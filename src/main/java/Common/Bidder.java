@@ -8,6 +8,9 @@ public class Bidder extends User {
         super(username, password, fullName, "BIDDER"); // set role cứng
         this.balance = balance;
     }
+    public boolean canAfford(double amount){
+        if (amount > balance) return false; else return true;
+    }
 
     public double getBalance() {
         return balance;
