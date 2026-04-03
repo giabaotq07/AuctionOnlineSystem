@@ -28,12 +28,13 @@ public class Client {
     }
   }
 
-  private void writeObject() {}
+  //private void writeObject() {}
 
   private void writeMessages() {
     String line = "";
     try {
       while (!line.equals(ClientHandler.STOP_STRING)) {
+        System.out.println("Nhập tin nhắn (gõ '" + ClientHandler.STOP_STRING + "' để dừng):");
         line = clientIn.nextLine();
         if (!line.trim().isEmpty()) {
           out.writeUTF(line);
