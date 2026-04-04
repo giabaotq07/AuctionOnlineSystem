@@ -12,7 +12,8 @@ public class Main extends Application {
   @Override
   public void start(Stage stage) throws IOException {
     Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
-    FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/app/views/ConnectServerController.fxml"));
+    FXMLLoader fxmlLoader =
+        new FXMLLoader(Main.class.getResource("/app/views/ConnectServerController.fxml"));
     Scene scene = new Scene(fxmlLoader.load(), 1280, 720);
     // String css = this.getClass().getResource("style.css").toExternalForm();
     // scene.getStylesheets().add(css);

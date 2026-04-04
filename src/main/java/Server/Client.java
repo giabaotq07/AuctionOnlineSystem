@@ -9,12 +9,14 @@ public class Client {
   private Socket socket;
   private ObjectOutputStream output;
   private static volatile Client instance;
+
   private Client() throws IOException {
-      socket = new Socket("127.0.0.1", Server.PORT);
-      System.out.println("Đã kết nối tới Server tại " + socket.getInetAddress());
-      output = new ObjectOutputStream(socket.getOutputStream());
+    socket = new Socket("127.0.0.1", Server.PORT);
+    System.out.println("Đã kết nối tới Server tại " + socket.getInetAddress());
+    output = new ObjectOutputStream(socket.getOutputStream());
   }
-  public static Client getInstance() throws IOException{
+
+  public static Client getInstance() throws IOException {
     if (instance == null) {
       synchronized (Client.class) {
         if (instance == null) {
@@ -24,6 +26,7 @@ public class Client {
     }
     return instance;
   }
+
   public ObjectOutputStream getOutput() {
     return output;
   }
