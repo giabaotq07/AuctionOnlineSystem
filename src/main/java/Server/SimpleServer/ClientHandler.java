@@ -1,4 +1,4 @@
-package Server;
+package Server.SimpleServer;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -39,13 +39,14 @@ public class ClientHandler implements Runnable {
     try {
       String line;
       while (true) {
-        line = in.readUTF().trim();
+        line = in.readUTF();
         if (line.equalsIgnoreCase(STOP_STRING)) {
           System.out.println("Client ngắt kết nối.");
           break;
         }
-        System.out.println("Client nói:");
-        System.out.println(line);
+        if (!line.equals("\n")) {
+          System.out.println("Client nói: " + line);
+        }
       }
     } catch (SocketException e) {
       System.out.println("Client mất kết nối.");

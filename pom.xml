@@ -90,7 +90,6 @@
                     <lineEndings>GIT_ATTRIBUTES</lineEndings>
                 </java>
             </configuration>
-
                 <executions>
                     <execution>
                         <id>spotless-check</id>

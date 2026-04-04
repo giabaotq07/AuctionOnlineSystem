@@ -1,5 +1,6 @@
 package app.controllers;
 
+import Server.Client;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,6 +36,18 @@ public class UIController {
     FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/hold_an_auction.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
+    stage.setScene(scene);
+    stage.show();
+  }
+
+  @FXML
+  public void SwitchToMess(ActionEvent event) throws IOException {
+    Client client = new Client();
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/mess_chat.fxml"));
+    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    scene = new Scene(loader.load(), 1280, 720);
+    MessController controller = loader.getController();
+    controller.setClient(client);
     stage.setScene(scene);
     stage.show();
   }
