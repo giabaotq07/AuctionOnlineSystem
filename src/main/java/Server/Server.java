@@ -38,7 +38,7 @@ public class Server {
   }
 
   /** Phương thức chính để khởi động Server. */
-  static void main() {
+  public static void main(String[] args) {
     new Server();
   }
 }

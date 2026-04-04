@@ -42,12 +42,12 @@ public class UIController {
 
   @FXML
   public void SwitchToMess(ActionEvent event) throws IOException {
-    Client client = new Client();
+    Client.getInstance();
     FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/mess_chat.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     MessController controller = loader.getController();
-    controller.setClient(client);
+    controller.setClient(Client.getInstance());
     stage.setScene(scene);
     stage.show();
   }
