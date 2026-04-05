@@ -1,59 +1,30 @@
 package Common;
-
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter; // Thêm format cho dễ nhìn
 
-public abstract class Item extends Entity {
+public class Item {
   private String itemName;
-  private String description;
-  private double startingPrice;
+  private String category;
   private double currentPrice;
-  private String sellerId;
-  private LocalDateTime startTime;
   private LocalDateTime endTime;
 
-  // Khoi tao
-  public Item(
-      String itemName,
-      String description,
-      double startingPrice,
-      LocalDateTime startTime,
-      LocalDateTime endTime,
-      String sellerId) {
-    super(); // Tự động lấy ID và createdAt từ Entity
-    this.itemName = itemName;
-    this.description = description;
-    this.startingPrice = startingPrice;
-    this.currentPrice = startingPrice; // Lúc mới tạo, giá hiện tại = giá khởi điểm
-    this.startTime = startTime;
-    this.endTime = endTime;
-    this.sellerId = sellerId;
+  public Item(String name, String cat, double price, LocalDateTime end) {
+    this.itemName = name;
+    this.category = cat;
+    this.currentPrice = price;
+    this.endTime = end;
   }
 
-  // cac lop con phai tu phan loai
-  public abstract String getCategory();
-
-  // override printinfo
   public void printInfo() {
-    System.out.println("--- Product Information ---");
-    System.out.println("Name: " + itemName);
-    System.out.println("Category: " + getCategory());
-    System.out.println("Current Price: " + currentPrice);
-    System.out.println("Ends at: " + endTime);
+    // Định dạng thời gian theo kiểu: dd/MM/yyyy HH:mm
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    System.out.println("[" + category + "] " + itemName +
+            " | Giá hiện tại: " + currentPrice +
+            " | Kết thúc lúc: " + endTime.format(formatter));
   }
 
-  public double getCurrentPrice() {
-    return currentPrice;
-  }
-
-  public void setCurrentPrice(double currentPrice) {
-    this.currentPrice = currentPrice;
-  }
-
-  public double getStartingPrice() {
-    return startingPrice;
-  }
-
-  public String getItemName() {
-    return itemName;
-  }
+  public double getCurrentPrice() { return currentPrice; }
+  public void setCurrentPrice(double price) { this.currentPrice = price; }
+  public String getItemName() { return itemName; }
+  public LocalDateTime getEndTime() { return endTime; } // Cần hàm này để Bid kiểm tra
 }

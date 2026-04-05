@@ -1,65 +1,101 @@
 package Common;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.time.LocalDateTime;
 
-public class Auction extends Entity {
-  private Item item;
-  private String status = "OPEN"; // [cite: 55]
-  // Sử dụng CopyOnWriteArrayList để an toàn khi vừa đọc (vẽ biểu đồ) vừa ghi (đặt giá)
-  private List<BidTransaction> bidHistory = new CopyOnWriteArrayList<>();
+public class Auction {
+    private static Auction instance;
+    private List<Item> itemList = new ArrayList<>();
+    // Dùng 1 Scanner duy nhất cho cả class để tránh lỗi trôi lệnh
+    private Scanner sc = new Scanner(System.in);
 
-  public Auction(Item item) {
-    super(UUID.randomUUID().toString());
-    this.item = item;
-  }
+    private Auction() {}
 
-  // Logic đặt giá tập trung cho 1 sản phẩm
-  public synchronized boolean placeBid(Bidder bidder, double amount) {
-    // 1. Kiểm tra trạng thái phiên [cite: 59]
-    if (!status.equals("RUNNING")) {
-      System.out.println("Phiên đấu giá không trong trạng thái hoạt động");
-      return false;
+    public static Auction getInstance() {
+        if (instance == null) instance = new Auction();
+        return instance;
     }
 
-    // 2. Kiểm tra giá cao nhất hiện tại [cite: 48, 49]
-    double currentMax = getHighestBidAmount();
-    if (amount <= currentMax) {
-      System.out.println("Giá đặt phải cao hơn giá hiện tại: " + currentMax);
-      return false;
+    // NHẬP: Thêm mặt hàng (Lên mẫu trực tiếp)
+    public void addItem() {
+        try {
+            System.out.println("Nhập theo thứ tự: [Tên] [Loại] [Giá_Khởi_Điểm] [Số_Phút_Đấu_Giá]");
+            String name = sc.next();
+            String cat = sc.next();
+            double price = sc.nextDouble();
+            int minutes = sc.nextInt(); // Nhập số phút để kiểm tra date dễ hơn
+
+            Item newItem = new Item(name, cat, price, LocalDateTime.now().plusMinutes(minutes));
+            itemList.add(newItem);
+            System.out.println("=> Đã nạp mẫu hàng: " + name + " (" + cat + ")");
+        } catch (InputMismatchException e) {
+            System.out.println("!! Lỗi: Giá và thời gian phải là số. Thao tác bị hủy.");
+            sc.nextLine(); // Dọn dẹp bộ nhớ đệm bị lỗi
+        }
     }
 
-    // 3. Kiểm tra số dư người dùng
-    if (!bidder.canAfford(amount)) {
-      System.out.println("Tài khoản không đủ số dư");
-      return false;
+    // XỬ LÝ CHÍNH: Nhập - Xuất điều hướng
+    public void xulydulieu() {
+        while (true) {
+            System.out.println("""
+                    \n--- MENU QUẢN LÝ ĐẤU GIÁ ---
+                    1. Add item (Thêm hàng)
+                    2. Bid item (Đấu giá)
+                    3. Show all (Xem danh sách)
+                    0. Exit (Thoát)
+                    """);
+            try {
+                int choice = sc.nextInt();
+                if (choice == 0) break;
+
+                switch (choice) {
+                    case 1 -> this.addItem();
+                    case 2 -> this.bidLogic();
+                    case 3 -> this.showStatus();
+                    default -> System.out.println("Lựa chọn không hợp lệ!");
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("!! Lỗi: Vui lòng chỉ nhập số từ 0-3.");
+                sc.nextLine(); // Dọn dẹp để không bị lặp lỗi vô tận
+            }
+        }
     }
 
-    // 4. Lưu giao dịch [cite: 117]
-    BidTransaction bid = new BidTransaction(this.id, bidder.getId(), amount);
-    bidHistory.add(bid);
+    // Tách riêng logic Bid để file Auction gọn gàng hơn (SRP)
+    private void bidLogic() {
+        if (itemList.isEmpty()) {
+            System.out.println("Chưa có hàng hóa nào!");
+            return;
+        }
 
-    // Cập nhật giá hiện tại vào Item để đồng bộ [cite: 44, 50]
-    item.setCurrentPrice(amount);
+        this.showStatus();
+        try {
+            System.out.print("Chọn ID món hàng: ");
+            int id = sc.nextInt();
 
-    return true;
-  }
+            if (id >= 0 && id < itemList.size()) {
+                System.out.println("Nhập [Tên_Bạn] và [Số_Tiền]:");
+                String bidderName = sc.next();
+                double amount = sc.nextDouble();
 
-  public double getHighestBidAmount() {
-    if (bidHistory.isEmpty()) return item.getStartingPrice(); // [cite: 42]
-    return bidHistory.get(bidHistory.size() - 1).getAmount();
-  }
+                // GỌI SINGLETON BID để xử lý logic kiểm tra giá và DATE
+                boolean success = Bid.getInstance().placeBid(itemList.get(id), amount, bidderName);
 
-  public String getWinnerId() {
-    if (bidHistory.isEmpty()) return null;
-    // Lấy người cuối cùng đặt giá cao nhất [cite: 54]
-    return bidHistory.get(bidHistory.size() - 1).getBidderId();
-  }
+                if (success) System.out.println("=> Chúc mừng! Bạn dẫn đầu.");
+            } else {
+                System.out.println("!! ID không tồn tại.");
+            }
+        } catch (InputMismatchException e) {
+            System.out.println("!! Lỗi nhập số tiền/ID.");
+            sc.nextLine();
+        }
+    }
 
-  @Override
-  public void printInfo() {
-    item.printInfo();
-    System.out.println("Trạng thái: " + status);
-    System.out.println("Số lượt bid: " + bidHistory.size());
-  }
+    public void showStatus() {
+        System.out.println("\n--- DANH SÁCH MẶT HÀNG ---");
+        for (int i = 0; i < itemList.size(); i++) {
+            System.out.print("ID: " + i + " ");
+            itemList.get(i).printInfo();
+        }
+    }
 }
