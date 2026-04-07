@@ -1,8 +1,10 @@
 package Common;
+
 import java.time.LocalDateTime;
 
 public class Bid {
     private static Bid instance;
+
     private Bid() {}
 
     public static Bid getInstance() {
@@ -10,21 +12,31 @@ public class Bid {
         return instance;
     }
 
-    public boolean placeBid(Item item, double amount, String bidder) {
-        // Kiểm tra 1: Còn trong thời gian đấu giá không?
+    // ===================== RESULT OBJECT =====================
+    public static class BidResult {
+        public final boolean success;
+        public final String message;
+
+        public BidResult(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+    }
+
+    // ===================== BID LOGIC =====================
+    public BidResult placeBid(Item item, double amount, String bidder) {
+
+        // Kiểm tra 1: hết thời gian
         if (LocalDateTime.now().isAfter(item.getEndTime())) {
-            System.out.println(">>> LỖI: Phiên đấu giá cho món này đã KẾT THÚC!");
-            return false;
+            return new BidResult(false, "Phiên đấu giá đã KẾT THÚC!");
         }
 
-        // Kiểm tra 2: Giá có cao hơn giá hiện tại không?
+        // Kiểm tra 2: giá hợp lệ
         if (amount > item.getCurrentPrice()) {
             item.setCurrentPrice(amount);
-            System.out.println(">>> CHẤP NHẬN: " + bidder + " dẫn đầu với giá " + amount);
-            return true;
+            return new BidResult(true, bidder + " đang dẫn đầu với giá " + amount);
         }
 
-        System.out.println(">>> TỪ CHỐI: Giá quá thấp!");
-        return false;
+        return new BidResult(false, "Giá quá thấp!");
     }
 }

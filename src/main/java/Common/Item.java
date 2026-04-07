@@ -1,6 +1,7 @@
 package Common;
+
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter; // Thêm format cho dễ nhìn
+import java.time.format.DateTimeFormatter;
 
 public class Item {
   private String itemName;
@@ -15,16 +16,38 @@ public class Item {
     this.endTime = end;
   }
 
-  public void printInfo() {
-    // Định dạng thời gian theo kiểu: dd/MM/yyyy HH:mm
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    System.out.println("[" + category + "] " + itemName +
-            " | Giá hiện tại: " + currentPrice +
-            " | Kết thúc lúc: " + endTime.format(formatter));
+  // ===================== GETTER / SETTER =====================
+  public String getItemName() {
+    return itemName;
   }
 
-  public double getCurrentPrice() { return currentPrice; }
-  public void setCurrentPrice(double price) { this.currentPrice = price; }
-  public String getItemName() { return itemName; }
-  public LocalDateTime getEndTime() { return endTime; } // Cần hàm này để Bid kiểm tra
+  public String getCategory() {
+    return category;
+  }
+
+  public double getCurrentPrice() {
+    return currentPrice;
+  }
+
+  public void setCurrentPrice(double price) {
+    this.currentPrice = price;
+  }
+
+  public LocalDateTime getEndTime() {
+    return endTime;
+  }
+
+  // ===================== FORMAT TIME =====================
+  public String getFormattedEndTime() {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    return endTime.format(formatter);
+  }
+
+  // ===================== TO STRING (CHO UI) =====================
+  @Override
+  public String toString() {
+    return "[" + category + "] " + itemName +
+            " | Giá: " + currentPrice +
+            " | Kết thúc: " + getFormattedEndTime();
+  }
 }
