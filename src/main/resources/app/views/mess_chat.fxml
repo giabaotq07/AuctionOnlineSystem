@@ -34,7 +34,7 @@
       </MenuBar>
       <Pane layoutX="46.0" layoutY="64.0" prefHeight="570.0" prefWidth="1181.0" AnchorPane.bottomAnchor="86.0" AnchorPane.leftAnchor="46.0" AnchorPane.rightAnchor="53.0" AnchorPane.topAnchor="64.0">
          <children>
-            <Button layoutX="1104.0" layoutY="522.0" mnemonicParsing="false" onAction="#writeMessages" prefHeight="34.0" prefWidth="63.0" text="Send" />
+            <Button layoutX="1104.0" layoutY="522.0" mnemonicParsing="false" onAction="#send" prefHeight="34.0" prefWidth="63.0" text="Send" />
             <TextArea fx:id="myTextArea" layoutX="14.0" layoutY="522.0" nodeOrientation="LEFT_TO_RIGHT" prefHeight="34.0" prefWidth="1081.0" />
             <ScrollPane fx:id="scrollPane" fitToWidth="true" layoutX="14.0" layoutY="14.0" prefHeight="501.0" prefWidth="1081.0">
                <content>
