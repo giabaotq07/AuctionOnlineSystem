@@ -3,7 +3,7 @@ package Common;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class Item {
+public class Item implements Cloneable{
   private String itemName;
   private String category;
   private double currentPrice;
@@ -41,6 +41,15 @@ public class Item {
   public String getFormattedEndTime() {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     return endTime.format(formatter);
+  }
+  //clone
+  public Item clone(){
+    try{
+      return (Item) super.clone();
+    } catch (CloneNotSupportedException e) {
+      throw null;
+    }
+
   }
 
   // ===================== TO STRING (CHO UI) =====================
