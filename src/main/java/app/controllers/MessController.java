@@ -1,5 +1,6 @@
 package app.controllers;
 
+import Common.core.Message;
 import Server.Client;
 import java.io.IOException;
 import javafx.application.Platform;
@@ -32,6 +33,11 @@ public class MessController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
+    try {
+      Client.getInstance().removeMessageHandler();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
     FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/user_interface.fxml"));
     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     Scene scene = new Scene(loader.load(), 1280, 720);
@@ -54,14 +60,14 @@ public class MessController {
   public void receive() {
     try {
       Client.getInstance()
-          .setMessageHandler((message) -> Platform.runLater(() -> addBubble(message.toString())));
+          .setMessageHandler((message) -> Platform.runLater(() -> addBubble(message)));
     } catch (IOException e) {
       //
     }
   }
 
-  public void addBubble(String text) {
-    Label label = new Label(text);
+  public void addBubble(Message message) {
+    Label label = new Label(message.toString());
     label.setWrapText(true);
     HBox container = new HBox(label);
     chatBox.getChildren().add(container);

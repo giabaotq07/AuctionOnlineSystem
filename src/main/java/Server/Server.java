@@ -17,6 +17,7 @@ public class Server {
   public static final String STOP_STRING = "STOP";
   private static final Map<String, ClientHandler> clientHandlers = new ConcurrentHashMap<>();
   private static final ExecutorService broadcastPool = Executors.newFixedThreadPool(10);
+  private final ExecutorService clientPool = Executors.newCachedThreadPool();
   private ServerSocket server;
   private boolean isRunning = true;
 
@@ -54,8 +55,7 @@ public class Server {
         System.out.println("\n[NEW] Client mới kết nối: " + handlerId);
         ClientHandler handler = new ClientHandler(clientSocket, handlerId);
         clientHandlers.put(handlerId, handler);
-        Thread thread = new Thread(handler);
-        thread.start();
+        clientPool.execute(handler);
       }
     } catch (IOException e) {
       if (isRunning) System.err.println("Lỗi chấp nhận kết nối: " + e.getMessage());

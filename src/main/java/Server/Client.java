@@ -13,6 +13,7 @@ public class Client {
   private final String clientIp;
   private static volatile Client instance;
   private boolean isClosing = false;
+  private boolean isListening = false;
   private MessageHandler<Message> messageHandler;
   private Thread listenThread;
 
@@ -39,6 +40,10 @@ public class Client {
     this.messageHandler = handler;
   }
 
+  public void removeMessageHandler() {
+    this.messageHandler = null;
+  }
+
   public void sendMessages(String line) throws IOException {
     if (!line.trim().isEmpty()) {
       Message message = new Message(this.clientIp, line);
@@ -56,12 +61,10 @@ public class Client {
               try {
                 while (!isClosing) {
                   Message message = (Message) input.readObject();
-                  if (message != null) {
+                  if (message != null && messageHandler != null) {
                     // System.out.println("\n[SERVER]: " + data);
-                    if (messageHandler != null) {
-                      messageHandler.messageHandlerReceiver(message);
-                      // System.out.println(message);
-                    }
+                    messageHandler.messageHandlerReceiver(message);
+                    // System.out.println(message);
                   }
                 }
               } catch (EOFException | SocketException e) {
