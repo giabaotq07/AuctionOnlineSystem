@@ -1,30 +1,53 @@
 package Common;
 
-public abstract class User extends Entity {
-  private String username;
-  private String password;
-  private String fullName;
-  private String role; // Có thể dùng Enum: BIDDER, SELLER, ADMIN [cite: 34]
+import java.util.ArrayList;
+import java.util.List;
 
-  public User(String username, String password, String fullName, String role) {
-    super(); // Gọi constructor của Entity
-    this.username = username;
-    this.password = password;
-    this.fullName = fullName;
-    this.role = role;
-  }
+public class User {
+    private int id;
+    private String name;
+    private List<String> bidHistory;
 
-  @Override
-  public void printInfo() {
-    System.out.println("User ID: " + id + " | Username: " + username + " | Role: " + role);
-  }
+    public User(int id, String name) {
+        this.id = id;
+        this.name = name;
+        this.bidHistory = new ArrayList<>();
+    }
 
-  // Getters & Setters
-  public String getUsername() {
-    return username;
-  }
+    // ===================== GETTER =====================
+    public int getId() {
+        return id;
+    }
 
-  public String getRole() {
-    return role;
-  }
+    public String getName() {
+        return name;
+    }
+
+    public List<String> getBidHistory() {
+        return bidHistory;
+    }
+
+    // ===================== ADD HISTORY =====================
+    public void addHistory(String record) {
+        bidHistory.add(record);
+    }
+
+    // ===================== FORMAT HISTORY =====================
+    public String getHistoryAsString() {
+        if (bidHistory.isEmpty()) return "Chưa có lịch sử.";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Lịch sử của ").append(name).append(":\n");
+
+        for (String s : bidHistory) {
+            sb.append("- ").append(s).append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "User[" + id + "] - " + name;
+    }
 }
