@@ -1,7 +1,6 @@
 package app.controllers;
 
 import Common.Auction;
-import Common.Bid;
 import Common.Item;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;

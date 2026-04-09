@@ -3,40 +3,22 @@ package Common;
 import java.time.LocalDateTime;
 
 public class Bid {
-    private static Bid instance;
+    private User bidder;         // Ai là người trả giá?
+    private double amount;       // Số tiền bao nhiêu?
+    private LocalDateTime time;  // Trả giá lúc nào?
 
-    private Bid() {}
-
-    public static Bid getInstance() {
-        if (instance == null) instance = new Bid();
-        return instance;
+    public Bid(User bidder, double amount, LocalDateTime time) {
+        this.bidder = bidder;
+        this.amount = amount;
+        this.time = time;
     }
 
-    // ===================== RESULT OBJECT =====================
-    public static class BidResult {
-        public final boolean success;
-        public final String message;
+    public User getBidder() { return bidder; }
+    public double getAmount() { return amount; }
+    public LocalDateTime getTime() { return time; }
 
-        public BidResult(boolean success, String message) {
-            this.success = success;
-            this.message = message;
-        }
-    }
-
-    // ===================== BID LOGIC =====================
-    public BidResult placeBid(Item item, double amount, String bidder) {
-
-        // Kiểm tra 1: hết thời gian
-        if (LocalDateTime.now().isAfter(item.getEndTime())) {
-            return new BidResult(false, "Phiên đấu giá đã KẾT THÚC!");
-        }
-
-        // Kiểm tra 2: giá hợp lệ
-        if (amount > item.getCurrentPrice()) {
-            item.setCurrentPrice(amount);
-            return new BidResult(true, bidder + " đang dẫn đầu với giá " + amount);
-        }
-
-        return new BidResult(false, "Giá quá thấp!");
+    @Override
+    public String toString() {
+        return bidder.getName() + " đã trả $" + amount + " vào lúc " + time.withNano(0);
     }
 }
