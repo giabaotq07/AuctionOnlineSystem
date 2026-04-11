@@ -14,7 +14,7 @@ public class UIController {
 
   @FXML
   public void SwitchToLive(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/live_auction.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/BidController.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
@@ -23,7 +23,7 @@ public class UIController {
 
   @FXML
   public void SwitchToMine(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/my_auction.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/AuctionController.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
@@ -32,7 +32,7 @@ public class UIController {
 
   @FXML
   public void SwitchToOrganize(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/hold_an_auction.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/MyHistory.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);

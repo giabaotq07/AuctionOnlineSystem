@@ -79,6 +79,15 @@ public class AuctionSession implements AuctionSubject, Serializable {
         notifyObserversNewBid(bidAmount, bidder.getName());
         return true;
     }
+    @Override
+    public String toString() {
+        return item.getName() + " | Giá hiện tại: $" + getCurrentHighestPrice();
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
 
     // 3. In lịch sử để kiểm tra
     public void printSessionSummary() {

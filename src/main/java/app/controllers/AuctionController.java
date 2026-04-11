@@ -1,59 +1,85 @@
 package app.controllers;
-
-import Common.Auction;
+import Common.DataStore;
+import javafx.event.ActionEvent;
+import Common.AuctionSession;
 import Common.Item;
+import Common.User;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.Node;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+
+import java.time.LocalDateTime;
 
 public class AuctionController {
 
+    // ===== INPUT =====
+    @FXML private TextField IdField;
     @FXML private TextField nameField;
-    @FXML private TextField categoryField;
+    @FXML private TextField descriptionField;
     @FXML private TextField priceField;
     @FXML private TextField minutesField;
 
-    @FXML private TextField idField;
-    @FXML private TextField bidderField;
-    @FXML private TextField amountField;
-
+    // ===== UI =====
+    @FXML private ListView<AuctionSession> sessionListView;
     @FXML private TextArea outputArea;
 
-    // ===== NÚT ADD =====
+    // ===== ADD SESSION =====
     @FXML
     public void handleAdd() {
         try {
-            String name = nameField.getText();
-            String cat = categoryField.getText();
-            double price = Double.parseDouble(priceField.getText());
-            int minutes = Integer.parseInt(minutesField.getText());
+            String id = "S" + (sessionListView.getItems().size() + 1);
+            Item item = new Item(
+                    id,
+                    nameField.getText(),
+                    descriptionField.getText(),
+                    Double.parseDouble(priceField.getText()),
+                    Integer.parseInt(minutesField.getText())
+            );
 
-            Auction.getInstance().addItem(name, cat, price, minutes);
 
-            outputArea.setText("Đã thêm item!");
+            AuctionSession session = new AuctionSession(
+                    item.getItemId(),
+                    item,
+                    new User("s1", "seller"),
+                    LocalDateTime.now().plusMinutes(Integer.parseInt(minutesField.getText()))
+            );
+            DataStore.sessions.add(session);
+
+            sessionListView.getItems().add(session);
+
+            outputArea.setText("Đã thêm session!");
+
         } catch (Exception e) {
             outputArea.setText("Lỗi nhập!");
         }
     }
-
-    // ===== NÚT BID =====
     @FXML
-    public void handleBid() {
-        try {
-            int id = Integer.parseInt(idField.getText());
-            String user = bidderField.getText();
-            double amount = Double.parseDouble(amountField.getText());
-
-            Bid.BidResult result = Auction.getInstance().bidItem(id, user, amount);
-
-            outputArea.setText(result.message);
-        } catch (Exception e) {
-            outputArea.setText("Lỗi dữ liệu!");
-        }
+    public void handleBack(ActionEvent event) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/FirstScene.fxml"));
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        Scene scene = new Scene(loader.load(), 1280, 720);
+        stage.setScene(scene);
+        stage.show();
     }
 
-    // ===== NÚT SHOW =====
+    // ===== CLICK → HIỆN INFO =====
     @FXML
-    public void handleShow() {
-        outputArea.setText(Auction.getInstance().getItemsAsString());
+    public void initialize() {
+        sessionListView.setOnMouseClicked(e -> {
+            AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+            if (s == null) return;
+
+            outputArea.setText(
+                    "Item: " + s.getItem().getName() +
+                            "\nMô tả: " + s.getItem().getDescription()+
+                            "\nGiá hiện tại: $" + s.getCurrentHighestPrice()
+            );
+        });
     }
 }

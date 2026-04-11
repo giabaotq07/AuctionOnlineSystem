@@ -14,7 +14,7 @@ public class OrganizeController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/user_interface.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/FirstScene.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);

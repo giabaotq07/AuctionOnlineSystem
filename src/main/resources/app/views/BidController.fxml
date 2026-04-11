@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="720.0" prefWidth="1280.0"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="app.controllers.BidController">
+
+    <children>
+
+        <!-- BACK BUTTON -->
+        <Button layoutX="20" layoutY="660"
+                text="Back"
+                onAction="#handleBack"/>
+
+        <!-- MENU -->
+        <MenuBar layoutY="0" prefWidth="1280">
+            <menus>
+                <Menu text="File">
+                    <items>
+                        <MenuItem text="Close"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+
+        <!-- LIST SESSION -->
+        <ListView fx:id="sessionListView"
+                  layoutX="20" layoutY="40"
+                  prefWidth="350" prefHeight="550"/>
+
+        <!-- FORM BID -->
+        <VBox layoutX="400" layoutY="40" spacing="10">
+
+            <Label text="Bid"/>
+
+            <TextField fx:id="bidderField" promptText="Tên người bid"/>
+            <TextField fx:id="amountField" promptText="Số tiền"/>
+
+            <Button text="Đặt giá" onAction="#handleBid"/>
+
+            <TextArea fx:id="outputArea"
+                      prefWidth="400" prefHeight="300"/>
+
+        </VBox>
+
+    </children>
+</AnchorPane>

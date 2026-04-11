@@ -13,8 +13,9 @@ public class Item {
         this.startingPrice = startingPrice;
         this.stepPrice = stepPrice;
     }
-
+    public String getItemId(){ return itemId;}
     public String getName() { return name; }
     public double getStartingPrice() { return startingPrice; }
     public double getStepPrice() { return stepPrice; }
+    public String getDescription() {return description;}
 }

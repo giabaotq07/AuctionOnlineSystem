@@ -1,0 +1,77 @@
+package app.controllers;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.Node;
+import javafx.stage.Stage;
+import java.io.IOException;
+import Common.*;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+
+public class BidController {
+
+  @FXML private ListView<AuctionSession> sessionListView;
+
+  @FXML private TextField bidderField;
+  @FXML private TextField amountField;
+
+  @FXML private TextArea outputArea;
+
+  private AuctionSession session;
+
+  // ===== LOAD LIST =====
+  @FXML
+  public void initialize() {
+    sessionListView.getItems().clear();
+    sessionListView.getItems().addAll(DataStore.sessions);
+
+    System.out.println("Loaded sessions: " + DataStore.sessions.size());
+
+    sessionListView.setOnMouseClicked(e -> {
+      AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+      if (s == null) return;
+      session = s;
+
+      outputArea.setText(
+              "Item: " + s.getItem().getName() +
+                      "\nGiá: $" + s.getCurrentHighestPrice()
+      );
+    });
+  }
+
+  // ===== BID =====
+  @FXML
+  public void handleBid() {
+    try {
+      if (session == null) {
+        outputArea.setText("Chưa chọn session!");
+        return;
+      }
+
+      String userName = bidderField.getText();
+      double amount = Double.parseDouble(amountField.getText());
+
+      User bidder = new User("b1", userName);
+
+      boolean success = session.placeBid(bidder, amount);
+
+      if (success) {
+        outputArea.setText("Đặt giá thành công!");
+      } else {
+        outputArea.setText("Đặt giá thất bại!");
+      }
+
+    } catch (Exception e) {
+      outputArea.setText("Lỗi dữ liệu!");
+    }
+  }
+  @FXML
+  public void handleBack(ActionEvent event) throws IOException {
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/FirstScene.fxml"));
+    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    Scene scene = new Scene(loader.load(), 1280, 720);
+    stage.setScene(scene);
+    stage.show();
+  }
+}
