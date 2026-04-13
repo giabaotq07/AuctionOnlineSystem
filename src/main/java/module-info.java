@@ -3,6 +3,7 @@ module app {
   requires javafx.fxml;
   requires java.desktop;
   requires atlantafx.base;
+  requires java.sql;
 
   opens app to
       javafx.fxml;

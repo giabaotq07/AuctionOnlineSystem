@@ -1,4 +1,4 @@
-package Common.core;
+package app.models.core;
 
 import java.io.Serializable;
 

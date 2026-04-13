@@ -1,4 +1,4 @@
-package Common;
+package app.models;
 
 public abstract class User extends Entity {
   private String username;

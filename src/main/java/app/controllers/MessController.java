@@ -1,6 +1,6 @@
 package app.controllers;
 
-import Common.core.Message;
+import app.models.core.Message;
 import Server.Client;
 import java.io.IOException;
 import javafx.application.Platform;

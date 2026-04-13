@@ -1,4 +1,4 @@
-package Common;
+package app.models;
 
 public class Bidder extends User {
 
