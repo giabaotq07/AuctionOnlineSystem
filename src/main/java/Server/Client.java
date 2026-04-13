@@ -1,7 +1,7 @@
 package Server;
 
-import Common.core.Message;
-import Common.protocol.MessageHandler;
+import app.models.core.Message;
+import app.models.protocol.MessageHandler;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
