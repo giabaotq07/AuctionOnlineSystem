@@ -1,5 +1,6 @@
 package Server.dao;
 
+import app.config.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
