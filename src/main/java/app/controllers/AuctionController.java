@@ -1,9 +1,6 @@
 package app.controllers;
-import Common.DataStore;
+import Common.*;
 import javafx.event.ActionEvent;
-import Common.AuctionSession;
-import Common.Item;
-import Common.User;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.fxml.FXMLLoader;
@@ -52,6 +49,13 @@ public class AuctionController {
             DataStore.sessions.add(session);
 
             sessionListView.getItems().add(session);
+            HistoryStore.history.add(
+                    new HistoryRecord(
+                            session.getSessionId(),
+                            HistoryType.ADD_ITEM,
+                             item.getName()+" "+ item.getPrice()
+                    )
+            );
 
             outputArea.setText("Đã thêm session!");
 

@@ -55,6 +55,16 @@ public class BidController {
       User bidder = new User("b1", userName);
 
       boolean success = session.placeBid(bidder, amount);
+      if (success) {
+        HistoryStore.history.add(
+                new HistoryRecord(
+                        session.getSessionId(),
+                        HistoryType.BID,
+                        bidder.getName() + " bid $" + amount +
+                                " vào " + session.getItem().getName()
+                )
+        );
+      }
 
       if (success) {
         outputArea.setText("Đặt giá thành công!");

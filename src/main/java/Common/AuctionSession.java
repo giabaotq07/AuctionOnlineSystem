@@ -88,6 +88,9 @@ public class AuctionSession implements AuctionSubject, Serializable {
         return item;
     }
 
+    public String getSessionId() {
+        return sessionId;
+    }
 
     // 3. In lịch sử để kiểm tra
     public void printSessionSummary() {

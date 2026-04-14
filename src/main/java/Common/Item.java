@@ -18,4 +18,7 @@ public class Item {
     public double getStartingPrice() { return startingPrice; }
     public double getStepPrice() { return stepPrice; }
     public String getDescription() {return description;}
+
+    public double getPrice() { return startingPrice;
+    }
 }
