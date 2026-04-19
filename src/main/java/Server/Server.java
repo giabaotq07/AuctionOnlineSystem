@@ -14,6 +14,7 @@ public class Server {
   /** Cổng mặc định của Server. */
   public static final int PORT = 5000;
 
+  private static final Server instance = null;
   public static final String STOP_STRING = "STOP";
   private static final Map<String, ClientHandler> clientHandlers = new ConcurrentHashMap<>();
   private static final ExecutorService broadcastPool = Executors.newFixedThreadPool(10);
@@ -77,6 +78,13 @@ public class Server {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  public static Server getInstance() {
+    if (instance == null) {
+      return new Server();
+    }
+    return instance;
   }
 
   static void main() {

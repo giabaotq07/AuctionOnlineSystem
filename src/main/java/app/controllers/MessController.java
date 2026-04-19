@@ -1,7 +1,7 @@
 package app.controllers;
 
-import app.models.core.Message;
 import Server.Client;
+import app.models.core.Message;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
