@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
@@ -23,12 +24,6 @@ public class ConnectServerController {
   private Scene scene;
   private Client client;
   private ObjectOutputStream output;
-  @FXML private Label statusLabel;
-  private Timer hide;
-
-  public void initialize() {
-    statusLabel.setVisible(false);
-  }
 
   @FXML
   public void ConnectServer(ActionEvent event) {
@@ -36,24 +31,25 @@ public class ConnectServerController {
       client.getInstance();
       SwitchToUI(event);
     } catch (Exception e) {
-      statusLabel.setVisible(true);
-      if (hide != null && hide.isRunning()) {
-        hide.stop();
-      }
-      hide = new Timer(10000, ex -> statusLabel.setVisible(false));
-      hide.setRepeats(false);
-      hide.start();
+      showAlert(Alert.AlertType.ERROR , "Lỗi kết nối", "Không thể kết nối đến Server");
     }
   }
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/user_interface.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/login_scene.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
     // String css = this.getClass().getResource("style.css").toExternalForm();
     // scene.getStylesheets().add(css);
     stage.show();
+  }
+  private void showAlert(Alert.AlertType alertType, String title, String content) {
+    Alert alert = new Alert(alertType);
+    alert.setTitle(title);
+    alert.setHeaderText(null);
+    alert.setContentText(content);
+    alert.showAndWait();
   }
 }
