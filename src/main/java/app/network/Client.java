@@ -2,7 +2,6 @@ package app.network;
 
 import app.models.MessagePacket;
 import com.google.gson.Gson;
-import javafx.application.Platform;
 import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
@@ -37,7 +36,7 @@ public class Client {
     try {
       String json;
       while ((json = in.readLine()) != null) {
-        System.out.println("Dữ liệu nhận từ Server: " + json); // <--- Thêm dòng này
+        System.out.println("[Server] " + json);
         // Sử dụng Type-safe hoặc xử lý JSON thô trước khi parse nếu cần
         MessagePacket<?> packet = gson.fromJson(json, MessagePacket.class);
 

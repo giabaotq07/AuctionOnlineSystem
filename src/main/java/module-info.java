@@ -4,13 +4,14 @@ module app {
   requires java.desktop;
   requires atlantafx.base;
   requires java.sql;
-    requires com.google.gson;
+  requires com.google.gson;
 
-    opens app to
+  opens app to
       javafx.fxml;
   opens app.controllers to
       javafx.fxml;
-  opens app.models to com.google.gson;
+  opens app.models to
+      com.google.gson;
 
   exports app;
 }

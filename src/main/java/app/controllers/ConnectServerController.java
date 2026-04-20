@@ -1,11 +1,8 @@
 package app.controllers;
 
-import app.network.Client;
 import app.config.NavigationManager;
 import app.config.View;
 import app.network.Client;
-import app.config.NavigationManager;
-import app.config.View;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -35,47 +32,47 @@ public class ConnectServerController {
 
     // Connect asynchronously to prevent UI freezing
     Thread connectionThread =
-            new Thread(
-                    () -> {
-                      try {
-                        // Try to establish connection with timeout
-                        Client connectedClient = connectWithTimeout();
+        new Thread(
+            () -> {
+              try {
+                // Try to establish connection with timeout
+                Client connectedClient = connectWithTimeout();
 
-                        if (connectedClient != null) {
-                          this.client = connectedClient;
+                if (connectedClient != null) {
+                  this.client = connectedClient;
 
-                          // Connection successful
-                          Platform.runLater(
-                                  () -> {
-                                    if (statusLabel != null) {
-                                      statusLabel.setText("✓ Kết nối thành công!");
-                                      statusLabel.setStyle("-fx-text-fill: #00AA00;"); // Green for success
-                                    }
-                                    handleLoginClick(event);
-                                  });
-                        } else {
-                          throw new IOException(
-                                  "Timeout: Không thể kết nối trong " + CONNECTION_TIMEOUT + "ms");
+                  // Connection successful
+                  Platform.runLater(
+                      () -> {
+                        if (statusLabel != null) {
+                          statusLabel.setText("✓ Kết nối thành công!");
+                          statusLabel.setStyle("-fx-text-fill: #00AA00;"); // Green for success
                         }
-                      } catch (IOException e) {
-                        Platform.runLater(
-                                () -> {
-                                  String errorMsg = getDetailedErrorMessage(e);
-                                  showAlert("Lỗi kết nối", errorMsg);
-                                  if (statusLabel != null) {
-                                    statusLabel.setText("✗ Kết nối thất bại");
-                                    statusLabel.setStyle("-fx-text-fill: #FF0000;"); // Red for error
-                                  }
-                                  resetConnectionButton();
-                                });
-                      } catch (Exception e) {
-                        Platform.runLater(
-                                () -> {
-                                  showAlert("Lỗi không xác định", e.getMessage());
-                                  resetConnectionButton();
-                                });
+                        handleLoginClick(event);
+                      });
+                } else {
+                  throw new IOException(
+                      "Timeout: Không thể kết nối trong " + CONNECTION_TIMEOUT + "ms");
+                }
+              } catch (IOException e) {
+                Platform.runLater(
+                    () -> {
+                      String errorMsg = getDetailedErrorMessage(e);
+                      showAlert("Lỗi kết nối", errorMsg);
+                      if (statusLabel != null) {
+                        statusLabel.setText("✗ Kết nối thất bại");
+                        statusLabel.setStyle("-fx-text-fill: #FF0000;"); // Red for error
                       }
+                      resetConnectionButton();
                     });
+              } catch (Exception e) {
+                Platform.runLater(
+                    () -> {
+                      showAlert("Lỗi không xác định", e.getMessage());
+                      resetConnectionButton();
+                    });
+              }
+            });
 
     connectionThread.setDaemon(true);
     connectionThread.start();
@@ -86,13 +83,14 @@ public class ConnectServerController {
     final Exception[] exception = {null};
 
     Thread connectionAttempt =
-            new Thread(() -> {
-                      try {
-                        result[0] = Client.getInstance();
-                      } catch (Exception e) {
-                        exception[0] = e;
-                      }
-                    });
+        new Thread(
+            () -> {
+              try {
+                result[0] = Client.getInstance();
+              } catch (Exception e) {
+                exception[0] = e;
+              }
+            });
 
     connectionAttempt.setDaemon(true);
     connectionAttempt.start();

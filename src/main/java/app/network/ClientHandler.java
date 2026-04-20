@@ -1,7 +1,7 @@
 package app.network;
 
-import app.models.MessagePacket;
 import app.models.CommandType;
+import app.models.MessagePacket;
 import app.network.services.AuctionService;
 import com.google.gson.Gson;
 import java.io.*;
@@ -14,7 +14,9 @@ public class ClientHandler implements Runnable {
   private String username;
   private final Gson gson = new Gson();
 
-  public ClientHandler(Socket socket) { this.socket = socket; }
+  public ClientHandler(Socket socket) {
+    this.socket = socket;
+  }
 
   @Override
   public void run() {
@@ -26,7 +28,9 @@ public class ClientHandler implements Runnable {
         MessagePacket<?> packet = gson.fromJson(line, MessagePacket.class);
         handlePacket(packet);
       }
-    } catch (IOException e) { close(); }
+    } catch (IOException e) {
+      close();
+    }
   }
 
   private void handlePacket(MessagePacket<?> packet) {
@@ -53,7 +57,8 @@ public class ClientHandler implements Runnable {
         // Tương tự cho đấu giá
         double amount = Double.parseDouble(packet.getData().toString());
         if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
-          MessagePacket<String> bidPacket = new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
+          MessagePacket<String> bidPacket =
+              new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
           bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
           Server.broadcast(bidPacket);
         }
@@ -69,6 +74,9 @@ public class ClientHandler implements Runnable {
     if (this.username != null) {
       Server.removeClient(this.username);
     }
-    try { socket.close(); } catch (IOException e) {}
+    try {
+      socket.close();
+    } catch (IOException e) {
+    }
   }
 }

@@ -20,7 +20,9 @@ public class Server {
     try {
       serverSocket = new ServerSocket(PORT);
       System.out.println("[SERVER] Đang chạy tại cổng " + PORT);
-    } catch (IOException e) { e.printStackTrace(); }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   public static synchronized Server getInstance() {
@@ -33,7 +35,9 @@ public class Server {
       try {
         Socket socket = serverSocket.accept();
         clientPool.execute(new ClientHandler(socket));
-      } catch (IOException e) { e.printStackTrace(); }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
   }
 

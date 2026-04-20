@@ -30,7 +30,15 @@ public class MessagePacket<T> implements Serializable {
     this.data = data;
   }
 
-  public CommandType getType() { return type; }
-  public T getData() { return data; }
-  public String getMessage() { return message; }
+  public CommandType getType() {
+    return type;
+  }
+
+  public T getData() {
+    return data;
+  }
+
+  public String getMessage() {
+    return message;
+  }
 }
