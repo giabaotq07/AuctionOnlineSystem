@@ -1,7 +1,100 @@
-.root{
-    -fx-background-color:  #eb8dde;
+/* ================= ROOT ================= */
+.root {
+    -fx-background-color: #ffffff;
+    -fx-font-family: "Segoe UI", Arial;
 }
-.label{
-    -fx-font-family: Arial;
-    -fx-font-size: 20px;
+
+/* ================= TEXT ================= */
+.label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #111827;
+}
+
+/* ================= BUTTON (DUY NHẤT 1 CLASS) ================= */
+.button {
+    -fx-background-color: #4f46e5;   /* màu chủ đạo */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 10 18;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #4338ca;   /* đậm hơn khi hover */
+}
+
+/* ================= INPUT + TEXT AREA (DUY NHẤT) ================= */
+.text-field, .text-area {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 8px;
+    -fx-padding: 10;
+    -fx-font-size: 14px;
+
+    -fx-text-fill: #111827;
+    -fx-prompt-text-fill: #9ca3af;
+}
+
+.text-field:focused, .text-area:focused {
+    -fx-border-color: #4f46e5;  /* đồng bộ với button */
+}
+
+/* ================= PLACEHOLDER ================= */
+.text-input {
+    -fx-prompt-text-fill: #9ca3af;
+}
+
+/* ================= CARD (OPTIONAL NHƯNG NÊN CÓ) ================= */
+.card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 20;
+}
+/* ================= LIST VIEW ================= */
+.list-view {
+    -fx-background-color: transparent;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 5;
+}
+
+/* vùng chứa items */
+.list-view .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ================= ITEM ================= */
+.list-cell {
+    -fx-background-color: #ffffff;
+    -fx-padding: 12 16;
+    -fx-text-fill: #111827;
+    -fx-background-radius: 10px;
+    -fx-border-color: transparent;
+}
+
+/* ================= HOVER ================= */
+.list-cell:hover {
+    -fx-background-color: #f3f4f6;
+}
+
+/* ================= SELECTED ================= */
+.list-cell:filled:selected {
+    -fx-background-color: #4f46e5;
+    -fx-text-fill: white;
+}
+
+/* giữ màu khi mất focus */
+.list-view:focused .list-cell:filled:selected {
+    -fx-background-color: #4f46e5;
+    -fx-text-fill: white;
+}
+
+/* ================= SPACING GIỮA ITEM ================= */
+.list-cell:filled {
+    -fx-border-width: 0 0 8 0; /* tạo khoảng cách giả giữa các item */
+    -fx-border-color: transparent;
 }

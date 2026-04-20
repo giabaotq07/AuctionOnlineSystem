@@ -8,27 +8,46 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="455.0" prefWidth="914.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.AuctionController">
+<AnchorPane prefHeight="455.0" prefWidth="914.0"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="app.controllers.AuctionController"
+            stylesheets="@style.css">
 
     <children>
-        <Button layoutX="14.0" layoutY="415.0" onAction="#handleBack" text="Back" />
-        <!-- LIST SESSION -->
-        <ListView fx:id="sessionListView" layoutX="450" layoutY="40" prefHeight="300" prefWidth="300" />
 
-        <!-- FORM -->
-        <VBox layoutX="14.0" layoutY="22.0" spacing="10">
+        <!-- LEFT: FORM -->
+        <VBox spacing="12"
+              AnchorPane.topAnchor="20.0"
+              AnchorPane.leftAnchor="20.0"
+              AnchorPane.bottomAnchor="20.0"
+              prefWidth="350">
 
-            <Label text="Add Item" />
-            <TextField fx:id="nameField" promptText="Tên" />
-            <TextField fx:id="descriptionField" promptText="Miêu Tả" />
-            <TextField fx:id="priceField" promptText="Giá" />
-            <TextField fx:id="minutesField" promptText="Số phút" />
+            <Label text="Add Item"/>
 
-            <Button onAction="#handleAdd" text="Add" />
+            <TextField fx:id="nameField" promptText="Tên"/>
+            <TextField fx:id="descriptionField" promptText="Miêu Tả"/>
+            <TextField fx:id="priceField" promptText="Giá"/>
+            <TextField fx:id="minutesField" promptText="Số phút"/>
 
-            <TextArea fx:id="outputArea" prefHeight="0.0" prefWidth="400" />
+            <Button onAction="#handleAdd" text="Add"/>
+
+            <TextArea fx:id="outputArea" prefHeight="120"/>
 
         </VBox>
+
+        <!-- RIGHT: LIST -->
+        <ListView fx:id="sessionListView"
+                  AnchorPane.topAnchor="20.0"
+                  AnchorPane.rightAnchor="20.0"
+                  AnchorPane.bottomAnchor="20.0"
+                  prefWidth="350"/>
+
+        <!-- BACK BUTTON -->
+        <Button text="Back"
+                onAction="#handleBack"
+                AnchorPane.bottomAnchor="20.0"
+                AnchorPane.leftAnchor="20.0"/>
 
     </children>
 </AnchorPane>

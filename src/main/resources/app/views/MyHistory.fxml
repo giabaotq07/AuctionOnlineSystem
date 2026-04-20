@@ -4,48 +4,49 @@
 <?import javafx.scene.layout.*?>
 
 <AnchorPane prefHeight="720.0" prefWidth="1280.0"
-            xmlns="http://javafx.com/javafx/17.0.12"
+            stylesheets="@style.css"
+            xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="app.controllers.MyHistoryController">
 
     <children>
 
-        <MenuBar layoutY="1.0" prefHeight="25.0" prefWidth="1281.0">
+        <MenuBar AnchorPane.leftAnchor="0.0"
+                 AnchorPane.rightAnchor="0.0"
+                 AnchorPane.topAnchor="0.0">
             <menus>
                 <Menu text="File">
                     <items>
-                        <MenuItem text="Close" />
+                        <MenuItem text="Close"/>
                     </items>
                 </Menu>
             </menus>
         </MenuBar>
 
-        <!-- SESSION LIST (THÊM CÁI NÀY) -->
         <ListView fx:id="sessionListView"
-                  layoutX="20"
-                  layoutY="50"
-                  prefHeight="600"
-                  prefWidth="300"/>
+                  prefWidth="600.0"
+                  AnchorPane.bottomAnchor="380.0"
+                  AnchorPane.leftAnchor="20.0"
+                  AnchorPane.topAnchor="50.0" />
 
-        <!-- HISTORY LIST -->
         <ListView fx:id="historyListView"
-                  layoutX="340"
-                  layoutY="50"
-                  prefHeight="600"
-                  prefWidth="500"/>
+                  prefWidth="600.0"
+                  AnchorPane.bottomAnchor="380.0"
+                  AnchorPane.rightAnchor="20.0"
+                  AnchorPane.topAnchor="50.0" />
 
-        <!-- DETAIL -->
         <TextArea fx:id="detailArea"
-                  layoutX="860"
-                  layoutY="50"
-                  prefWidth="380"
-                  prefHeight="300"
-                  editable="false"/>
+                  editable="false"
+                  AnchorPane.bottomAnchor="80.0"
+                  AnchorPane.leftAnchor="20.0"
+                  AnchorPane.rightAnchor="20.0"
+                  prefHeight="280.0" />
 
-        <Button layoutX="37.0"
-                layoutY="663.0"
-                text="Back"
-                onAction="#SwitchToUI"/>
+        <Button text="Back"
+                onAction="#SwitchToUI"
+                AnchorPane.bottomAnchor="25.0"
+                AnchorPane.leftAnchor="20.0"
+                prefWidth="100.0" />
 
     </children>
 </AnchorPane>
