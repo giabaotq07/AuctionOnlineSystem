@@ -47,6 +47,8 @@ public class LoginController {
         if (isLoginSuccessful) {
             // Nhảy sang màn hình chính
             try{
+                Client.getInstance().connect();
+                Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, userInput));
                 SwitchToUI(event);
             }
             catch (IOException e){

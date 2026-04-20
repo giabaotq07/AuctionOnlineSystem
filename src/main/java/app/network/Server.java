@@ -50,7 +50,6 @@ public class Server {
   }
 
   static void main() {
-    Server server = new Server();
-    server.start();
+    Server.getInstance().start();
   }
 }

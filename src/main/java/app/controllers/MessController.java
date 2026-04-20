@@ -26,11 +26,7 @@ public class MessController {
 
   @FXML
   public void initialize() {
-    // 1. Lấy instance và kết nối
     client = Client.getInstance();
-    try {
-      client.connect();
-
       // 2. Tự động cuộn xuống khi có tin nhắn mới
       chatBox.heightProperty().addListener((observable, oldValue, newValue) -> {
         scrollPane.setVvalue(1.0d);
@@ -38,29 +34,15 @@ public class MessController {
 
       // 3. Đăng ký lắng nghe phản hồi từ Server
       setupNetworkListener();
-
-    } catch (IOException e) {
-      System.err.println("Không thể kết nối đến Server: " + e.getMessage());
-    }
   }
 
   private void setupNetworkListener() {
     client.setOnMessageReceived(packet -> {
-      // Lưu ý: Client.java đã bọc Platform.runLater,
-      // nên ở đây ta có thể trực tiếp thao tác với UI
-      switch (packet.getType()) {
-        case UPDATE_PRICE:
-          // Ví dụ: Hiển thị giá mới vào khung chat hoặc log
-          addBubble(new MessagePacket<>(CommandType.UPDATE_PRICE, "Giá mới: " + packet.getData()));
-          break;
-        case SUCCESS:
-          addBubble(packet);
-          break;
-        case ERROR:
-          // Hiển thị lỗi từ Server (ví dụ: đặt giá thấp hơn giá hiện tại)
-          System.err.println("Lỗi: " + packet.getMessage());
-          break;
-      }
+      // Dùng Platform.runLater để đảm bảo an toàn cho UI
+      Platform.runLater(() -> {
+        addBubble(packet);
+        // Hoặc kiểm tra switch-case nếu bạn muốn xử lý riêng từng loại
+      });
     });
   }
 
@@ -68,21 +50,45 @@ public class MessController {
   public void send() {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
-      // Gửi yêu cầu đặt giá hoặc gửi tin nhắn tùy theo CommandType
-      client.sendRequest(new MessagePacket<>(CommandType.PLACE_BID, text));
+      // Nếu muốn gửi tin nhắn chat:
+      client.sendRequest(new MessagePacket<>(CommandType.CHAT, text));
       myTextArea.clear();
     }
   }
 
-  public void addBubble(MessagePacket<?> messagePacket) {
-    // Tạo label hiển thị nội dung tin nhắn
-    Label label = new Label(messagePacket.getType() + ": " + messagePacket.getData());
-    label.setWrapText(true);
-    label.getStyleClass().add("chat-label"); // Bạn có thể thêm CSS
+  public void addBubble(MessagePacket<?> packet) {
+    Platform.runLater(() -> {
+      VBox messageGroup = new VBox(2); // Khoảng cách giữa tên và nội dung
 
-    HBox container = new HBox(label);
-    // Tùy chỉnh style dựa trên loại tin nhắn (nếu cần)
-    chatBox.getChildren().add(container);
+      // 1. Tên người gửi (Hiện phía trên tin nhắn)
+      Label senderLabel = new Label(packet.getMessage() != null ? packet.getMessage() : "Hệ thống");
+      senderLabel.setStyle("-fx-text-fill: #8e8e8e; -fx-font-size: 11px; -fx-padding: 0 5 0 5;");
+
+      // 2. Nội dung tin nhắn
+      Label contentLabel = new Label(packet.getData().toString());
+      contentLabel.setWrapText(true);
+      contentLabel.setMaxWidth(350);
+
+      // Style cho bong bóng tin nhắn màu tối
+      String bubbleStyle = "-fx-background-radius: 12; -fx-padding: 10; -fx-font-size: 14px; -fx-text-fill: white;";
+
+      if (packet.getType() == CommandType.CHAT) {
+        bubbleStyle += "-fx-background-color: #3d3d3d;"; // Màu xám tối cho người khác
+      } else if (packet.getType() == CommandType.UPDATE_PRICE) {
+        bubbleStyle += "-fx-background-color: #1a4d2e; -fx-border-color: #2ecc71; -fx-border-radius: 12;"; // Màu xanh lá tối cho đấu giá
+      } else {
+        bubbleStyle += "-fx-background-color: #2c3e50;"; // Màu mặc định
+      }
+
+      contentLabel.setStyle(bubbleStyle);
+
+      messageGroup.getChildren().addAll(senderLabel, contentLabel);
+
+      HBox container = new HBox(messageGroup);
+      container.setPadding(new javafx.geometry.Insets(5, 10, 5, 10));
+
+      chatBox.getChildren().add(container);
+    });
   }
 
   @FXML

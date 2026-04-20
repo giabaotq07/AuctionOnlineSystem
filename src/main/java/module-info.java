@@ -10,6 +10,7 @@ module app {
       javafx.fxml;
   opens app.controllers to
       javafx.fxml;
+  opens app.models to com.google.gson;
 
   exports app;
 }

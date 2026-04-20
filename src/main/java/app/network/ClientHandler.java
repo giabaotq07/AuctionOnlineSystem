@@ -42,9 +42,9 @@ public class ClientHandler implements Runnable {
 
       case CHAT:
         String content = (String) packet.getData();
-        // Gửi kèm Username người gửi để mọi người biết ai đang chat
+        // Tạo gói tin chứa nội dung chat và gán tên người gửi vào trường Message hoặc Data
         MessagePacket<String> chatPacket = new MessagePacket<>(CommandType.CHAT, content);
-        // Bạn có thể tùy biến: MessagePacket<>(CommandType.CHAT, this.username + ": " + content);
+        chatPacket.setMessage(this.username); // Dùng trường message để lưu tên người gửi
         Server.broadcast(chatPacket);
         break;
 

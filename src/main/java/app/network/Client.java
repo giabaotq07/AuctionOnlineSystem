@@ -25,7 +25,9 @@ public class Client {
   }
 
   public void connect() throws IOException {
+    System.out.println("[CLIENT] Đang kết nối...");
     socket = new Socket("127.0.0.1", 5000);
+    System.out.println("[CLIENT] Kết nối thành công!");
     out = new PrintWriter(socket.getOutputStream(), true);
     in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     new Thread(this::listen).start();
@@ -35,13 +37,18 @@ public class Client {
     try {
       String json;
       while ((json = in.readLine()) != null) {
-        System.out.println(json);
+        System.out.println("Dữ liệu nhận từ Server: " + json); // <--- Thêm dòng này
+        // Sử dụng Type-safe hoặc xử lý JSON thô trước khi parse nếu cần
         MessagePacket<?> packet = gson.fromJson(json, MessagePacket.class);
+
         if (onMessageReceived != null) {
-          Platform.runLater(() -> onMessageReceived.accept(packet));
+          // Đẩy về cho Controller xử lý
+          onMessageReceived.accept(packet);
         }
       }
-    } catch (IOException e) { e.printStackTrace(); }
+    } catch (IOException e) {
+      System.err.println("Mất kết nối Server.");
+    }
   }
 
   public void sendRequest(MessagePacket<?> packet) {
