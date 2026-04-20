@@ -1,4 +1,4 @@
-package Common;
+package app.Common;
 
 public interface AuctionSubject {
     void registerObserver(AuctionObserver observer);

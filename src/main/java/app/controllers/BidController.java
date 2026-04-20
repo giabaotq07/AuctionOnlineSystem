@@ -5,7 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.Node;
 import javafx.stage.Stage;
 import java.io.IOException;
-import Common.*;
+import app.Common.*;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
