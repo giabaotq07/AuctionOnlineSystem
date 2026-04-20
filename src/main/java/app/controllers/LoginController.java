@@ -1,9 +1,12 @@
 package app.controllers;
 
+import app.config.NavigationManager;
+import app.config.View;
 import app.ClientApp;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
+import java.io.IOException;
 import java.io.IOException;
 
 import app.models.CommandType;
