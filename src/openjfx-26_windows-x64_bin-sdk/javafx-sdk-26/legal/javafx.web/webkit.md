@@ -1789,8 +1789,8 @@ Source/WebCore/platform/image-decoders/skia
 Source/WebCore/platform/mediastream
 Source/WebCore/platform/mock
 Source/WebCore/platform/mock/mediasource
-Source/WebCore/platform/network
-Source/WebCore/platform/network/java
+Source/WebCore/platform/app.network
+Source/WebCore/platform/app.network/java
 Source/WebCore/platform/playstation
 Source/WebCore/platform/skia
 Source/WebCore/platform/soup
@@ -2172,9 +2172,9 @@ Source/WebCore/platform/mediarecorder
 Source/WebCore/platform/mediastream
 Source/WebCore/platform/mediastream/libwebrtc
 Source/WebCore/platform/mock
-Source/WebCore/platform/network
-Source/WebCore/platform/network/java
-Source/WebCore/platform/network/playstation
+Source/WebCore/platform/app.network
+Source/WebCore/platform/app.network/java
+Source/WebCore/platform/app.network/playstation
 Source/WebCore/platform/playstation
 Source/WebCore/platform/spiel
 Source/WebCore/platform/text
@@ -2309,7 +2309,7 @@ Source/WebCore/platform/graphics/skia
 Source/WebCore/platform/graphics/texmap
 Source/WebCore/platform/image-decoders/jpegxl
 Source/WebCore/platform/mediastream
-Source/WebCore/platform/network
+Source/WebCore/platform/app.network
 Source/WebCore/platform/playstation
 
 Copyright (C) 2015 Dominic Szablewski (dominic@phoboslab.org)
@@ -2378,7 +2378,7 @@ Source/WebCore/platform/graphics/opentype
 Source/WebCore/platform/mediarecorder
 Source/WebCore/platform/mediastream
 Source/WebCore/platform/mediastream/libwebrtc
-Source/WebCore/platform/network
+Source/WebCore/platform/app.network
 Source/WebCore/rendering
 Source/WebCore/style
 Source/WebCore/testing
@@ -3436,7 +3436,7 @@ Source/WebCore/platform
 Source/WebCore/platform/audio
 Source/WebCore/platform/graphics
 Source/WebCore/platform/mediastream
-Source/WebCore/platform/network
+Source/WebCore/platform/app.network
 
 Copyright (C) 2023-2024 Apple Inc. All rights reserved.
 
@@ -4990,8 +4990,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---------------------------------
 The below applies to some files in the following directories:
-Source/WebCore/platform/network
-Source/WebCore/platform/network/java
+Source/WebCore/platform/app.network
+Source/WebCore/platform/app.network/java
 
 Copyright (C) 2008-2009 Apple Inc. All rights reserved.
 Copyright (C) 2012-2018 Igalia S.L.
@@ -5523,7 +5523,7 @@ Source/WebCore/platform/graphics/coretext
 Source/WebCore/platform/graphics/freetype
 Source/WebCore/platform/image-decoders/webp
 Source/WebCore/platform/java
-Source/WebCore/platform/network
+Source/WebCore/platform/app.network
 Source/WebCore/platform/win
 Source/WebCore/rendering
 Source/WebCore/storage
@@ -5788,8 +5788,8 @@ Source/WebCore/platform/image-decoders/bmp
 Source/WebCore/platform/image-decoders/ico
 Source/WebCore/platform/mediastream
 Source/WebCore/platform/mock
-Source/WebCore/platform/network
-Source/WebCore/platform/network/java
+Source/WebCore/platform/app.network
+Source/WebCore/platform/app.network/java
 Source/WebCore/platform/sql
 Source/WebCore/platform/text
 Source/WebCore/rendering

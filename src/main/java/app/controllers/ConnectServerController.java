@@ -1,6 +1,6 @@
 package app.controllers;
 
-import Server.Client;
+import app.network.Client;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
