@@ -1,20 +1,17 @@
 package app.controllers;
-
-import Server.Client;
+import Server .Client;
+import app.config.NavigationManager;
+import app.config.View;
 import app.models.core.Message;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
 public class MessController {
   @FXML private TextArea myTextArea;
@@ -38,13 +35,7 @@ public class MessController {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/user_interface.fxml"));
-    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    Scene scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    // String css = this.getClass().getResource("style.css").toExternalForm();
-    // scene.getStylesheets().add(css);
-    stage.show();
+    NavigationManager.getInstance().navigateTo(View.UI);
   }
 
   @FXML
@@ -60,7 +51,7 @@ public class MessController {
   public void receive() {
     try {
       Client.getInstance()
-          .setMessageHandler((message) -> Platform.runLater(() -> addBubble(message)));
+              .setMessageHandler((message) -> Platform.runLater(() -> addBubble(message)));
     } catch (IOException e) {
       //
     }

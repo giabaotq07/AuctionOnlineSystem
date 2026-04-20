@@ -1,10 +1,10 @@
 package app.controllers;
 
+import app.config.NavigationManager;
+import app.config.View;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -14,37 +14,21 @@ public class UIController {
 
   @FXML
   public void SwitchToLive(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/live_auction.fxml"));
-    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
+    NavigationManager.getInstance().navigateTo(View.LIVE);
   }
 
   @FXML
   public void SwitchToMine(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/my_auction.fxml"));
-    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
+    NavigationManager.getInstance().navigateTo(View.MINE);
   }
 
   @FXML
   public void SwitchToOrganize(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/hold_an_auction.fxml"));
-    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
+    NavigationManager.getInstance().navigateTo(View.ORGANIZE);
   }
 
   @FXML
   public void SwitchToMess(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/mess_chat.fxml"));
-    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
+    NavigationManager.getInstance().navigateTo(View.MESSAGE);
   }
 }
