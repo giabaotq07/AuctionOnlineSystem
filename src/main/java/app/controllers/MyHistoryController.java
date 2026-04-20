@@ -1,7 +1,7 @@
 package app.controllers;
 
 import java.io.IOException;
-import Common.*;
+import app.Common.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

@@ -1,4 +1,4 @@
-package Common;
+package app.Common;
 
 public class User {
     private String id;
