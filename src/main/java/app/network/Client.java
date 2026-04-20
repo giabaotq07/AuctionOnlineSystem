@@ -35,6 +35,7 @@ public class Client {
     try {
       String json;
       while ((json = in.readLine()) != null) {
+        System.out.println(json);
         MessagePacket<?> packet = gson.fromJson(json, MessagePacket.class);
         if (onMessageReceived != null) {
           Platform.runLater(() -> onMessageReceived.accept(packet));

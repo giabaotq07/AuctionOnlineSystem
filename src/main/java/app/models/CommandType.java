@@ -7,6 +7,7 @@ public enum CommandType {
     // Auction Actions
     PLACE_BID,          // Client đặt giá
     CREATE_AUCTION,     // Seller tạo phiên
+    CHAT,
 
     // Server Push (Realtime)
     UPDATE_PRICE,       // Notify giá mới cho tất cả Client

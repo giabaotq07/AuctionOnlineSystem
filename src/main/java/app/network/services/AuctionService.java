@@ -11,7 +11,7 @@ public class AuctionService {
         return instance;
     }
 
-    public boolean placeBid(int auctionId, int userId, double amount) {
+    public boolean placeBid(int auctionId, String username, double amount) {
         lock.lock();
         try {
             // Giả lập check DB: SELECT current_price FROM items WHERE id = auctionId

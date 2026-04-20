@@ -14,7 +14,7 @@ public class Server {
   private static Server instance;
   private ServerSocket serverSocket;
   private final ExecutorService clientPool = Executors.newCachedThreadPool();
-  private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
+  private static final Map<String, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
 
   private Server() {
     try {
@@ -37,12 +37,12 @@ public class Server {
     }
   }
 
-  public static void registerClient(int userId, ClientHandler handler) {
-    authenticatedClients.put(userId, handler);
+  public static void registerClient(String username, ClientHandler handler) {
+    authenticatedClients.put(username, handler);
   }
 
-  public static void removeClient(int userId) {
-    authenticatedClients.remove(userId);
+  public static void removeClient(String username) {
+    authenticatedClients.remove(username);
   }
 
   public static void broadcast(MessagePacket<?> packet) {

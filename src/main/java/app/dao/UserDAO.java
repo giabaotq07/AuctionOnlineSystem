@@ -19,8 +19,8 @@ public class UserDAO {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             pstmt.setString(1, username);
-            pstmt.setString(2, PasswordUtils.hashPassword(password)); // Ở hệ thống thực tế, bạn sẽ phải hash mật khẩu trước khi so sánh
-
+            // pstmt.setString(2, PasswordUtils.hashPassword(password)); // Ở hệ thống thực tế, bạn sẽ phải hash mật khẩu trước khi so sánh
+            pstmt.setString(2, password);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next(); // Nếu ResultSet có dữ liệu -> Sai/Đúng
             }
