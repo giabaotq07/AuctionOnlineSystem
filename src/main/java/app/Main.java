@@ -1,5 +1,6 @@
 package app;
 
+import app.config.NavigationManager;
 import atlantafx.base.theme.PrimerDark;
 import java.io.IOException;
 import javafx.application.Application;
@@ -22,5 +23,6 @@ public class Main extends Application {
     stage.setTitle("LoPPy");
     stage.setScene(scene);
     stage.show();
+    NavigationManager.getInstance().setPrimaryStage(stage);
   }
 }

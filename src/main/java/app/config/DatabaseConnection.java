@@ -11,18 +11,8 @@ public class DatabaseConnection {
   private static final String PASSWORD = "123456"; // Đổi thành pass MySQL của cậu
 
   // Private constructor để ngăn tạo object từ bên ngoài
-  private DatabaseConnection() {}
-
-  public static Connection getConnection() {
-      try {
-        // Đăng ký Driver (tùy chọn với bản MySQL mới nhưng nên có để chắc chắn)
-        Class.forName("com.mysql.cj.jdbc.Driver");
-        connection = DriverManager.getConnection(URL, USER, PASSWORD);
-        System.out.println("Kết nối MySQL thành công!");
-      } catch (ClassNotFoundException | SQLException e) {
-        e.printStackTrace();
-      }
-    return connection;
+  public static Connection getConnection() throws SQLException {
+    return DriverManager.getConnection(URL, USER, PASSWORD);
   }
 
   public static void closeConnection() {

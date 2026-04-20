@@ -1,7 +1,7 @@
 package app.controllers;
 
-import app.network.Client;
 import app.models.CommandType;
+import app.network.Client;
 import app.models.MessagePacket;
 import java.io.IOException;
 import javafx.application.Platform;
@@ -79,6 +79,8 @@ public class MessController {
     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     Scene scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
+    // String css = this.getClass().getResource("style.css").toExternalForm();
+    // scene.getStylesheets().add(css);
     stage.show();
   }
 }

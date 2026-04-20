@@ -1,17 +1,15 @@
 package app.controllers;
 
 import app.network.Client;
+import app.config.NavigationManager;
+import app.config.View;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.stage.Stage;
 
 public class ConnectServerController {
   @FXML private Button connectButton;
@@ -33,47 +31,48 @@ public class ConnectServerController {
     }
 
     // Connect asynchronously to prevent UI freezing
-    Thread connectionThread = new Thread(() -> {
-      try {
-        // Try to establish connection with timeout
-        Client connectedClient = connectWithTimeout();
+    Thread connectionThread =
+            new Thread(
+                    () -> {
+                      try {
+                        // Try to establish connection with timeout
+                        Client connectedClient = connectWithTimeout();
 
-        if (connectedClient != null) {
-          this.client = connectedClient;
+                        if (connectedClient != null) {
+                          this.client = connectedClient;
 
-          // Connection successful
-          Platform.runLater(() -> {
-            if (statusLabel != null) {
-              statusLabel.setText("✓ Kết nối thành công!");
-              statusLabel.setStyle("-fx-text-fill: #00AA00;"); // Green for success
-            }
-            try {
-              SwitchToUI(event);
-            } catch (IOException e) {
-              showAlert("Lỗi", "Không thể tải giao diện");
-              resetConnectionButton();
-            }
-          });
-        } else {
-          throw new IOException("Timeout: Không thể kết nối trong " + CONNECTION_TIMEOUT + "ms");
-        }
-      } catch (IOException e) {
-        Platform.runLater(() -> {
-          String errorMsg = getDetailedErrorMessage(e);
-          showAlert("Lỗi kết nối", errorMsg);
-          if (statusLabel != null) {
-            statusLabel.setText("✗ Kết nối thất bại");
-            statusLabel.setStyle("-fx-text-fill: #FF0000;"); // Red for error
-          }
-          resetConnectionButton();
-        });
-      } catch (Exception e) {
-        Platform.runLater(() -> {
-          showAlert("Lỗi không xác định", e.getMessage());
-          resetConnectionButton();
-        });
-      }
-    });
+                          // Connection successful
+                          Platform.runLater(
+                                  () -> {
+                                    if (statusLabel != null) {
+                                      statusLabel.setText("✓ Kết nối thành công!");
+                                      statusLabel.setStyle("-fx-text-fill: #00AA00;"); // Green for success
+                                    }
+                                    handleLoginClick(event);
+                                  });
+                        } else {
+                          throw new IOException(
+                                  "Timeout: Không thể kết nối trong " + CONNECTION_TIMEOUT + "ms");
+                        }
+                      } catch (IOException e) {
+                        Platform.runLater(
+                                () -> {
+                                  String errorMsg = getDetailedErrorMessage(e);
+                                  showAlert("Lỗi kết nối", errorMsg);
+                                  if (statusLabel != null) {
+                                    statusLabel.setText("✗ Kết nối thất bại");
+                                    statusLabel.setStyle("-fx-text-fill: #FF0000;"); // Red for error
+                                  }
+                                  resetConnectionButton();
+                                });
+                      } catch (Exception e) {
+                        Platform.runLater(
+                                () -> {
+                                  showAlert("Lỗi không xác định", e.getMessage());
+                                  resetConnectionButton();
+                                });
+                      }
+                    });
 
     connectionThread.setDaemon(true);
     connectionThread.start();
@@ -83,13 +82,14 @@ public class ConnectServerController {
     final Client[] result = {null};
     final Exception[] exception = {null};
 
-    Thread connectionAttempt = new Thread(() -> {
-      try {
-        result[0] = Client.getInstance();
-      } catch (Exception e) {
-        exception[0] = e;
-      }
-    });
+    Thread connectionAttempt =
+            new Thread(() -> {
+                      try {
+                        result[0] = Client.getInstance();
+                      } catch (Exception e) {
+                        exception[0] = e;
+                      }
+                    });
 
     connectionAttempt.setDaemon(true);
     connectionAttempt.start();
@@ -130,21 +130,16 @@ public class ConnectServerController {
     }
   }
 
-
-  @FXML
-  public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/login_scene.fxml"));
-    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    Scene scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
-  }
-
   private void showAlert(String title, String content) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle(title);
     alert.setHeaderText(null);
     alert.setContentText(content);
     alert.showAndWait();
+  }
+
+  @FXML
+  public void handleLoginClick(ActionEvent event) {
+    NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 }
