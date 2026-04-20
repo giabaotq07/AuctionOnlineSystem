@@ -32,30 +32,32 @@ public class ClientHandler implements Runnable {
   private void handlePacket(MessagePacket<?> packet) {
     switch (packet.getType()) {
       case LOGIN:
-        // Giả sử data gửi lên là chuỗi Username
-        this.username = (String) packet.getData();
+        this.username = String.valueOf(packet.getData());
         Server.registerClient(this.username, this);
-
-        System.out.println("[SERVER] Người dùng " + this.username + " đã kết nối.");
-        sendMessage(new MessagePacket<>(CommandType.SUCCESS, "Chào " + this.username));
+        System.out.println("[SERVER] " + this.username + " đã đăng nhập.");
+        // Phản hồi thành công
+        MessagePacket<String> welcome = new MessagePacket<>(CommandType.SUCCESS, "Chào mừng!");
+        welcome.setMessage("Hệ thống");
+        sendMessage(welcome);
         break;
 
       case CHAT:
         String content = (String) packet.getData();
-        // Tạo gói tin chứa nội dung chat và gán tên người gửi vào trường Message hoặc Data
         MessagePacket<String> chatPacket = new MessagePacket<>(CommandType.CHAT, content);
-        chatPacket.setMessage(this.username); // Dùng trường message để lưu tên người gửi
+        // QUAN TRỌNG: Gán tên người gửi vào đây
+        chatPacket.setMessage(this.username);
         Server.broadcast(chatPacket);
         break;
 
       case PLACE_BID:
-      double amount = (double) packet.getData();
-      if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
-        Server.broadcast(new MessagePacket<>(CommandType.UPDATE_PRICE, amount));
-      } else {
-        sendMessage(MessagePacket.error("Giá đặt không hợp lệ!"));
-      }
-      break;
+        // Tương tự cho đấu giá
+        double amount = Double.parseDouble(packet.getData().toString());
+        if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
+          MessagePacket<String> bidPacket = new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
+          bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
+          Server.broadcast(bidPacket);
+        }
+        break;
     }
   }
 

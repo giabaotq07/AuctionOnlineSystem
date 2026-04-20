@@ -58,36 +58,18 @@ public class MessController {
 
   public void addBubble(MessagePacket<?> packet) {
     Platform.runLater(() -> {
-      VBox messageGroup = new VBox(2); // Khoảng cách giữa tên và nội dung
+      // Lấy tên người gửi (nếu null thì hiện Hệ thống)
+      String name = (packet.getMessage() != null) ? packet.getMessage() : "Hệ thống";
 
-      // 1. Tên người gửi (Hiện phía trên tin nhắn)
-      Label senderLabel = new Label(packet.getMessage() != null ? packet.getMessage() : "Hệ thống");
-      senderLabel.setStyle("-fx-text-fill: #8e8e8e; -fx-font-size: 11px; -fx-padding: 0 5 0 5;");
+      // Lấy nội dung tin nhắn
+      String msg = (packet.getData() != null) ? packet.getData().toString() : "";
 
-      // 2. Nội dung tin nhắn
-      Label contentLabel = new Label(packet.getData().toString());
-      contentLabel.setWrapText(true);
-      contentLabel.setMaxWidth(350);
+      // Tạo một Label duy nhất theo định dạng [name]: msg
+      Label line = new Label("[" + name + "]: " + msg);
+      line.setWrapText(true);
 
-      // Style cho bong bóng tin nhắn màu tối
-      String bubbleStyle = "-fx-background-radius: 12; -fx-padding: 10; -fx-font-size: 14px; -fx-text-fill: white;";
-
-      if (packet.getType() == CommandType.CHAT) {
-        bubbleStyle += "-fx-background-color: #3d3d3d;"; // Màu xám tối cho người khác
-      } else if (packet.getType() == CommandType.UPDATE_PRICE) {
-        bubbleStyle += "-fx-background-color: #1a4d2e; -fx-border-color: #2ecc71; -fx-border-radius: 12;"; // Màu xanh lá tối cho đấu giá
-      } else {
-        bubbleStyle += "-fx-background-color: #2c3e50;"; // Màu mặc định
-      }
-
-      contentLabel.setStyle(bubbleStyle);
-
-      messageGroup.getChildren().addAll(senderLabel, contentLabel);
-
-      HBox container = new HBox(messageGroup);
-      container.setPadding(new javafx.geometry.Insets(5, 10, 5, 10));
-
-      chatBox.getChildren().add(container);
+      // Thêm trực tiếp vào chatBox
+      chatBox.getChildren().add(line);
     });
   }
 
