@@ -45,14 +45,6 @@
     -fx-prompt-text-fill: #9ca3af;
 }
 
-/* ================= CARD (OPTIONAL NHƯNG NÊN CÓ) ================= */
-.card {
-    -fx-background-color: #ffffff;
-    -fx-border-color: #e5e7eb;
-    -fx-border-radius: 12px;
-    -fx-background-radius: 12px;
-    -fx-padding: 20;
-}
 /* ================= LIST VIEW ================= */
 .list-view {
     -fx-background-color: transparent;

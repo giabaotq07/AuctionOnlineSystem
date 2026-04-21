@@ -103,4 +103,7 @@ public class AuctionSession implements AuctionSubject, Serializable {
         }
         System.out.println("------------------------------------------\n");
     }
+    public String getItemname(){
+        return item.getName();
+    }
 }

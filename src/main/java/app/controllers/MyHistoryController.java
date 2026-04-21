@@ -1,7 +1,7 @@
 package app.controllers;
 
 import java.io.IOException;
-import Common.*;
+import app.Common.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -9,6 +9,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class MyHistoryController {
@@ -19,6 +20,7 @@ public class MyHistoryController {
   @FXML private ListView<AuctionSession> sessionListView;
   @FXML private ListView<HistoryRecord> historyListView;
   @FXML private TextArea detailArea;
+
 
   @FXML
   public void initialize() {
@@ -53,6 +55,7 @@ public class MyHistoryController {
       }
     });
   }
+
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
