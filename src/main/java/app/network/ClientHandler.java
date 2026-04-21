@@ -33,6 +33,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /** hàm này để đây minh hoạ, chưa có các lớp DAO để gọi */
   private void handlePacket(MessagePacket<?> packet) {
     switch (packet.getType()) {
       case LOGIN:

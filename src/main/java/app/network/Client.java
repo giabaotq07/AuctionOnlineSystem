@@ -34,14 +34,14 @@ public class Client {
 
   private void listen() {
     try {
-      String json;
-      while ((json = in.readLine()) != null) {
-        System.out.println("[Server] " + json);
+      String line;
+      while ((line = in.readLine()) != null) {
+        System.out.println("[Server] " + line);
         // Sử dụng Type-safe hoặc xử lý JSON thô trước khi parse nếu cần
-        MessagePacket<?> packet = gson.fromJson(json, MessagePacket.class);
+        MessagePacket<?> packet = gson.fromJson(line, MessagePacket.class);
 
         if (onMessageReceived != null) {
-          // Đẩy về cho Controller xử lý
+          // Đẩy về cho Controller xử lýw
           onMessageReceived.accept(packet);
         }
       }
