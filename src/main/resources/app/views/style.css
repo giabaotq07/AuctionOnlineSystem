@@ -1,92 +1,52 @@
-/* ================= ROOT ================= */
+/* ===== ROOT ===== */
 .root {
-    -fx-background-color: #ffffff;
-    -fx-font-family: "Segoe UI", Arial;
+    -fx-background-color: white;
+    -fx-font-family: Arial;
 }
 
-/* ================= TEXT ================= */
+/* ===== TEXT ===== */
 .label {
-    -fx-font-size: 14px;
-    -fx-text-fill: #111827;
+    -fx-text-fill: black;
 }
 
-/* ================= BUTTON (DUY NHẤT 1 CLASS) ================= */
+/* ===== BUTTON ===== */
 .button {
-    -fx-background-color: #4f46e5;   /* màu chủ đạo */
+    -fx-background-color: blue;
     -fx-text-fill: white;
-    -fx-font-size: 14px;
-    -fx-padding: 10 18;
-    -fx-background-radius: 8px;
-    -fx-cursor: hand;
 }
 
 .button:hover {
-    -fx-background-color: #4338ca;   /* đậm hơn khi hover */
+    -fx-background-color: darkblue;
 }
 
-/* ================= INPUT + TEXT AREA (DUY NHẤT) ================= */
+/* ===== INPUT ===== */
 .text-field, .text-area {
-    -fx-background-color: #ffffff;
-    -fx-border-color: #e5e7eb;
-    -fx-border-radius: 8px;
-    -fx-padding: 10;
-    -fx-font-size: 14px;
-
-    -fx-text-fill: #111827;
-    -fx-prompt-text-fill: #9ca3af;
+    -fx-background-color: white;
+    -fx-border-color: gray;
+    -fx-text-fill: black;
+    -fx-prompt-text-fill: gray;
 }
 
 .text-field:focused, .text-area:focused {
-    -fx-border-color: #4f46e5;  /* đồng bộ với button */
+    -fx-border-color: blue;
 }
 
-/* ================= PLACEHOLDER ================= */
-.text-input {
-    -fx-prompt-text-fill: #9ca3af;
-}
-
-/* ================= LIST VIEW ================= */
+/* ===== LIST VIEW ===== */
 .list-view {
-    -fx-background-color: transparent;
-    -fx-border-color: #e5e7eb;
-    -fx-border-radius: 12px;
-    -fx-background-radius: 12px;
-    -fx-padding: 5;
+    -fx-border-color: gray;
 }
 
-/* vùng chứa items */
-.list-view .viewport {
-    -fx-background-color: transparent;
-}
-
-/* ================= ITEM ================= */
+/* ===== ITEM ===== */
 .list-cell {
-    -fx-background-color: #ffffff;
-    -fx-padding: 12 16;
-    -fx-text-fill: #111827;
-    -fx-background-radius: 10px;
-    -fx-border-color: transparent;
+    -fx-background-color: white;
+    -fx-text-fill: black;
 }
 
-/* ================= HOVER ================= */
 .list-cell:hover {
-    -fx-background-color: #f3f4f6;
+    -fx-background-color: lightgray;
 }
 
-/* ================= SELECTED ================= */
-.list-cell:filled:selected {
-    -fx-background-color: #4f46e5;
+.list-cell:selected {
+    -fx-background-color: blue;
     -fx-text-fill: white;
-}
-
-/* giữ màu khi mất focus */
-.list-view:focused .list-cell:filled:selected {
-    -fx-background-color: #4f46e5;
-    -fx-text-fill: white;
-}
-
-/* ================= SPACING GIỮA ITEM ================= */
-.list-cell:filled {
-    -fx-border-width: 0 0 8 0; /* tạo khoảng cách giả giữa các item */
-    -fx-border-color: transparent;
 }
