@@ -3,9 +3,6 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
-import app.models.CommandType;
-import app.models.MessagePacket;
-import app.network.Client;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -46,8 +43,6 @@ public class LoginController {
     if (isLoginSuccessful) {
       // Nhảy sang màn hình chính
       try {
-        Client.getInstance().connect();
-        Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, userInput));
         SwitchToUI(event);
       } catch (IOException e) {
         e.printStackTrace();

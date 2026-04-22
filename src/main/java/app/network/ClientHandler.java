@@ -2,7 +2,6 @@ package app.network;
 
 import app.models.CommandType;
 import app.models.MessagePacket;
-import app.network.services.AuctionService;
 import com.google.gson.Gson;
 import java.io.*;
 import java.net.Socket;
@@ -55,14 +54,15 @@ public class ClientHandler implements Runnable {
         break;
 
       case PLACE_BID:
+        // đoạn này để chờ code database
+
         // Tương tự cho đấu giá
-        double amount = Double.parseDouble(packet.getData().toString());
-        if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
-          MessagePacket<String> bidPacket =
-              new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
-          bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
-          Server.broadcast(bidPacket);
-        }
+        // double amount = Double.parseDouble(packet.getData().toString());
+        // if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
+        //   MessagePacket<String> bidPacket =
+        //       new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
+        //   bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
+        //   Server.broadcast(bidPacket);
         break;
     }
   }
