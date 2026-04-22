@@ -7,7 +7,7 @@ public class User {
   private double assets;
   private String password;
 
-  public User(String id, String account, String password, String name) {
+  public User(String id, String name, String account, String password) {
     this.account = account;
     this.password = password;
     this.assets = 0;
@@ -38,6 +38,8 @@ public class User {
     return assets;
   }
 
+
+
   /*
    public void setAccount(String name) {
        this.account = name;
@@ -48,8 +50,8 @@ public class User {
     this.name = name;
   }
 
-  public void getName() {
-    this.name = name;
+  public String getName() {
+    return name;
   }
 
   public void setAccount(String account) {}

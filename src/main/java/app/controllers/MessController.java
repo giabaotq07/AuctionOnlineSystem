@@ -4,6 +4,8 @@ import app.models.CommandType;
 import app.models.MessagePacket;
 import app.network.Client;
 import java.io.IOException;
+import java.util.function.Consumer;
+
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -26,7 +28,8 @@ public class MessController {
   @FXML
   public void initialize() {
     client = Client.getInstance();
-    // 2. Tự động cuộn xuống khi có tin nhắn mới
+
+      // 2. Tự động cuộn xuống khi có tin nhắn mới
     chatBox
         .heightProperty()
         .addListener(

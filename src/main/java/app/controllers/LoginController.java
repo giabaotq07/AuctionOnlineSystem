@@ -1,9 +1,15 @@
 package app.controllers;
 
+import app.ClientApp;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
 import java.io.IOException;
+
+import app.models.CommandType;
+import app.models.MessagePacket;
+import app.models.User;
+import app.network.Client;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -41,8 +47,10 @@ public class LoginController {
 
     // 3. Xử lý kết quả trả về
     if (isLoginSuccessful) {
+      sendLoginRequest(userInput);
       // Nhảy sang màn hình chính
       try {
+        // gửi lệnh đăng nhập tới server
         SwitchToUI(event);
       } catch (IOException e) {
         e.printStackTrace();
@@ -53,6 +61,22 @@ public class LoginController {
       showAlert(
           Alert.AlertType.ERROR, "Lỗi đăng nhập", "Tên đăng nhập hoặc mật khẩu không chính xác!");
     }
+  }
+
+  public void sendLoginRequest(String account) {
+    User user;
+    UserDAO userDao = new UserDAO();
+    user = userDao.loadUsers(account);
+    if (user == null) {
+      System.out.println("ko thấy user");
+      return;
+    }
+      try {
+          Client.getInstance().connect();
+      } catch (IOException e) {
+          throw new RuntimeException(e);
+      }
+      Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
   }
 
   @FXML

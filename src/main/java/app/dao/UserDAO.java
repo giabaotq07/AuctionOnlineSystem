@@ -2,6 +2,8 @@ package app.dao;
 
 import app.config.DatabaseConnection;
 import app.config.PasswordUtils;
+import app.models.User;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,20 +33,28 @@ public class UserDAO {
     }
   }
 
-  public void loadUsers() {
-    String query = "SELECT * FROM users";
-    try {
-      Connection conn = DatabaseConnection.getConnection();
-      PreparedStatement pstmt = conn.prepareStatement(query);
+  public User loadUsers(String account) {
+    String query = "SELECT * FROM users WHERE account = ?";
+    User user;
+    try
+      (Connection conn = DatabaseConnection.getConnection();
+       PreparedStatement pstmt = conn.prepareStatement(query)
+      ) {
+      pstmt.setString(1, account);
       ResultSet rs = pstmt.executeQuery();
 
       while (rs.next()) {
-        System.out.println("User: " + rs.getString("username"));
-        System.out.println("Password: " + rs.getString("password"));
+        String id = rs.getString("id");
+        String username = rs.getString("account");
+        String password = rs.getString("password");
+        String name = rs.getString("name");
+        user = new User(id, name, username, password);
+        return user;
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    return null;
   }
 
   public int addUser(String account, String password, String name) {
