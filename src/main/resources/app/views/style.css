@@ -1,92 +1,52 @@
+/* ===== ROOT ===== */
 .root {
-    -fx-background-color: #1e1e2e;
+    -fx-background-color: white;
+    -fx-font-family: Arial;
 }
 
+/* ===== TEXT ===== */
 .label {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-text-fill: #cdd6f4;
+    -fx-text-fill: black;
 }
 
-.title-label {
-    -fx-font-size: 32px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #f38ba8;
-    -fx-alignment: center;
-}
-
-/* Common cards / panels */
-.card {
-    -fx-background-color: #313244;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 4);
-    -fx-background-radius: 12;
-}
-
-/* Text Fields */
-.text-field, .password-field {
-    -fx-background-radius: 6;
-    -fx-padding: 8 12;
-    -fx-font-size: 16px;
-    -fx-border-color: #45475a;
-    -fx-border-radius: 6;
-    -fx-background-color: #181825;
-    -fx-text-fill: #cdd6f4;
-    -fx-prompt-text-fill: #6c7086;
-}
-.text-field:focused, .password-field:focused {
-    -fx-border-color: #cba6f7;
-}
-
-/* Buttons */
+/* ===== BUTTON ===== */
 .button {
-    -fx-background-color: #cba6f7;
-    -fx-text-fill: #11111b;
-    -fx-font-weight: bold;
-    -fx-font-size: 16px;
-    -fx-background-radius: 6;
-    -fx-padding: 10 20;
-    -fx-cursor: hand;
-}
-
-.primary-button {
-    -fx-background-color: #f38ba8;
-    -fx-text-fill: #1e1e2e;
-}
-.primary-button:hover {
-    -fx-background-color: #eba0ac;
-}
-
-.secondary-button {
-    -fx-background-color: #45475a;
-    -fx-text-fill: #cdd6f4;
-}
-.secondary-button:hover {
-    -fx-background-color: #585b70;
-}
-
-.form-label {
-    -fx-font-size: 16px;
-    -fx-text-fill: #bac2de;
-    -fx-font-weight: bold;
-}
-
-.link-label {
-    -fx-font-size: 14px;
-    -fx-text-fill: #89b4fa;
-    -fx-cursor: hand;
-}
-.link-label:hover {
-    -fx-text-fill: #b4befe;
+    -fx-background-color: blue;
+    -fx-text-fill: white;
 }
 
 .button:hover {
-    -fx-background-color: #b4befe;
+    -fx-background-color: darkblue;
 }
 
-.button:pressed {
-    -fx-background-color: #89b4fa;
+/* ===== INPUT ===== */
+.text-field, .text-area {
+    -fx-background-color: white;
+    -fx-border-color: gray;
+    -fx-text-fill: black;
+    -fx-prompt-text-fill: gray;
 }
 
-.button:disabled {
-    -fx-background-color: #45475a;
-    -fx-text-fill: #a6adc8;
+.text-field:focused, .text-area:focused {
+    -fx-border-color: blue;
+}
+
+/* ===== LIST VIEW ===== */
+.list-view {
+    -fx-border-color: gray;
+}
+
+/* ===== ITEM ===== */
+.list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: black;
+}
+
+.list-cell:hover {
+    -fx-background-color: lightgray;
+}
+
+.list-cell:selected {
+    -fx-background-color: blue;
+    -fx-text-fill: white;
 }

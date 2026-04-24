@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="720.0" prefWidth="1280.0"
+            stylesheets="@style.css"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="app.controllers.MyHistoryController">
+
+    <children>
+
+        <MenuBar AnchorPane.leftAnchor="0.0"
+                 AnchorPane.rightAnchor="0.0"
+                 AnchorPane.topAnchor="0.0">
+            <menus>
+                <Menu text="File">
+                    <items>
+                        <MenuItem text="Close"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+
+        <ListView fx:id="sessionListView"
+                  prefWidth="600.0"
+                  AnchorPane.bottomAnchor="380.0"
+                  AnchorPane.leftAnchor="20.0"
+                  AnchorPane.topAnchor="50.0" />
+
+        <ListView fx:id="historyListView"
+                  prefWidth="600.0"
+                  AnchorPane.bottomAnchor="380.0"
+                  AnchorPane.rightAnchor="20.0"
+                  AnchorPane.topAnchor="50.0" />
+
+        <TextArea fx:id="detailArea"
+                  editable="false"
+                  AnchorPane.bottomAnchor="80.0"
+                  AnchorPane.leftAnchor="20.0"
+                  AnchorPane.rightAnchor="20.0"
+                  prefHeight="280.0" />
+
+        <Button text="Back"
+                onAction="#SwitchToUI"
+                AnchorPane.bottomAnchor="25.0"
+                AnchorPane.leftAnchor="20.0"
+                prefWidth="100.0" />
+
+    </children>
+</AnchorPane>
