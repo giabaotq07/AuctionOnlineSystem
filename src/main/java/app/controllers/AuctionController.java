@@ -41,7 +41,7 @@ public class AuctionController {
           new AuctionSession(
               item.getItemId(),
               item,
-              new User("s1", "seller"),
+              new User(1, "seller"),
               LocalDateTime.now().plusMinutes(Integer.parseInt(minutesField.getText())));
       DataStore.sessions.add(session);
 

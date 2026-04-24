@@ -1,7 +1,7 @@
 package app.models;
 
 public class Seller extends User implements AuctionObserver {
-  public Seller(String id, String username) {
+  public Seller(int id, String username) {
     super(id, username);
   }
 

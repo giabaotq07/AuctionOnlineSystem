@@ -1,30 +1,31 @@
 package app.models;
 
 public class User {
-  private String id;
+  private int id;
   private String name;
   private String account;
   private double assets;
   private String password;
 
-  public User(String id, String name, String account, String password) {
+  public User(int id, String name, String account, String password) {
+    this.id = id;
     this.account = account;
     this.password = password;
     this.assets = 0;
     this.name = name;
   }
 
-  public User(String id, String name) {
+  public User(int id, String name) {
     this.id = id;
     this.name = name;
     this.assets = 0;
   }
 
-  public String getId() {
+  public int getId() {
     return id;
   }
 
-  public void setId(String id) {
+  public void setId(int id) {
     this.id = id;
   }
 
@@ -78,4 +79,14 @@ public class User {
       throw new IllegalArgumentException("Không đủ tiền để rút");
     }
   }
+
+  @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        User user = (User) o;
+
+        return account.equals(user.account) && name.equals(user.name);
+    }
 }

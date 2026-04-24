@@ -1,7 +1,7 @@
 package app.models;
 
 public class Bidder extends User implements AuctionObserver {
-  public Bidder(String id, String username) {
+  public Bidder(int id, String username) {
     super(id, username);
   }
 

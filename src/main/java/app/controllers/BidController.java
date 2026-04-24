@@ -52,7 +52,7 @@ public class BidController {
       String userName = bidderField.getText();
       double amount = Double.parseDouble(amountField.getText());
 
-      User bidder = new User("b1", userName);
+      User bidder = new User(1, userName);
 
       boolean success = session.placeBid(bidder, amount);
       if (success) {

@@ -1,7 +1,7 @@
 package app.models;
 
 public class Admin extends User {
-  public Admin(String id, String username) {
+  public Admin(int id, String username) {
     super(id, username);
   }
 }
