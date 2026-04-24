@@ -13,6 +13,7 @@ public class Client {
   private BufferedReader in;
   private final Gson gson = new Gson();
   private Consumer<MessagePacket<?>> onMessageReceived;
+  private boolean isConnected = false;
 
   public static Client getInstance() {
     if (instance == null) {
@@ -29,7 +30,10 @@ public class Client {
     System.out.println("[CLIENT] Kết nối thành công!");
     out = new PrintWriter(socket.getOutputStream(), true);
     in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    new Thread(this::listen).start();
+    Thread thread = new Thread(this::listen);
+    thread.setDaemon(true);
+    thread.start();
+    isConnected = true;
   }
 
   private void listen() {
@@ -37,7 +41,6 @@ public class Client {
       String line;
       while ((line = in.readLine()) != null) {
         System.out.println("[Server] " + line);
-        // Sử dụng Type-safe hoặc xử lý JSON thô trước khi parse nếu cần
         MessagePacket<?> packet = gson.fromJson(line, MessagePacket.class);
 
         if (onMessageReceived != null) {
@@ -47,7 +50,12 @@ public class Client {
       }
     } catch (IOException e) {
       System.err.println("Mất kết nối Server.");
+      isConnected = false;
     }
+  }
+
+  public boolean isConnected() {
+    return isConnected;
   }
 
   public void sendRequest(MessagePacket<?> packet) {

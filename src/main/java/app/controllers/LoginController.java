@@ -1,15 +1,13 @@
 package app.controllers;
 
-import app.ClientApp;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
-import java.io.IOException;
-
 import app.models.CommandType;
 import app.models.MessagePacket;
 import app.models.User;
 import app.network.Client;
+import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -71,12 +69,12 @@ public class LoginController {
       System.out.println("ko thấy user");
       return;
     }
-      try {
-          Client.getInstance().connect();
-      } catch (IOException e) {
-          throw new RuntimeException(e);
-      }
-      Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
+    try {
+      Client.getInstance().connect();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
   }
 
   @FXML

@@ -39,7 +39,6 @@ public class ClientHandler implements Runnable {
         this.username = String.valueOf(packet.getData());
         Server.registerClient(this.username, this);
         System.out.println("[SERVER] " + this.username + " đã đăng nhập.");
-        // Phản hồi thành công
         MessagePacket<String> welcome = new MessagePacket<>(CommandType.SUCCESS, "Chào mừng!");
         welcome.setMessage("Hệ thống");
         sendMessage(welcome);
@@ -48,7 +47,6 @@ public class ClientHandler implements Runnable {
       case CHAT:
         String content = (String) packet.getData();
         MessagePacket<String> chatPacket = new MessagePacket<>(CommandType.CHAT, content);
-        // QUAN TRỌNG: Gán tên người gửi vào đây
         chatPacket.setMessage(this.username);
         Server.broadcast(chatPacket);
         break;
@@ -59,10 +57,12 @@ public class ClientHandler implements Runnable {
         // Tương tự cho đấu giá
         // double amount = Double.parseDouble(packet.getData().toString());
         // if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
-        //   MessagePacket<String> bidPacket =
-        //       new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
-        //   bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
-        //   Server.broadcast(bidPacket);
+        // MessagePacket<String> bidPacket =
+        // new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
+        // bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
+        // Server.broadcast(bidPacket);
+        break;
+      default:
         break;
     }
   }

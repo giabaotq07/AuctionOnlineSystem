@@ -2,8 +2,6 @@ package app.controllers;
 
 import app.config.NavigationManager;
 import app.config.View;
-import app.models.CommandType;
-import app.models.MessagePacket;
 import app.network.Client;
 import java.io.IOException;
 import javafx.application.Platform;

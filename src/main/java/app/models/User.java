@@ -38,8 +38,6 @@ public class User {
     return assets;
   }
 
-
-
   /*
    public void setAccount(String name) {
        this.account = name;
