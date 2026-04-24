@@ -88,8 +88,12 @@ public class UserDAO {
       if (e.getErrorCode() == 1062) {
         System.out.println("Tài khoản '" + account + "' đã có người sử dụng!");
       } else {
+        System.err.println("Lỗi SQL khi thêm User: " + e.getMessage());
         e.printStackTrace(); // In ra lỗi khác nếu có
       }
+    } catch (Exception ex) {
+      System.err.println("Lỗi không xác định khi thêm User: " + ex.getMessage());
+      ex.printStackTrace();
     }
     return generatedId;
   }

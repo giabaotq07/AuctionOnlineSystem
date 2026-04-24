@@ -10,10 +10,10 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.LoginController">
    <children>
       <Pane layoutX="330.0" layoutY="250.0" prefHeight="380.0" prefWidth="550.0" styleClass="card" />
-      <Label layoutX="430.0" layoutY="280.0" prefWidth="350.0" styleClass="title-label" text="ĐĂNG NHẬP" />
-      <TextField fx:id="account" layoutX="383.0" layoutY="354.0" prefHeight="25.0" prefWidth="451.0" promptText="Username" />
-      <Button fx:id="loginButton" layoutX="587.0" layoutY="494.0" mnemonicParsing="false" onAction="#handleLogin" text="Login" />
-      <PasswordField fx:id="password" layoutX="383.0" layoutY="398.0" prefHeight="25.0" prefWidth="451.0" promptText="Password" />
-      <Label fx:id="lblRegister" alignment="CENTER" layoutX="438.0" layoutY="533.0" prefHeight="55.0" prefWidth="361.0" text="Tạo 1 tài khoản mới" style=" -fx-cursor: hand;" onMouseEntered="#handleMouseEntered" onMouseExited="#handleMouseExited"  onMouseClicked="#switchToRegister"/>
+      <Label layoutX="330.0" layoutY="280.0" prefWidth="550.0" styleClass="title-label" text="ĐĂNG NHẬP" />
+      <TextField fx:id="account" layoutX="383.0" layoutY="354.0" prefHeight="40.0" prefWidth="451.0" promptText="Username" />
+      <Button fx:id="loginButton" layoutX="523.0" layoutY="494.0" prefWidth="170.0" mnemonicParsing="false" onAction="#handleLogin" styleClass="primary-button" text="Đăng Nhập" />
+      <PasswordField fx:id="password" layoutX="383.0" layoutY="410.0" prefHeight="40.0" prefWidth="451.0" promptText="Password" />
+      <Label fx:id="lblRegister" alignment="CENTER" layoutX="438.0" layoutY="553.0" prefHeight="35.0" prefWidth="361.0" text="Chưa có tài khoản? Đăng ký ngay" styleClass="link-label" onMouseEntered="#handleMouseEntered" onMouseExited="#handleMouseExited"  onMouseClicked="#switchToRegister"/>
    </children>
 </AnchorPane>

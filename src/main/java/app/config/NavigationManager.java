@@ -33,6 +33,9 @@ public class NavigationManager {
       Parent root = loader.load();
       Scene scene = new Scene(root);
 
+      String css = getClass().getResource("/app/views/style.css").toExternalForm();
+      scene.getStylesheets().add(css);
+
       primaryStage.setScene(scene);
       primaryStage.show();
     } catch (IOException e) {
