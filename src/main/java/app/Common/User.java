@@ -1,5 +1,7 @@
 package app.Common;
 
+import javax.naming.InsufficientResourcesException;
+
 public class User {
     private String id;
     private String name;
@@ -22,12 +24,21 @@ public class User {
         this.name = name;
     }
     public void Deposit(double amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Không thể nạp số tiền âm");
+        }
+
         assets += amount;
     }
     public void Withdraw(double amount) {
-        if (assets >= amount) {
-            assets -= amount;
+        if (amount < 0) {
+            throw new IllegalArgumentException("Số tiền rút không thể âm");
         }
-         else System.out.println("Không đủ tiền để rút");
+
+        if (amount > assets) {
+            throw new IllegalArgumentException("Không đủ tiền để rút");
+        }
+
+        assets -= amount;
     }
 }
