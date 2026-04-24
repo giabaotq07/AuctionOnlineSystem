@@ -1,5 +1,6 @@
 package app;
 
+import app.config.NavigationManager;
 import atlantafx.base.theme.PrimerDark;
 import java.io.IOException;
 import javafx.application.Application;
@@ -13,14 +14,15 @@ public class Main extends Application {
   public void start(Stage stage) throws IOException {
     Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
     FXMLLoader fxmlLoader =
-        new FXMLLoader(Main.class.getResource("/app/views/user_interface.fxml"));
+        new FXMLLoader(Main.class.getResource("/app/views/ConnectServerController.fxml"));
     Scene scene = new Scene(fxmlLoader.load(), 1280, 720);
-    // String css = this.getClass().getResource("style.css").toExternalForm();
-    // scene.getStylesheets().add(css);
+    String css = getClass().getResource("/app/views/style.css").toExternalForm();
+    scene.getStylesheets().add(css);
     Image icon = new Image(getClass().getResourceAsStream("/app/views/icon.png"));
     stage.getIcons().add(icon);
     stage.setTitle("LoPPy");
     stage.setScene(scene);
     stage.show();
+    NavigationManager.getInstance().setPrimaryStage(stage);
   }
 }

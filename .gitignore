@@ -5,8 +5,7 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/
-!.idea/vcs.xml
+.idea
 *.iws
 *.iml
 *.ipr
