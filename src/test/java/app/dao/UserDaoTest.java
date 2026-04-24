@@ -1,10 +1,12 @@
-package app.models;
+package app.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import app.config.DatabaseConnection;
-import app.dao.UserDAO;
+
 import java.sql.SQLException;
+
+import app.models.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
