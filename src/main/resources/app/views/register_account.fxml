@@ -5,46 +5,23 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.Pane?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.RegisterController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.RegisterController">
    <children>
-      <Label layoutX="570.0" layoutY="120.0" text="ĐĂNG KÝ">
-         <font>
-            <Font size="34.0" />
-         </font>
-      </Label>
-      <Label layoutX="450.0" layoutY="220.0" text="Name">
-         <font>
-            <Font size="20.0" />
-         </font>
-      </Label>
-      <TextField fx:id="txtName" layoutX="550.0" layoutY="215.0" prefHeight="40.0" prefWidth="300.0" />
+      <Pane layoutX="390.0" layoutY="160.0" prefHeight="400.0" prefWidth="500.0" styleClass="card" />
+      <Label layoutX="390.0" layoutY="190.0" prefWidth="500.0" styleClass="title-label" text="ĐĂNG KÝ" />
 
-      <Label layoutX="450.0" layoutY="290.0" text="Account">
-         <font>
-            <Font size="20.0" />
-         </font>
-      </Label>
-      <TextField fx:id="txtAccount" layoutX="550.0" layoutY="285.0" prefHeight="40.0" prefWidth="300.0" />
+      <Label layoutX="430.0" layoutY="260.0" styleClass="form-label" text="Name" />
+      <TextField fx:id="txtName" layoutX="530.0" layoutY="255.0" prefHeight="35.0" prefWidth="300.0" />
 
-      <Label layoutX="450.0" layoutY="360.0" text="Password">
-         <font>
-            <Font size="20.0" />
-         </font>
-      </Label>
-      <PasswordField fx:id="txtPassword" layoutX="550.0" layoutY="355.0" prefHeight="40.0" prefWidth="300.0" />
+      <Label layoutX="430.0" layoutY="320.0" styleClass="form-label" text="Account" />
+      <TextField fx:id="txtAccount" layoutX="530.0" layoutY="315.0" prefHeight="35.0" prefWidth="300.0" />
 
-      <Button layoutX="575.0" layoutY="450.0" mnemonicParsing="false" onAction="#handleRegister" prefHeight="50.0" prefWidth="150.0" text="Đăng ký">
-         <font>
-            <Font size="22.0" />
-         </font>
-      </Button>
+      <Label layoutX="430.0" layoutY="380.0" styleClass="form-label" text="Password" />
+      <PasswordField fx:id="txtPassword" layoutX="530.0" layoutY="375.0" prefHeight="35.0" prefWidth="300.0" />
 
-      <Button layoutX="450.0" layoutY="450.0" mnemonicParsing="false" onAction="#backToLogin" prefHeight="50.0" prefWidth="100.0" text="Back">
-         <font>
-            <Font size="22.0" />
-         </font>
-      </Button>
+      <Button layoutX="605.0" layoutY="460.0" mnemonicParsing="false" onAction="#handleRegister" prefHeight="40.0" prefWidth="150.0" styleClass="primary-button" text="Đăng ký" />
+      <Button layoutX="490.0" layoutY="460.0" mnemonicParsing="false" onAction="#backToLogin" prefHeight="40.0" prefWidth="100.0" styleClass="secondary-button" text="Back" />
    </children>
 </AnchorPane>
