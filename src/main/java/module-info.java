@@ -8,7 +8,6 @@ module app {
   requires java.naming;
   requires mysql.connector.j;
 
-
   opens app to
       javafx.fxml;
   opens app.controllers to

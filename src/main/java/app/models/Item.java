@@ -1,4 +1,4 @@
-package app.Common;
+package app.models;
 
 public class Item {
   private String itemId;

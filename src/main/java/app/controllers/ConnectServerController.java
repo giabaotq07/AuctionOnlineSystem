@@ -6,7 +6,6 @@ import app.config.View;
 import app.network.Client;
 import java.io.IOException;
 import java.sql.SQLException;
-
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -51,11 +50,11 @@ public class ConnectServerController {
                           statusLabel.setText("✓ Kết nối thành công!");
                           statusLabel.setStyle("-fx-text-fill: #00AA00;"); // Green for success
                         }
-                          try {
-                              handleLoginClick(event);
-                          } catch (SQLException e) {
-                              throw new RuntimeException(e);
-                          }
+                        try {
+                          handleLoginClick(event);
+                        } catch (SQLException e) {
+                          throw new RuntimeException(e);
+                        }
                       });
                 } else {
                   throw new IOException(
@@ -149,7 +148,7 @@ public class ConnectServerController {
 
   @FXML
   public void handleLoginClick(ActionEvent event) throws SQLException {
-      DatabaseConnection.getConnection();
-      NavigationManager.getInstance().navigateTo(View.LOGIN);
+    DatabaseConnection.getConnection();
+    NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 }

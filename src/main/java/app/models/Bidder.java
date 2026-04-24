@@ -1,4 +1,4 @@
-package app.Common;
+package app.models;
 
 public class Bidder extends User implements AuctionObserver {
   public Bidder(String id, String username) {

@@ -1,7 +1,7 @@
 package app.controllers;
 
-import app.Common.AuctionSession;
-import app.Common.DataStore;
+import app.models.AuctionSession;
+import app.models.DataStore;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -26,30 +26,36 @@ public class FirstScene {
   public void initialize() {
 
     // load ban đầu
-    sessionListView.getItems().setAll(DataStore.sessions);
+    if (sessionListView != null) {
+      sessionListView.getItems().setAll(DataStore.sessions);
 
-    // search realtime
-    searchField
-        .textProperty()
-        .addListener(
-            (obs, oldVal, newVal) -> {
-              searchSessions(newVal);
-            });
+      // search realtime
+      if (searchField != null) {
+        searchField
+            .textProperty()
+            .addListener(
+                (obs, oldVal, newVal) -> {
+                  searchSessions(newVal);
+                });
+      }
 
-    // click session → show detail
-    sessionListView.setOnMouseClicked(
-        e -> {
-          AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
-          if (s == null) return;
+      // click session → show detail
+      sessionListView.setOnMouseClicked(
+          e -> {
+            AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+            if (s == null) return;
 
-          detailArea.setText(
-              "Id: "
-                  + s.getSessionId()
-                  + "\nPrice: "
-                  + s.getCurrentHighestPrice()
-                  + "\nitem: "
-                  + s.getItem());
-        });
+            if (detailArea != null) {
+              detailArea.setText(
+                  "Id: "
+                      + s.getSessionId()
+                      + "\nPrice: "
+                      + s.getCurrentHighestPrice()
+                      + "\nitem: "
+                      + s.getItem());
+            }
+          });
+    }
   }
 
   private void searchSessions(String keyword) {
@@ -79,7 +85,7 @@ public class FirstScene {
 
   @FXML
   public void SwitchToLive(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/BidController.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/live_auction.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
@@ -88,7 +94,16 @@ public class FirstScene {
 
   @FXML
   public void SwitchToMine(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/AuctionController.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/my_auction.fxml"));
+    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    scene = new Scene(loader.load(), 1280, 720);
+    stage.setScene(scene);
+    stage.show();
+  }
+
+  @FXML
+  public void SwitchToMess(ActionEvent event) throws IOException {
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/mess_chat.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
@@ -97,7 +112,7 @@ public class FirstScene {
 
   @FXML
   public void SwitchToOrganize(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/MyHistory.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/hold_an_auction.fxml"));
     stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
