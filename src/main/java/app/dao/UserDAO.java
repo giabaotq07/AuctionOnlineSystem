@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDAO {
   // Trả về true nếu đăng nhập thành công
@@ -34,24 +36,22 @@ public class UserDAO {
 
   public User loadUsers(String account) {
     String query = "SELECT * FROM users WHERE account = ?";
-    User user = null;
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setString(1, account);
-      ResultSet rs = pstmt.executeQuery();
-
-      while (rs.next()) {
-        String id = rs.getString("id");
-        String username = rs.getString("account");
-        String password = rs.getString("password");
-        String name = rs.getString("name");
-        user = new User(id, name, username, password);
-        return user;
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          String id = rs.getString("id");
+          String username = rs.getString("account");
+          String password = rs.getString("password");
+          String name = rs.getString("name");
+          return new User(id, name, username, password);
+        }
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    return user;
+    return null;
   }
 
   public User addUser(String account, String password, String name) {
@@ -60,7 +60,8 @@ public class UserDAO {
 
     // 1. Chú ý tham số thứ 2: Statement.RETURN_GENERATED_KEYS
     try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(insertSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement pstmt =
+            conn.prepareStatement(insertSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
 
       pstmt.setString(1, account);
       pstmt.setString(2, PasswordUtils.hashPassword(password)); // Nhớ hash mật khẩu nhé!
@@ -137,32 +138,10 @@ public class UserDAO {
     return null;
   }
 
-  public void getUserRole(String account) {
-    String query = "SELECT role FROM users WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query)) {
-      pstmt.setString(1, account); // Thay bằng account bạn muốn kiểm tra
-      ResultSet rs = pstmt.executeQuery();
-
-      if (rs.next()) {
-        String role = rs.getString("role");
-        System.out.println("Role của user '" + account + "' là: " + role);
-      } else {
-        System.out.println("User '" + account + "' không tồn tại.");
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-  }
-
   public void updateUserBalance(User user) {
     String updateSql = "UPDATE users SET assets = ? WHERE account = ?";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
-
-      // Giả sử bạn có một User object với số dư mới
-      // User user = new User("1", "John Doe", "john_doe", "password123");
-      // user.Deposit(1000); // Cập nhật số dư mới
 
       pstmt.setDouble(1, user.getAssets());
       pstmt.setString(2, user.getAccount());
@@ -178,38 +157,61 @@ public class UserDAO {
     }
   }
 
-  public void getAllUsers() {
+  public List<User> getAllUsers() {
     String query = "SELECT * FROM users";
+    List<User> list = new ArrayList<>();
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query);
         ResultSet rs = pstmt.executeQuery()) {
 
       while (rs.next()) {
+        String id = rs.getString("id");
         String account = rs.getString("account");
         String name = rs.getString("name");
-        System.out.println("Account: " + account + ", Name: " + name);
+        String password = rs.getString("password");
+        list.add(new User(id, name, account, password));
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    return list;
   }
 
-  public void getUserById(int id) {
+  public User getUserById(int id) {
     String query = "SELECT * FROM users WHERE id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
-      pstmt.setInt(1, id);
-      ResultSet rs = pstmt.executeQuery();
 
-      if (rs.next()) {
-        String account = rs.getString("account");
-        String name = rs.getString("name");
-        System.out.println("User ID: " + id + ", Account: " + account + ", Name: " + name);
-      } else {
-        System.out.println("User with ID '" + id + "' không tồn tại.");
+      pstmt.setInt(1, id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          String strId = rs.getString("id");
+          String account = rs.getString("account");
+          String name = rs.getString("name");
+          String password = rs.getString("password");
+          return new User(strId, name, account, password);
+        }
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    return null;
+  }
+
+  public String getUserRole(String account) {
+    String query = "SELECT role FROM users WHERE account = ?";
+    try (Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+      pstmt.setString(1, account);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return rs.getString("role");
+        }
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 }

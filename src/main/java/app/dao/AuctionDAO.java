@@ -8,7 +8,8 @@ import java.sql.SQLException;
 public class AuctionDAO {
   public void placeBid(int itemId, int userId, double bidAmount) {
     String insertSql =
-        "INSERT INTO bids (item_id, user_id, bid_amount) VALUES (?, ?, ?)"; // Giả sử bạn có bảng bids
+        "INSERT INTO bids (item_id, user_id, bid_amount) VALUES (?, ?, ?)"; // Giả sử bạn có bảng
+    // bids
 
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
@@ -20,6 +21,6 @@ public class AuctionDAO {
       pstmt.executeUpdate();
     } catch (SQLException e) {
       e.printStackTrace();
-  }
+    }
   }
 }

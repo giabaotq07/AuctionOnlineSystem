@@ -10,7 +10,7 @@ public enum CommandType {
   PLACE_BID, // Client đặt giá
   CREATE_AUCTION, // Seller tạo phiên
   CHAT,
-  
+
   // status
   OPEN,
   RUNNING,

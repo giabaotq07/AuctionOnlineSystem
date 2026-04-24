@@ -1,13 +1,14 @@
 package app.controllers;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.scene.Node;
-import javafx.stage.Stage;
-import java.io.IOException;
+
 import app.Common.*;
+import java.io.IOException;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 
 public class BidController {
 
@@ -28,16 +29,15 @@ public class BidController {
 
     System.out.println("Loaded sessions: " + DataStore.sessions.size());
 
-    sessionListView.setOnMouseClicked(e -> {
-      AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
-      if (s == null) return;
-      session = s;
+    sessionListView.setOnMouseClicked(
+        e -> {
+          AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+          if (s == null) return;
+          session = s;
 
-      outputArea.setText(
-              "Item: " + s.getItem().getName() +
-                      "\nGiá: $" + s.getCurrentHighestPrice()
-      );
-    });
+          outputArea.setText(
+              "Item: " + s.getItem().getName() + "\nGiá: $" + s.getCurrentHighestPrice());
+        });
   }
 
   // ===== BID =====
@@ -57,13 +57,10 @@ public class BidController {
       boolean success = session.placeBid(bidder, amount);
       if (success) {
         HistoryStore.history.add(
-                new HistoryRecord(
-                        session.getSessionId(),
-                        HistoryType.BID,
-                        bidder.getName() + " bid $" + amount +
-                                " vào " + session.getItem().getName()
-                )
-        );
+            new HistoryRecord(
+                session.getSessionId(),
+                HistoryType.BID,
+                bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName()));
       }
 
       if (success) {
@@ -76,6 +73,7 @@ public class BidController {
       outputArea.setText("Lỗi dữ liệu!");
     }
   }
+
   @FXML
   public void handleBack(ActionEvent event) throws IOException {
     FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/FirstScene.fxml"));

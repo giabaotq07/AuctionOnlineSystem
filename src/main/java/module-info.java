@@ -5,6 +5,9 @@ module app {
   requires atlantafx.base;
   requires java.sql;
   requires com.google.gson;
+  requires java.naming;
+  requires mysql.connector.j;
+
 
   opens app to
       javafx.fxml;

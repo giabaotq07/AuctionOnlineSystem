@@ -1,9 +1,8 @@
 package app.controllers;
 
-import java.io.IOException;
-
 import app.Common.AuctionSession;
 import app.Common.DataStore;
+import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -30,28 +29,34 @@ public class FirstScene {
     sessionListView.getItems().setAll(DataStore.sessions);
 
     // search realtime
-    searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-      searchSessions(newVal);
-    });
+    searchField
+        .textProperty()
+        .addListener(
+            (obs, oldVal, newVal) -> {
+              searchSessions(newVal);
+            });
 
     // click session → show detail
-    sessionListView.setOnMouseClicked(e -> {
-      AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
-      if (s == null) return;
+    sessionListView.setOnMouseClicked(
+        e -> {
+          AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+          if (s == null) return;
 
-      detailArea.setText(
-              "Id: " + s.getSessionId() +
-                      "\nPrice: " + s.getCurrentHighestPrice() +
-                      "\nitem: " + s.getItem()
-      );
-    });
+          detailArea.setText(
+              "Id: "
+                  + s.getSessionId()
+                  + "\nPrice: "
+                  + s.getCurrentHighestPrice()
+                  + "\nitem: "
+                  + s.getItem());
+        });
   }
 
-  private void searchSessions(String keyword){
+  private void searchSessions(String keyword) {
 
     sessionListView.getItems().clear();
 
-    if (keyword == null || keyword.isBlank()){
+    if (keyword == null || keyword.isBlank()) {
       sessionListView.getItems().setAll(DataStore.sessions);
       return;
     }

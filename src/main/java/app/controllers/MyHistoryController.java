@@ -1,7 +1,7 @@
 package app.controllers;
 
-import java.io.IOException;
 import app.Common.*;
+import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -9,7 +9,6 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class MyHistoryController {
@@ -21,7 +20,6 @@ public class MyHistoryController {
   @FXML private ListView<HistoryRecord> historyListView;
   @FXML private TextArea detailArea;
 
-
   @FXML
   public void initialize() {
 
@@ -29,33 +27,29 @@ public class MyHistoryController {
     sessionListView.getItems().setAll(DataStore.sessions);
 
     // click session → filter history
-    sessionListView.setOnMouseClicked(e -> {
+    sessionListView.setOnMouseClicked(
+        e -> {
+          AuctionSession session = sessionListView.getSelectionModel().getSelectedItem();
+          if (session == null) return;
 
-      AuctionSession session = sessionListView.getSelectionModel().getSelectedItem();
-      if (session == null) return;
+          String sid = session.getSessionId();
 
-      String sid = session.getSessionId();
-
-      historyListView.getItems().setAll(
-              HistoryStore.history.stream()
-                      .filter(h -> h.getSessionId().equals(sid))
-                      .toList()
-      );
-    });
+          historyListView
+              .getItems()
+              .setAll(
+                  HistoryStore.history.stream().filter(h -> h.getSessionId().equals(sid)).toList());
+        });
 
     // click history → detail
-    historyListView.setOnMouseClicked(e -> {
-      HistoryRecord r = historyListView.getSelectionModel().getSelectedItem();
-      if (r != null) {
-        detailArea.setText(
-                "TYPE: " + r.getType() +
-                        "\nTIME: " + r.getTime() +
-                        "\nMESSAGE: " + r.getMessage()
-        );
-      }
-    });
+    historyListView.setOnMouseClicked(
+        e -> {
+          HistoryRecord r = historyListView.getSelectionModel().getSelectedItem();
+          if (r != null) {
+            detailArea.setText(
+                "TYPE: " + r.getType() + "\nTIME: " + r.getTime() + "\nMESSAGE: " + r.getMessage());
+          }
+        });
   }
-
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {

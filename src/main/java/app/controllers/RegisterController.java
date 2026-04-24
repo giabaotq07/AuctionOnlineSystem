@@ -38,10 +38,12 @@ public class RegisterController {
       return;
     }
 
-    int id = userDAO.addUser(account, password, name);
-    if (id > 0) {
+    app.models.User newUser = userDAO.addUser(account, password, name);
+    if (newUser != null) {
       showAlert(
-          Alert.AlertType.INFORMATION, "Thành công", "Đăng ký thành công! ID tài khoản: " + id);
+          Alert.AlertType.INFORMATION,
+          "Thành công",
+          "Đăng ký thành công! ID tài khoản: " + newUser.getId());
       // Có thể thêm code chuyển về màn hình đăng nhập ở đây
     } else {
       showAlert(
