@@ -148,7 +148,6 @@ public class ConnectServerController {
 
   @FXML
   public void handleLoginClick(ActionEvent event) throws SQLException {
-    DatabaseConnection.getConnection();
     NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 }
