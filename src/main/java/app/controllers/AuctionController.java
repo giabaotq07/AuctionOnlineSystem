@@ -1,6 +1,8 @@
 package app.controllers;
 
 import app.models.*;
+import app.services.UserService;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import javafx.event.ActionEvent;
@@ -13,6 +15,7 @@ import javafx.stage.Stage;
 
 public class AuctionController {
 
+  UserService userService = new UserService();
   // ===== INPUT =====
   @FXML private TextField IdField;
   @FXML private TextField nameField;
@@ -28,29 +31,24 @@ public class AuctionController {
   @FXML
   public void handleAdd() {
     try {
-      String id = "S" + (sessionListView.getItems().size() + 1);
       Item item =
-          new Item(
-              id,
+          new app.models.Electronics(
               nameField.getText(),
               descriptionField.getText(),
               Double.parseDouble(priceField.getText()),
-              Integer.parseInt(minutesField.getText()));
+              10.0); // Default step price
 
       AuctionSession session =
           new AuctionSession(
-              item.getItemId(),
               item,
-              new User(1, "seller"),
+              userService.getUserByAccount("nguoiban"),
               LocalDateTime.now().plusMinutes(Integer.parseInt(minutesField.getText())));
       DataStore.sessions.add(session);
 
       sessionListView.getItems().add(session);
       HistoryStore.history.add(
           new HistoryRecord(
-              session.getSessionId(),
-              HistoryType.ADD_ITEM,
-              item.getName() + " " + item.getPrice()));
+              session.getId(), HistoryType.ADD_ITEM, item.getName() + " " + item.getPrice()));
 
       outputArea.setText("Đã thêm session!");
 

@@ -11,7 +11,7 @@ public class UserTest {
 
   @BeforeEach
   public void setUser() {
-    user = new User(1, "Tester");
+    user = new User(1, "Tester", "test_account", "test_password");
   }
 
   @Test

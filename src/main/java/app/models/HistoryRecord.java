@@ -3,20 +3,26 @@ package app.models;
 import java.time.LocalDateTime;
 
 public class HistoryRecord {
-
-  private String sessionId;
+  private int sessionId;
   private HistoryType type;
   private String message;
   private LocalDateTime time;
 
-  public HistoryRecord(String sessionId, HistoryType type, String message) {
+  public HistoryRecord(int sessionId, HistoryType type, String message) {
     this.sessionId = sessionId;
     this.type = type;
     this.message = message;
     this.time = LocalDateTime.now();
   }
 
-  public String getSessionId() {
+  public HistoryRecord(int sessionId, HistoryType type, String message, LocalDateTime time) {
+    this.sessionId = sessionId;
+    this.type = type;
+    this.message = message;
+    this.time = time;
+  }
+
+  public int getSessionId() {
     return sessionId;
   }
 
@@ -30,10 +36,5 @@ public class HistoryRecord {
 
   public LocalDateTime getTime() {
     return time;
-  }
-
-  @Override
-  public String toString() {
-    return "[" + time + "] " + type + " - " + message;
   }
 }

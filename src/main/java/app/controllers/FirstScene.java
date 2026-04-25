@@ -48,7 +48,7 @@ public class FirstScene {
             if (detailArea != null) {
               detailArea.setText(
                   "Id: "
-                      + s.getSessionId()
+                      + s.getId()
                       + "\nPrice: "
                       + s.getCurrentHighestPrice()
                       + "\nitem: "

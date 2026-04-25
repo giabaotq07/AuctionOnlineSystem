@@ -1,34 +1,37 @@
 package app.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import app.config.DatabaseConnection;
-
-import java.sql.SQLException;
-
+import app.exceptions.UserNotFoundException;
 import app.models.User;
-import org.junit.jupiter.api.BeforeEach;
+import app.services.UserService;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class UserDaoTest {
-  UserDAO userDAO;
-  User user0;
+  static UserService userService;
+  static User tester;
 
-  @BeforeEach
-  void setUp() {
-    try {
-      DatabaseConnection.getConnection();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
-    userDAO = new UserDAO();
-    userDAO.deleteUser("test_account");
-    user0 = userDAO.addUser("test_account", "test_password", "Test User");
+  @BeforeAll
+  public static void setupDatabase() {
+    DatabaseConnection.initializeDatabase();
+    userService = new UserService();
+    tester = new User(12,"Test User", "test_account", "test_password");
   }
 
   @Test
-  void testLoadUser() {
-    User user1 = userDAO.loadUsers("test_account");
-    assertEquals(user1, user0);
+  void testGetUserByAccount0() {
+    User user = userService.getUserByAccount("test_account");
+    assertEquals(user, tester);
   }
+
+  @Test
+  void testGetUserByAccount1() {
+    assertThrows(UserNotFoundException.class, () -> {
+      userService.getUserByAccount("non_existent_account");
+    });
+  }
+
 }

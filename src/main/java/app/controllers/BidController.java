@@ -1,6 +1,8 @@
 package app.controllers;
 
 import app.models.*;
+import app.services.UserService;
+
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,6 +14,8 @@ import javafx.stage.Stage;
 
 public class BidController {
 
+  UserService userService = new UserService();
+  // ===== INPUT =====
   @FXML private ListView<AuctionSession> sessionListView;
 
   @FXML private TextField bidderField;
@@ -52,13 +56,13 @@ public class BidController {
       String userName = bidderField.getText();
       double amount = Double.parseDouble(amountField.getText());
 
-      User bidder = new User(1, userName);
+      User bidder = userService.getUserByAccount(userName);
 
       boolean success = session.placeBid(bidder, amount);
       if (success) {
         HistoryStore.history.add(
             new HistoryRecord(
-                session.getSessionId(),
+                session.getId(),
                 HistoryType.BID,
                 bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName()));
       }

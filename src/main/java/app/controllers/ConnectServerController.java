@@ -1,6 +1,5 @@
 package app.controllers;
 
-import app.config.DatabaseConnection;
 import app.config.NavigationManager;
 import app.config.View;
 import app.network.Client;
@@ -16,7 +15,6 @@ import javafx.scene.control.Label;
 public class ConnectServerController {
   @FXML private Button connectButton;
   @FXML private Label statusLabel;
-  private Client client;
   private static final int CONNECTION_TIMEOUT = 5000; // 5 seconds
 
   @FXML
@@ -41,8 +39,6 @@ public class ConnectServerController {
                 Client connectedClient = connectWithTimeout();
 
                 if (connectedClient != null) {
-                  this.client = connectedClient;
-
                   // Connection successful
                   Platform.runLater(
                       () -> {

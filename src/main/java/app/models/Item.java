@@ -1,27 +1,56 @@
 package app.models;
 
-public class Item {
-  private String itemId;
+public class Item extends Entity {
+  private int id;
   private String name;
   private String description;
-  private double startingPrice; // Giá khởi điểm
-  private double stepPrice; // Bước giá (ví dụ: mỗi lần tăng ít nhất 50k)
+  private double startingPrice;
+  private double stepPrice;
+  private ItemType type;
 
   public Item(
-      String itemId, String name, String description, double startingPrice, double stepPrice) {
-    this.itemId = itemId;
+      String name, String description, double startingPrice, double stepPrice, ItemType type) {
     this.name = name;
     this.description = description;
     this.startingPrice = startingPrice;
     this.stepPrice = stepPrice;
+    this.type = type;
   }
 
-  public String getItemId() {
-    return itemId;
+  public Item(
+      int id,
+      String name,
+      String description,
+      double startingPrice,
+      double stepPrice,
+      ItemType type) {
+    this.id = id;
+    this.name = name;
+    this.description = description;
+    this.startingPrice = startingPrice;
+    this.stepPrice = stepPrice;
+    this.type = type;
+  }
+
+  @Override
+  public int getId() {
+    return id;
+  }
+
+  public void setId(int id) {
+    this.id = id;
   }
 
   public String getName() {
     return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getDescription() {
+    return description;
   }
 
   public double getStartingPrice() {
@@ -32,8 +61,12 @@ public class Item {
     return stepPrice;
   }
 
-  public String getDescription() {
-    return description;
+  public ItemType getType() {
+    return type;
+  }
+
+  public void setType(ItemType type) {
+    this.type = type;
   }
 
   public double getPrice() {

@@ -2,7 +2,9 @@ package app.controllers;
 
 import app.config.NavigationManager;
 import app.config.View;
-import app.dao.UserDAO;
+import app.exceptions.UserAlreadyExistsException;
+import app.models.User;
+import app.services.UserService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -17,7 +19,7 @@ public class RegisterController {
 
   @FXML private PasswordField txtPassword;
 
-  private final UserDAO userDAO = new UserDAO();
+  private final UserService userService = new UserService();
 
   @FXML
   public void handleRegister(ActionEvent event) {
@@ -38,18 +40,18 @@ public class RegisterController {
       return;
     }
 
-    app.models.User newUser = userDAO.addUser(account, password, name);
-    if (newUser != null) {
+    User newUser =  new User(name, account, password);
+    try {
+      newUser = userService.register(newUser);
       showAlert(
           Alert.AlertType.INFORMATION,
           "Thành công",
           "Đăng ký thành công! ID tài khoản: " + newUser.getId());
-      // Có thể thêm code chuyển về màn hình đăng nhập ở đây
-    } else {
+    } catch (UserAlreadyExistsException e) {
       showAlert(
-          Alert.AlertType.ERROR,
-          "Thất bại",
-          "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
+              Alert.AlertType.ERROR,
+              "Thất bại",
+              "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
     }
   }
 

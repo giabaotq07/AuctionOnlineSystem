@@ -2,11 +2,11 @@ package app.controllers;
 
 import app.config.NavigationManager;
 import app.config.View;
-import app.dao.UserDAO;
 import app.models.CommandType;
 import app.models.MessagePacket;
 import app.models.User;
 import app.network.Client;
+import app.services.UserService;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -22,11 +22,11 @@ public class LoginController {
   @FXML private Stage stage;
   @FXML private Scene scene;
   @FXML private Label lblRegister;
-  private UserDAO userDAO;
+  private UserService userService;
 
   @FXML
   public void initialize() {
-    userDAO = new UserDAO();
+    userService = new UserService();
   }
 
   @FXML
@@ -41,7 +41,7 @@ public class LoginController {
     }
     // 2. Mang đi gọi hàm kiểm tra từ UserDao
     // (Thay đổi tên hàm checkCredentials cho đúng với method ông đã viết trong UserDao nhé)
-    boolean isLoginSuccessful = userDAO.checkLogin(userInput, passInput);
+    boolean isLoginSuccessful = userService.login(userInput, passInput);
 
     // 3. Xử lý kết quả trả về
     if (isLoginSuccessful) {
@@ -63,8 +63,8 @@ public class LoginController {
 
   public void sendLoginRequest(String account) {
     User user;
-    UserDAO userDao = new UserDAO();
-    user = userDao.loadUsers(account);
+    UserService userService = new UserService();
+    user = userService.getUserByAccount(account);
     if (user == null) {
       System.out.println("ko thấy user");
       return;

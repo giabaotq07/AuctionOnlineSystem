@@ -6,20 +6,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AuctionSession implements AuctionSubject, Serializable {
-  private String sessionId;
+  private int id;
   private Item item;
   private User seller;
   private AuctionStatus status;
   private LocalDateTime endTime;
   private List<AuctionObserver> observers = new ArrayList<>();
-  // Lịch sử trả giá
   private List<Bid> bidHistory;
+
+  public AuctionSession(Item item, User seller, LocalDateTime endTime) {
+    this.item = item;
+    this.seller = seller;
+    this.endTime = endTime;
+    this.status = AuctionStatus.ACTIVE;
+    this.bidHistory = new ArrayList<>();
+  }
+
+  public AuctionSession(int id, Item item, User seller, LocalDateTime endTime) {
+    this.id = id;
+    this.item = item;
+    this.seller = seller;
+    this.endTime = endTime;
+    this.status = AuctionStatus.ACTIVE;
+    this.bidHistory = new ArrayList<>();
+  }
 
   @Override
   public void registerObserver(AuctionObserver observer) {
-    if (!observers.contains(observer)) {
-      observers.add(observer);
-    }
+    if (!observers.contains(observer)) observers.add(observer);
   }
 
   @Override
@@ -34,51 +48,49 @@ public class AuctionSession implements AuctionSubject, Serializable {
     }
   }
 
-  public AuctionSession(String sessionId, Item item, User seller, LocalDateTime endTime) {
-    this.sessionId = sessionId;
-    this.item = item;
-    this.seller = seller;
-    this.endTime = endTime;
-    this.status = AuctionStatus.ACTIVE; // Vừa tạo là cho phép đấu giá luôn
-    this.bidHistory = new ArrayList<>();
+  public int getId() {
+    return this.id;
   }
 
-  // 1. Hàm tìm giá cao nhất hiện tại
+  public void setId(int id) {
+    this.id = id;
+  }
+
+  public void setStatus(AuctionStatus status) {
+    this.status = status;
+  }
+
+  public AuctionStatus getStatus() {
+    return this.status;
+  }
+
+  public Item getItem() {
+    return this.item;
+  }
+
+  public User getSeller() {
+    return this.seller;
+  }
+
+  public LocalDateTime getEndTime() {
+    return this.endTime;
+  }
+
   public double getCurrentHighestPrice() {
-    if (bidHistory.isEmpty()) {
-      return item.getStartingPrice();
-    }
-    // Trả về số tiền của lượt bid cuối cùng trong danh sách
+    if (bidHistory.isEmpty()) return item.getStartingPrice();
     return bidHistory.get(bidHistory.size() - 1).getAmount();
   }
 
-  // 2. Logic xử lý ra giá
   public synchronized boolean placeBid(User bidder, double bidAmount) {
-    // Kiểm tra thời gian
     if (LocalDateTime.now().isAfter(endTime)) {
       this.status = AuctionStatus.COMPLETED;
-      System.out.println("Phiên đấu giá đã kết thúc!");
       return false;
     }
-
-    // Kiểm tra trạng thái
-    if (this.status != AuctionStatus.ACTIVE) {
-      System.out.println("Phiên đấu giá không trong trạng thái hoạt động!");
-      return false;
-    }
-
-    // Kiểm tra luật giá: Giá mới phải >= (Giá cao nhất hiện tại + Bước giá)
+    if (this.status != AuctionStatus.ACTIVE) return false;
     double minimumRequiredPrice = getCurrentHighestPrice() + item.getStepPrice();
-    if (bidAmount < minimumRequiredPrice) {
-      System.out.println("Giá không hợp lệ! Bạn phải trả ít nhất: $" + minimumRequiredPrice);
-      return false;
-    }
-
-    // Nếu hợp lệ -> Ghi nhận lượt trả giá
+    if (bidAmount < minimumRequiredPrice) return false;
     Bid newBid = new Bid(bidder, bidAmount, LocalDateTime.now());
     bidHistory.add(newBid);
-    System.out.println(bidder.getName() + " ra giá thành công: $" + bidAmount);
-
     notifyObserversNewBid(bidAmount, bidder.getName());
     return true;
   }
@@ -86,28 +98,6 @@ public class AuctionSession implements AuctionSubject, Serializable {
   @Override
   public String toString() {
     return item.getName() + " | Giá hiện tại: $" + getCurrentHighestPrice();
-  }
-
-  public Item getItem() {
-    return item;
-  }
-
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  // 3. In lịch sử để kiểm tra
-  public void printSessionSummary() {
-    System.out.println("\n--- TỔNG KẾT PHIÊN ĐẤU GIÁ: " + item.getName() + " ---");
-    for (Bid bid : bidHistory) {
-      System.out.println("- " + bid.toString());
-    }
-    if (!bidHistory.isEmpty()) {
-      System.out.println(
-          "Người đang giữ giá cao nhất: "
-              + bidHistory.get(bidHistory.size() - 1).getBidder().getName());
-    }
-    System.out.println("------------------------------------------\n");
   }
 
   public String getItemname() {

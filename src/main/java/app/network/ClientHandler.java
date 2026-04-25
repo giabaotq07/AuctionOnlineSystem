@@ -53,14 +53,6 @@ public class ClientHandler implements Runnable {
 
       case PLACE_BID:
         // đoạn này để chờ code database
-
-        // Tương tự cho đấu giá
-        // double amount = Double.parseDouble(packet.getData().toString());
-        // if (AuctionService.getInstance().placeBid(1, this.username, amount)) {
-        // MessagePacket<String> bidPacket =
-        // new MessagePacket<>(CommandType.UPDATE_PRICE, String.valueOf(amount));
-        // bidPacket.setMessage(this.username); // Ai là người trả giá cao nhất
-        // Server.broadcast(bidPacket);
         break;
       default:
         break;

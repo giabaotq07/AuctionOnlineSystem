@@ -1,12 +1,20 @@
 package app.models;
 
-public class User {
+import java.util.Objects;
+
+public class User extends Entity {
   private int id;
   private String name;
   private String account;
   private double assets;
   private String password;
 
+  public User(String name, String account, String password) {
+    this.account = account;
+    this.password = password;
+    this.assets = 0;
+    this.name = name;
+  }
   public User(int id, String name, String account, String password) {
     this.id = id;
     this.account = account;
@@ -15,12 +23,7 @@ public class User {
     this.name = name;
   }
 
-  public User(int id, String name) {
-    this.id = id;
-    this.name = name;
-    this.assets = 0;
-  }
-
+  @Override
   public int getId() {
     return id;
   }
@@ -45,12 +48,6 @@ public class User {
     return assets;
   }
 
-  /*
-   public void setAccount(String name) {
-       this.account = name;
-   }
-  */
-
   public void setName(String name) {
     this.name = name;
   }
@@ -59,7 +56,11 @@ public class User {
     return name;
   }
 
-  public void setAccount(String account) {}
+  public void setAccount(String account) {
+    this.account = account;
+  }
+
+
 
   public void Deposit(double amount) {
     if (amount < 0) {
@@ -82,11 +83,18 @@ public class User {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
 
     User user = (User) o;
 
-    return account.equals(user.account) && name.equals(user.name);
+    return Objects.equals(account, user.account);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(account);
   }
 }

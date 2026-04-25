@@ -32,12 +32,11 @@ public class MyHistoryController {
           AuctionSession session = sessionListView.getSelectionModel().getSelectedItem();
           if (session == null) return;
 
-          String sid = session.getSessionId();
+          int sid = session.getId();
 
           historyListView
               .getItems()
-              .setAll(
-                  HistoryStore.history.stream().filter(h -> h.getSessionId().equals(sid)).toList());
+              .setAll(HistoryStore.history.stream().filter(h -> h.getSessionId() == sid).toList());
         });
 
     // click history → detail

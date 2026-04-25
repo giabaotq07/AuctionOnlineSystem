@@ -52,8 +52,4 @@ public class Server {
   public static void broadcast(MessagePacket<?> packet) {
     authenticatedClients.values().forEach(h -> h.sendMessage(packet));
   }
-
-  static void main() {
-    Server.getInstance().start();
-  }
 }
