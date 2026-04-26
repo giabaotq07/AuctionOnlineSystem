@@ -13,17 +13,21 @@ public class Wallet {
 
   // Dùng synchronized để tại một thời điểm chỉ một luồng được phép sửa tiền
   public synchronized boolean withdraw(double amount) {
-    if (amount > 0 && assets >= amount) {
-      this.assets -= amount;
-      return true; // Rút tiền/Đặt cọc thành công
+    if (amount <= 0) {
+      throw new IllegalArgumentException("So tien rut phai la so duong.");
     }
-    return false; // Không đủ tiền
+    if (assets < amount) {
+      throw new IllegalArgumentException("So tien rut vuot qua so du.");
+    }
+    this.assets -= amount;
+    return true; // Rút tiền/Đặt cọc thành công
   }
 
   public synchronized void deposit(double amount) {
-    if (amount > 0) {
-      this.assets += amount;
+    if (amount <= 0) {
+      throw new IllegalArgumentException("So tien gui phai la so duong.");
     }
+    this.assets += amount;
   }
 
   public double getAssets() {

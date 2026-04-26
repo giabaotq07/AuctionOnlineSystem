@@ -11,7 +11,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDAO {
+public class UserDAO implements GenericDAO<User, Integer> {
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(
         rs.getInt("id"),
@@ -20,8 +20,6 @@ public class UserDAO {
         new Wallet(rs.getDouble("assets")),
         rs.getString("role"));
   }
-
-  // ======================== TRUY VẤN (LOAD) ========================
 
   public User getUserByAccount(String account) {
     String query = "SELECT * FROM users WHERE account = ?";
@@ -38,7 +36,8 @@ public class UserDAO {
     }
   }
 
-  public User getUserById(int id) {
+  @Override
+  public User getById(Integer id) {
     String query = "SELECT * FROM users WHERE id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -53,7 +52,8 @@ public class UserDAO {
     }
   }
 
-  public List<User> getAllUsers() {
+  @Override
+  public List<User> getAll() {
     String query = "SELECT * FROM users";
     List<User> list = new ArrayList<>();
     try (Connection conn = DatabaseConnection.getConnection();
@@ -69,7 +69,8 @@ public class UserDAO {
     return list;
   }
 
-  public User addUser(User user) {
+  @Override
+  public User add(User user) {
     String insertSql =
         "INSERT INTO users (account, password, name, role, assets) VALUES (?, ?, ?, ?, ?)";
     try (Connection conn = DatabaseConnection.getConnection();
@@ -91,6 +92,13 @@ public class UserDAO {
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi database khi thêm user (có thể trùng account).", e);
     }
+  }
+
+  @Override
+  public boolean update(User user) {
+    // Basic update updating all fields
+    String sql = "UPDATE users SET name = ?, assets = ?, role = ? WHERE id = ?";
+    return executeUpdate(sql, user.getName(), user.getWallet().getAssets(), user.getRole().name(), user.getId());
   }
 
   private boolean executeUpdate(String sql, Object... params) {
@@ -120,7 +128,8 @@ public class UserDAO {
     return executeUpdate(sql, PasswordUtils.hashPassword(newPassword), user.getId());
   }
 
-  public boolean deleteUser(int id) {
+  @Override
+  public boolean delete(Integer id) {
     String sql = "DELETE FROM users WHERE id = ?";
     return executeUpdate(sql, id);
   }

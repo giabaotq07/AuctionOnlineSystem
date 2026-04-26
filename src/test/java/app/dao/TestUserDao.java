@@ -22,7 +22,7 @@ public class TestUserDao {
             new Account("test_account", "test_password"),
             new Wallet(),
             UserRole.BIDDER);
-    tester = userDAO.addUser(tester);
+    tester = userDAO.add(tester);
   }
 
   @Test
@@ -34,33 +34,33 @@ public class TestUserDao {
   }
 
   @Test
-  void testAddUser() {
+  void testadd() {
     User user =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
-    user = userDAO.addUser(user);
+    user = userDAO.add(user);
     User addedUser =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     assertThrows(
         DatabaseException.class,
-        () -> userDAO.addUser(addedUser)); // Thử thêm lại để kiểm tra trùng account
+        () -> userDAO.add(addedUser)); // Thử thêm lại để kiểm tra trùng account
     assertNotNull(user);
     assertTrue(user.getId() > 0);
     assertEquals("new_account", user.getAccount().getUsername());
 
     // Clean up
-    userDAO.deleteUser(user.getId());
+    userDAO.delete(user.getId());
   }
 
   @Test
-  void testDeleteUser() {
+  void testdelete() {
     User user =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
-    user = userDAO.addUser(user);
-    assertTrue(userDAO.deleteUser(user.getId()));
-    assertFalse(userDAO.deleteUser(user.getId())); // Thử xóa lại để kiểm tra đã xóa
+    user = userDAO.add(user);
+    assertTrue(userDAO.delete(user.getId()));
+    assertFalse(userDAO.delete(user.getId())); // Thử xóa lại để kiểm tra đã xóa
   }
 
   @Test
@@ -68,11 +68,11 @@ public class TestUserDao {
     User user =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
-    user = userDAO.addUser(user);
+    user = userDAO.add(user);
     user.setName("Updated Name");
     assertTrue(userDAO.updateUserProfile(user));
     User updatedUser = userDAO.getUserByAccount("new_account");
     assertEquals(user.getName(), updatedUser.getName());
-    userDAO.deleteUser(user.getId());
+    userDAO.delete(user.getId());
   }
 }

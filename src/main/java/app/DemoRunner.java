@@ -71,7 +71,7 @@ public class DemoRunner {
     Item phone =
         ItemFactory.createItem(
             "IPhone 16 Pro Max", "Dien thoai moi", 1000, 50, ItemType.ELECTRONICS);
-    phone = itemService.addItem(phone);
+    phone = itemService.add(phone);
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
