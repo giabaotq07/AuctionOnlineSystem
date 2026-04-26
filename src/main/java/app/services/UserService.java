@@ -1,53 +1,86 @@
 package app.services;
 
+import app.config.PasswordUtils;
 import app.dao.UserDAO;
+import app.exceptions.InvalidCredentialsException;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.User;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
   private final UserDAO userDAO;
+  private final Map<String, User> userCache = new ConcurrentHashMap<>();
 
-  // Sử dụng Dependency Injection thông qua Constructor
+  public UserService() {
+    this.userDAO = new UserDAO();
+  }
+
   public UserService(UserDAO userDAO) {
     this.userDAO = userDAO;
   }
 
-  public boolean login(String account, String password) {
-    if (account == null || password == null || account.isEmpty()) {
-      return false;
+  public User login(String account, String rawPassword) throws InvalidCredentialsException {
+    User user = userDAO.loadUsers(account);
+    if (user == null || !PasswordUtils.verify(rawPassword, user.getPassword())) {
+      throw new InvalidCredentialsException("Tài khoản hoặc mật khẩu không đúng.");
     }
-    return userDAO.checkLogin(account, password);
+    return user;
   }
 
   public User register(User user) throws UserAlreadyExistsException {
-    // Có thể thêm logic kiểm tra độ dài mật khẩu, định dạng email tại đây
-//    if (user.getAccount() == null || user.getAccount().length() < 3) {
-//      throw new IllegalArgumentException("Tài khoản phải có ít nhất 3 ký tự.");
-//    }
-    return userDAO.addUser(user);
+    User exists = userDAO.loadUsers(user.getAccount());
+    if (exists != null) {
+      throw new UserAlreadyExistsException("Tài khoản '" + user.getAccount() + "' đã tồn tại!");
+    }
+    user = userDAO.addUser(user);
+    userCache.put(user.getAccount(), user);
+    return user;
   }
 
-  public User getUserByAccount(String account) throws UserNotFoundException {
-    return userDAO.loadUsers(account);
+  public User getUserByAccount(String account) {
+    User user = userDAO.loadUsers(account);
+    if (user == null) {
+      throw new UserNotFoundException("Không tìm thấy user: " + account);
+    }
+    userCache.putIfAbsent(account, user);
+    return userCache.get(account);
   }
 
-  public User getUserById(int id) throws UserNotFoundException {
-    return userDAO.getUserById(id);
+  public User getUserById(int id) {
+    User user = userDAO.getUserById(id);
+    if (user == null) {
+      throw new UserNotFoundException("Không tìm thấy user với ID: " + id);
+    }
+    return user;
   }
 
-  public void updateProfile(User user) throws UserNotFoundException {
-    // DAO đã ném UserNotFoundException nếu không tìm thấy, nên chỉ cần gọi
-    userDAO.updateUser(user);
+  public User updateProfile(User user) {
+    boolean ok = userDAO.updateUser(user);
+    if (!ok) {
+      throw new UserNotFoundException(
+          "Không thể cập nhật. User '" + user.getAccount() + "' không tồn tại.");
+    }
+    userCache.put(user.getAccount(), user);
+    return user;
   }
 
-  public void updateBalance(User user) throws UserNotFoundException {
-    userDAO.updateUserBalance(user);
+  public boolean updateBalance(User user) {
+    boolean ok = userDAO.updateUserBalance(user);
+    if (!ok) {
+      throw new UserNotFoundException(
+          "Không tìm thấy user để cập nhật số dư: " + user.getAccount());
+    }
   }
 
-  public void deleteUser(String account) throws UserNotFoundException {
-    userDAO.deleteUser(account);
+  public void deleteUser(String account) {
+    boolean ok = userDAO.deleteUser(account);
+    if (!ok) {
+      throw new UserNotFoundException("Không thể xóa. User '" + account + "' không tồn tại.");
+    }
+    userCache.remove(account);
   }
 
   public List<User> getAllUsers() {
@@ -56,6 +89,6 @@ public class UserService {
 
   public String getUserRole(String account) {
     String role = userDAO.getUserRole(account);
-    return (role != null) ? role : "GUEST"; // Trả về role mặc định nếu không tìm thấy
+    return (role != null) ? role : "GUEST";
   }
 }

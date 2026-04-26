@@ -17,21 +17,6 @@ public class Item extends Entity {
     this.type = type;
   }
 
-  public Item(
-      int id,
-      String name,
-      String description,
-      double startingPrice,
-      double stepPrice,
-      ItemType type) {
-    this.id = id;
-    this.name = name;
-    this.description = description;
-    this.startingPrice = startingPrice;
-    this.stepPrice = stepPrice;
-    this.type = type;
-  }
-
   @Override
   public int getId() {
     return id;

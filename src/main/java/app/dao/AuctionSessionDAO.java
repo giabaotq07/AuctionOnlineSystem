@@ -1,61 +1,69 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import app.models.AuctionSession;
-import app.models.AuctionStatus;
-import app.models.Item;
-import app.models.User;
+import app.exceptions.DatabaseException;
+import app.models.*;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AuctionSessionDAO {
-  private final ItemDAO itemDAO = new ItemDAO();
-  private final UserDAO userDAO = new UserDAO();
+  // 1. Chuỗi SQL JOIN dùng chung
+  private final String SELECT_JOIN_QUERY =
+      "SELECT s.*, "
+          + "i.name AS item_name, i.description AS item_desc, i.starting_price, i.step_price, i.type AS item_type, "
+          + "u.name AS seller_name, u.account AS seller_acc "
+          + "FROM auction_sessions s "
+          + "JOIN items i ON s.item_id = i.id "
+          + "JOIN users u ON s.seller_id = u.id";
 
-  public AuctionSession addAuctionSession(AuctionSession session) {
-    String query =
-        "INSERT INTO auction_sessions (item_id, seller_id, status, end_time) VALUES (?, ?, ?, ?)";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-      pstmt.setInt(1, session.getItem().getId());
-      pstmt.setInt(2, session.getSeller().getId());
-      pstmt.setString(3, session.getStatus().name());
-      pstmt.setTimestamp(4, Timestamp.valueOf(session.getEndTime()));
-      if (pstmt.executeUpdate() > 0) {
-        try (ResultSet rs = pstmt.getGeneratedKeys()) {
-          if (rs.next()) {
-            session.setId(rs.getInt(1));
-            return session;
-          }
-        }
-      }
-    } catch (SQLException | NullPointerException e) {
-      e.printStackTrace();
-    }
-    return null;
+  private AuctionSession mapFullAuctionSession(ResultSet rs) throws SQLException {
+    Item item =
+        new Item(
+            rs.getString("item_name"),
+            rs.getString("item_desc"),
+            rs.getDouble("starting_price"),
+            rs.getDouble("step_price"),
+            ItemType.valueOf(rs.getString("item_type")));
+    item.setId(rs.getInt("item_id"));
+    User seller =
+        new User(
+            rs.getInt("seller_id"), rs.getString("seller_name"), rs.getString("seller_acc"), null);
+    AuctionSession session =
+        new AuctionSession(
+            rs.getInt("id"), item, seller, rs.getTimestamp("end_time").toLocalDateTime());
+    session.setStatus(AuctionStatus.valueOf(rs.getString("status")));
+    return session;
   }
 
   public AuctionSession getAuctionSessionById(int sessionId) {
-    String query = "SELECT * FROM auction_sessions WHERE id = ?";
+    String query = SELECT_JOIN_QUERY + " WHERE s.id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, sessionId);
       try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          Item item = itemDAO.getItemById(rs.getInt("item_id"));
-          User seller = userDAO.getUserById(rs.getInt("seller_id"));
-          LocalDateTime endTime = rs.getTimestamp("end_time").toLocalDateTime();
-          AuctionSession session = new AuctionSession(rs.getInt("id"), item, seller, endTime);
-          session.setStatus(AuctionStatus.valueOf(rs.getString("status")));
-          return session;
+          return mapFullAuctionSession(rs);
         }
+        return null;
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Lỗi database khi lấy phiên đấu giá.", e);
     }
-    return null;
+  }
+
+  public List<AuctionSession> getAllAuctionSessions() {
+    List<AuctionSession> sessions = new ArrayList<>();
+    try (Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(SELECT_JOIN_QUERY);
+        ResultSet rs = pstmt.executeQuery()) {
+      while (rs.next()) {
+        sessions.add(mapFullAuctionSession(rs));
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi database khi lấy danh sách.", e);
+    }
+    return sessions;
   }
 
   public boolean updateAuctionSessionStatus(int sessionId, AuctionStatus status) {
@@ -66,27 +74,29 @@ public class AuctionSessionDAO {
       pstmt.setInt(2, sessionId);
       return pstmt.executeUpdate() > 0;
     } catch (SQLException e) {
-      return false;
+      throw new DatabaseException("Lỗi database khi cập nhật trạng thái.", e);
     }
   }
 
-  public List<AuctionSession> getAllAuctionSessions() {
-    List<AuctionSession> sessions = new ArrayList<>();
-    String query = "SELECT * FROM auction_sessions";
+  public AuctionSession addAuctionSession(AuctionSession session) {
+    String query =
+        "INSERT INTO auction_sessions (item_id, seller_id, status, end_time) VALUES (?, ?, ?, ?)";
     try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query);
-        ResultSet rs = pstmt.executeQuery()) {
-      while (rs.next()) {
-        Item item = itemDAO.getItemById(rs.getInt("item_id"));
-        User seller = userDAO.getUserById(rs.getInt("seller_id"));
-        LocalDateTime endTime = rs.getTimestamp("end_time").toLocalDateTime();
-        AuctionSession session = new AuctionSession(rs.getInt("id"), item, seller, endTime);
-        session.setStatus(AuctionStatus.valueOf(rs.getString("status")));
-        sessions.add(session);
+        PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+      pstmt.setInt(1, session.getItem().getId());
+      pstmt.setInt(2, session.getSeller().getId());
+      pstmt.setString(3, session.getStatus().name());
+      pstmt.setTimestamp(4, Timestamp.valueOf(session.getEndTime()));
+      pstmt.executeUpdate();
+      try (ResultSet rs = pstmt.getGeneratedKeys()) {
+        if (rs.next()) {
+          session.setId(rs.getInt(1));
+          return session;
+        }
+        throw new DatabaseException("Thêm thất bại, không lấy được ID.");
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Lỗi khi tạo phiên đấu giá mới.", e);
     }
-    return sessions;
   }
 }

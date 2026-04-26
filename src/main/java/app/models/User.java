@@ -15,6 +15,7 @@ public class User extends Entity {
     this.assets = 0;
     this.name = name;
   }
+
   public User(int id, String name, String account, String password) {
     this.id = id;
     this.account = account;
@@ -60,8 +61,6 @@ public class User extends Entity {
     this.account = account;
   }
 
-
-
   public void Deposit(double amount) {
     if (amount < 0) {
       throw new IllegalArgumentException("Không thể nạp số tiền âm");
@@ -83,10 +82,8 @@ public class User extends Entity {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
 
     User user = (User) o;
 

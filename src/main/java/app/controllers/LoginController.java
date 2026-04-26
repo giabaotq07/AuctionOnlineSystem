@@ -1,7 +1,10 @@
 package app.controllers;
 
+import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.dao.UserDAO;
+import app.exceptions.InvalidCredentialsException;
 import app.models.CommandType;
 import app.models.MessagePacket;
 import app.models.User;
@@ -23,10 +26,13 @@ public class LoginController {
   @FXML private Scene scene;
   @FXML private Label lblRegister;
   private UserService userService;
+  private UserDAO userDAO;
+  private User user;
 
   @FXML
   public void initialize() {
-    userService = new UserService();
+    userDAO = new UserDAO();
+    userService = new UserService(userDAO);
   }
 
   @FXML
@@ -36,45 +42,20 @@ public class LoginController {
 
     // 1. Kiểm tra rỗng ở phía Client trước khi đụng vào Database
     if (userInput.isEmpty() || passInput.isEmpty()) {
-      showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Vui lòng nhập đầy đủ account và Password!");
-      return;
-    }
-    // 2. Mang đi gọi hàm kiểm tra từ UserDao
-    // (Thay đổi tên hàm checkCredentials cho đúng với method ông đã viết trong UserDao nhé)
-    boolean isLoginSuccessful = userService.login(userInput, passInput);
-
-    // 3. Xử lý kết quả trả về
-    if (isLoginSuccessful) {
-      sendLoginRequest(userInput);
-      // Nhảy sang màn hình chính
-      try {
-        // gửi lệnh đăng nhập tới server
-        SwitchToUI(event);
-      } catch (IOException e) {
-        e.printStackTrace();
-        System.out.println("Không thể chuyển sang giao diện chính sau khi đăng nhập thành công.");
-      }
-    } else {
-      // Thông báo lỗi
-      showAlert(
-          Alert.AlertType.ERROR, "Lỗi đăng nhập", "Tên đăng nhập hoặc mật khẩu không chính xác!");
-    }
-  }
-
-  public void sendLoginRequest(String account) {
-    User user;
-    UserService userService = new UserService();
-    user = userService.getUserByAccount(account);
-    if (user == null) {
-      System.out.println("ko thấy user");
+      AlertUtils.showError("Cảnh báo", "Vui lòng nhập đầy đủ account và Password!");
       return;
     }
     try {
-      Client.getInstance().connect();
+      user = userService.login(userInput, passInput);
+      Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
+      SwitchToUI(event); // Nhảy sang màn hình chính
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      e.printStackTrace();
+      AlertUtils.showError("Lỗi Hệ Thống", e.getMessage());
+      System.out.println("Không thể chuyển sang giao diện chính sau khi đăng nhập thành công.");
+    } catch (InvalidCredentialsException e) {
+      AlertUtils.showError("Lỗi đăng nhập", "Tên đăng nhập hoặc mật khẩu không chính xác!");
     }
-    Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
   }
 
   @FXML

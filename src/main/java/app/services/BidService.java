@@ -15,8 +15,10 @@ public class BidService {
     this.bidDAO = bidDAO;
   }
 
-  public boolean placeBid(int sessionId, int userId, double amount) {
-    return bidDAO.placeBid(sessionId, userId, amount);
+  public void placeBid(int sessionId, int userId, double amount) {
+    // Việc kiểm tra bid cao hơn giá hiện tại và ngăn chặn lost update
+    // đã được đưa vào Transaction trong BidDAO.placeBid sử dụng Pessimistic Lock.
+    bidDAO.placeBid(sessionId, userId, amount);
   }
 
   public List<Bid> getBidsBySession(int sessionId) {
@@ -24,12 +26,6 @@ public class BidService {
   }
 
   public Bid getHighestBid(int sessionId) {
-    List<Bid> bids = bidDAO.getBidsBySession(sessionId);
-    if (bids == null || bids.isEmpty()) return null;
-    Bid highest = bids.get(0);
-    for (Bid b : bids) {
-      if (b.getAmount() > highest.getAmount()) highest = b;
-    }
-    return highest;
+    return bidDAO.getHighestBid(sessionId);
   }
 }

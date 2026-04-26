@@ -4,6 +4,7 @@ target/
 !**/src/test/**/target/
 .kotlin
 
+.venv
 ### IntelliJ IDEA ###
 .idea
 *.iws

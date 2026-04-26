@@ -1,7 +1,9 @@
 package app.controllers;
 
+import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.dao.UserDAO;
 import app.exceptions.UserAlreadyExistsException;
 import app.models.User;
 import app.services.UserService;
@@ -19,7 +21,8 @@ public class RegisterController {
 
   @FXML private PasswordField txtPassword;
 
-  private final UserService userService = new UserService();
+  private final UserDAO userDAO = new UserDAO();
+  private final UserService userService = new UserService(userDAO);
 
   @FXML
   public void handleRegister(ActionEvent event) {
@@ -33,25 +36,17 @@ public class RegisterController {
         || account.trim().isEmpty()
         || password == null
         || password.trim().isEmpty()) {
-      showAlert(
-          Alert.AlertType.WARNING,
-          "Lỗi đăng ký",
-          "Vui lòng nhập đầy đủ Name, Account và Password!");
+      AlertUtils.showError("Lỗi đăng ký", "Vui lòng nhập đầy đủ Name, Account và Password!");
       return;
     }
 
-    User newUser =  new User(name, account, password);
+    User newUser = new User(name, account, password);
     try {
       newUser = userService.register(newUser);
-      showAlert(
-          Alert.AlertType.INFORMATION,
-          "Thành công",
-          "Đăng ký thành công! ID tài khoản: " + newUser.getId());
+      AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());
     } catch (UserAlreadyExistsException e) {
-      showAlert(
-              Alert.AlertType.ERROR,
-              "Thất bại",
-              "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
+      AlertUtils.showError(
+          "Thất bại", "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
     }
   }
 

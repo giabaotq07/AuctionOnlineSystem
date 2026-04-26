@@ -1,6 +1,7 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
+import app.exceptions.DatabaseException;
 import app.models.Item;
 import app.models.ItemType;
 import java.sql.Connection;
@@ -32,7 +33,7 @@ public class ItemDAO {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Database/Service error", e);
     }
     return null;
   }
@@ -54,7 +55,7 @@ public class ItemDAO {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Database/Service error", e);
     }
     return null;
   }
@@ -72,8 +73,7 @@ public class ItemDAO {
       pstmt.setInt(6, item.getId());
       return pstmt.executeUpdate() > 0;
     } catch (SQLException e) {
-      e.printStackTrace();
-      return false;
+      throw new DatabaseException("Database/Service error", e);
     }
   }
 
@@ -105,7 +105,7 @@ public class ItemDAO {
                 rs.getDouble("step_price")));
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Database/Service error", e);
     }
     return items;
   }

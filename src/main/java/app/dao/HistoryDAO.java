@@ -1,6 +1,7 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
+import app.exceptions.DatabaseException;
 import app.models.HistoryRecord;
 import app.models.HistoryType;
 import java.sql.Connection;
@@ -22,7 +23,7 @@ public class HistoryDAO {
       pstmt.setTimestamp(4, java.sql.Timestamp.valueOf(record.getTime()));
       return pstmt.executeUpdate() > 0;
     } catch (SQLException e) {
-      return false;
+      throw new DatabaseException("Lỗi lưu lịch sử.", e);
     }
   }
 
@@ -44,6 +45,7 @@ public class HistoryDAO {
         }
       }
     } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy xuất lịch sử.", e);
     }
     return records;
   }

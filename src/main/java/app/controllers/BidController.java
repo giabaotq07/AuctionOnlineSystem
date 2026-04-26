@@ -1,8 +1,8 @@
 package app.controllers;
 
+import app.dao.UserDAO;
 import app.models.*;
 import app.services.UserService;
-
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,7 +14,8 @@ import javafx.stage.Stage;
 
 public class BidController {
 
-  UserService userService = new UserService();
+  UserDAO userDao;
+  UserService userService;
   // ===== INPUT =====
   @FXML private ListView<AuctionSession> sessionListView;
 
@@ -28,6 +29,8 @@ public class BidController {
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
+    userDao = new UserDAO();
+    userService = new UserService(userDao);
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
 

@@ -1,8 +1,8 @@
 package app.controllers;
 
+import app.dao.UserDAO;
 import app.models.*;
 import app.services.UserService;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import javafx.event.ActionEvent;
@@ -15,7 +15,8 @@ import javafx.stage.Stage;
 
 public class AuctionController {
 
-  UserService userService = new UserService();
+  UserDAO userDAO = new UserDAO();
+  UserService userService = new UserService(userDAO);
   // ===== INPUT =====
   @FXML private TextField IdField;
   @FXML private TextField nameField;

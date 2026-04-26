@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 
 public class LiveController {
   @FXML private Stage stage;
+
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
     NavigationManager.getInstance().navigateTo(View.UI);

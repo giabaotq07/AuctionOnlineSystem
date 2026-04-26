@@ -15,4 +15,9 @@ public class PasswordUtils {
       throw new RuntimeException("Lỗi thuật toán mã hóa", e);
     }
   }
+
+  public static boolean verify(String plainTextPassword, String hashedPasswordInDb) {
+    String hashedInput = hashPassword(plainTextPassword);
+    return hashedInput.equals(hashedPasswordInDb);
+  }
 }

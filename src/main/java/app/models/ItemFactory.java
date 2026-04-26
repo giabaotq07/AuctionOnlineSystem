@@ -16,21 +16,13 @@ public class ItemFactory {
     if (type == null) type = ItemType.GENERAL;
     switch (type) {
       case ELECTRONICS:
-        return id > 0
-            ? new Electronics(id, name, description, startingPrice, stepPrice)
-            : new Electronics(name, description, startingPrice, stepPrice);
+        return new Electronics(name, description, startingPrice, stepPrice);
       case ART:
-        return id > 0
-            ? new Art(id, name, description, startingPrice, stepPrice)
-            : new Art(name, description, startingPrice, stepPrice);
+        return new Art(name, description, startingPrice, stepPrice);
       case VEHICLE:
-        return id > 0
-            ? new Vehicle(id, name, description, startingPrice, stepPrice)
-            : new Vehicle(name, description, startingPrice, stepPrice);
+        return new Vehicle(name, description, startingPrice, stepPrice);
       default:
-        return id > 0
-            ? new Item(id, name, description, startingPrice, stepPrice, type)
-            : new Item(name, description, startingPrice, stepPrice, type);
+        return new Item(name, description, startingPrice, stepPrice, type);
     }
   }
 }

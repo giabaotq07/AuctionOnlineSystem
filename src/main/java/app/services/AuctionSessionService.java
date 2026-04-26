@@ -1,8 +1,11 @@
 package app.services;
 
 import app.dao.AuctionSessionDAO;
+import app.exceptions.ServiceException;
 import app.models.AuctionSession;
 import app.models.AuctionStatus;
+import app.models.Bid;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class AuctionSessionService {
@@ -12,49 +15,68 @@ public class AuctionSessionService {
     this.auctionSessionDAO = new AuctionSessionDAO();
   }
 
-  public AuctionSessionService(AuctionSessionDAO dao) {
-    this.auctionSessionDAO = dao;
+  public AuctionSessionService(AuctionSessionDAO auctionSessionDAO) {
+    this.auctionSessionDAO = auctionSessionDAO;
   }
 
   public AuctionSession createAuctionSession(AuctionSession session) {
+    // C thể thm logic kiểm tra: thời gian kết thc phải ở tương lai
+    if (session.getEndTime().isBefore(LocalDateTime.now())) {
+      throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
+    }
     return auctionSessionDAO.addAuctionSession(session);
   }
 
   public AuctionSession getAuctionSessionById(int sessionId) {
-    return auctionSessionDAO.getAuctionSessionById(sessionId);
+    AuctionSession session = auctionSessionDAO.getAuctionSessionById(sessionId);
+    if (session == null) {
+      throw new ServiceException("Khng tm thấy phin đấu gi với ID: " + sessionId);
+    }
+    return session;
   }
 
-  public boolean updateSessionStatus(int sessionId, AuctionStatus status) {
-    return auctionSessionDAO.updateAuctionSessionStatus(sessionId, status);
+  public void updateSessionStatus(int sessionId, AuctionStatus status) {
+    boolean ok = auctionSessionDAO.updateAuctionSessionStatus(sessionId, status);
+    if (!ok) {
+      throw new ServiceException("Khng thể cập nhật trạng thi cho phin ID: " + sessionId);
+    }
   }
 
   public List<AuctionSession> getAllAuctionSessions() {
+    // Tận dụng hm JOIN đ tối ưu ở DAO
     return auctionSessionDAO.getAllAuctionSessions();
   }
 
   public boolean closeSessionIfExpired(int sessionId) {
-    AuctionSession session = getAuctionSessionById(sessionId);
-    if (session != null && session.getStatus() == AuctionStatus.ACTIVE) {
-      if (java.time.LocalDateTime.now().isAfter(session.getEndTime())) {
-        return updateSessionStatus(sessionId, AuctionStatus.COMPLETED);
+    try {
+      AuctionSession session = getAuctionSessionById(sessionId);
+
+      if (session.getStatus() == AuctionStatus.ACTIVE
+          && LocalDateTime.now().isAfter(session.getEndTime())) {
+
+        updateSessionStatus(sessionId, AuctionStatus.COMPLETED);
+        return true;
       }
+    } catch (Exception e) {
+      // Log lỗi hoặc bỏ qua nếu phin khng tồn tại
+      System.err.println("Lỗi khi kiểm tra hết hạn phin " + sessionId + ": " + e.getMessage());
     }
     return false;
   }
 
   public void handleSessionCompletion(int sessionId, BidService bidService) {
     if (closeSessionIfExpired(sessionId)) {
-      app.models.Bid highestBid = bidService.getHighestBid(sessionId);
+      Bid highestBid = bidService.getHighestBid(sessionId);
+
       if (highestBid != null) {
         System.out.println(
-            "-> Phien "
-                + sessionId
-                + " da ket thuc. Winner: "
-                + highestBid.getBidder().getName()
-                + ", Gia: $"
-                + highestBid.getAmount());
+            String.format(
+                "-> Phiên %d kết thúc. Winner: %s, Giá: $%.2f",
+                sessionId, highestBid.getBidder().getName(), highestBid.getAmount()));
+
+        // Tại đây bạn có thể thêm logic trừ tiền người thắng hoặc cộng tiền người bán
       } else {
-        System.out.println("-> Phien " + sessionId + " da ket thuc. Khong co ai dat gia.");
+        System.out.println("-> Phiên " + sessionId + " kết thúc. Không có người đặt giá.");
       }
     }
   }

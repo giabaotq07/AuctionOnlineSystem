@@ -1,6 +1,7 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
+import app.exceptions.DatabaseException;
 import app.models.BidTransaction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,8 +21,7 @@ public class BidTransactionDAO {
       pstmt.setInt(3, transaction.getAmount());
       return pstmt.executeUpdate() > 0;
     } catch (SQLException e) {
-      e.printStackTrace();
-      return false;
+      throw new DatabaseException("Database/Service error", e);
     }
   }
 
@@ -39,7 +39,7 @@ public class BidTransactionDAO {
         }
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Database/Service error", e);
     }
     return list;
   }
