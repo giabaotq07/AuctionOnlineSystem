@@ -8,8 +8,8 @@ import java.util.List;
 public class HistoryService {
   private final HistoryDAO historyDAO;
 
-  public HistoryService() {
-    historyDAO = new HistoryDAO();
+  public HistoryService(HistoryDAO historyDAO) {
+    this.historyDAO = historyDAO;
   }
 
   public boolean logEvent(int sessionId, HistoryType type, String message) {

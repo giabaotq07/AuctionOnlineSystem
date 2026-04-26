@@ -1,8 +1,6 @@
 package app;
 
-import app.dao.AuctionSessionDAO;
-import app.dao.BidDAO;
-import app.dao.UserDAO;
+import app.dao.*;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.*;
@@ -18,14 +16,16 @@ public class DemoRunner {
     app.config.DatabaseConnection.initializeDatabase();
 
     UserDAO userDAO = new UserDAO();
+    ItemDAO itemDAO = new ItemDAO();
     AuctionSessionDAO sessionDAO = new AuctionSessionDAO();
     BidDAO bidDAO = new BidDAO();
+    HistoryDAO historyDAO = new HistoryDAO();
 
     UserService userService = new UserService(userDAO);
-    ItemService itemService = new ItemService();
+    ItemService itemService = new ItemService(itemDAO);
     AuctionSessionService sessionService = new AuctionSessionService(sessionDAO);
     BidService bidService = new BidService(bidDAO);
-    HistoryService historyService = new HistoryService();
+    HistoryService historyService = new HistoryService(historyDAO);
     User seller = null;
     User buyer1 = null;
     User buyer2 = null;

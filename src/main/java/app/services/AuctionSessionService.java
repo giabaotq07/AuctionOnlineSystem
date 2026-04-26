@@ -11,10 +11,6 @@ import java.util.List;
 public class AuctionSessionService {
   private final AuctionSessionDAO auctionSessionDAO;
 
-  public AuctionSessionService() {
-    this.auctionSessionDAO = new AuctionSessionDAO();
-  }
-
   public AuctionSessionService(AuctionSessionDAO auctionSessionDAO) {
     this.auctionSessionDAO = auctionSessionDAO;
   }
@@ -43,7 +39,6 @@ public class AuctionSessionService {
   }
 
   public List<AuctionSession> getAllAuctionSessions() {
-    // Tận dụng hm JOIN đ tối ưu ở DAO
     return auctionSessionDAO.getAllAuctionSessions();
   }
 
@@ -58,7 +53,6 @@ public class AuctionSessionService {
         return true;
       }
     } catch (Exception e) {
-      // Log lỗi hoặc bỏ qua nếu phin khng tồn tại
       System.err.println("Lỗi khi kiểm tra hết hạn phin " + sessionId + ": " + e.getMessage());
     }
     return false;

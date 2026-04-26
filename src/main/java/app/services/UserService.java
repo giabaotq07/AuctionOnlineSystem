@@ -14,10 +14,6 @@ public class UserService {
   private final UserDAO userDAO;
   private final Map<String, User> userCache = new ConcurrentHashMap<>();
 
-  public UserService() {
-    this.userDAO = new UserDAO();
-  }
-
   public UserService(UserDAO userDAO) {
     this.userDAO = userDAO;
   }
