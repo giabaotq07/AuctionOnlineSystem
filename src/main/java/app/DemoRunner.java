@@ -34,7 +34,7 @@ public class DemoRunner {
     try {
       User user =
           UserFactory.createUser(
-              "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.BIDDER.name());
+              "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.BIDDER);
       userService.register(user);
     } catch (UserAlreadyExistsException | UserNotFoundException e) {
       System.out.println(e.getMessage());
@@ -44,10 +44,7 @@ public class DemoRunner {
     try {
       User user =
           UserFactory.createUser(
-              "Nguoi Mua",
-              new Account("nguoimua1", "123456"),
-              new Wallet(),
-              UserRole.BIDDER.name());
+              "Nguoi Mua", new Account("nguoimua1", "123456"), new Wallet(), UserRole.BIDDER);
       userService.register(user);
     } catch (UserAlreadyExistsException | UserNotFoundException e) {
       System.out.println(e.getMessage());
@@ -57,10 +54,7 @@ public class DemoRunner {
     try {
       User user =
           UserFactory.createUser(
-              "Nguoi Mua",
-              new Account("nguoimua2", "123456"),
-              new Wallet(),
-              UserRole.BIDDER.name());
+              "Nguoi Mua", new Account("nguoimua2", "123456"), new Wallet(), UserRole.BIDDER);
       userService.register(user);
     } catch (UserAlreadyExistsException | UserNotFoundException e) {
       System.out.println(e.getMessage());

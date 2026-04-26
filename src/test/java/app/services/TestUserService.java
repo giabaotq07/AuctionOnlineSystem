@@ -23,7 +23,7 @@ public class TestUserService {
             "Test User",
             new Account("test_account", "test_password"),
             new Wallet(),
-            UserRole.BIDDER.name());
+            UserRole.BIDDER);
     tester = userDAO.addUser(tester);
   }
 

@@ -13,10 +13,7 @@ public class UserTest {
   public void setUser() {
     user =
         UserFactory.createUser(
-            "Tester",
-            new Account("test_account", "test_password"),
-            new Wallet(),
-            UserRole.BIDDER.name());
+            "Tester", new Account("test_account", "test_password"), new Wallet(), UserRole.BIDDER);
   }
 
   @Test

@@ -41,8 +41,7 @@ public class RegisterController {
     }
 
     User newUser =
-        UserFactory.createUser(
-            name, new Account(account, password), new Wallet(), UserRole.BIDDER.name());
+        UserFactory.createUser(name, new Account(account, password), new Wallet(), UserRole.BIDDER);
     try {
       newUser = userService.register(newUser);
       AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());

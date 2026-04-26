@@ -31,7 +31,7 @@ public class AuctionSessionDAO {
             rs.getString("seller_name"),
             new Account(rs.getString("seller_acc"), rs.getString("seller_password")),
             new Wallet(rs.getDouble("seller_assets")),
-            rs.getString("seller_role"));
+            UserRole.valueOf(rs.getString("seller_role")));
     seller.setId(rs.getInt("seller_id"));
     AuctionSession session =
         new AuctionSession(

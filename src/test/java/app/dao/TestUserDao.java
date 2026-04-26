@@ -21,7 +21,7 @@ public class TestUserDao {
             "Test User",
             new Account("test_account", "test_password"),
             new Wallet(),
-            UserRole.BIDDER.name());
+            UserRole.BIDDER);
     tester = userDAO.addUser(tester);
   }
 
@@ -37,17 +37,11 @@ public class TestUserDao {
   void testAddUser() {
     User user =
         UserFactory.createUser(
-            "New User",
-            new Account("new_account", "new_password"),
-            new Wallet(),
-            UserRole.BIDDER.name());
+            "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     user = userDAO.addUser(user);
     User addedUser =
         UserFactory.createUser(
-            "New User",
-            new Account("new_account", "new_password"),
-            new Wallet(),
-            UserRole.BIDDER.name());
+            "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     assertThrows(
         DatabaseException.class,
         () -> userDAO.addUser(addedUser)); // Thử thêm lại để kiểm tra trùng account
@@ -63,10 +57,7 @@ public class TestUserDao {
   void testDeleteUser() {
     User user =
         UserFactory.createUser(
-            "New User",
-            new Account("new_account", "new_password"),
-            new Wallet(),
-            UserRole.BIDDER.name());
+            "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     user = userDAO.addUser(user);
     assertTrue(userDAO.deleteUser(user.getId()));
     assertFalse(userDAO.deleteUser(user.getId())); // Thử xóa lại để kiểm tra đã xóa
@@ -76,10 +67,7 @@ public class TestUserDao {
   void testUpdateUser() {
     User user =
         UserFactory.createUser(
-            "New User",
-            new Account("new_account", "new_password"),
-            new Wallet(),
-            UserRole.BIDDER.name());
+            "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     user = userDAO.addUser(user);
     user.setName("Updated Name");
     assertTrue(userDAO.updateUserProfile(user));
