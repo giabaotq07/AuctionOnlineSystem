@@ -1,27 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.FontWeight?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.RegisterController">
-   <children>
-      <Pane layoutX="390.0" layoutY="160.0" prefHeight="400.0" prefWidth="500.0" styleClass="card" />
-      <Label layoutX="390.0" layoutY="190.0" prefWidth="500.0" styleClass="title-label" text="ĐĂNG KÝ" />
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #f4f6f8;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.RegisterController">
+    <children>
+        <VBox alignment="CENTER" layoutX="390.0" layoutY="60.0" prefWidth="500.0" spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 5);">
+            <children>
+                <HBox alignment="TOP_RIGHT" prefWidth="200.0">
+                    <Button text="X" onAction="#backToLogin" style="-fx-background-color: transparent; -fx-text-fill: #673ab7; -fx-font-size: 24px; -fx-font-weight: bold; -fx-cursor: hand;" />
+                </HBox>
 
-      <Label layoutX="430.0" layoutY="260.0" styleClass="form-label" text="Name" />
-      <TextField fx:id="txtName" layoutX="530.0" layoutY="255.0" prefHeight="35.0" prefWidth="300.0" />
+                <Label text="LOPPY AUCTION" textFill="#673ab7" style="-fx-font-size: 28px; -fx-font-weight: bold;" />
 
-      <Label layoutX="430.0" layoutY="320.0" styleClass="form-label" text="Account" />
-      <TextField fx:id="txtAccount" layoutX="530.0" layoutY="315.0" prefHeight="35.0" prefWidth="300.0" />
+                <HBox alignment="CENTER">
+                    <Label text="Bạn đã có tài khoản? " style="-fx-font-size: 18px; -fx-text-fill: #333333;" />
+                    <Label fx:id="lblLogin" text="Đăng Nhập" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333333; -fx-cursor: hand;" onMouseClicked="#backToLoginMouse" onMouseEntered="#handleMouseEntered" onMouseExited="#handleMouseExited" />
+                </HBox>
 
-      <Label layoutX="430.0" layoutY="380.0" styleClass="form-label" text="Password" />
-      <PasswordField fx:id="txtPassword" layoutX="530.0" layoutY="375.0" prefHeight="35.0" prefWidth="300.0" />
+                <VBox spacing="10.0" prefWidth="420.0">
+                    <Label text="Họ và tên" style="-fx-font-size: 16px; -fx-text-fill: #333333;" />
+                    <TextField fx:id="txtName" promptText="Nhập họ và tên" style="-fx-font-size: 14px; -fx-padding: 15; -fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 5; -fx-background-radius: 5; -fx-text-inner-color: black;" />
+                </VBox>
 
-      <Button layoutX="605.0" layoutY="460.0" mnemonicParsing="false" onAction="#handleRegister" prefHeight="40.0" prefWidth="150.0" styleClass="primary-button" text="Đăng ký" />
-      <Button layoutX="490.0" layoutY="460.0" mnemonicParsing="false" onAction="#backToLogin" prefHeight="40.0" prefWidth="100.0" styleClass="secondary-button" text="Back" />
-   </children>
+                <VBox spacing="10.0" prefWidth="420.0">
+                    <Label text="Tên đăng nhập / Email" style="-fx-font-size: 16px; -fx-text-fill: #333333;" />
+                    <TextField fx:id="txtAccount" promptText="Nhập tên đăng nhập/Email" style="-fx-font-size: 14px; -fx-padding: 15; -fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 5; -fx-background-radius: 5; -fx-text-inner-color: black;" />
+                </VBox>
+
+                <VBox spacing="10.0" prefWidth="420.0">
+                    <Label text="Mật khẩu" style="-fx-font-size: 16px; -fx-text-fill: #333333;" />
+                    <PasswordField fx:id="txtPassword" promptText="Mật khẩu" style="-fx-font-size: 14px; -fx-padding: 15; -fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 5; -fx-background-radius: 5; -fx-text-inner-color: black;" />
+                </VBox>
+
+                <Button mnemonicParsing="false" onAction="#handleRegister" prefHeight="50.0" prefWidth="420.0" text="ĐĂNG KÝ" style="-fx-background-color: #673ab7; -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;">
+                    <VBox.margin>
+                        <Insets top="10.0" />
+                    </VBox.margin>
+                </Button>
+            </children>
+        </VBox>
+    </children>
 </AnchorPane>

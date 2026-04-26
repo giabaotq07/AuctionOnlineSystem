@@ -1,47 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.FirstScene">
-    <GridPane alignment="CENTER" prefHeight="720.0" prefWidth="1280.0" AnchorPane.bottomAnchor="0.0"
-              AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0"/>
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="ALWAYS"/>
-            <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="ALWAYS"/>
-            <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="ALWAYS"/>
-        </rowConstraints>
-        <Button mnemonicParsing="false" onAction="#SwitchToLive" prefHeight="50.0" prefWidth="130.0"
-                text="Live Auction" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="2"
-                GridPane.valignment="CENTER"/>
-        <Button mnemonicParsing="false" onAction="#SwitchToMess" prefHeight="50.0" prefWidth="130.0"
-                text="Mess Chat" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1"
-                GridPane.valignment="CENTER"/>
-        <Button mnemonicParsing="false" onAction="#SwitchToMine" prefHeight="50.0" prefWidth="130.0"
-                text="My Auction" GridPane.halignment="CENTER" GridPane.rowIndex="2" GridPane.valignment="CENTER"/>
-    </GridPane>
-    <MenuBar layoutY="1.0" prefHeight="25.0" prefWidth="1280.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-             AnchorPane.topAnchor="0.0">
-        <Menu mnemonicParsing="false" text="File">
-            <MenuItem mnemonicParsing="false" text="Close"/>
-        </Menu>
-        <Menu mnemonicParsing="false" text="Edit">
-            <MenuItem mnemonicParsing="false" text="Delete"/>
-        </Menu>
-        <Menu mnemonicParsing="false" text="Help">
-            <MenuItem mnemonicParsing="false" text="About"/>
-        </Menu>
-    </MenuBar>
-</AnchorPane>
+<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #f4f6f8;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.FirstScene">
+
+    <top>
+        <VBox style="-fx-background-color: white;">
+            <!-- Header section: Logo and search -->
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0" style="-fx-border-color: #eaeaea; -fx-border-width: 0 0 1 0;">
+                <padding>
+                    <Insets left="40.0" right="40.0" />
+                </padding>
+                <Label text="LOPPY AUCTION" textFill="#673ab7" style="-fx-font-weight: bold; -fx-font-size: 24px;" />
+                <Region HBox.hgrow="ALWAYS" />
+                <TextField prefWidth="300.0" promptText="Tìm kiếm tài sản đấu giá..." style="-fx-background-radius: 20; -fx-padding: 5 15; -fx-border-radius: 20; -fx-border-color: #cccccc;" />
+                <Button style="-fx-background-color: #673ab7; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 5 15;" text="Tìm kiếm" />
+                <Region HBox.hgrow="SOMETIMES" prefWidth="20.0" />
+                <Button fx:id="btnAuth" text="Đăng nhập / Đăng ký" style="-fx-background-color: transparent; -fx-text-fill: #333333; -fx-font-weight: bold;" onAction="#handleAuth" />
+            </HBox>
+
+            <!-- Navigation Menu -->
+            <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="20.0" style="-fx-background-color: #673ab7;">
+                <padding>
+                    <Insets left="40.0" />
+                </padding>
+                <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TRANG CHỦ" />
+                <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TÀI SẢN ĐẤU GIÁ" onAction="#SwitchToLive"/>
+                <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="ĐẤU GIÁ CỦA TÔI" onAction="#SwitchToMine" />
+                <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="MESS CHAT" onAction="#SwitchToMess"/>
+                <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TẠO PHIÊN ĐẤU GIÁ" onAction="#SwitchToOrganize"/>
+                <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TIN TỨC" />
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox spacing="20.0">
+                <padding>
+                    <Insets top="20.0" right="40.0" bottom="20.0" left="40.0" />
+                </padding>
+
+                <!-- Hero / Banner Placeholder -->
+                <StackPane prefHeight="200.0" style="-fx-background-color: #eaeaea; -fx-background-radius: 10;">
+                    <Label text="BANNER QUẢNG CÁO" textFill="#999999" style="-fx-font-size: 24px;" />
+                </StackPane>
+
+                <Label text="TÀI SẢN ĐANG ĐẤU GIÁ" textFill="#673ab7" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-padding: 10 0 0 0;" />
+
+                <!-- Mock Items FlowPane -->
+                <FlowPane fx:id="activeAuctionsPane" hgap="20.0" vgap="20.0">
+                </FlowPane>
+
+                <Label text="TÀI SẢN ĐÃ ĐẤU GIÁ" textFill="#673ab7" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-padding: 20 0 0 0;" />
+
+                <FlowPane hgap="20.0" vgap="20.0">
+                    <VBox prefWidth="280.0" style="-fx-background-color: #f9f9f9; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;">
+                        <StackPane prefHeight="150.0" style="-fx-background-color: #e0e0e0; -fx-background-radius: 5;"><Label text="Ảnh tài sản 3" style="-fx-text-fill: #aaa;"/></StackPane>
+                        <Label text="Đồng hồ Rolex Datejust" wrapText="true" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;" />
+                        <Label text="Giá trúng thầu: 250.000.000 đ" style="-fx-text-fill: #673ab7; -fx-font-weight: bold;" />
+                        <Label text="Kết thúc: 01/10/2026 10:00" style="-fx-font-size: 12px; -fx-text-fill: #666;" />
+                        <Button text="Đã bán" disable="true" maxWidth="Infinity" style="-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;" />
+                    </VBox>
+                    <VBox prefWidth="280.0" style="-fx-background-color: #f9f9f9; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;">
+                        <StackPane prefHeight="150.0" style="-fx-background-color: #e0e0e0; -fx-background-radius: 5;"><Label text="Ảnh tài sản 4" style="-fx-text-fill: #aaa;"/></StackPane>
+                        <Label text="Tranh sơn dầu phong cảnh" wrapText="true" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;" />
+                        <Label text="Giá trúng thầu: 150.000.000 đ" style="-fx-text-fill: #673ab7; -fx-font-weight: bold;" />
+                        <Label text="Kết thúc: 05/10/2026 14:00" style="-fx-font-size: 12px; -fx-text-fill: #666;" />
+                        <Button text="Đã bán" disable="true" maxWidth="Infinity" style="-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;" />
+                    </VBox>
+                </FlowPane>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>
+

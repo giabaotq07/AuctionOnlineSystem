@@ -47,6 +47,7 @@ public class LoginController {
     }
     try {
       user = userService.login(userInput, passInput);
+      app.models.DataStore.currentUser = user; // Save logged in user
       Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
       SwitchToUI(event); // Nhảy sang màn hình chính
     } catch (IOException e) {

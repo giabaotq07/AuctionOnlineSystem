@@ -13,10 +13,8 @@ public class DatabaseConnection {
   private static final String DB_PORT = valueOf("AUCTION_DB_PORT", "db.port", "3306");
   private static final String DB_NAME = valueOf("AUCTION_DB_NAME", "db.name", "auction_db");
   private static final String USER = valueOf("AUCTION_DB_USER", "db.user", "root");
-  private static final String PASSWORD =
-      valueOf("AUCTION_DB_PASSWORD", "db.password", "123456"); // đổi pass
-  private static final String SERVER_URL =
-      "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/?allowMultiQueries=true&serverTimezone=UTC";
+  private static final String PASSWORD = valueOf("AUCTION_DB_PASSWORD", "db.password", "25122007"); // đổi pass
+  private static final String SERVER_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/?allowMultiQueries=true&serverTimezone=UTC";
 
   private DatabaseConnection() {}
 

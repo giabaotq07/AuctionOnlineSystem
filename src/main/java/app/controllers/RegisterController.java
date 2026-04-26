@@ -10,13 +10,15 @@ import app.services.UserService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 
 public class RegisterController {
 
+  @FXML private Label lblLogin;
   @FXML private TextField txtName;
-
   @FXML private TextField txtAccount;
 
   @FXML private PasswordField txtPassword;
@@ -54,6 +56,25 @@ public class RegisterController {
   @FXML
   public void backToLogin(ActionEvent event) {
     NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+
+  @FXML
+  public void backToLoginMouse(MouseEvent event) {
+    NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+
+  @FXML
+  public void handleMouseEntered(MouseEvent event) {
+    if (lblLogin != null) {
+      lblLogin.setUnderline(true);
+    }
+  }
+
+  @FXML
+  public void handleMouseExited(MouseEvent event) {
+    if (lblLogin != null) {
+      lblLogin.setUnderline(false);
+    }
   }
 
   private void showAlert(Alert.AlertType alertType, String title, String message) {

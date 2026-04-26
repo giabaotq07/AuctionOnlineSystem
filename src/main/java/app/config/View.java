@@ -1,6 +1,7 @@
 package app.config;
 
 public enum View {
+  CONNECT("/app/views/ConnectServerController.fxml"),
   LOGIN("/app/views/login_scene.fxml"),
   ORGANIZE("/app/views/hold_an_auction.fxml"),
   LIVE("/app/views/live_auction.fxml"),

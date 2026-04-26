@@ -1,6 +1,7 @@
 package app.config;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -28,9 +29,18 @@ public class NavigationManager {
 
   // 4. Hàm chuyển màn hình (Reusable & Tối ưu)
   public void navigateTo(View view) {
+    navigateTo(view, null);
+  }
+
+  public void navigateTo(View view, Consumer<Object> controllerCallback) {
     try {
       FXMLLoader loader = new FXMLLoader(getClass().getResource(view.getFxmlPath()));
       Parent root = loader.load();
+
+      if (controllerCallback != null) {
+        controllerCallback.accept(loader.getController());
+      }
+
       Scene scene = new Scene(root);
 
       String css = getClass().getResource("/app/views/style.css").toExternalForm();

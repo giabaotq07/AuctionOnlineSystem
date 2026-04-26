@@ -1,6 +1,10 @@
 package app.controllers;
 
+import app.config.NavigationManager;
+import app.config.View;
 import app.models.*;
+import app.network.Client;
+import app.config.AlertUtils;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -52,10 +56,10 @@ public class MyHistoryController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/FirstScene.fxml"));
-    stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
+    if (!Client.getInstance().isConnected()) {
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      return;
+    }
+    NavigationManager.getInstance().navigateTo(View.UI);
   }
 }
