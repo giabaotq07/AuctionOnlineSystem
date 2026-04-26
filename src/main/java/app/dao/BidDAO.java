@@ -2,13 +2,12 @@ package app.dao;
 
 import app.config.DatabaseConnection;
 import app.exceptions.DatabaseException;
+import app.exceptions.ServiceException;
 import app.models.*;
-
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import app.exceptions.ServiceException;
 
 public class BidDAO {
   private User mapUser(ResultSet rs) throws SQLException {
@@ -80,11 +79,11 @@ public class BidDAO {
   public List<Bid> getBidsBySession(int sessionId) {
     List<Bid> bids = new ArrayList<>();
     String query =
-            "SELECT b.bid_amount, b.time, u.id, u.name, u.account, u.password, u.assets, u.role "
-                    + "FROM bids b "
-                    + "JOIN users u ON b.user_id = u.id "
-                    + "WHERE b.session_id = ? "
-                    + "ORDER BY b.bid_amount DESC LIMIT 1";
+        "SELECT b.bid_amount, b.time, u.id, u.name, u.account, u.password, u.assets, u.role "
+            + "FROM bids b "
+            + "JOIN users u ON b.user_id = u.id "
+            + "WHERE b.session_id = ? "
+            + "ORDER BY b.bid_amount DESC LIMIT 1";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, sessionId);

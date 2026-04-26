@@ -14,7 +14,6 @@ public class Seller extends User implements AuctionObserver {
     return UserRole.SELLER;
   }
 
-
   @Override
   public void onNewBidPlaced(String itemName, double newPrice, String bidderName) {
     System.out.println(

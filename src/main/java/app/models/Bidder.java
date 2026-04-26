@@ -14,7 +14,6 @@ public class Bidder extends User implements AuctionObserver {
     return UserRole.BIDDER;
   }
 
-
   @Override
   public void onNewBidPlaced(String itemName, double newPrice, String bidderName) {
     if (this.getName().equals(bidderName)) {

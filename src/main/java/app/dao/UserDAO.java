@@ -7,7 +7,6 @@ import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

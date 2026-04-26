@@ -16,8 +16,12 @@ public class TestUserDao {
   public static void setupDatabase() {
     DatabaseConnection.initializeDatabase();
     userDAO = new UserDAO();
-    tester = UserFactory.createUser(
-            "Test User", new Account("test_account", "test_password"), new Wallet(), UserRole.BIDDER.name());
+    tester =
+        UserFactory.createUser(
+            "Test User",
+            new Account("test_account", "test_password"),
+            new Wallet(),
+            UserRole.BIDDER.name());
     tester = userDAO.addUser(tester);
   }
 

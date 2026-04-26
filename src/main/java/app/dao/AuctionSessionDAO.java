@@ -26,11 +26,12 @@ public class AuctionSessionDAO {
             rs.getDouble("step_price"),
             ItemType.valueOf(rs.getString("item_type")));
     item.setId(rs.getInt("item_id"));
-    User seller = UserFactory.createUser(
-        rs.getString("seller_name"),
-        new Account(rs.getString("seller_acc"), rs.getString("seller_password")),
-        new Wallet(rs.getDouble("seller_assets")),
-        rs.getString("seller_role"));
+    User seller =
+        UserFactory.createUser(
+            rs.getString("seller_name"),
+            new Account(rs.getString("seller_acc"), rs.getString("seller_password")),
+            new Wallet(rs.getDouble("seller_assets")),
+            rs.getString("seller_role"));
     seller.setId(rs.getInt("seller_id"));
     AuctionSession session =
         new AuctionSession(

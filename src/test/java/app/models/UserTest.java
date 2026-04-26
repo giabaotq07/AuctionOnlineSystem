@@ -11,7 +11,12 @@ public class UserTest {
 
   @BeforeEach
   public void setUser() {
-    user = UserFactory.createUser( "Tester", new Account("test_account", "test_password"), new Wallet(), UserRole.BIDDER.name());
+    user =
+        UserFactory.createUser(
+            "Tester",
+            new Account("test_account", "test_password"),
+            new Wallet(),
+            UserRole.BIDDER.name());
   }
 
   @Test

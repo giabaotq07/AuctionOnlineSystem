@@ -1,8 +1,7 @@
 package app.models;
 
 public class UserFactory {
-  public static User createUser(
-      String name, Account account, Wallet wallet, String roleStr) {
+  public static User createUser(String name, Account account, Wallet wallet, String roleStr) {
     UserRole role = UserRole.valueOf(roleStr.toUpperCase());
     return switch (role) {
       case ADMIN -> new Admin(name, account, wallet);
