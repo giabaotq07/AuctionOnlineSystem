@@ -5,7 +5,7 @@ import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
 import app.exceptions.UserAlreadyExistsException;
-import app.models.User;
+import app.models.*;
 import app.services.UserService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -40,7 +40,7 @@ public class RegisterController {
       return;
     }
 
-    User newUser = new User(name, account, password);
+    User newUser = UserFactory.createUser(name, new Account(account, password), new Wallet(), UserRole.BIDDER.name());
     try {
       newUser = userService.register(newUser);
       AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());

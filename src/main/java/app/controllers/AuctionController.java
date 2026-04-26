@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.dao.ItemDAO;
 import app.dao.UserDAO;
 import app.models.*;
 import app.services.UserService;
@@ -33,11 +34,13 @@ public class AuctionController {
   public void handleAdd() {
     try {
       Item item =
-          new app.models.Electronics(
+          ItemFactory.createItem(
               nameField.getText(),
               descriptionField.getText(),
               Double.parseDouble(priceField.getText()),
-              10.0); // Default step price
+              10.0,
+                  ItemType.ELECTRONICS
+                  );
 
       AuctionSession session =
           new AuctionSession(

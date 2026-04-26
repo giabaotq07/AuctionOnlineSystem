@@ -12,23 +12,26 @@ public class AuctionSessionDAO {
   private final String SELECT_JOIN_QUERY =
       "SELECT s.*, "
           + "i.name AS item_name, i.description AS item_desc, i.starting_price, i.step_price, i.type AS item_type, "
-          + "u.name AS seller_name, u.account AS seller_acc "
+          + "u.name AS seller_name, u.account AS seller_acc, u.password AS seller_password, u.assets AS seller_assets, u.role AS seller_role "
           + "FROM auction_sessions s "
           + "JOIN items i ON s.item_id = i.id "
           + "JOIN users u ON s.seller_id = u.id";
 
   private AuctionSession mapFullAuctionSession(ResultSet rs) throws SQLException {
     Item item =
-        new Item(
+        ItemFactory.createItem(
             rs.getString("item_name"),
             rs.getString("item_desc"),
             rs.getDouble("starting_price"),
             rs.getDouble("step_price"),
             ItemType.valueOf(rs.getString("item_type")));
     item.setId(rs.getInt("item_id"));
-    User seller =
-        new User(
-            rs.getInt("seller_id"), rs.getString("seller_name"), rs.getString("seller_acc"), null);
+    User seller = UserFactory.createUser(
+        rs.getString("seller_name"),
+        new Account(rs.getString("seller_acc"), rs.getString("seller_password")),
+        new Wallet(rs.getDouble("seller_assets")),
+        rs.getString("seller_role"));
+    seller.setId(rs.getInt("seller_id"));
     AuctionSession session =
         new AuctionSession(
             rs.getInt("id"), item, seller, rs.getTimestamp("end_time").toLocalDateTime());

@@ -3,6 +3,7 @@ package app.dao;
 import app.config.DatabaseConnection;
 import app.exceptions.DatabaseException;
 import app.models.Item;
+import app.models.ItemFactory;
 import app.models.ItemType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -45,13 +46,13 @@ public class ItemDAO {
       pstmt.setInt(1, id);
       try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          return app.models.ItemFactory.createItemWithId(
+          return ItemFactory.createItem(
               rs.getInt("id"),
-              ItemType.valueOf(rs.getString("type")),
               rs.getString("name"),
               rs.getString("description"),
               rs.getDouble("starting_price"),
-              rs.getDouble("step_price"));
+              rs.getDouble("step_price"),
+              ItemType.valueOf(rs.getString("type")));
         }
       }
     } catch (SQLException e) {
@@ -96,13 +97,13 @@ public class ItemDAO {
         ResultSet rs = pstmt.executeQuery()) {
       while (rs.next()) {
         items.add(
-            app.models.ItemFactory.createItemWithId(
+            app.models.ItemFactory.createItem(
                 rs.getInt("id"),
-                ItemType.valueOf(rs.getString("type")),
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getDouble("starting_price"),
-                rs.getDouble("step_price")));
+                rs.getDouble("step_price"),
+                ItemType.valueOf(rs.getString("type"))));
       }
     } catch (SQLException e) {
       throw new DatabaseException("Database/Service error", e);

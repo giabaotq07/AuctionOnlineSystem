@@ -1,7 +1,12 @@
 package app.models;
 
 public abstract class Entity {
-  protected int internalId;
+  protected int id;
 
-  public abstract int getId();
+  public int getId() {
+    return id;
+  }
+  public void setId(int id) {
+    this.id = id;
+  }
 }

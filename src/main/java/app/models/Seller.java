@@ -1,9 +1,19 @@
 package app.models;
 
 public class Seller extends User implements AuctionObserver {
-  public Seller(int id, String username, String account, String password) {
-    super(id, username, account, password);
+  public Seller(int id, String name, Account account, Wallet wallet) {
+    super(id, name, account, wallet);
   }
+
+  public Seller(String name, Account account, Wallet wallet) {
+    super(name, account, wallet);
+  }
+
+  @Override
+  public UserRole getRole() {
+    return UserRole.SELLER;
+  }
+
 
   @Override
   public void onNewBidPlaced(String itemName, double newPrice, String bidderName) {

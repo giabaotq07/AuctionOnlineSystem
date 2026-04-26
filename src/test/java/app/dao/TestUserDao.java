@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import app.config.DatabaseConnection;
 import app.exceptions.DatabaseException;
-import app.models.User;
+import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -16,46 +16,71 @@ public class TestUserDao {
   public static void setupDatabase() {
     DatabaseConnection.initializeDatabase();
     userDAO = new UserDAO();
-    tester = new User(12, "Test User", "test_account", "test_password");
+    tester = UserFactory.createUser(
+            "Test User", new Account("test_account", "test_password"), new Wallet(), UserRole.BIDDER.name());
+    tester = userDAO.addUser(tester);
   }
 
   @Test
   void testGetUserByAccount() {
-    User user = userDAO.loadUsers("test_account");
+    User user = userDAO.getUserByAccount("test_account");
     assertEquals(user, tester);
-    user = userDAO.loadUsers("non_existent_account");
+    user = userDAO.getUserByAccount("non_existent_account");
     assertNull(user);
   }
 
   @Test
   void testAddUser() {
-    User newUser = new User(0, "New User", "new_account", "new_password");
-    User addedUser = userDAO.addUser(newUser);
-    assertThrows(DatabaseException.class, () -> userDAO.addUser(newUser)); // Thử thêm lại để kiểm tra trùng account
-    assertNotNull(addedUser);
-    assertTrue(addedUser.getId() > 0);
-    assertEquals("new_account", addedUser.getAccount());
+    User user =
+        UserFactory.createUser(
+            "New User",
+            new Account("new_account", "new_password"),
+            new Wallet(),
+            UserRole.BIDDER.name());
+    user = userDAO.addUser(user);
+    User addedUser =
+        UserFactory.createUser(
+            "New User",
+            new Account("new_account", "new_password"),
+            new Wallet(),
+            UserRole.BIDDER.name());
+    assertThrows(
+        DatabaseException.class,
+        () -> userDAO.addUser(addedUser)); // Thử thêm lại để kiểm tra trùng account
+    assertNotNull(user);
+    assertTrue(user.getId() > 0);
+    assertEquals("new_account", user.getAccount().getUsername());
 
     // Clean up
-    userDAO.deleteUser("new_account");
+    userDAO.deleteUser(user.getId());
   }
 
   @Test
   void testDeleteUser() {
-    User newUser = new User(0, "New User", "new_account", "new_password");
-    User addedUser = userDAO.addUser(newUser);
-    assertTrue(userDAO.deleteUser("new_account"));
-    assertFalse(userDAO.deleteUser("non_existent_account"));
+    User user =
+        UserFactory.createUser(
+            "New User",
+            new Account("new_account", "new_password"),
+            new Wallet(),
+            UserRole.BIDDER.name());
+    user = userDAO.addUser(user);
+    assertTrue(userDAO.deleteUser(user.getId()));
+    assertFalse(userDAO.deleteUser(user.getId())); // Thử xóa lại để kiểm tra đã xóa
   }
 
   @Test
   void testUpdateUser() {
-    User newUser = new User(0, "New User", "new_account", "new_password");
-    User addedUser = userDAO.addUser(newUser);
-    addedUser.setName("Updated Name");
-    assertTrue(userDAO.updateUser(addedUser));
-    User updatedUser = userDAO.loadUsers("new_account");
-    assertEquals(newUser.getName(), updatedUser.getName());
-    userDAO.deleteUser("new_account");
+    User user =
+        UserFactory.createUser(
+            "New User",
+            new Account("new_account", "new_password"),
+            new Wallet(),
+            UserRole.BIDDER.name());
+    user = userDAO.addUser(user);
+    user.setName("Updated Name");
+    assertTrue(userDAO.updateUserProfile(user));
+    User updatedUser = userDAO.getUserByAccount("new_account");
+    assertEquals(user.getName(), updatedUser.getName());
+    userDAO.deleteUser(user.getId());
   }
 }

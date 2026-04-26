@@ -2,7 +2,7 @@ package app.services;
 
 import app.config.DatabaseConnection;
 import app.dao.UserDAO;
-import app.models.User;
+import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,12 +18,14 @@ public class TestUserService {
         DatabaseConnection.initializeDatabase();
         userDAO = new UserDAO();
         userService = new UserService(userDAO);
-        tester = new User(12, "Test User", "test_account", "test_password");
+        tester = UserFactory.createUser(
+                "Test User", new Account("test_account", "test_password"), new Wallet(), UserRole.BIDDER.name());
+        tester = userDAO.addUser(tester);
     }
 
     @Test
     public void testLogin() {
-        User loged = userService.login("test_account", "test_password");
-        assertEquals(tester, loged);
+        User logined = userService.login("test_account", "test_password");
+        assertEquals(tester, logined);
     }
 }

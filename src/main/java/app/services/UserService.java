@@ -23,25 +23,25 @@ public class UserService {
   }
 
   public User login(String account, String rawPassword) throws InvalidCredentialsException {
-    User user = userDAO.loadUsers(account);
-    if (user == null || !PasswordUtils.verify(rawPassword, user.getPassword())) {
+    User user = userDAO.getUserByAccount(account);
+    if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
       throw new InvalidCredentialsException("Tài khoản hoặc mật khẩu không đúng.");
     }
     return user;
   }
 
   public User register(User user) throws UserAlreadyExistsException {
-    User exists = userDAO.loadUsers(user.getAccount());
+    User exists = userDAO.getUserByAccount(user.getAccount().getUsername());
     if (exists != null) {
       throw new UserAlreadyExistsException("Tài khoản '" + user.getAccount() + "' đã tồn tại!");
     }
     user = userDAO.addUser(user);
-    userCache.put(user.getAccount(), user);
+    userCache.put(user.getAccount().getUsername(), user);
     return user;
   }
 
   public User getUserByAccount(String account) {
-    User user = userDAO.loadUsers(account);
+    User user = userDAO.getUserByAccount(account);
     if (user == null) {
       throw new UserNotFoundException("Không tìm thấy user: " + account);
     }
@@ -58,37 +58,32 @@ public class UserService {
   }
 
   public User updateProfile(User user) {
-    boolean ok = userDAO.updateUser(user);
+    boolean ok = userDAO.updateUserProfile(user);
     if (!ok) {
       throw new UserNotFoundException(
-          "Không thể cập nhật. User '" + user.getAccount() + "' không tồn tại.");
+          "Không thể cập nhật. User '" + user.getAccount().getUsername() + "' không tồn tại.");
     }
-    userCache.put(user.getAccount(), user);
+    userCache.put(user.getAccount().getUsername(), user);
     return user;
   }
 
-  public boolean updateBalance(User user) {
-    boolean ok = userDAO.updateUserBalance(user);
+  public void updateWallet(User user) {
+    boolean ok = userDAO.updateUserWallet(user);
     if (!ok) {
       throw new UserNotFoundException(
-          "Không tìm thấy user để cập nhật số dư: " + user.getAccount());
+          "Không tìm thấy user để cập nhật số dư: " + user.getAccount().getUsername());
     }
   }
 
-  public void deleteUser(String account) {
-    boolean ok = userDAO.deleteUser(account);
+  public void deleteUser(int id) {
+    boolean ok = userDAO.deleteUser(id);
     if (!ok) {
-      throw new UserNotFoundException("Không thể xóa. User '" + account + "' không tồn tại.");
+      throw new UserNotFoundException("Không thể xóa. User '" + id + "' không tồn tại.");
     }
-    userCache.remove(account);
+    userCache.remove(id);
   }
 
   public List<User> getAllUsers() {
     return userDAO.getAllUsers();
-  }
-
-  public String getUserRole(String account) {
-    String role = userDAO.getUserRole(account);
-    return (role != null) ? role : "GUEST";
   }
 }

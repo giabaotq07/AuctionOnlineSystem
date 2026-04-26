@@ -2,8 +2,8 @@ package app.dao;
 
 import app.config.DatabaseConnection;
 import app.exceptions.DatabaseException;
-import app.models.Bid;
-import app.models.User;
+import app.models.*;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,6 +11,15 @@ import java.util.List;
 import app.exceptions.ServiceException;
 
 public class BidDAO {
+  private User mapUser(ResultSet rs) throws SQLException {
+    return UserFactory.createUser(
+        rs.getInt("id"),
+        rs.getString("name"),
+        new Account(rs.getString("account"), rs.getString("password")),
+        new Wallet(),
+        rs.getString("role"));
+  }
+
   public void placeBid(int sessionId, int userId, double bidAmount) {
     try (Connection conn = DatabaseConnection.getConnection()) {
       conn.setAutoCommit(false);
@@ -71,18 +80,17 @@ public class BidDAO {
   public List<Bid> getBidsBySession(int sessionId) {
     List<Bid> bids = new ArrayList<>();
     String query =
-        "SELECT b.bid_amount, b.time, u.id, u.name, u.account "
-            + "FROM bids b "
-            + "JOIN users u ON b.user_id = u.id "
-            + "WHERE b.session_id = ? "
-            + "ORDER BY b.time ASC";
+            "SELECT b.bid_amount, b.time, u.id, u.name, u.account, u.password, u.assets, u.role "
+                    + "FROM bids b "
+                    + "JOIN users u ON b.user_id = u.id "
+                    + "WHERE b.session_id = ? "
+                    + "ORDER BY b.bid_amount DESC LIMIT 1";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, sessionId);
       try (ResultSet rs = pstmt.executeQuery()) {
         while (rs.next()) {
-          User bidder =
-              new User(rs.getInt("id"), rs.getString("name"), rs.getString("account"), null);
+          User bidder = mapUser(rs);
           double amount = rs.getDouble("bid_amount");
           LocalDateTime time = rs.getTimestamp("time").toLocalDateTime();
           bids.add(new Bid(bidder, amount, time));
@@ -96,7 +104,7 @@ public class BidDAO {
 
   public Bid getHighestBid(int sessionId) {
     String query =
-        "SELECT b.bid_amount, b.time, u.id, u.name, u.account "
+        "SELECT b.bid_amount, b.time, u.id, u.name, u.account, u.password, u.assets, u.role "
             + "FROM bids b "
             + "JOIN users u ON b.user_id = u.id "
             + "WHERE b.session_id = ? "
@@ -106,8 +114,7 @@ public class BidDAO {
       pstmt.setInt(1, sessionId);
       try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
-          User bidder =
-              new User(rs.getInt("id"), rs.getString("name"), rs.getString("account"), null);
+          User bidder = mapUser(rs);
           return new Bid(
               bidder, rs.getDouble("bid_amount"), rs.getTimestamp("time").toLocalDateTime());
         }

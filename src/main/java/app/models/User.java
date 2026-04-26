@@ -2,83 +2,41 @@ package app.models;
 
 import java.util.Objects;
 
-public class User extends Entity {
-  private int id;
-  private String name;
-  private String account;
-  private double assets;
-  private String password;
+public abstract class User extends Entity {
+  protected String name;
+  protected final Account account;
+  protected final Wallet wallet;
 
-  public User(String name, String account, String password) {
-    this.account = account;
-    this.password = password;
-    this.assets = 0;
-    this.name = name;
-  }
-
-  public User(int id, String name, String account, String password) {
+  public User(int id, String name, Account account, Wallet wallet) {
     this.id = id;
+    this.name = name;
     this.account = account;
-    this.password = password;
-    this.assets = 0;
+    this.wallet = wallet;
+  }
+
+  public User(String name, Account account, Wallet wallet) {
     this.name = name;
-  }
-
-  @Override
-  public int getId() {
-    return id;
-  }
-
-  public void setId(int id) {
-    this.id = id;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  public String getAccount() {
-    return account;
-  }
-
-  public double getAssets() {
-    return assets;
-  }
-
-  public void setName(String name) {
-    this.name = name;
+    this.account = account;
+    this.wallet = wallet;
   }
 
   public String getName() {
     return name;
   }
 
-  public void setAccount(String account) {
-    this.account = account;
+  public void setName(String name) {
+    this.name = name;
   }
 
-  public void Deposit(double amount) {
-    if (amount < 0) {
-      throw new IllegalArgumentException("Không thể nạp số tiền âm");
-    }
-    assets += amount;
+  public Account getAccount() {
+    return account;
   }
 
-  public void Withdraw(double amount) {
-    if (amount < 0) {
-      throw new IllegalArgumentException("Số tiền rút không thể âm");
-    }
-    if (assets >= amount) {
-      assets -= amount;
-    } else {
-      System.out.println("Không đủ tiền để rút");
-      throw new IllegalArgumentException("Không đủ tiền để rút");
-    }
+  public Wallet getWallet() {
+    return wallet;
   }
+
+  public abstract UserRole getRole();
 
   @Override
   public boolean equals(Object o) {
@@ -87,11 +45,11 @@ public class User extends Entity {
 
     User user = (User) o;
 
-    return Objects.equals(account, user.account);
+    return Objects.equals(id, user.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(account);
+    return Objects.hash(id);
   }
 }
