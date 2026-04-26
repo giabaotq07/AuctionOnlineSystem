@@ -98,7 +98,8 @@ public class UserDAO implements GenericDAO<User, Integer> {
   public boolean update(User user) {
     // Basic update updating all fields
     String sql = "UPDATE users SET name = ?, assets = ?, role = ? WHERE id = ?";
-    return executeUpdate(sql, user.getName(), user.getWallet().getAssets(), user.getRole().name(), user.getId());
+    return executeUpdate(
+        sql, user.getName(), user.getWallet().getAssets(), user.getRole().name(), user.getId());
   }
 
   private boolean executeUpdate(String sql, Object... params) {

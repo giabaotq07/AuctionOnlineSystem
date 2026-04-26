@@ -27,7 +27,7 @@ public class ItemDAO implements GenericDAO<Item, Integer> {
   public Item getById(Integer id) {
     String query = "SELECT * FROM items WHERE id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(query)) {
+        PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, id);
       try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
@@ -44,8 +44,8 @@ public class ItemDAO implements GenericDAO<Item, Integer> {
     List<Item> items = new ArrayList<>();
     String query = "SELECT * FROM items";
     try (Connection conn = DatabaseConnection.getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(query);
-         ResultSet rs = pstmt.executeQuery()) {
+        PreparedStatement pstmt = conn.prepareStatement(query);
+        ResultSet rs = pstmt.executeQuery()) {
       while (rs.next()) {
         items.add(mapItem(rs));
       }

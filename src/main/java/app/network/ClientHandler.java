@@ -5,21 +5,22 @@ import app.models.MessagePacket;
 import com.google.gson.Gson;
 import java.io.*;
 import java.net.Socket;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class ClientHandler implements Runnable {
   private final Socket socket;
-    private PrintWriter writer;
+  private PrintWriter writer;
   private String username;
   private final Gson gson = new Gson();
 
+  // Lưu lệnh thành 1 map, lúc dùng sẽ gọi theo type
   private static final Map<CommandType, Command> COMMANDS = new HashMap<>();
 
   static {
-      COMMANDS.put(CommandType.LOGIN, new LoginCommand());
-      COMMANDS.put(CommandType.CHAT, new ChatCommand());
-      COMMANDS.put(CommandType.PLACE_BID, new PlaceBidCommand());
+    COMMANDS.put(CommandType.LOGIN, new LoginCommand());
+    COMMANDS.put(CommandType.CHAT, new ChatCommand());
+    COMMANDS.put(CommandType.PLACE_BID, new PlaceBidCommand());
   }
 
   public ClientHandler(Socket socket) {
@@ -29,7 +30,7 @@ public class ClientHandler implements Runnable {
   @Override
   public void run() {
     try {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       writer = new PrintWriter(socket.getOutputStream(), true);
       String line;
       while ((line = reader.readLine()) != null) {
@@ -43,12 +44,12 @@ public class ClientHandler implements Runnable {
 
   /** hàm này để đây minh hoạ, chưa có các lớp DAO để gọi */
   private void handlePacket(MessagePacket<?> packet) {
-      Command command = COMMANDS.get(packet.getType());
-      if (command != null) {
-          command.execute(this, packet);
-      } else {
-          System.out.println("[SERVER] Unrecognized command type: " + packet.getType());
-      }
+    Command command = COMMANDS.get(packet.getType()); // lấy command theo type và thực thi
+    if (command != null) {
+      command.execute(this, packet); // cái này đc kế thừa và cài đặt ở lớp con
+    } else {
+      System.out.println("[SERVER] Unrecognized command type: " + packet.getType());
+    }
   }
 
   public void sendMessage(MessagePacket<?> packet) {
@@ -56,11 +57,11 @@ public class ClientHandler implements Runnable {
   }
 
   public String getUsername() {
-      return username;
+    return username;
   }
 
   public void setUsername(String username) {
-      this.username = username;
+    this.username = username;
   }
 
   private void close() {
