@@ -1,7 +1,11 @@
 package app.controllers;
 
+import app.config.AlertUtils;
+import app.config.NavigationManager;
+import app.config.View;
 import app.models.AuctionSession;
 import app.models.DataStore;
+import app.network.Client;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,10 +19,6 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import app.config.NavigationManager;
-import app.config.View;
-import app.config.AlertUtils;
-import app.network.Client;
 
 public class FirstScene {
 
@@ -110,22 +110,27 @@ public class FirstScene {
     }
   }
 
-  private void openLiveWithSession(app.models.AuctionSession session, javafx.event.Event event) throws IOException {
+  private void openLiveWithSession(app.models.AuctionSession session, javafx.event.Event event)
+      throws IOException {
     if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
       return;
     }
-    NavigationManager.getInstance().navigateTo(View.LIVE, controller -> {
-      if (controller instanceof LiveController) {
-        ((LiveController) controller).setSession(session);
-      }
-    });
+    NavigationManager.getInstance()
+        .navigateTo(
+            View.LIVE,
+            controller -> {
+              if (controller instanceof LiveController) {
+                ((LiveController) controller).setSession(session);
+              }
+            });
   }
 
   private VBox createAuctionCard(AuctionSession session) {
     VBox vbox = new VBox();
     vbox.setPrefWidth(280.0);
-    vbox.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;");
+    vbox.setStyle(
+        "-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;");
 
     StackPane imagePane = new StackPane();
     imagePane.setPrefHeight(150.0);
@@ -138,7 +143,8 @@ public class FirstScene {
     titleLabel.setWrapText(true);
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
-    Label priceLabel = new Label(String.format("Giá khởi điểm: %,.0f đ", session.getItem().getStartingPrice()));
+    Label priceLabel =
+        new Label(String.format("Giá khởi điểm: %,.0f đ", session.getItem().getStartingPrice()));
     priceLabel.setStyle("-fx-text-fill: #673ab7; -fx-font-weight: bold;");
 
     Label timeLabel = new Label("Kết thúc: " + session.getEndTime().toString());
@@ -146,14 +152,16 @@ public class FirstScene {
 
     Button btnDetail = new Button("Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
-    btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white; -fx-background-radius: 4;");
-    btnDetail.setOnAction(e -> {
-      try {
-        openLiveWithSession(session, e);
-      } catch (IOException ex) {
-        ex.printStackTrace();
-      }
-    });
+    btnDetail.setStyle(
+        "-fx-background-color: #673ab7; -fx-text-fill: white; -fx-background-radius: 4;");
+    btnDetail.setOnAction(
+        e -> {
+          try {
+            openLiveWithSession(session, e);
+          } catch (IOException ex) {
+            ex.printStackTrace();
+          }
+        });
 
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;

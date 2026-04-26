@@ -1,15 +1,13 @@
 package app.controllers;
 
+import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
 import app.models.*;
 import app.network.Client;
-import app.config.AlertUtils;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;

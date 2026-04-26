@@ -1,11 +1,10 @@
 package app.controllers;
 
-import app.models.*;
-import app.network.Client;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
-import java.io.IOException;
+import app.models.*;
+import app.network.Client;
 import java.time.LocalDateTime;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -54,20 +53,19 @@ public class AuctionController {
       }
 
       int nextId = DataStore.sessions.size() + 1;
-      Item item = ItemFactory.createItem(
-              nextId, name, desc, startPrice, stepPrice, type);
+      Item item = ItemFactory.createItem(nextId, name, desc, startPrice, stepPrice, type);
 
-      AuctionSession session = new AuctionSession(
-              nextId,
-              item,
-              DataStore.currentUser,
-              LocalDateTime.now().plusMinutes(durationMins));
+      AuctionSession session =
+          new AuctionSession(
+              nextId, item, DataStore.currentUser, LocalDateTime.now().plusMinutes(durationMins));
 
       DataStore.sessions.add(session);
 
       HistoryStore.history.add(
           new HistoryRecord(
-              session.getId(), HistoryType.ADD_ITEM, item.getName() + " Giá: " + item.getStartingPrice()));
+              session.getId(),
+              HistoryType.ADD_ITEM,
+              item.getName() + " Giá: " + item.getStartingPrice()));
 
       AlertUtils.showInfo("Thành công", "Phiên đấu giá đã được thêm thành công!");
       handleBack(event); // Redirect to FirstScene
