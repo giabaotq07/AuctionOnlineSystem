@@ -5,13 +5,23 @@ import app.models.MessagePacket;
 import com.google.gson.Gson;
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClientHandler implements Runnable {
   private final Socket socket;
-  private BufferedReader reader;
   private PrintWriter writer;
   private String username;
   private final Gson gson = new Gson();
+
+  // Lưu lệnh thành 1 map, lúc dùng sẽ gọi theo type
+  private static final Map<CommandType, Command> COMMANDS = new HashMap<>();
+
+  static {
+    COMMANDS.put(CommandType.LOGIN, new LoginCommand());
+    COMMANDS.put(CommandType.CHAT, new ChatCommand());
+    COMMANDS.put(CommandType.PLACE_BID, new PlaceBidCommand());
+  }
 
   public ClientHandler(Socket socket) {
     this.socket = socket;
@@ -20,7 +30,7 @@ public class ClientHandler implements Runnable {
   @Override
   public void run() {
     try {
-      reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       writer = new PrintWriter(socket.getOutputStream(), true);
       String line;
       while ((line = reader.readLine()) != null) {
@@ -34,33 +44,24 @@ public class ClientHandler implements Runnable {
 
   /** hàm này để đây minh hoạ, chưa có các lớp DAO để gọi */
   private void handlePacket(MessagePacket<?> packet) {
-    switch (packet.getType()) {
-      case LOGIN:
-        this.username = String.valueOf(packet.getData());
-        Server.registerClient(this.username, this);
-        System.out.println("[SERVER] " + this.username + " đã đăng nhập.");
-        MessagePacket<String> welcome = new MessagePacket<>(CommandType.SUCCESS, "Chào mừng!");
-        welcome.setMessage("Hệ thống");
-        sendMessage(welcome);
-        break;
-
-      case CHAT:
-        String content = (String) packet.getData();
-        MessagePacket<String> chatPacket = new MessagePacket<>(CommandType.CHAT, content);
-        chatPacket.setMessage(this.username);
-        Server.broadcast(chatPacket);
-        break;
-
-      case PLACE_BID:
-        // đoạn này để chờ code database
-        break;
-      default:
-        break;
+    Command command = COMMANDS.get(packet.getType()); // lấy command theo type và thực thi
+    if (command != null) {
+      command.execute(this, packet); // cái này đc kế thừa và cài đặt ở lớp con
+    } else {
+      System.out.println("[SERVER] Unrecognized command type: " + packet.getType());
     }
   }
 
   public void sendMessage(MessagePacket<?> packet) {
     if (writer != null) writer.println(gson.toJson(packet));
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
   }
 
   private void close() {
@@ -69,7 +70,7 @@ public class ClientHandler implements Runnable {
     }
     try {
       socket.close();
-    } catch (IOException e) {
+    } catch (IOException _) {
     }
   }
 }

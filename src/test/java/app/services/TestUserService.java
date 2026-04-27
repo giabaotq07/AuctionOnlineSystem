@@ -24,7 +24,7 @@ public class TestUserService {
             new Account("test_account", "test_password"),
             new Wallet(),
             UserRole.BIDDER);
-    tester = userDAO.addUser(tester);
+    tester = userDAO.add(tester);
   }
 
   @Test

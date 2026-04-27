@@ -1,8 +1,6 @@
 package app;
 
-import app.dao.AuctionSessionDAO;
-import app.dao.BidDAO;
-import app.dao.UserDAO;
+import app.dao.*;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.*;
@@ -18,14 +16,16 @@ public class DemoRunner {
     app.config.DatabaseConnection.initializeDatabase();
 
     UserDAO userDAO = new UserDAO();
+    ItemDAO itemDAO = new ItemDAO();
     AuctionSessionDAO sessionDAO = new AuctionSessionDAO();
     BidDAO bidDAO = new BidDAO();
+    HistoryDAO historyDAO = new HistoryDAO();
 
     UserService userService = new UserService(userDAO);
-    ItemService itemService = new ItemService();
+    ItemService itemService = new ItemService(itemDAO);
     AuctionSessionService sessionService = new AuctionSessionService(sessionDAO);
     BidService bidService = new BidService(bidDAO);
-    HistoryService historyService = new HistoryService();
+    HistoryService historyService = new HistoryService(historyDAO);
     User seller = null;
     User buyer1 = null;
     User buyer2 = null;
@@ -71,7 +71,7 @@ public class DemoRunner {
     Item phone =
         ItemFactory.createItem(
             "IPhone 16 Pro Max", "Dien thoai moi", 1000, 50, ItemType.ELECTRONICS);
-    phone = itemService.addItem(phone);
+    phone = itemService.add(phone);
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
