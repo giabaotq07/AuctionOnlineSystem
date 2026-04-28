@@ -7,31 +7,27 @@ import java.util.List;
 public class ItemService {
   private final ItemDAO itemDAO;
 
-  public ItemService() {
-    this.itemDAO = new ItemDAO();
-  }
-
   public ItemService(ItemDAO itemDAO) {
     this.itemDAO = itemDAO;
   }
 
-  public Item addItem(Item item) {
-    return itemDAO.addItem(item);
+  public Item add(Item item) {
+    return itemDAO.add(item);
   }
 
-  public Item getItemById(int id) {
-    return itemDAO.getItemById(id);
+  public Item getById(int id) {
+    return itemDAO.getById(id);
   }
 
-  public boolean updateItem(Item item) {
-    return itemDAO.updateItem(item);
+  public boolean update(Item item) {
+    return itemDAO.update(item);
   }
 
-  public boolean deleteItem(int id) {
-    return itemDAO.deleteItem(id);
+  public boolean delete(int id) {
+    return itemDAO.delete(id);
   }
 
-  public List<Item> getAllItems() {
-    return itemDAO.getAllItems();
+  public List<Item> getAll() {
+    return itemDAO.getAll();
   }
 }

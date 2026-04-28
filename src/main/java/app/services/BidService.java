@@ -7,10 +7,6 @@ import java.util.List;
 public class BidService {
   private final BidDAO bidDAO;
 
-  public BidService() {
-    this.bidDAO = new BidDAO();
-  }
-
   public BidService(BidDAO bidDAO) {
     this.bidDAO = bidDAO;
   }

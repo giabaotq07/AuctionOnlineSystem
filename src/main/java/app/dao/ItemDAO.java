@@ -13,8 +13,49 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemDAO {
-  public Item addItem(Item item) {
+public class ItemDAO implements GenericDAO<Item, Integer> {
+  private Item mapItem(ResultSet rs) throws SQLException {
+    return ItemFactory.createItem(
+        rs.getInt("id"),
+        rs.getString("name"),
+        rs.getString("description"),
+        rs.getDouble("starting_price"),
+        rs.getDouble("step_price"),
+        ItemType.valueOf(rs.getString("type")));
+  }
+
+  public Item getById(Integer id) {
+    String query = "SELECT * FROM items WHERE id = ?";
+    try (Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(query)) {
+      pstmt.setInt(1, id);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          return mapItem(rs);
+        }
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Database/Service error", e);
+    }
+    return null;
+  }
+
+  public List<Item> getAll() {
+    List<Item> items = new ArrayList<>();
+    String query = "SELECT * FROM items";
+    try (Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(query);
+        ResultSet rs = pstmt.executeQuery()) {
+      while (rs.next()) {
+        items.add(mapItem(rs));
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Database/Service error", e);
+    }
+    return items;
+  }
+
+  public Item add(Item item) {
     String query =
         "INSERT INTO items (name, description, starting_price, step_price, type) VALUES (?, ?, ?, ?, ?)";
     try (Connection conn = DatabaseConnection.getConnection();
@@ -39,29 +80,7 @@ public class ItemDAO {
     return null;
   }
 
-  public Item getItemById(int id) {
-    String query = "SELECT * FROM items WHERE id = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query)) {
-      pstmt.setInt(1, id);
-      try (ResultSet rs = pstmt.executeQuery()) {
-        if (rs.next()) {
-          return ItemFactory.createItem(
-              rs.getInt("id"),
-              rs.getString("name"),
-              rs.getString("description"),
-              rs.getDouble("starting_price"),
-              rs.getDouble("step_price"),
-              ItemType.valueOf(rs.getString("type")));
-        }
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Database/Service error", e);
-    }
-    return null;
-  }
-
-  public boolean updateItem(Item item) {
+  public boolean update(Item item) {
     String query =
         "UPDATE items SET name = ?, description = ?, starting_price = ?, step_price = ?, type = ? WHERE id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
@@ -78,7 +97,7 @@ public class ItemDAO {
     }
   }
 
-  public boolean deleteItem(int id) {
+  public boolean delete(Integer id) {
     String query = "DELETE FROM items WHERE id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -87,27 +106,5 @@ public class ItemDAO {
     } catch (SQLException e) {
       return false;
     }
-  }
-
-  public List<Item> getAllItems() {
-    List<Item> items = new ArrayList<>();
-    String query = "SELECT * FROM items";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query);
-        ResultSet rs = pstmt.executeQuery()) {
-      while (rs.next()) {
-        items.add(
-            app.models.ItemFactory.createItem(
-                rs.getInt("id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getDouble("starting_price"),
-                rs.getDouble("step_price"),
-                ItemType.valueOf(rs.getString("type"))));
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Database/Service error", e);
-    }
-    return items;
   }
 }
