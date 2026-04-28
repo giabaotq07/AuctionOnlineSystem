@@ -7,15 +7,16 @@ import app.models.AuctionSession;
 import app.models.DataStore;
 import app.network.Client;
 import java.io.IOException;
+import java.util.List;
+
+import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -29,7 +30,8 @@ public class FirstScene {
   @FXML private ListView<AuctionSession> sessionListView;
   @FXML private TextArea detailArea;
   @FXML private Button btnAuth;
-  @FXML private FlowPane activeAuctionsPane;
+  @FXML private StackPane activeAuctionsPane;
+  private javafx.animation.Timeline autoScroll;
 
   @FXML
   public void initialize() {
@@ -41,14 +43,43 @@ public class FirstScene {
       }
     }
 
+    HBox cardContainer = createContainer(DataStore.sessions);
+    ScrollPane viewport = new ScrollPane();
+    viewport.setContent(cardContainer);
+    //An thanh cuon
+    viewport.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    viewport.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    viewport.setStyle("-fx-background-color: transparent; -fx-background-insets: 0;");
+    viewport.setPrefWidth(900);
+    viewport.setPrefHeight(350);
+
     if (activeAuctionsPane != null) {
       activeAuctionsPane.getChildren().clear();
-      for (AuctionSession session : DataStore.sessions) {
-        if (session.getStatus() == app.models.AuctionStatus.ACTIVE) {
-          VBox card = createAuctionCard(session);
-          activeAuctionsPane.getChildren().add(0, card); // Add to the left
-        }
-      }
+      activeAuctionsPane.getChildren().add(viewport);
+      autoScroll = new javafx.animation.Timeline(
+              new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3),e -> {
+                double currentH = viewport.getHvalue();
+                int totalSessions = DataStore.sessions.size();
+                int steps = totalSessions - 4;
+                if (steps <=0) return ;
+                double stepSize = 1.0/steps;
+                if (currentH >= 1.0){
+                  viewport.setHvalue(0);
+                }
+                else{
+                  viewport.setHvalue(currentH + stepSize);
+                }
+              })
+      );
+      autoScroll.setCycleCount(Timeline.INDEFINITE);
+      autoScroll.play();
+      viewport.setOnMouseEntered(event -> {
+        if (autoScroll != null) autoScroll.pause();
+      });
+
+      viewport.setOnMouseExited(event -> {
+        if (autoScroll != null) autoScroll.play();
+      });
     }
 
     // load ban đầu
@@ -166,6 +197,19 @@ public class FirstScene {
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
+  private HBox createContainer(List<AuctionSession> sessions){
+    HBox container = new HBox();
+    // Căn space
+    container.setSpacing(20);
+    // Căn lề
+    container.setAlignment(Pos.CENTER_LEFT);
+    for (AuctionSession session : sessions){
+      VBox card = createAuctionCard(session);
+      container.getChildren().add(card);
+    }
+    return container;
+  }
+
 
   @FXML
   public void SwitchToLive(ActionEvent event) throws IOException {
@@ -206,5 +250,16 @@ public class FirstScene {
   @FXML
   public void handleAuth(ActionEvent event) {
     NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+  private void pauseScroll() {
+    if (autoScroll != null) {
+      autoScroll.pause();
+    }
+  }
+
+  private void resumeScroll() {
+    if (autoScroll != null) {
+      autoScroll.play();
+    }
   }
 }

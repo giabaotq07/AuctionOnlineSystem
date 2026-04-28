@@ -1,92 +1,143 @@
+/* --- TỔNG THỂ --- */
 .root {
-    -fx-background-color: #1e1e2e;
+    -fx-background-color: #f0f2f5;
 }
 
-.label {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-text-fill: #cdd6f4;
-}
-
-.title-label {
-    -fx-font-size: 32px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #f38ba8;
-    -fx-alignment: center;
-}
-
-/* Common cards / panels */
+/* --- CARD VÀ NHÃN --- */
 .card {
-    -fx-background-color: #313244;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 4);
+    -fx-background-color: #ffffff;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);
     -fx-background-radius: 12;
 }
 
-/* Text Fields */
-.text-field, .password-field {
+.label, .form-label {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-text-fill: #374151;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-opacity: 1.0 !important; /* Khử mờ cho nhãn */
+}
+
+.title-label {
+    -fx-font-size: 34px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #4834d4;
+}
+
+/* --- ĐỒNG BỘ CÁC Ô NHẬP LIỆU (TextField, PasswordField, TextArea) --- */
+.text-field, .password-field, .text-area {
     -fx-background-radius: 6;
     -fx-padding: 8 12;
     -fx-font-size: 16px;
-    -fx-border-color: #45475a;
+    -fx-font-weight: bold;
+    -fx-border-color: #d1d5db;
     -fx-border-radius: 6;
-    -fx-background-color: #181825;
-    -fx-text-fill: #cdd6f4;
-    -fx-prompt-text-fill: #6c7086;
-}
-.text-field:focused, .password-field:focused {
-    -fx-border-color: #cba6f7;
+    -fx-background-color: #fafafa;
+    -fx-text-fill: #1f2937 !important; /* Chữ đen đậm */
+    -fx-prompt-text-fill: #9ca3af;
+    -fx-opacity: 1.0 !important;      /* KHỬ MỜ TOÀN BỘ */
 }
 
-/* Buttons */
+/* Fix riêng cho TextArea (Mô tả) */
+.text-area .content {
+    -fx-background-color: #fafafa;
+    -fx-text-fill: #1f2937 !important;
+}
+
+/* Ép màu cho node văn bản ẩn bên trong để chữ nét căng */
+.text-field .text, .text-area .text {
+    -fx-fill: #1f2937 !important;
+    -fx-font-weight: bold;
+}
+
+/* --- FIX TRIỆT ĐỂ COMBOBOX (Chọn loại) --- */
+.combo-box {
+    -fx-background-color: #fafafa;
+    -fx-border-color: #d1d5db;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-opacity: 1.0 !important;
+}
+
+/* Chữ hiển thị sau khi đã chọn - KHÔNG MỜ */
+.combo-box > .label {
+    -fx-text-fill: #1f2937 !important;
+    -fx-font-weight: bold;
+    -fx-opacity: 1.0 !important;
+}
+
+/* Mũi tên */
+.combo-box .arrow {
+    -fx-background-color: #6c5ce7;
+}
+
+/* Bảng danh sách xổ xuống (Sửa lỗi bị đen nền) */
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 6;
+    -fx-border-color: #d1d5db;
+    -fx-border-width: 1;
+}
+
+/* Từng dòng trong danh sách chọn */
+.combo-box-popup .list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #1f2937 !important;
+    -fx-font-weight: bold;
+    -fx-opacity: 1.0 !important;
+    -fx-padding: 8 12;
+}
+
+/* Khi di chuột qua hoặc chọn mục trong list */
+.combo-box-popup .list-cell:hover,
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: #cba6f7;
+    -fx-text-fill: white !important;
+}
+
+/* --- HIỆU ỨNG FOCUS --- */
+.text-field:focused, .password-field:focused, .text-area:focused, .combo-box:focused {
+    -fx-border-color: #6c5ce7;
+    -fx-background-color: #ffffff;
+}
+
+.text-area:focused .content {
+    -fx-background-color: #ffffff;
+}
+
+/* --- NÚT BẤM --- */
 .button {
     -fx-background-color: #cba6f7;
-    -fx-text-fill: #11111b;
+    -fx-text-fill: #ffffff;
     -fx-font-weight: bold;
     -fx-font-size: 16px;
     -fx-background-radius: 6;
     -fx-padding: 10 20;
     -fx-cursor: hand;
+    -fx-opacity: 1.0 !important;
 }
 
 .primary-button {
-    -fx-background-color: #f38ba8;
-    -fx-text-fill: #1e1e2e;
-}
-.primary-button:hover {
-    -fx-background-color: #eba0ac;
+    -fx-background-color: #6c5ce7;
+    -fx-text-fill: #ffffff;
 }
 
-.secondary-button {
-    -fx-background-color: #45475a;
-    -fx-text-fill: #cdd6f4;
-}
-.secondary-button:hover {
-    -fx-background-color: #585b70;
+.button:hover {
+    -fx-background-color: #a29bfe;
 }
 
-.form-label {
-    -fx-font-size: 16px;
-    -fx-text-fill: #bac2de;
-    -fx-font-weight: bold;
+.button:pressed {
+    -fx-background-color: #4834d4;
+}
+
+.button:disabled {
+    -fx-background-color: #d1d5db;
+    -fx-text-fill: #9ca3af;
 }
 
 .link-label {
     -fx-font-size: 14px;
-    -fx-text-fill: #89b4fa;
+    -fx-text-fill: #6c5ce7;
     -fx-cursor: hand;
-}
-.link-label:hover {
-    -fx-text-fill: #b4befe;
-}
-
-.button:hover {
-    -fx-background-color: #b4befe;
-}
-
-.button:pressed {
-    -fx-background-color: #89b4fa;
-}
-
-.button:disabled {
-    -fx-background-color: #45475a;
-    -fx-text-fill: #a6adc8;
+    -fx-font-weight: bold;
 }

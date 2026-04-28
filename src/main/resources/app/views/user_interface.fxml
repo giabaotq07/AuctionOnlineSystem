@@ -9,7 +9,6 @@
 
     <top>
         <VBox style="-fx-background-color: white;">
-            <!-- Header section: Logo and search -->
             <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0" style="-fx-border-color: #eaeaea; -fx-border-width: 0 0 1 0;">
                 <padding>
                     <Insets left="40.0" right="40.0" />
@@ -22,7 +21,6 @@
                 <Button fx:id="btnAuth" text="Đăng nhập / Đăng ký" style="-fx-background-color: transparent; -fx-text-fill: #333333; -fx-font-weight: bold;" onAction="#handleAuth" />
             </HBox>
 
-            <!-- Navigation Menu -->
             <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="20.0" style="-fx-background-color: #673ab7;">
                 <padding>
                     <Insets left="40.0" />
@@ -44,16 +42,13 @@
                     <Insets top="20.0" right="40.0" bottom="20.0" left="40.0" />
                 </padding>
 
-                <!-- Hero / Banner Placeholder -->
                 <StackPane prefHeight="200.0" style="-fx-background-color: #eaeaea; -fx-background-radius: 10;">
                     <Label text="BANNER QUẢNG CÁO" textFill="#999999" style="-fx-font-size: 24px;" />
                 </StackPane>
 
                 <Label text="TÀI SẢN ĐANG ĐẤU GIÁ" textFill="#673ab7" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-padding: 10 0 0 0;" />
 
-                <!-- Mock Items FlowPane -->
-                <FlowPane fx:id="activeAuctionsPane" hgap="20.0" vgap="20.0">
-                </FlowPane>
+                <StackPane fx:id="activeAuctionsPane" prefHeight="320.0" style="-fx-background-color: transparent;" />
 
                 <Label text="TÀI SẢN ĐÃ ĐẤU GIÁ" textFill="#673ab7" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-padding: 20 0 0 0;" />
 
@@ -65,17 +60,8 @@
                         <Label text="Kết thúc: 01/10/2026 10:00" style="-fx-font-size: 12px; -fx-text-fill: #666;" />
                         <Button text="Đã bán" disable="true" maxWidth="Infinity" style="-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;" />
                     </VBox>
-                    <VBox prefWidth="280.0" style="-fx-background-color: #f9f9f9; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;">
-                        <StackPane prefHeight="150.0" style="-fx-background-color: #e0e0e0; -fx-background-radius: 5;"><Label text="Ảnh tài sản 4" style="-fx-text-fill: #aaa;"/></StackPane>
-                        <Label text="Tranh sơn dầu phong cảnh" wrapText="true" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;" />
-                        <Label text="Giá trúng thầu: 150.000.000 đ" style="-fx-text-fill: #673ab7; -fx-font-weight: bold;" />
-                        <Label text="Kết thúc: 05/10/2026 14:00" style="-fx-font-size: 12px; -fx-text-fill: #666;" />
-                        <Button text="Đã bán" disable="true" maxWidth="Infinity" style="-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;" />
-                    </VBox>
                 </FlowPane>
-
             </VBox>
         </ScrollPane>
     </center>
 </BorderPane>
-
