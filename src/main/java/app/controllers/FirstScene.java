@@ -161,7 +161,7 @@ public class FirstScene {
     VBox vbox = new VBox();
     vbox.setPrefWidth(280.0);
     vbox.setStyle(
-        "-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;");
+        "-fx-background-color:#161b26; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;");
 
     StackPane imagePane = new StackPane();
     imagePane.setPrefHeight(150.0);
