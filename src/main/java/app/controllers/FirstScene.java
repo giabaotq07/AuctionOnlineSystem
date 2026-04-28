@@ -60,14 +60,14 @@ public class FirstScene {
               new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3),e -> {
                 double currentH = viewport.getHvalue();
                 int totalSessions = DataStore.sessions.size();
-                int steps = totalSessions - 4;
+                int steps = totalSessions - 3;
                 if (steps <=0) return ;
                 double stepSize = 1.0/steps;
-                if (currentH >= 1.0){
-                  viewport.setHvalue(0);
-                }
-                else{
-                  viewport.setHvalue(currentH + stepSize);
+                if (currentH >= 0.98) {
+                  viewport.setHvalue(0); // Quay về đầu
+                } else {
+                  // Cộng thêm một bước, nhưng không vượt quá 1.0
+                  viewport.setHvalue(Math.min(1.0, currentH + stepSize));
                 }
               })
       );
@@ -200,7 +200,7 @@ public class FirstScene {
   private HBox createContainer(List<AuctionSession> sessions){
     HBox container = new HBox();
     // Căn space
-    container.setSpacing(20);
+    container.setSpacing(36);
     // Căn lề
     container.setAlignment(Pos.CENTER_LEFT);
     for (AuctionSession session : sessions){

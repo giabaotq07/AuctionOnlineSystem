@@ -27,20 +27,21 @@
                 <Region prefWidth="20.0" HBox.hgrow="SOMETIMES" />
                 <Button fx:id="btnAuth" onAction="#handleAuth" style="-fx-background-color: transparent; -fx-text-fill: #333333; -fx-font-weight: bold;" text="Đăng nhập / Đăng ký" />
             </HBox>
-
-            <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="20.0" style="-fx-background-color: #0a0b10;">
-                <padding>
-                    <Insets left="40.0" />
-                </padding>
-                <Button style="-fx-background-color: blue; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TRANG CHỦ" />
-                <Button onAction="#SwitchToLive" style="-fx-background-color: blue; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TÀI SẢN ĐẤU GIÁ" />
-                <Button onAction="#SwitchToMine" style="-fx-background-color: blue; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="ĐẤU GIÁ CỦA TÔI" />
-                <Button onAction="#SwitchToMess" style="-fx-background-color: blue; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="MESS CHAT" />
-                <Button onAction="#SwitchToOrganize" style="-fx-background-color: blue; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TẠO PHIÊN ĐẤU GIÁ" />
-                <Button style="-fx-background-color: blue; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" text="TIN TỨC" />
-            </HBox>
         </VBox>
     </top>
+    <left>
+        <VBox prefHeight="660.0" prefWidth="202.0" spacing="8.0" style="-fx-background-color: #161b26; -fx-border-color: #1a2236; -fx-border-width: 0 1 0 0;">
+            <padding>
+                <Insets left="15.0" right="15.0" top="20.0" />
+            </padding>
+
+            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" style="-fx-background-color: #2d5cf7; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 12;" text="🏠  TRANG CHỦ" />
+            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" onAction="#SwitchToLive" style="-fx-background-color: transparent; -fx-text-fill: #8a9bbf; -fx-padding: 12;" text="💎  TÀI SẢN ĐẤU GIÁ" />
+            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" onAction="#SwitchToMine" style="-fx-background-color: transparent; -fx-text-fill: #8a9bbf; -fx-padding: 12;" text="📈  ĐẤU GIÁ CỦA TÔI" />
+            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" onAction="#SwitchToMess" style="-fx-background-color: transparent; -fx-text-fill: #8a9bbf; -fx-padding: 12;" text="💬  MESS CHAT" />
+            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" onAction="#SwitchToOrganize" style="-fx-background-color: transparent; -fx-text-fill: #8a9bbf; -fx-padding: 12;" text="➕  TẠO PHIÊN" />
+        </VBox>
+    </left>
 
     <center>
         <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
