@@ -8,7 +8,7 @@ import app.models.DataStore;
 import app.network.Client;
 import java.io.IOException;
 import java.util.List;
-
+import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -20,6 +20,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class FirstScene {
 
@@ -31,6 +32,7 @@ public class FirstScene {
   @FXML private TextArea detailArea;
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
+  @FXML private FlowPane completedAuctionsPane;
   private javafx.animation.Timeline autoScroll;
 
   @FXML
@@ -43,10 +45,14 @@ public class FirstScene {
       }
     }
 
-    HBox cardContainer = createContainer(DataStore.sessions);
+    List<AuctionSession> activeS =
+        DataStore.sessions.stream()
+            .filter(s -> s.getStatus() == app.models.AuctionStatus.ACTIVE)
+            .toList();
+    HBox cardContainer = createContainer(activeS);
     ScrollPane viewport = new ScrollPane();
     viewport.setContent(cardContainer);
-    //An thanh cuon
+    // An thanh cuon
     viewport.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
     viewport.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
     viewport.setStyle("-fx-background-color: transparent; -fx-background-insets: 0;");
@@ -56,34 +62,40 @@ public class FirstScene {
     if (activeAuctionsPane != null) {
       activeAuctionsPane.getChildren().clear();
       activeAuctionsPane.getChildren().add(viewport);
-      autoScroll = new javafx.animation.Timeline(
-              new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3),e -> {
-                double currentH = viewport.getHvalue();
-                int totalSessions = DataStore.sessions.size();
-                int steps = totalSessions - 4;
-                if (steps <=0) return ;
-                double stepSize = 1.0/steps;
-                if (currentH >= 1.0){
-                  viewport.setHvalue(0);
-                }
-                else{
-                  viewport.setHvalue(currentH + stepSize);
-                }
-              })
-      );
+      autoScroll =
+          new javafx.animation.Timeline(
+              new javafx.animation.KeyFrame(
+                  javafx.util.Duration.seconds(3),
+                  e -> {
+                    double currentH = viewport.getHvalue();
+                    int totalSessions = DataStore.sessions.size();
+                    int steps = totalSessions - 4;
+                    if (steps <= 0) return;
+                    double stepSize = 1.0 / steps;
+                    if (currentH >= 1.0) {
+                      viewport.setHvalue(0);
+                    } else {
+                      viewport.setHvalue(currentH + stepSize);
+                    }
+                  }));
       autoScroll.setCycleCount(Timeline.INDEFINITE);
       autoScroll.play();
-      viewport.setOnMouseEntered(event -> {
-        if (autoScroll != null) autoScroll.pause();
-      });
+      viewport.setOnMouseEntered(
+          event -> {
+            if (autoScroll != null) autoScroll.pause();
+          });
 
-      viewport.setOnMouseExited(event -> {
-        if (autoScroll != null) autoScroll.play();
-      });
+      viewport.setOnMouseExited(
+          event -> {
+            if (autoScroll != null) autoScroll.play();
+          });
+    }
+
+    if (completedAuctionsPane != null) {
+      populateCompletedAuctions();
     }
 
     // load ban đầu
-
     if (sessionListView != null) {
       sessionListView.getItems().setAll(DataStore.sessions);
 
@@ -106,13 +118,43 @@ public class FirstScene {
             if (detailArea != null) {
               detailArea.setText(
                   "Id: "
-                      + s.getId()
+                      + s.getSessionId()
                       + "\nPrice: "
                       + s.getCurrentHighestPrice()
                       + "\nitem: "
                       + s.getItem());
             }
           });
+
+      // Auto reload every 5 seconds
+      Timeline timeline =
+          new Timeline(
+              new KeyFrame(
+                  Duration.seconds(5),
+                  e -> {
+                    // This ensures that when logic updates DataStore sessions or states
+                    // the UI will refresh automatically.
+                    String currentKeyword = (searchField != null) ? searchField.getText() : "";
+                    if (currentKeyword == null || currentKeyword.isBlank()) {
+                      sessionListView.getItems().setAll(DataStore.sessions);
+                    } else {
+                      searchSessions(currentKeyword);
+                    }
+
+                    if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
+                      ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
+                      List<AuctionSession> actives =
+                          DataStore.sessions.stream()
+                              .filter(s -> s.getStatus() == app.models.AuctionStatus.ACTIVE)
+                              .toList();
+                      vp.setContent(createContainer(actives));
+                    }
+                    if (completedAuctionsPane != null) {
+                      populateCompletedAuctions();
+                    }
+                  }));
+      timeline.setCycleCount(Timeline.INDEFINITE);
+      timeline.play();
     }
   }
 
@@ -141,10 +183,60 @@ public class FirstScene {
     }
   }
 
+  private void populateCompletedAuctions() {
+    completedAuctionsPane.getChildren().clear();
+    List<AuctionSession> completeds =
+        DataStore.sessions.stream()
+            .filter(s -> s.getStatus() == app.models.AuctionStatus.COMPLETED)
+            .toList();
+
+    for (AuctionSession session : completeds) {
+      VBox vbox = new VBox();
+      vbox.setPrefWidth(280.0);
+      vbox.setStyle(
+          "-fx-background-color: #f9f9f9; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;");
+
+      StackPane imagePane = new StackPane();
+      imagePane.setPrefHeight(150.0);
+      imagePane.setStyle("-fx-background-color: #e0e0e0; -fx-background-radius: 5;");
+      Label imgLabel = new Label("Ảnh tài sản");
+      imgLabel.setStyle("-fx-text-fill: #aaa;");
+      imagePane.getChildren().add(imgLabel);
+
+      Label titleLabel = new Label(session.getItem().getName());
+      titleLabel.setWrapText(true);
+      titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+      double finalPrice =
+          session.getBidHistory().isEmpty()
+              ? session.getItem().getStartingPrice()
+              : session.getBidHistory().get(session.getBidHistory().size() - 1).getAmount();
+      Label priceLabel = new Label(String.format("Giá chốt: %,.0f đ", finalPrice));
+      priceLabel.setStyle("-fx-text-fill: #673ab7; -fx-font-weight: bold;");
+
+      Label timeLabel = new Label("Kết thúc: " + session.getEndTime().toString());
+      timeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666;");
+
+      Button btnDetail = new Button("Đã bán");
+      btnDetail.setDisable(true);
+      btnDetail.setMaxWidth(Double.MAX_VALUE);
+      btnDetail.setStyle(
+          "-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;");
+
+      vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
+      completedAuctionsPane.getChildren().add(vbox);
+    }
+  }
+
   private void openLiveWithSession(app.models.AuctionSession session, javafx.event.Event event)
       throws IOException {
     if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      return;
+    }
+    if (DataStore.currentUser == null) {
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tham gia đấu giá!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
     NavigationManager.getInstance()
@@ -175,8 +267,8 @@ public class FirstScene {
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
     Label priceLabel =
-        new Label(String.format("Giá khởi điểm: %,.0f đ", session.getItem().getStartingPrice()));
-    priceLabel.setStyle("-fx-text-fill: #673ab7; -fx-font-weight: bold;");
+        new Label(String.format("Giá hiện tại: %,.0f đ", session.getCurrentHighestPrice()));
+    priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     Label timeLabel = new Label("Kết thúc: " + session.getEndTime().toString());
     timeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666;");
@@ -197,24 +289,29 @@ public class FirstScene {
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
-  private HBox createContainer(List<AuctionSession> sessions){
+
+  private HBox createContainer(List<AuctionSession> sessions) {
     HBox container = new HBox();
     // Căn space
     container.setSpacing(20);
     // Căn lề
     container.setAlignment(Pos.CENTER_LEFT);
-    for (AuctionSession session : sessions){
+    for (AuctionSession session : sessions) {
       VBox card = createAuctionCard(session);
       container.getChildren().add(card);
     }
     return container;
   }
 
-
   @FXML
   public void SwitchToLive(ActionEvent event) throws IOException {
     if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      return;
+    }
+    if (DataStore.currentUser == null) {
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tham gia đấu giá!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
     NavigationManager.getInstance().navigateTo(View.LIVE);
@@ -226,6 +323,11 @@ public class FirstScene {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
       return;
     }
+    if (DataStore.currentUser == null) {
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để xem thông tin cá nhân!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
+      return;
+    }
     NavigationManager.getInstance().navigateTo(View.MINE);
   }
 
@@ -233,6 +335,11 @@ public class FirstScene {
   public void SwitchToMess(ActionEvent event) throws IOException {
     if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      return;
+    }
+    if (DataStore.currentUser == null) {
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để xem tin nhắn!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
     NavigationManager.getInstance().navigateTo(View.MESSAGE);
@@ -244,6 +351,11 @@ public class FirstScene {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
       return;
     }
+    if (DataStore.currentUser == null) {
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
+      return;
+    }
     NavigationManager.getInstance().navigateTo(View.ORGANIZE);
   }
 
@@ -251,6 +363,30 @@ public class FirstScene {
   public void handleAuth(ActionEvent event) {
     NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
+
+  @FXML
+  public void handleReload(ActionEvent event) {
+    String currentKeyword = (searchField != null) ? searchField.getText() : "";
+    if (sessionListView != null) {
+      if (currentKeyword == null || currentKeyword.isBlank()) {
+        sessionListView.getItems().setAll(DataStore.sessions);
+      } else {
+        searchSessions(currentKeyword);
+      }
+    }
+    if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
+      ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
+      List<AuctionSession> actives =
+          DataStore.sessions.stream()
+              .filter(s -> s.getStatus() == app.models.AuctionStatus.ACTIVE)
+              .toList();
+      vp.setContent(createContainer(actives));
+    }
+    if (completedAuctionsPane != null) {
+      populateCompletedAuctions();
+    }
+  }
+
   private void pauseScroll() {
     if (autoScroll != null) {
       autoScroll.pause();

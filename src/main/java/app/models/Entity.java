@@ -1,6 +1,6 @@
 package app.models;
 
-public abstract class Entity {
+public abstract class Entity implements java.io.Serializable {
   protected int id;
 
   public int getId() {

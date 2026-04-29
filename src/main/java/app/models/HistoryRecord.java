@@ -2,7 +2,7 @@ package app.models;
 
 import java.time.LocalDateTime;
 
-public class HistoryRecord {
+public class HistoryRecord implements java.io.Serializable {
   private int sessionId;
   private HistoryType type;
   private String message;

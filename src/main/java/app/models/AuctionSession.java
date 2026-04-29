@@ -11,7 +11,8 @@ public class AuctionSession implements AuctionSubject, Serializable {
   private User seller;
   private AuctionStatus status;
   private LocalDateTime endTime;
-  private List<AuctionObserver> observers = new ArrayList<>();
+  private Double biddeposit;
+  private transient List<AuctionObserver> observers = new ArrayList<>();
   private List<Bid> bidHistory;
 
   public AuctionSession(Item item, User seller, LocalDateTime endTime) {
@@ -33,23 +34,32 @@ public class AuctionSession implements AuctionSubject, Serializable {
 
   @Override
   public void registerObserver(AuctionObserver observer) {
+    if (observers == null) observers = new ArrayList<>();
     if (!observers.contains(observer)) observers.add(observer);
   }
 
   @Override
   public void removeObserver(AuctionObserver observer) {
-    observers.remove(observer);
+    if (observers != null) {
+      observers.remove(observer);
+    }
   }
 
   @Override
   public void notifyObserversNewBid(double price, String bidderName) {
-    for (AuctionObserver observer : observers) {
-      observer.onNewBidPlaced(item.getName(), price, bidderName);
+    if (observers != null) {
+      for (AuctionObserver observer : observers) {
+        observer.onNewBidPlaced(item.getName(), price, bidderName);
+      }
     }
   }
 
   public int getId() {
     return this.id;
+  }
+
+  public String getSessionId() {
+    return String.valueOf(this.id);
   }
 
   public void setId(int id) {
@@ -61,7 +71,7 @@ public class AuctionSession implements AuctionSubject, Serializable {
   }
 
   public AuctionStatus getStatus() {
-    return this.status;
+    return status;
   }
 
   public Item getItem() {
@@ -74,6 +84,18 @@ public class AuctionSession implements AuctionSubject, Serializable {
 
   public LocalDateTime getEndTime() {
     return this.endTime;
+  }
+
+  public void setBiddeposit(Double deposit) {
+    this.biddeposit = deposit;
+  }
+
+  public Double getBiddeposit() {
+    return biddeposit;
+  }
+
+  public List<Bid> getBidHistory() {
+    return bidHistory;
   }
 
   public double getCurrentHighestPrice() {

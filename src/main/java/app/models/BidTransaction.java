@@ -1,6 +1,6 @@
 package app.models;
 
-public class BidTransaction {
+public class BidTransaction implements java.io.Serializable {
   private int userId, auctionId, amount;
 
   public BidTransaction(int amount, int auctionId, int userId) {

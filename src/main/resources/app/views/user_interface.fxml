@@ -17,6 +17,7 @@
                 <Region HBox.hgrow="ALWAYS" />
                 <TextField prefWidth="300.0" promptText="Tìm kiếm tài sản đấu giá..." style="-fx-background-radius: 20; -fx-padding: 5 15; -fx-border-radius: 20; -fx-border-color: #cccccc;" />
                 <Button style="-fx-background-color: #673ab7; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 5 15;" text="Tìm kiếm" />
+                <Button style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 5 15;" text="Làm mới" onAction="#handleReload" />
                 <Region HBox.hgrow="SOMETIMES" prefWidth="20.0" />
                 <Button fx:id="btnAuth" text="Đăng nhập / Đăng ký" style="-fx-background-color: transparent; -fx-text-fill: #333333; -fx-font-weight: bold;" onAction="#handleAuth" />
             </HBox>
@@ -52,14 +53,7 @@
 
                 <Label text="TÀI SẢN ĐÃ ĐẤU GIÁ" textFill="#673ab7" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-padding: 20 0 0 0;" />
 
-                <FlowPane hgap="20.0" vgap="20.0">
-                    <VBox prefWidth="280.0" style="-fx-background-color: #f9f9f9; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4); -fx-padding: 15; -fx-spacing: 10;">
-                        <StackPane prefHeight="150.0" style="-fx-background-color: #e0e0e0; -fx-background-radius: 5;"><Label text="Ảnh tài sản 3" style="-fx-text-fill: #aaa;"/></StackPane>
-                        <Label text="Đồng hồ Rolex Datejust" wrapText="true" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;" />
-                        <Label text="Giá trúng thầu: 250.000.000 đ" style="-fx-text-fill: #673ab7; -fx-font-weight: bold;" />
-                        <Label text="Kết thúc: 01/10/2026 10:00" style="-fx-font-size: 12px; -fx-text-fill: #666;" />
-                        <Button text="Đã bán" disable="true" maxWidth="Infinity" style="-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;" />
-                    </VBox>
+                <FlowPane fx:id="completedAuctionsPane" hgap="20.0" vgap="20.0">
                 </FlowPane>
             </VBox>
         </ScrollPane>

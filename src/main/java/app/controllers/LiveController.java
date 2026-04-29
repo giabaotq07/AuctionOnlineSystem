@@ -91,10 +91,13 @@ public class LiveController implements AuctionObserver {
 
       if (!session.placeBid(DataStore.currentUser, bidAmount)) {
         AlertUtils.showError(
-            "Lỗi trả giá",
-            "Không thể trả giá! Giá nhập phải lớn hơn bằng giá hiện tại + bước giá hoặc phiên đấu giá đã kết thúc.");
+            "L—i tr gi",
+            "Khng thƒ tr gi! Gi nhp phi l›n hn bng gi hi‡n ti + b›c gi hoc phin ‘u gi ‘ kt thc.");
       } else {
         bidAmountField.clear();
+        app.models.MessagePacket<app.models.AuctionSession> syncPacket =
+            new app.models.MessagePacket<>(app.models.CommandType.PLACE_BID, session);
+        app.network.Client.getInstance().sendRequest(syncPacket);
       }
     } catch (NumberFormatException e) {
       AlertUtils.showError("Lỗi nhập liệu", "Vui lòng nhập một số tiền hợp lệ!");
@@ -113,11 +116,18 @@ public class LiveController implements AuctionObserver {
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime endTime = session.getEndTime();
                 if (now.isAfter(endTime)) {
-                  timeLabel.setText("Phiên đấu giá đã kết thúc!");
-                  timeLabel.setStyle(
-                      "-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
                   scheduler.shutdown();
                   session.setStatus(app.models.AuctionStatus.COMPLETED);
+                  // Gọi thông báo kết thúc
+                  String winner = "Không có ai";
+                  double price = session.getItem().getStartingPrice();
+                  if (!session.getBidHistory().isEmpty()) {
+                    app.models.Bid lastBid =
+                        session.getBidHistory().get(session.getBidHistory().size() - 1);
+                    winner = lastBid.getBidder().getName();
+                    price = lastBid.getAmount();
+                  }
+                  onAuctionClosed(session.getItem().getName(), winner, price);
                 } else {
                   long days = ChronoUnit.DAYS.between(now, endTime);
                   LocalDateTime temp = now.plusDays(days);
