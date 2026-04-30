@@ -16,7 +16,7 @@ public class TestUserService {
   @BeforeAll
   public static void setupDatabase() {
     DatabaseConnection.initializeDatabase();
-    userDAO = new UserDAO();
+    userDAO = UserDAO.getInstance();
     userService = new UserService(userDAO);
     tester = userService.getUserByAccount("test_account");
   }

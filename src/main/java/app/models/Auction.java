@@ -8,11 +8,11 @@ import java.util.List;
 
 public class Auction implements AuctionSubject, Serializable {
   private int id;
-  private Item item;
-  private User seller;
+  private final Item item;
+  private final User seller;
   private AuctionStatus status;
   private LocalDateTime endTime;
-  private Double biddeposit;
+  private Double bidDeposit;
   private transient List<AuctionObserver> observers = new ArrayList<>();
   private List<BidTransaction> bidTransactionHistory;
 
@@ -87,12 +87,12 @@ public class Auction implements AuctionSubject, Serializable {
     return this.endTime;
   }
 
-  public void setBiddeposit(Double deposit) {
-    this.biddeposit = deposit;
+  public void setBidDeposit(Double deposit) {
+    this.bidDeposit = deposit;
   }
 
-  public Double getBiddeposit() {
-    return biddeposit;
+  public Double getBidDeposit() {
+    return bidDeposit;
   }
 
   public List<BidTransaction> getBidHistory() {
@@ -101,7 +101,7 @@ public class Auction implements AuctionSubject, Serializable {
 
   public double getCurrentHighestPrice() {
     if (bidTransactionHistory.isEmpty()) return item.getStartingPrice();
-    return bidTransactionHistory.get(bidTransactionHistory.size() - 1).getAmount();
+    return bidTransactionHistory.getLast().getAmount();
   }
 
   public synchronized boolean placeBid(User bidder, double bidAmount) {
@@ -123,7 +123,7 @@ public class Auction implements AuctionSubject, Serializable {
     return item.getName() + " | Giá hiện tại: $" + getCurrentHighestPrice();
   }
 
-  public String getItemname() {
+  public String getItemName() {
     return item.getName();
   }
 }

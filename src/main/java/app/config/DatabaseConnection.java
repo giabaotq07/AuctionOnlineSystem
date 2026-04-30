@@ -72,8 +72,4 @@ public class DatabaseConnection {
       e.printStackTrace();
     }
   }
-
-  public static void closeConnection() {
-    // Kept for compatibility with existing code.
-  }
 }

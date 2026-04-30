@@ -172,8 +172,8 @@ public class FirstScene {
 
       String item = "";
 
-      if (s.getItemname() != null) {
-        item = s.getItemname().toLowerCase();
+      if (s.getItemName() != null) {
+        item = s.getItemName().toLowerCase();
       }
 
       if (item.contains(key)) {

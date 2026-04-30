@@ -12,6 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryDAO {
+  private static HistoryDAO instance;
+  private HistoryDAO() {}
+  public static HistoryDAO getInstance() {
+    if (instance == null) {
+      synchronized (HistoryDAO.class) {
+        if (instance == null) {
+          instance = new HistoryDAO();
+        }
+      }
+    }
+    return instance;
+  }
   public boolean addHistoryRecord(HistoryRecord record) {
     String query =
         "INSERT INTO history_records (session_id, type, message, time) VALUES (?, ?, ?, ?)";

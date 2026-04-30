@@ -6,19 +6,19 @@ import app.models.User;
 import java.util.List;
 
 public interface IUserService {
-  User login(String account, String rawPassword) throws InvalidCredentialsException;
+  boolean login(String account, String rawPassword) throws InvalidCredentialsException;
 
-  User register(User user) throws UserAlreadyExistsException;
+  boolean register(User user) throws UserAlreadyExistsException;
 
   User getUserByAccount(String account);
 
   User getUserById(int id);
 
-  User updateProfile(User user);
+  boolean updateProfile(User user);
 
-  void updateWallet(User user);
+  boolean updateWallet(User user);
 
-  void deleteUser(int id);
+  boolean deleteUser(int id);
 
   List<User> getAllUsers();
 }

@@ -10,6 +10,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BidDAO {
+  private static BidDAO instance;
+
+  private BidDAO() {}
+
+  public static BidDAO getInstance() {
+    if (instance == null) {
+      synchronized (BidDAO.class) {
+        if (instance == null) {
+          instance = new BidDAO();
+        }
+      }
+    }
+    return instance;
+  }
+
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(
         rs.getInt("id"),

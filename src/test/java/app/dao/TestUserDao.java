@@ -16,7 +16,7 @@ public class TestUserDao {
   @BeforeAll
   public static void setupDatabase() {
     DatabaseConnection.initializeDatabase();
-    userDAO = new UserDAO();
+    userDAO = UserDAO.getInstance();
     tester =
         UserFactory.createUser(
             "Test User",
