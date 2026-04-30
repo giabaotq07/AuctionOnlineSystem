@@ -1,6 +1,6 @@
 package app.network;
 
-import app.models.CommandType;
+import app.enums.CommandType;
 import app.models.MessagePacket;
 import java.io.*;
 import java.net.Socket;

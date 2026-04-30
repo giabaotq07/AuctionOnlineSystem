@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.CommandType;
+
 import java.io.Serializable;
 
 public class MessagePacket<T> implements Serializable {

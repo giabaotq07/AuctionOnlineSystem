@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.ItemType;
+
 public class Electronics extends Item {
   public Electronics(
       String name, String description, double startingPrice, double stepPrice, ItemType type) {

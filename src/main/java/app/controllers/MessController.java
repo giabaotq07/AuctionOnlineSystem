@@ -1,6 +1,6 @@
 package app.controllers;
 
-import app.models.CommandType;
+import app.enums.CommandType;
 import app.models.MessagePacket;
 import app.network.Client;
 import java.io.IOException;

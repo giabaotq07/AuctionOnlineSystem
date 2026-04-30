@@ -5,9 +5,8 @@ import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
 import app.exceptions.InvalidCredentialsException;
-import app.models.CommandType;
-import app.models.MessagePacket;
-import app.models.User;
+import app.enums.CommandType;
+import app.models.*;
 import app.network.Client;
 import app.services.UserService;
 import java.io.IOException;
@@ -30,12 +29,6 @@ public class LoginController {
   private User user;
 
   @FXML
-  public void initialize() {
-    userDAO = new UserDAO();
-    userService = new UserService(userDAO);
-  }
-
-  @FXML
   public void handleLogin(ActionEvent event) {
     String userInput = account.getText();
     String passInput = password.getText();
@@ -48,16 +41,16 @@ public class LoginController {
 
     try {
       User loggedInUser = userService.login(userInput, passInput);
-      app.models.DataStore.currentUser = loggedInUser;
+      DataStore.currentUser = loggedInUser;
       sendLoginRequest(userInput);
 
-      app.models.Bidder bidder =
-          new app.models.Bidder(
+      Bidder bidder =
+          new Bidder(
               loggedInUser.getId(),
               loggedInUser.getName(),
               loggedInUser.getAccount(),
               loggedInUser.getWallet());
-      app.models.AuctionStateManager.getInstance().registerObserverToActive(bidder);
+      AuctionStateManager.getInstance().registerObserverToActive(bidder);
 
       SwitchToUI(event); // Nhảy sang màn hình chính
     } catch (InvalidCredentialsException e) {
@@ -96,19 +89,6 @@ public class LoginController {
     alert.showAndWait();
   }
 
-  // 1. Hiện dấu gạch chân khi đưa chuột vào
-  @FXML
-  public void handleMouseEntered(MouseEvent event) {
-    lblRegister.setUnderline(true);
-  }
-
-  // 2. Bỏ dấu gạch chân khi đưa chuột ra
-  @FXML
-  public void handleMouseExited(MouseEvent event) {
-    lblRegister.setUnderline(false);
-  }
-
-  // 3. Chuyển sang màn hình Register khi Click
   @FXML
   public void switchToRegister(MouseEvent event) {
     NavigationManager.getInstance().navigateTo(View.REGISTER);

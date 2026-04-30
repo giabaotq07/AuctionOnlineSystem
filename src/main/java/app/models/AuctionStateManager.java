@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.AuctionStatus;
+
 import java.util.ArrayList;
 import java.util.List;
 

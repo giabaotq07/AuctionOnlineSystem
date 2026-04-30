@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.UserRole;
+
 import java.util.Objects;
 
 public abstract class User extends Entity {

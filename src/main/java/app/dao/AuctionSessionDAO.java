@@ -1,6 +1,9 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
+import app.enums.AuctionStatus;
+import app.enums.ItemType;
+import app.enums.UserRole;
 import app.exceptions.DatabaseException;
 import app.models.*;
 import java.sql.*;

@@ -3,6 +3,8 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.enums.AuctionStatus;
+import app.enums.CommandType;
 import app.models.AuctionObserver;
 import app.models.AuctionSession;
 import app.models.DataStore;
@@ -96,7 +98,7 @@ public class LiveController implements AuctionObserver {
       } else {
         bidAmountField.clear();
         app.models.MessagePacket<app.models.AuctionSession> syncPacket =
-            new app.models.MessagePacket<>(app.models.CommandType.PLACE_BID, session);
+            new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
         app.network.Client.getInstance().sendRequest(syncPacket);
       }
     } catch (NumberFormatException e) {
@@ -117,7 +119,7 @@ public class LiveController implements AuctionObserver {
                 LocalDateTime endTime = session.getEndTime();
                 if (now.isAfter(endTime)) {
                   scheduler.shutdown();
-                  session.setStatus(app.models.AuctionStatus.COMPLETED);
+                  session.setStatus(AuctionStatus.COMPLETED);
                   // Gọi thông báo kết thúc
                   String winner = "Không có ai";
                   double price = session.getItem().getStartingPrice();

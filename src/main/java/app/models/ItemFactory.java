@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.ItemType;
+
 public class ItemFactory implements java.io.Serializable {
   public static Item createItem(
       int id,

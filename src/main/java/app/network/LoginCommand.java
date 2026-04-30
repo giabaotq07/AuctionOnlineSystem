@@ -1,6 +1,6 @@
 package app.network;
 
-import app.models.CommandType;
+import app.enums.CommandType;
 import app.models.MessagePacket;
 
 public class LoginCommand implements Command {

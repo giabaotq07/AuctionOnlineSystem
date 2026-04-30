@@ -4,6 +4,7 @@ import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
+import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
 import app.models.*;
 import app.services.UserService;

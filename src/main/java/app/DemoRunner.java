@@ -1,6 +1,9 @@
 package app;
 
 import app.dao.*;
+import app.enums.HistoryType;
+import app.enums.ItemType;
+import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.*;

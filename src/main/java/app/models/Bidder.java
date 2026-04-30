@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.UserRole;
+
 public class Bidder extends User implements AuctionObserver {
   public Bidder(int id, String name, Account account, Wallet wallet) {
     super(id, name, account, wallet);

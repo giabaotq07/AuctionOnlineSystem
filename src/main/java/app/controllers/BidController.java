@@ -1,6 +1,7 @@
 package app.controllers;
 
 import app.dao.UserDAO;
+import app.enums.HistoryType;
 import app.models.*;
 import app.services.UserService;
 import java.io.IOException;

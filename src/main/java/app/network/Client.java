@@ -1,5 +1,6 @@
 package app.network;
 
+import app.enums.CommandType;
 import app.models.MessagePacket;
 import java.io.*;
 import java.net.Socket;
@@ -42,7 +43,7 @@ public class Client {
         System.out.println("[Server] " + packet.getType());
 
         // --- NEW CODE: Bắt các tín hiệu global tại đây ---
-        if (packet.getType() == app.models.CommandType.CREATE_AUCTION) {
+        if (packet.getType() == CommandType.CREATE_AUCTION) {
           app.models.AuctionSession session = (app.models.AuctionSession) packet.getData();
           // Nếu session mới này do người khác tạo mà chưa có trong db hiện tại:
           boolean exists =
@@ -53,7 +54,7 @@ public class Client {
           }
         }
 
-        if (packet.getType() == app.models.CommandType.PLACE_BID) {
+        if (packet.getType() == CommandType.PLACE_BID) {
           app.models.AuctionSession updatedSession = (app.models.AuctionSession) packet.getData();
           app.models.DataStore.sessions.stream()
               .filter(s -> s.getId() == updatedSession.getId())

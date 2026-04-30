@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.AuctionStatus;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

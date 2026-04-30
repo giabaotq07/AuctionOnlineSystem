@@ -3,6 +3,7 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.enums.AuctionStatus;
 import app.models.AuctionSession;
 import app.models.DataStore;
 import app.network.Client;
@@ -47,7 +48,7 @@ public class FirstScene {
 
     List<AuctionSession> activeS =
         DataStore.sessions.stream()
-            .filter(s -> s.getStatus() == app.models.AuctionStatus.ACTIVE)
+            .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
             .toList();
     HBox cardContainer = createContainer(activeS);
     ScrollPane viewport = new ScrollPane();
@@ -145,7 +146,7 @@ public class FirstScene {
                       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
                       List<AuctionSession> actives =
                           DataStore.sessions.stream()
-                              .filter(s -> s.getStatus() == app.models.AuctionStatus.ACTIVE)
+                              .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
                               .toList();
                       vp.setContent(createContainer(actives));
                     }
@@ -187,7 +188,7 @@ public class FirstScene {
     completedAuctionsPane.getChildren().clear();
     List<AuctionSession> completeds =
         DataStore.sessions.stream()
-            .filter(s -> s.getStatus() == app.models.AuctionStatus.COMPLETED)
+            .filter(s -> s.getStatus() == AuctionStatus.COMPLETED)
             .toList();
 
     for (AuctionSession session : completeds) {
@@ -378,7 +379,7 @@ public class FirstScene {
       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
       List<AuctionSession> actives =
           DataStore.sessions.stream()
-              .filter(s -> s.getStatus() == app.models.AuctionStatus.ACTIVE)
+              .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
               .toList();
       vp.setContent(createContainer(actives));
     }

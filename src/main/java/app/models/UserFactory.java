@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.UserRole;
+
 public class UserFactory implements java.io.Serializable {
   public static User createUser(String name, Account account, Wallet wallet, UserRole role) {
     return switch (role) {

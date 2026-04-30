@@ -4,7 +4,7 @@ import app.config.DatabaseConnection;
 import app.exceptions.DatabaseException;
 import app.models.Item;
 import app.models.ItemFactory;
-import app.models.ItemType;
+import app.enums.ItemType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

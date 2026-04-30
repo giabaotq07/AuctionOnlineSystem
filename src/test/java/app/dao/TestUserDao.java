@@ -3,6 +3,7 @@ package app.dao;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.config.DatabaseConnection;
+import app.enums.UserRole;
 import app.exceptions.DatabaseException;
 import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
