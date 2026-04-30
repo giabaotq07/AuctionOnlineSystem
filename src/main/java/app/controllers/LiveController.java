@@ -5,8 +5,8 @@ import app.config.NavigationManager;
 import app.config.View;
 import app.enums.AuctionStatus;
 import app.enums.CommandType;
+import app.models.Auction;
 import app.models.AuctionObserver;
-import app.models.AuctionSession;
 import app.models.DataStore;
 import app.network.Client;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 public class LiveController implements AuctionObserver {
-  private AuctionSession session;
+  private Auction session;
 
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
@@ -34,7 +34,7 @@ public class LiveController implements AuctionObserver {
 
   private ScheduledExecutorService scheduler;
 
-  public void setSession(AuctionSession session) {
+  public void setSession(Auction session) {
     this.session = session;
     if (session != null && session.getItem() != null) {
       if (itemNameLabel != null) itemNameLabel.setText(session.getItem().getName());
@@ -97,7 +97,7 @@ public class LiveController implements AuctionObserver {
             "Khng thƒ tr gi! Gi nhp phi l›n hn bng gi hi‡n ti + b›c gi hoc phin ‘u gi ‘ kt thc.");
       } else {
         bidAmountField.clear();
-        app.models.MessagePacket<app.models.AuctionSession> syncPacket =
+        app.models.MessagePacket<Auction> syncPacket =
             new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
         app.network.Client.getInstance().sendRequest(syncPacket);
       }

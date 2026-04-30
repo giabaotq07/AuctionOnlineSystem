@@ -20,7 +20,7 @@ public class AuctionSessionDAO {
           + "JOIN items i ON s.item_id = i.id "
           + "JOIN users u ON s.seller_id = u.id";
 
-  private AuctionSession mapFullAuctionSession(ResultSet rs) throws SQLException {
+  private Auction mapFullAuctionSession(ResultSet rs) throws SQLException {
     Item item =
         ItemFactory.createItem(
             rs.getString("item_name"),
@@ -36,14 +36,13 @@ public class AuctionSessionDAO {
             new Wallet(rs.getDouble("seller_assets")),
             UserRole.valueOf(rs.getString("seller_role")));
     seller.setId(rs.getInt("seller_id"));
-    AuctionSession session =
-        new AuctionSession(
-            rs.getInt("id"), item, seller, rs.getTimestamp("end_time").toLocalDateTime());
+    Auction session =
+        new Auction(rs.getInt("id"), item, seller, rs.getTimestamp("end_time").toLocalDateTime());
     session.setStatus(AuctionStatus.valueOf(rs.getString("status")));
     return session;
   }
 
-  public AuctionSession getAuctionSessionById(int sessionId) {
+  public Auction getAuctionSessionById(int sessionId) {
     String query = SELECT_JOIN_QUERY + " WHERE s.id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -59,8 +58,8 @@ public class AuctionSessionDAO {
     }
   }
 
-  public List<AuctionSession> getAllAuctionSessions() {
-    List<AuctionSession> sessions = new ArrayList<>();
+  public List<Auction> getAllAuctionSessions() {
+    List<Auction> sessions = new ArrayList<>();
     try (Connection conn = DatabaseConnection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(SELECT_JOIN_QUERY);
         ResultSet rs = pstmt.executeQuery()) {
@@ -85,7 +84,7 @@ public class AuctionSessionDAO {
     }
   }
 
-  public AuctionSession addAuctionSession(AuctionSession session) {
+  public Auction addAuctionSession(Auction session) {
     String query =
         "INSERT INTO auction_sessions (item_id, seller_id, status, end_time) VALUES (?, ?, ?, ?)";
     try (Connection conn = DatabaseConnection.getConnection();

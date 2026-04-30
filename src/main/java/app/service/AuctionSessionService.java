@@ -3,7 +3,7 @@ package app.service;
 import app.dao.AuctionSessionDAO;
 import app.enums.AuctionStatus;
 import app.exceptions.ServiceException;
-import app.models.AuctionSession;
+import app.models.Auction;
 import app.models.Bid;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,7 +15,7 @@ public class AuctionSessionService {
     this.auctionSessionDAO = auctionSessionDAO;
   }
 
-  public AuctionSession createAuctionSession(AuctionSession session) {
+  public Auction createAuctionSession(Auction session) {
     // C thể thm logic kiểm tra: thời gian kết thc phải ở tương lai
     if (session.getEndTime().isBefore(LocalDateTime.now())) {
       throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
@@ -23,8 +23,8 @@ public class AuctionSessionService {
     return auctionSessionDAO.addAuctionSession(session);
   }
 
-  public AuctionSession getAuctionSessionById(int sessionId) {
-    AuctionSession session = auctionSessionDAO.getAuctionSessionById(sessionId);
+  public Auction getAuctionSessionById(int sessionId) {
+    Auction session = auctionSessionDAO.getAuctionSessionById(sessionId);
     if (session == null) {
       throw new ServiceException("Khng tm thấy phin đấu gi với ID: " + sessionId);
     }
@@ -38,13 +38,13 @@ public class AuctionSessionService {
     }
   }
 
-  public List<AuctionSession> getAllAuctionSessions() {
+  public List<Auction> getAllAuctionSessions() {
     return auctionSessionDAO.getAllAuctionSessions();
   }
 
   public boolean closeSessionIfExpired(int sessionId) {
     try {
-      AuctionSession session = getAuctionSessionById(sessionId);
+      Auction session = getAuctionSessionById(sessionId);
 
       if (session.getStatus() == AuctionStatus.ACTIVE
           && LocalDateTime.now().isAfter(session.getEndTime())) {

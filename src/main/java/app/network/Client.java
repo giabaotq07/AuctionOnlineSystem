@@ -1,5 +1,6 @@
 package app.network;
 
+import app.models.Auction;
 import app.models.MessagePacket;
 import java.io.*;
 import java.net.Socket;
@@ -45,7 +46,7 @@ public class Client {
             onMessageReceived.accept(packet);
             break;
           case CREATE_AUCTION:
-            app.models.AuctionSession session = (app.models.AuctionSession) packet.getData();
+            Auction session = (Auction) packet.getData();
             boolean exists =
                 app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
             if (!exists) {
@@ -55,7 +56,7 @@ public class Client {
             break;
 
           case PLACE_BID:
-            app.models.AuctionSession updatedSession = (app.models.AuctionSession) packet.getData();
+            Auction updatedSession = (Auction) packet.getData();
             app.models.DataStore.sessions.stream()
                 .filter(s -> s.getId() == updatedSession.getId())
                 .findFirst()

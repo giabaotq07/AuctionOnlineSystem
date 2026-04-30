@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AuctionSession implements AuctionSubject, Serializable {
+public class Auction implements AuctionSubject, Serializable {
   private int id;
   private Item item;
   private User seller;
@@ -16,7 +16,7 @@ public class AuctionSession implements AuctionSubject, Serializable {
   private transient List<AuctionObserver> observers = new ArrayList<>();
   private List<Bid> bidHistory;
 
-  public AuctionSession(Item item, User seller, LocalDateTime endTime) {
+  public Auction(Item item, User seller, LocalDateTime endTime) {
     this.item = item;
     this.seller = seller;
     this.endTime = endTime;
@@ -24,7 +24,7 @@ public class AuctionSession implements AuctionSubject, Serializable {
     this.bidHistory = new ArrayList<>();
   }
 
-  public AuctionSession(int id, Item item, User seller, LocalDateTime endTime) {
+  public Auction(int id, Item item, User seller, LocalDateTime endTime) {
     this.id = id;
     this.item = item;
     this.seller = seller;

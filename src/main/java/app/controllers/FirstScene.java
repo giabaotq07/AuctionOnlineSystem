@@ -4,7 +4,7 @@ import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
 import app.enums.AuctionStatus;
-import app.models.AuctionSession;
+import app.models.Auction;
 import app.models.DataStore;
 import app.network.Client;
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class FirstScene {
   private Scene scene;
 
   @FXML private TextField searchField;
-  @FXML private ListView<AuctionSession> sessionListView;
+  @FXML private ListView<Auction> sessionListView;
   @FXML private TextArea detailArea;
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
@@ -46,7 +46,7 @@ public class FirstScene {
       }
     }
 
-    List<AuctionSession> activeS =
+    List<Auction> activeS =
         DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
     HBox cardContainer = createContainer(activeS);
     ScrollPane viewport = new ScrollPane();
@@ -111,7 +111,7 @@ public class FirstScene {
       // click session → show detail
       sessionListView.setOnMouseClicked(
           e -> {
-            AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+            Auction s = sessionListView.getSelectionModel().getSelectedItem();
             if (s == null) return;
 
             if (detailArea != null) {
@@ -142,7 +142,7 @@ public class FirstScene {
 
                     if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
                       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
-                      List<AuctionSession> actives =
+                      List<Auction> actives =
                           DataStore.sessions.stream()
                               .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
                               .toList();
@@ -168,7 +168,7 @@ public class FirstScene {
 
     String key = keyword.trim().toLowerCase();
 
-    for (AuctionSession s : DataStore.sessions) {
+    for (Auction s : DataStore.sessions) {
 
       String item = "";
 
@@ -184,10 +184,10 @@ public class FirstScene {
 
   private void populateCompletedAuctions() {
     completedAuctionsPane.getChildren().clear();
-    List<AuctionSession> completeds =
+    List<Auction> completeds =
         DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.COMPLETED).toList();
 
-    for (AuctionSession session : completeds) {
+    for (Auction session : completeds) {
       VBox vbox = new VBox();
       vbox.setPrefWidth(280.0);
       vbox.setStyle(
@@ -225,8 +225,7 @@ public class FirstScene {
     }
   }
 
-  private void openLiveWithSession(app.models.AuctionSession session, javafx.event.Event event)
-      throws IOException {
+  private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {
     if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
       return;
@@ -246,7 +245,7 @@ public class FirstScene {
             });
   }
 
-  private VBox createAuctionCard(AuctionSession session) {
+  private VBox createAuctionCard(Auction session) {
     VBox vbox = new VBox();
     vbox.setPrefWidth(280.0);
     vbox.setStyle(
@@ -287,13 +286,13 @@ public class FirstScene {
     return vbox;
   }
 
-  private HBox createContainer(List<AuctionSession> sessions) {
+  private HBox createContainer(List<Auction> sessions) {
     HBox container = new HBox();
     // Căn space
     container.setSpacing(20);
     // Căn lề
     container.setAlignment(Pos.CENTER_LEFT);
-    for (AuctionSession session : sessions) {
+    for (Auction session : sessions) {
       VBox card = createAuctionCard(session);
       container.getChildren().add(card);
     }
@@ -373,7 +372,7 @@ public class FirstScene {
     }
     if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
-      List<AuctionSession> actives =
+      List<Auction> actives =
           DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
       vp.setContent(createContainer(actives));
     }

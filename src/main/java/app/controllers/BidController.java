@@ -18,14 +18,14 @@ public class BidController {
   UserDAO userDao;
   UserService userService;
   // ===== INPUT =====
-  @FXML private ListView<AuctionSession> sessionListView;
+  @FXML private ListView<Auction> sessionListView;
 
   @FXML private TextField bidderField;
   @FXML private TextField amountField;
 
   @FXML private TextArea outputArea;
 
-  private AuctionSession session;
+  private Auction session;
 
   // ===== LOAD LIST =====
   @FXML
@@ -39,7 +39,7 @@ public class BidController {
 
     sessionListView.setOnMouseClicked(
         e -> {
-          AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+          Auction s = sessionListView.getSelectionModel().getSelectedItem();
           if (s == null) return;
           session = s;
 

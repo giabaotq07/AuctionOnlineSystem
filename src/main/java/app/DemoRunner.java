@@ -78,7 +78,7 @@ public class DemoRunner {
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
-    AuctionSession session = new AuctionSession(phone, seller, LocalDateTime.now().plusSeconds(5));
+    Auction session = new Auction(phone, seller, LocalDateTime.now().plusSeconds(5));
     session = sessionService.createAuctionSession(session);
     System.out.println("Phien dau gia tao voi ID: " + session.getId());
     historyService.logEvent(
