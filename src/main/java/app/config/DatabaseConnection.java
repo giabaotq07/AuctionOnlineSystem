@@ -69,6 +69,7 @@ public class DatabaseConnection {
       System.out.println("Database initialization completed for '" + DB_NAME + "'.");
     } catch (Exception e) {
       System.out.println("Database initialization failed: " + e.getMessage());
+      e.printStackTrace();
     }
   }
 
