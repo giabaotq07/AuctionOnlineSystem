@@ -19,23 +19,20 @@ public class UserService implements IUserService {
   }
 
   @Override
-  public User login(String account, String rawPassword) throws InvalidCredentialsException {
+  public boolean login(String account, String rawPassword) throws InvalidCredentialsException {
     User user = userDAO.getUserByAccount(account);
-    if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
-      throw new InvalidCredentialsException("Tài khoản hoặc mật khẩu không đúng.");
-    }
-    return user;
+      return user != null && PasswordUtils.verify(rawPassword, user.getAccount().getPassword());
   }
 
   @Override
-  public User register(User user) throws UserAlreadyExistsException {
+  public boolean register(User user) throws UserAlreadyExistsException {
     User exists = userDAO.getUserByAccount(user.getAccount().getUsername());
     if (exists != null) {
-      throw new UserAlreadyExistsException("Tài khoản '" + user.getAccount() + "' đã tồn tại!");
+      return false;
     }
     user = userDAO.add(user);
     userCache.put(user.getAccount().getUsername(), user);
-    return user;
+    return true;
   }
 
   @Override
@@ -58,32 +55,33 @@ public class UserService implements IUserService {
   }
 
   @Override
-  public User updateProfile(User user) {
+  public boolean updateProfile(User user) {
     boolean ok = userDAO.updateUserProfile(user);
     if (!ok) {
-      throw new UserNotFoundException(
-          "Không thể cập nhật. User '" + user.getAccount().getUsername() + "' không tồn tại.");
+      return false;
     }
     userCache.put(user.getAccount().getUsername(), user);
-    return user;
+    return true;
   }
 
   @Override
-  public void updateWallet(User user) {
+  public boolean updateWallet(User user) {
     boolean ok = userDAO.updateUserWallet(user);
     if (!ok) {
-      throw new UserNotFoundException(
-          "Không tìm thấy user để cập nhật số dư: " + user.getAccount().getUsername());
-    }
+      return false;
+      }
+    userCache.put(user.getAccount().getUsername(), user);
+    return true;
   }
 
   @Override
-  public void deleteUser(int id) {
+  public boolean deleteUser(int id) {
     boolean ok = userDAO.delete(id);
     if (!ok) {
-      throw new UserNotFoundException("Không thể xóa. User '" + id + "' không tồn tại.");
+      return false;
     }
     userCache.remove(getUserById(id).getAccount().getUsername());
+    return true;
   }
 
   @Override

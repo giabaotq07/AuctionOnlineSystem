@@ -13,7 +13,19 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemDAO implements GenericDAO<Item, Integer> {
+public class ItemDAO {
+  private static ItemDAO instance;
+  private ItemDAO() {}
+  public static ItemDAO getInstance() {
+    if (instance == null) {
+        synchronized (ItemDAO.class) {
+            if (instance == null) {
+            instance = new ItemDAO();
+            }
+        }
+    }
+    return instance;
+  }
   private Item mapItem(ResultSet rs) throws SQLException {
     return ItemFactory.createItem(
         rs.getInt("id"),

@@ -18,11 +18,11 @@ public class DemoRunner {
     System.out.println("Dang kiem tra va khoi tao Database...");
     app.config.DatabaseConnection.initializeDatabase();
 
-    UserDAO userDAO = new UserDAO();
-    ItemDAO itemDAO = new ItemDAO();
-    AuctionDAO sessionDAO = new AuctionDAO();
-    BidDAO bidDAO = new BidDAO();
-    HistoryDAO historyDAO = new HistoryDAO();
+    UserDAO userDAO = UserDAO.getInstance();
+    ItemDAO itemDAO = ItemDAO.getInstance();
+    AuctionDAO sessionDAO = AuctionDAO.getInstance();
+    BidDAO bidDAO = BidDAO.getInstance();
+    HistoryDAO historyDAO = HistoryDAO.getInstance();
 
     UserService userService = new UserService(userDAO);
     ItemService itemService = new ItemService(itemDAO);

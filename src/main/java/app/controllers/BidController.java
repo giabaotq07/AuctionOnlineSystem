@@ -30,7 +30,7 @@ public class BidController {
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
-    userDao = new UserDAO();
+    userDao = UserDAO.getInstance();
     userService = new UserService(userDao);
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
