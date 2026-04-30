@@ -70,7 +70,9 @@ public class Client {
                       if (!s.getBidHistory().isEmpty()) {
                         BidTransaction lastBidTransaction =
                             s.getBidHistory().get(s.getBidHistory().size() - 1);
-                        s.notifyObserversNewBid(lastBidTransaction.getAmount(), lastBidTransaction.getBidder().getName());
+                        s.notifyObserversNewBid(
+                            lastBidTransaction.getAmount(),
+                            lastBidTransaction.getBidder().getName());
                       }
                     });
             break;
