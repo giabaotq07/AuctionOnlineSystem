@@ -1,6 +1,6 @@
 package app.models;
 
-public class Wallet {
+public class Wallet implements java.io.Serializable {
   private double assets;
 
   public Wallet() {

@@ -1,3 +1,14 @@
+-- SET FOREIGN_KEY_CHECKS = 0; -- Tắt kiểm tra khóa ngoại để xóa không bị lỗi
+--
+-- DROP TABLE IF EXISTS bid_transactions;
+-- DROP TABLE IF EXISTS history_records;
+-- DROP TABLE IF EXISTS bids;
+-- DROP TABLE IF EXISTS auction_sessions;
+-- DROP TABLE IF EXISTS items;
+-- DROP TABLE IF EXISTS users;
+--
+-- SET FOREIGN_KEY_CHECKS = 1; -- Bật lại kiểm tra khóa ngoại
+
 -- Sau đó mới chạy đoạn script CREATE TABLE của bạn
 CREATE DATABASE IF NOT EXISTS auction_db;
 USE auction_db;

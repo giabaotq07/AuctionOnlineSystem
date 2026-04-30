@@ -2,7 +2,6 @@ package app.network;
 
 import app.models.CommandType;
 import app.models.MessagePacket;
-import com.google.gson.Gson;
 import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
@@ -10,11 +9,10 @@ import java.util.Map;
 
 public class ClientHandler implements Runnable {
   private final Socket socket;
-  private PrintWriter writer;
+  private ObjectOutputStream writer;
   private String username;
-  private final Gson gson = new Gson();
 
-  // Lưu lệnh thành 1 map, lúc dùng sẽ gọi theo type
+  // Lui lenh thanh 1 map
   private static final Map<CommandType, Command> COMMANDS = new HashMap<>();
 
   static {
@@ -30,30 +28,64 @@ public class ClientHandler implements Runnable {
   @Override
   public void run() {
     try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-      writer = new PrintWriter(socket.getOutputStream(), true);
-      String line;
-      while ((line = reader.readLine()) != null) {
-        MessagePacket<?> packet = gson.fromJson(line, MessagePacket.class);
+      writer = new ObjectOutputStream(socket.getOutputStream());
+      writer.flush();
+      ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
+      MessagePacket<?> packet;
+      while ((packet = (MessagePacket<?>) reader.readObject()) != null) {
         handlePacket(packet);
       }
-    } catch (IOException e) {
+    } catch (IOException | ClassNotFoundException e) {
       close();
     }
   }
 
-  /** hàm này để đây minh hoạ, chưa có các lớp DAO để gọi */
   private void handlePacket(MessagePacket<?> packet) {
-    Command command = COMMANDS.get(packet.getType()); // lấy command theo type và thực thi
+    Command command = COMMANDS.get(packet.getType());
     if (command != null) {
       command.execute(this, packet); // cái này đc kế thừa và cài đặt ở lớp con
     } else {
       System.out.println("[SERVER] Unrecognized command type: " + packet.getType());
     }
+
+    switch (packet.getType()) {
+      case CHAT:
+        String content = (String) packet.getData();
+        MessagePacket<String> chatPacket = new MessagePacket<>(CommandType.CHAT, content);
+        chatPacket.setMessage(this.username);
+        Server.broadcast(chatPacket);
+        break;
+
+      case CREATE_AUCTION:
+        // Broadcast the new auction session to everyone else
+        MessagePacket<app.models.AuctionSession> auctionPacket =
+            new MessagePacket<>(
+                CommandType.CREATE_AUCTION, (app.models.AuctionSession) packet.getData());
+        auctionPacket.setMessage(this.username);
+        Server.broadcast(auctionPacket);
+        break;
+
+      case PLACE_BID:
+        // broadcast bid session to client
+        MessagePacket<app.models.AuctionSession> placeBidPacket =
+            new MessagePacket<>(
+                CommandType.PLACE_BID, (app.models.AuctionSession) packet.getData());
+        placeBidPacket.setMessage(this.username);
+        Server.broadcast(placeBidPacket);
+        break;
+    }
   }
 
   public void sendMessage(MessagePacket<?> packet) {
-    if (writer != null) writer.println(gson.toJson(packet));
+    if (writer != null) {
+      try {
+        writer.reset(); // Reset Java object stream cache
+        writer.writeObject(packet);
+        writer.flush();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   public String getUsername() {
@@ -70,7 +102,7 @@ public class ClientHandler implements Runnable {
     }
     try {
       socket.close();
-    } catch (IOException _) {
+    } catch (IOException ignored) {
     }
   }
 }

@@ -1,7 +1,6 @@
 package app.network;
 
 import app.models.MessagePacket;
-import com.google.gson.Gson;
 import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
@@ -9,9 +8,8 @@ import java.util.function.Consumer;
 public class Client {
   private static volatile Client instance;
   private Socket socket;
-  private PrintWriter out;
-  private BufferedReader in;
-  private final Gson gson = new Gson();
+  private ObjectOutputStream out;
+  private ObjectInputStream in;
   private Consumer<MessagePacket<?>> onMessageReceived;
   private boolean isConnected = false;
 
@@ -28,8 +26,9 @@ public class Client {
     System.out.println("[CLIENT] Đang kết nối...");
     socket = new Socket("127.0.0.1", 5000);
     System.out.println("[CLIENT] Kết nối thành công!");
-    out = new PrintWriter(socket.getOutputStream(), true);
-    in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    out = new ObjectOutputStream(socket.getOutputStream());
+    out.flush();
+    in = new ObjectInputStream(socket.getInputStream());
     Thread thread = new Thread(this::listen);
     thread.setDaemon(true);
     thread.start();
@@ -38,17 +37,47 @@ public class Client {
 
   private void listen() {
     try {
-      String line;
-      while ((line = in.readLine()) != null) {
-        System.out.println("[Server] " + line);
-        MessagePacket<?> packet = gson.fromJson(line, MessagePacket.class);
+      MessagePacket<?> packet;
+      while ((packet = (MessagePacket<?>) in.readObject()) != null) {
+        System.out.println("[Server] " + packet.getType());
+
+        // --- NEW CODE: Bắt các tín hiệu global tại đây ---
+        if (packet.getType() == app.models.CommandType.CREATE_AUCTION) {
+          app.models.AuctionSession session = (app.models.AuctionSession) packet.getData();
+          // Nếu session mới này do người khác tạo mà chưa có trong db hiện tại:
+          boolean exists =
+              app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
+          if (!exists) {
+            app.models.DataStore.sessions.add(session);
+            app.models.AuctionStateManager.getInstance().addSession(session);
+          }
+        }
+
+        if (packet.getType() == app.models.CommandType.PLACE_BID) {
+          app.models.AuctionSession updatedSession = (app.models.AuctionSession) packet.getData();
+          app.models.DataStore.sessions.stream()
+              .filter(s -> s.getId() == updatedSession.getId())
+              .findFirst()
+              .ifPresent(
+                  s -> {
+                    s.getBidHistory().clear();
+                    s.getBidHistory().addAll(updatedSession.getBidHistory());
+                    s.setStatus(updatedSession.getStatus());
+
+                    if (!s.getBidHistory().isEmpty()) {
+                      app.models.Bid lastBid = s.getBidHistory().get(s.getBidHistory().size() - 1);
+                      s.notifyObserversNewBid(lastBid.getAmount(), lastBid.getBidder().getName());
+                    }
+                  });
+        }
+        // --- END NEW CODE ---
 
         if (onMessageReceived != null) {
           // Đẩy về cho Controller xử lýw
           onMessageReceived.accept(packet);
         }
       }
-    } catch (IOException e) {
+    } catch (IOException | ClassNotFoundException e) {
       System.err.println("Mất kết nối Server.");
       isConnected = false;
     }
@@ -59,7 +88,15 @@ public class Client {
   }
 
   public void sendRequest(MessagePacket<?> packet) {
-    if (out != null) out.println(gson.toJson(packet));
+    if (out != null) {
+      try {
+        out.reset(); // Reset Java object stream cache
+        out.writeObject(packet);
+        out.flush();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   public void setOnMessageReceived(Consumer<MessagePacket<?>> handler) {

@@ -1,6 +1,6 @@
 package app.models;
 
-public class ItemFactory {
+public class ItemFactory implements java.io.Serializable {
   public static Item createItem(
       int id,
       String name,

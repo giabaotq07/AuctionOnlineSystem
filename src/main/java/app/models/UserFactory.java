@@ -1,6 +1,6 @@
 package app.models;
 
-public class UserFactory {
+public class UserFactory implements java.io.Serializable {
   public static User createUser(String name, Account account, Wallet wallet, UserRole role) {
     return switch (role) {
       case ADMIN -> new Admin(name, account, wallet);

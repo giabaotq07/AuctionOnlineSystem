@@ -42,21 +42,45 @@ public class LoginController {
 
     // 1. Kiểm tra rỗng ở phía Client trước khi đụng vào Database
     if (userInput.isEmpty() || passInput.isEmpty()) {
-      AlertUtils.showError("Cảnh báo", "Vui lòng nhập đầy đủ account và Password!");
+      showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Vui lòng nhập đầy đủ account và Password!");
       return;
     }
+
     try {
-      user = userService.login(userInput, passInput);
-      app.models.DataStore.currentUser = user; // Save logged in user
-      Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
+      User loggedInUser = userService.login(userInput, passInput);
+      app.models.DataStore.currentUser = loggedInUser;
+      sendLoginRequest(userInput);
+
+      app.models.Bidder bidder =
+          new app.models.Bidder(
+              loggedInUser.getId(),
+              loggedInUser.getName(),
+              loggedInUser.getAccount(),
+              loggedInUser.getWallet());
+      app.models.AuctionStateManager.getInstance().registerObserverToActive(bidder);
+
       SwitchToUI(event); // Nhảy sang màn hình chính
-    } catch (IOException e) {
+    } catch (InvalidCredentialsException e) {
+      AlertUtils.showError("Lỗi đăng nhập", "Tên đăng nhập hoặc mật khẩu không chính xác!");
+    } catch (Exception e) {
       e.printStackTrace();
       AlertUtils.showError("Lỗi Hệ Thống", e.getMessage());
       System.out.println("Không thể chuyển sang giao diện chính sau khi đăng nhập thành công.");
-    } catch (InvalidCredentialsException e) {
-      AlertUtils.showError("Lỗi đăng nhập", "Tên đăng nhập hoặc mật khẩu không chính xác!");
     }
+  }
+
+  public void sendLoginRequest(String account) {
+    User user = userService.getUserByAccount(account);
+    if (user == null) {
+      System.out.println("ko thấy user");
+      return;
+    }
+    try {
+      Client.getInstance().connect();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
   }
 
   @FXML

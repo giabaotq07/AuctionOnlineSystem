@@ -6,6 +6,7 @@ import app.config.View;
 import app.models.*;
 import app.network.Client;
 import java.time.LocalDateTime;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -21,6 +22,15 @@ public class AuctionController {
 
   @FXML
   public void initialize() {
+    if (DataStore.currentUser == null) {
+      // Force them out right away if they somehow load this page without logging in
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
+      Platform.runLater(
+          () -> {
+            NavigationManager.getInstance().navigateTo(View.LOGIN);
+          });
+      return;
+    }
     if (typeComboBox != null) {
       typeComboBox.getItems().setAll(ItemType.values());
       typeComboBox.getSelectionModel().selectFirst();
@@ -60,6 +70,13 @@ public class AuctionController {
               nextId, item, DataStore.currentUser, LocalDateTime.now().plusMinutes(durationMins));
 
       DataStore.sessions.add(session);
+      app.models.AuctionStateManager.getInstance().addSession(session);
+
+      // --- NEW CODE: BT U BROADCAST SANG CC CLIENT KHC ---
+      app.models.MessagePacket<app.models.AuctionSession> createPacket =
+          new app.models.MessagePacket<>(app.models.CommandType.CREATE_AUCTION, session);
+      app.network.Client.getInstance().sendRequest(createPacket);
+      // --- END NEW CODE ---
 
       HistoryStore.history.add(
           new HistoryRecord(

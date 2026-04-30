@@ -2,7 +2,7 @@ package app.models;
 
 import java.time.LocalDateTime;
 
-public class Bid {
+public class Bid implements java.io.Serializable {
   private User bidder; // Ai là người trả giá?
   private double amount; // Số tiền bao nhiêu?
   private LocalDateTime time; // Trả giá lúc nào?
