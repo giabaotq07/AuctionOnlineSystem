@@ -6,6 +6,7 @@ import app.config.View;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.enums.CommandType;
+import app.models.DataStore;
 import app.models.MessagePacket;
 import app.models.User;
 import app.network.Client;
@@ -40,6 +41,7 @@ public class LoginController {
                       response = (LoginResponse) packet.getData();
                     }
                     if (response.success()) {
+                      DataStore.currentUser = response.user();
                       SwitchToUI();
                     } else {
                       AlertUtils.showError("Đăng nhập thất bại", response.message());
