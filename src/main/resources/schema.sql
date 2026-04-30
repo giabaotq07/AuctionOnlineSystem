@@ -2,7 +2,7 @@
 --
 -- DROP TABLE IF EXISTS bid_transactions;
 -- DROP TABLE IF EXISTS history_records;
--- DROP TABLE IF EXISTS bids;
+-- DROP TABLE IF EXISTS bidTransactions;
 -- DROP TABLE IF EXISTS auction_sessions;
 -- DROP TABLE IF EXISTS items;
 -- DROP TABLE IF EXISTS users;
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS auction_sessions (
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS bids (
+CREATE TABLE IF NOT EXISTS bidTransactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     session_id INT NOT NULL,
     user_id INT NOT NULL,

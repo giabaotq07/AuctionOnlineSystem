@@ -1,18 +1,18 @@
 package app.service;
 
-import app.dao.AuctionSessionDAO;
+import app.dao.AuctionDAO;
 import app.enums.AuctionStatus;
 import app.exceptions.ServiceException;
 import app.models.Auction;
-import app.models.Bid;
+import app.models.BidTransaction;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class AuctionSessionService {
-  private final AuctionSessionDAO auctionSessionDAO;
+public class AuctionService {
+  private final AuctionDAO AuctionDAO;
 
-  public AuctionSessionService(AuctionSessionDAO auctionSessionDAO) {
-    this.auctionSessionDAO = auctionSessionDAO;
+  public AuctionService(AuctionDAO AuctionDAO) {
+    this.AuctionDAO = AuctionDAO;
   }
 
   public Auction createAuctionSession(Auction session) {
@@ -20,11 +20,11 @@ public class AuctionSessionService {
     if (session.getEndTime().isBefore(LocalDateTime.now())) {
       throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
     }
-    return auctionSessionDAO.addAuctionSession(session);
+    return AuctionDAO.addAuction(session);
   }
 
-  public Auction getAuctionSessionById(int sessionId) {
-    Auction session = auctionSessionDAO.getAuctionSessionById(sessionId);
+  public Auction getAuctionById(int sessionId) {
+    Auction session = AuctionDAO.getAuctionById(sessionId);
     if (session == null) {
       throw new ServiceException("Khng tm thấy phin đấu gi với ID: " + sessionId);
     }
@@ -32,19 +32,19 @@ public class AuctionSessionService {
   }
 
   public void updateSessionStatus(int sessionId, AuctionStatus status) {
-    boolean ok = auctionSessionDAO.updateAuctionSessionStatus(sessionId, status);
+    boolean ok = AuctionDAO.updateAuctionStatus(sessionId, status);
     if (!ok) {
       throw new ServiceException("Khng thể cập nhật trạng thi cho phin ID: " + sessionId);
     }
   }
 
-  public List<Auction> getAllAuctionSessions() {
-    return auctionSessionDAO.getAllAuctionSessions();
+  public List<Auction> getAllAuction() {
+    return AuctionDAO.getAllAuction();
   }
 
   public boolean closeSessionIfExpired(int sessionId) {
     try {
-      Auction session = getAuctionSessionById(sessionId);
+      Auction session = getAuctionById(sessionId);
 
       if (session.getStatus() == AuctionStatus.ACTIVE
           && LocalDateTime.now().isAfter(session.getEndTime())) {
@@ -60,13 +60,13 @@ public class AuctionSessionService {
 
   public void handleSessionCompletion(int sessionId, BidService bidService) {
     if (closeSessionIfExpired(sessionId)) {
-      Bid highestBid = bidService.getHighestBid(sessionId);
+      BidTransaction highestBidTransaction = bidService.getHighestBid(sessionId);
 
-      if (highestBid != null) {
+      if (highestBidTransaction != null) {
         System.out.println(
             String.format(
                 "-> Phiên %d kết thúc. Winner: %s, Giá: $%.2f",
-                sessionId, highestBid.getBidder().getName(), highestBid.getAmount()));
+                sessionId, highestBidTransaction.getBidder().getName(), highestBidTransaction.getAmount()));
 
         // Tại đây bạn có thể thêm logic trừ tiền người thắng hoặc cộng tiền người bán
       } else {

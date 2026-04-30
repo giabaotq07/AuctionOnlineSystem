@@ -1,6 +1,7 @@
 package app.network;
 
 import app.models.Auction;
+import app.models.BidTransaction;
 import app.models.MessagePacket;
 import java.io.*;
 import java.net.Socket;
@@ -67,9 +68,9 @@ public class Client {
                       s.setStatus(updatedSession.getStatus());
 
                       if (!s.getBidHistory().isEmpty()) {
-                        app.models.Bid lastBid =
+                        BidTransaction lastBidTransaction =
                             s.getBidHistory().get(s.getBidHistory().size() - 1);
-                        s.notifyObserversNewBid(lastBid.getAmount(), lastBid.getBidder().getName());
+                        s.notifyObserversNewBid(lastBidTransaction.getAmount(), lastBidTransaction.getBidder().getName());
                       }
                     });
             break;

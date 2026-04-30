@@ -1,35 +1,32 @@
 package app.models;
 
-public class BidTransaction implements java.io.Serializable {
-  private int userId, auctionId, amount;
+import java.time.LocalDateTime;
 
-  public BidTransaction(int amount, int auctionId, int userId) {
+public class BidTransaction implements java.io.Serializable {
+  private User bidder; // Ai là người trả giá?
+  private double amount; // Số tiền bao nhiêu?
+  private LocalDateTime time; // Trả giá lúc nào?
+
+  public BidTransaction(User bidder, double amount, LocalDateTime time) {
+    this.bidder = bidder;
     this.amount = amount;
-    this.auctionId = auctionId;
-    this.userId = userId;
+    this.time = time;
   }
 
-  public int getAmount() {
+  public User getBidder() {
+    return bidder;
+  }
+
+  public double getAmount() {
     return amount;
   }
 
-  public void setAmount(int amount) {
-    this.amount = amount;
+  public LocalDateTime getTime() {
+    return time;
   }
 
-  public int getAuctionId() {
-    return auctionId;
-  }
-
-  public void setAuctionId(int auctionId) {
-    this.auctionId = auctionId;
-  }
-
-  public int getUserId() {
-    return userId;
-  }
-
-  public void setUserId(int userId) {
-    this.userId = userId;
+  @Override
+  public String toString() {
+    return bidder.getName() + " đã trả $" + amount + " vào lúc " + time.withNano(0);
   }
 }

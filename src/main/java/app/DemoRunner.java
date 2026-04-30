@@ -11,7 +11,7 @@ import app.service.*;
 import java.time.LocalDateTime;
 
 public class DemoRunner {
-  public static void main(String[] args) {
+  static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
 
     // Khoi tao Database va tao cac bang neu chua co
@@ -20,18 +20,18 @@ public class DemoRunner {
 
     UserDAO userDAO = new UserDAO();
     ItemDAO itemDAO = new ItemDAO();
-    AuctionSessionDAO sessionDAO = new AuctionSessionDAO();
+    AuctionDAO sessionDAO = new AuctionDAO();
     BidDAO bidDAO = new BidDAO();
     HistoryDAO historyDAO = new HistoryDAO();
 
     UserService userService = new UserService(userDAO);
     ItemService itemService = new ItemService(itemDAO);
-    AuctionSessionService sessionService = new AuctionSessionService(sessionDAO);
+    AuctionService sessionService = new AuctionService(sessionDAO);
     BidService bidService = new BidService(bidDAO);
     HistoryService historyService = new HistoryService(historyDAO);
-    User seller = null;
-    User buyer1 = null;
-    User buyer2 = null;
+    User seller;
+    User buyer1;
+    User buyer2;
     // 1. Dang ky user
     System.out.println("\n1. Dang ky phien ban demo nguoi dung...");
     try {

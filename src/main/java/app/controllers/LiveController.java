@@ -7,6 +7,7 @@ import app.enums.AuctionStatus;
 import app.enums.CommandType;
 import app.models.Auction;
 import app.models.AuctionObserver;
+import app.models.BidTransaction;
 import app.models.DataStore;
 import app.network.Client;
 import java.io.IOException;
@@ -124,10 +125,10 @@ public class LiveController implements AuctionObserver {
                   String winner = "Không có ai";
                   double price = session.getItem().getStartingPrice();
                   if (!session.getBidHistory().isEmpty()) {
-                    app.models.Bid lastBid =
+                    BidTransaction lastBidTransaction =
                         session.getBidHistory().get(session.getBidHistory().size() - 1);
-                    winner = lastBid.getBidder().getName();
-                    price = lastBid.getAmount();
+                    winner = lastBidTransaction.getBidder().getName();
+                    price = lastBidTransaction.getAmount();
                   }
                   onAuctionClosed(session.getItem().getName(), winner, price);
                 } else {

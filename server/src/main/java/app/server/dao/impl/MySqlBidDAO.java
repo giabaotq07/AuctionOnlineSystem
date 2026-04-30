@@ -1,6 +1,5 @@
 package app.server.dao.impl;
 
-import app.models.BidTransaction;
 import app.server.config.DatabaseConnection;
 import app.server.dao.BidDAO;
 import app.server.exception.DaoException;

@@ -1,7 +1,7 @@
 package app.service;
 
 import app.dao.BidDAO;
-import app.models.Bid;
+import app.models.BidTransaction;
 import java.util.List;
 
 public class BidService {
@@ -17,11 +17,11 @@ public class BidService {
     bidDAO.placeBid(sessionId, userId, amount);
   }
 
-  public List<Bid> getBidsBySession(int sessionId) {
+  public List<BidTransaction> getBidsBySession(int sessionId) {
     return bidDAO.getBidsBySession(sessionId);
   }
 
-  public Bid getHighestBid(int sessionId) {
+  public BidTransaction getHighestBid(int sessionId) {
     return bidDAO.getHighestBid(sessionId);
   }
 }

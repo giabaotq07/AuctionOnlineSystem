@@ -14,14 +14,14 @@ public class Auction implements AuctionSubject, Serializable {
   private LocalDateTime endTime;
   private Double biddeposit;
   private transient List<AuctionObserver> observers = new ArrayList<>();
-  private List<Bid> bidHistory;
+  private List<BidTransaction> bidTransactionHistory;
 
   public Auction(Item item, User seller, LocalDateTime endTime) {
     this.item = item;
     this.seller = seller;
     this.endTime = endTime;
     this.status = AuctionStatus.ACTIVE;
-    this.bidHistory = new ArrayList<>();
+    this.bidTransactionHistory = new ArrayList<>();
   }
 
   public Auction(int id, Item item, User seller, LocalDateTime endTime) {
@@ -30,7 +30,7 @@ public class Auction implements AuctionSubject, Serializable {
     this.seller = seller;
     this.endTime = endTime;
     this.status = AuctionStatus.ACTIVE;
-    this.bidHistory = new ArrayList<>();
+    this.bidTransactionHistory = new ArrayList<>();
   }
 
   @Override
@@ -95,13 +95,13 @@ public class Auction implements AuctionSubject, Serializable {
     return biddeposit;
   }
 
-  public List<Bid> getBidHistory() {
-    return bidHistory;
+  public List<BidTransaction> getBidHistory() {
+    return bidTransactionHistory;
   }
 
   public double getCurrentHighestPrice() {
-    if (bidHistory.isEmpty()) return item.getStartingPrice();
-    return bidHistory.get(bidHistory.size() - 1).getAmount();
+    if (bidTransactionHistory.isEmpty()) return item.getStartingPrice();
+    return bidTransactionHistory.get(bidTransactionHistory.size() - 1).getAmount();
   }
 
   public synchronized boolean placeBid(User bidder, double bidAmount) {
@@ -112,8 +112,8 @@ public class Auction implements AuctionSubject, Serializable {
     if (this.status != AuctionStatus.ACTIVE) return false;
     double minimumRequiredPrice = getCurrentHighestPrice() + item.getStepPrice();
     if (bidAmount < minimumRequiredPrice) return false;
-    Bid newBid = new Bid(bidder, bidAmount, LocalDateTime.now());
-    bidHistory.add(newBid);
+    BidTransaction newBidTransaction = new BidTransaction(bidder, bidAmount, LocalDateTime.now());
+    bidTransactionHistory.add(newBidTransaction);
     notifyObserversNewBid(bidAmount, bidder.getName());
     return true;
   }
