@@ -47,9 +47,7 @@ public class FirstScene {
     }
 
     List<AuctionSession> activeS =
-        DataStore.sessions.stream()
-            .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
-            .toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
     HBox cardContainer = createContainer(activeS);
     ScrollPane viewport = new ScrollPane();
     viewport.setContent(cardContainer);
@@ -187,9 +185,7 @@ public class FirstScene {
   private void populateCompletedAuctions() {
     completedAuctionsPane.getChildren().clear();
     List<AuctionSession> completeds =
-        DataStore.sessions.stream()
-            .filter(s -> s.getStatus() == AuctionStatus.COMPLETED)
-            .toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.COMPLETED).toList();
 
     for (AuctionSession session : completeds) {
       VBox vbox = new VBox();
@@ -378,9 +374,7 @@ public class FirstScene {
     if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
       List<AuctionSession> actives =
-          DataStore.sessions.stream()
-              .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
-              .toList();
+          DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
       vp.setContent(createContainer(actives));
     }
     if (completedAuctionsPane != null) {

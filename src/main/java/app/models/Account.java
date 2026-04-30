@@ -2,7 +2,7 @@ package app.models;
 
 public class Account implements java.io.Serializable {
   private String username;
-  private String password;
+  private transient String password;
 
   public Account(String username, String password) {
     this.username = username;

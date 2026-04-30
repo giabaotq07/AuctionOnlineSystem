@@ -1,6 +1,5 @@
 package app.network;
 
-import app.enums.CommandType;
 import app.models.MessagePacket;
 import java.io.*;
 import java.net.Socket;
@@ -41,37 +40,39 @@ public class Client {
       MessagePacket<?> packet;
       while ((packet = (MessagePacket<?>) in.readObject()) != null) {
         System.out.println("[Server] " + packet.getType());
+        switch (packet.getType()) {
+          case LOGIN:
+            onMessageReceived.accept(packet);
+            break;
+          case CREATE_AUCTION:
+            app.models.AuctionSession session = (app.models.AuctionSession) packet.getData();
+            boolean exists =
+                app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
+            if (!exists) {
+              app.models.DataStore.sessions.add(session);
+              app.models.AuctionStateManager.getInstance().addSession(session);
+            }
+            break;
 
-        // --- NEW CODE: Bắt các tín hiệu global tại đây ---
-        if (packet.getType() == CommandType.CREATE_AUCTION) {
-          app.models.AuctionSession session = (app.models.AuctionSession) packet.getData();
-          // Nếu session mới này do người khác tạo mà chưa có trong db hiện tại:
-          boolean exists =
-              app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
-          if (!exists) {
-            app.models.DataStore.sessions.add(session);
-            app.models.AuctionStateManager.getInstance().addSession(session);
-          }
+          case PLACE_BID:
+            app.models.AuctionSession updatedSession = (app.models.AuctionSession) packet.getData();
+            app.models.DataStore.sessions.stream()
+                .filter(s -> s.getId() == updatedSession.getId())
+                .findFirst()
+                .ifPresent(
+                    s -> {
+                      s.getBidHistory().clear();
+                      s.getBidHistory().addAll(updatedSession.getBidHistory());
+                      s.setStatus(updatedSession.getStatus());
+
+                      if (!s.getBidHistory().isEmpty()) {
+                        app.models.Bid lastBid =
+                            s.getBidHistory().get(s.getBidHistory().size() - 1);
+                        s.notifyObserversNewBid(lastBid.getAmount(), lastBid.getBidder().getName());
+                      }
+                    });
+            break;
         }
-
-        if (packet.getType() == CommandType.PLACE_BID) {
-          app.models.AuctionSession updatedSession = (app.models.AuctionSession) packet.getData();
-          app.models.DataStore.sessions.stream()
-              .filter(s -> s.getId() == updatedSession.getId())
-              .findFirst()
-              .ifPresent(
-                  s -> {
-                    s.getBidHistory().clear();
-                    s.getBidHistory().addAll(updatedSession.getBidHistory());
-                    s.setStatus(updatedSession.getStatus());
-
-                    if (!s.getBidHistory().isEmpty()) {
-                      app.models.Bid lastBid = s.getBidHistory().get(s.getBidHistory().size() - 1);
-                      s.notifyObserversNewBid(lastBid.getAmount(), lastBid.getBidder().getName());
-                    }
-                  });
-        }
-        // --- END NEW CODE ---
 
         if (onMessageReceived != null) {
           // Đẩy về cho Controller xử lýw

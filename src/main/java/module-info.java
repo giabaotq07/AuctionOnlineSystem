@@ -15,5 +15,7 @@ module app {
       com.google.gson;
 
   exports app;
-  opens app.enums to com.google.gson;
+
+  opens app.enums to
+      com.google.gson;
 }

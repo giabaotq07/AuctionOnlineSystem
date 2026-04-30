@@ -1,9 +1,9 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
+import app.enums.HistoryType;
 import app.exceptions.DatabaseException;
 import app.models.HistoryRecord;
-import app.enums.HistoryType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

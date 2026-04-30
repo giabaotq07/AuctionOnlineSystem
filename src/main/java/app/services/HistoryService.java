@@ -1,8 +1,8 @@
 package app.services;
 
 import app.dao.HistoryDAO;
-import app.models.HistoryRecord;
 import app.enums.HistoryType;
+import app.models.HistoryRecord;
 import java.util.List;
 
 public class HistoryService {

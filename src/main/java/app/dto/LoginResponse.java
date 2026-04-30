@@ -1,6 +1,6 @@
 package app.dto;
 
-import app.enums.UserRole;
+import app.models.User;
+import java.io.Serializable;
 
-public record LoginResponse(boolean success, String message, int userId, UserRole role, String sessionToken) {
-}
+public record LoginResponse(boolean success, String message, User user) implements Serializable {}

@@ -1,4 +1,5 @@
 package app.dto;
 
-public record LoginRequest(String username, String password) {
-}
+import java.io.Serializable;
+
+public record LoginRequest(String username, String password) implements Serializable {}

@@ -1,7 +1,6 @@
 package app.models;
 
 import app.enums.HistoryType;
-
 import java.time.LocalDateTime;
 
 public class HistoryRecord implements java.io.Serializable {
