@@ -1,4 +1,4 @@
-package app.services;
+package app.service;
 
 import app.exceptions.InvalidCredentialsException;
 import app.exceptions.UserAlreadyExistsException;

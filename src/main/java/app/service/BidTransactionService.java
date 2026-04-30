@@ -1,4 +1,4 @@
-package app.services;
+package app.service;
 
 import app.dao.BidTransactionDAO;
 import app.models.BidTransaction;

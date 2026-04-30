@@ -1,4 +1,4 @@
-package app.services;
+package app.service;
 
 import app.config.PasswordUtils;
 import app.dao.UserDAO;

@@ -6,7 +6,7 @@ import app.dto.LoginResponse;
 import app.enums.CommandType;
 import app.models.MessagePacket;
 import app.models.User;
-import app.services.UserService;
+import app.service.UserService;
 
 public class LoginCommand implements Command {
   @Override

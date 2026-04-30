@@ -1,4 +1,4 @@
-package app.services;
+package app.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -20,12 +20,7 @@ public class TestUserService {
     userDAO = new UserDAO();
     userService = new UserService(userDAO);
     tester =
-        UserFactory.createUser(
-            "Test User",
-            new Account("test_account", "test_password"),
-            new Wallet(),
-            UserRole.BIDDER);
-    tester = userDAO.add(tester);
+        userService.getUserByAccount("test_account");
   }
 
   @Test

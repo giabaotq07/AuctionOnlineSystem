@@ -7,7 +7,7 @@ import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
 import app.models.*;
-import app.services.UserService;
+import app.service.UserService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;

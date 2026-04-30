@@ -7,7 +7,7 @@ import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.*;
-import app.services.*;
+import app.service.*;
 import java.time.LocalDateTime;
 
 public class DemoRunner {

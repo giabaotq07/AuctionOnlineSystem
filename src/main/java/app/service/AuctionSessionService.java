@@ -1,4 +1,4 @@
-package app.services;
+package app.service;
 
 import app.dao.AuctionSessionDAO;
 import app.enums.AuctionStatus;
