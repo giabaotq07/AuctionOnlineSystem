@@ -53,7 +53,8 @@ public class AuctionService {
         return true;
       }
     } catch (Exception e) {
-      System.err.println("Lỗi khi kiểm tra hết hạn phin " + sessionId + ": " + e.getMessage());
+      System.err.println("Lỗi khi kiểm tra hết hạn phiên " + sessionId + ": " + e.getMessage());
+      e.printStackTrace();
     }
     return false;
   }

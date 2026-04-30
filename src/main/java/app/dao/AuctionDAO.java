@@ -32,7 +32,7 @@ public class AuctionDAO {
     User seller =
         UserFactory.createUser(
             rs.getString("seller_name"),
-            new Account(rs.getString("seller_acc"), rs.getString("seller_password")),
+            new Account(rs.getString("seller_acc"), null),
             new Wallet(rs.getDouble("seller_assets")),
             UserRole.valueOf(rs.getString("seller_role")));
     seller.setId(rs.getInt("seller_id"));

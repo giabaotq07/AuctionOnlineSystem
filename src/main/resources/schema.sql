@@ -1,13 +1,12 @@
--- SET FOREIGN_KEY_CHECKS = 0; -- Tắt kiểm tra khóa ngoại để xóa không bị lỗi
---
--- DROP TABLE IF EXISTS bid_transactions;
--- DROP TABLE IF EXISTS history_records;
--- DROP TABLE IF EXISTS bidTransactions;
--- DROP TABLE IF EXISTS auction_sessions;
--- DROP TABLE IF EXISTS items;
--- DROP TABLE IF EXISTS users;
---
--- SET FOREIGN_KEY_CHECKS = 1; -- Bật lại kiểm tra khóa ngoại
+SET FOREIGN_KEY_CHECKS = 0; -- Tắt kiểm tra khóa ngoại để xóa không bị lỗi
+
+DROP TABLE IF EXISTS history_records;
+DROP TABLE IF EXISTS bids;
+DROP TABLE IF EXISTS auction_sessions;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1; -- Bật lại kiểm tra khóa ngoại
 
 -- Sau đó mới chạy đoạn script CREATE TABLE của bạn
 CREATE DATABASE IF NOT EXISTS auction_db;
@@ -37,15 +36,6 @@ CREATE TABLE IF NOT EXISTS auction_sessions (
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS bidTransactions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    session_id INT NOT NULL,
-    user_id INT NOT NULL,
-    bid_amount DOUBLE NOT NULL,
-    time DATETIME NOT NULL,
-    FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
 CREATE TABLE IF NOT EXISTS history_records (
     id INT AUTO_INCREMENT PRIMARY KEY,
     session_id INT NOT NULL,
@@ -54,12 +44,12 @@ CREATE TABLE IF NOT EXISTS history_records (
     time DATETIME NOT NULL,
     FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS bid_transactions (
+CREATE TABLE IF NOT EXISTS bids (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    auction_id INT NOT NULL,
+    session_id INT NOT NULL,
     user_id INT NOT NULL,
-    amount DOUBLE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (auction_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
+    bid_amount DOUBLE NOT NULL,
+    time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
