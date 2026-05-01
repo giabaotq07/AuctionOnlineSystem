@@ -9,8 +9,6 @@ DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1; -- Bật lại kiểm tra khóa ngoại
 
 -- Sau đó mới chạy đoạn script CREATE TABLE của bạn
-CREATE DATABASE IF NOT EXISTS auction_db;
-USE auction_db;
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     account VARCHAR(50) UNIQUE NOT NULL,
