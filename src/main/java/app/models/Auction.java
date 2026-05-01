@@ -3,8 +3,7 @@ package app.models;
 import app.enums.AuctionStatus;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Auction {
 
@@ -18,15 +17,8 @@ public class Auction {
   private long depositAmount;
   private long highestBid;
   private int extendedCount;
-  private int version;
-  private final LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
+  private final ReentrantLock lock = new ReentrantLock();
 
-  private List<Integer> activeBidderIds;
-
-  // ==================== Constructors ====================
-
-  // Dùng khi tạo mới (INSERT)
   public Auction(int itemId, int sellerId, LocalDateTime endTime, long depositAmount) {
     this.itemId = itemId;
     this.sellerId = sellerId;
@@ -35,9 +27,6 @@ public class Auction {
     this.status = AuctionStatus.OPEN;
     this.highestBid = 0;
     this.extendedCount = 0;
-    this.version = 0;
-    this.activeBidderIds = new ArrayList<>();
-    this.createdAt = LocalDateTime.now();
   }
 
   public Auction(
@@ -50,10 +39,7 @@ public class Auction {
       LocalDateTime endTime,
       long depositAmount,
       long highestBid,
-      int extendedCount,
-      int version,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt) {
+      int extendedCount) {
     this.id = id;
     this.itemId = itemId;
     this.sellerId = sellerId;
@@ -64,10 +50,6 @@ public class Auction {
     this.depositAmount = depositAmount;
     this.highestBid = highestBid;
     this.extendedCount = extendedCount;
-    this.version = version;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.activeBidderIds = new ArrayList<>();
   }
 
   public void start() {
@@ -76,7 +58,6 @@ public class Auction {
     }
     this.status = AuctionStatus.RUNNING;
     this.startTime = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
   }
 
   public void finish() {
@@ -85,7 +66,6 @@ public class Auction {
           "Chỉ có thể kết thúc phiên đang RUNNING, hiện tại: " + status);
     }
     this.status = AuctionStatus.FINISHED;
-    this.updatedAt = LocalDateTime.now();
   }
 
   public void markPaid() {
@@ -93,7 +73,6 @@ public class Auction {
       throw new IllegalStateException("Chỉ có thể PAID khi FINISHED, hiện tại: " + status);
     }
     this.status = AuctionStatus.PAID;
-    this.updatedAt = LocalDateTime.now();
   }
 
   public void cancel() {
@@ -101,7 +80,6 @@ public class Auction {
       throw new IllegalStateException("Không thể huỷ phiên đã " + status);
     }
     this.status = AuctionStatus.CANCELLED;
-    this.updatedAt = LocalDateTime.now();
   }
 
   public void updateHighestBid(long newBid, int bidderId) {
@@ -110,8 +88,6 @@ public class Auction {
     }
     this.highestBid = newBid;
     this.winnerId = bidderId;
-    this.version++; // optimistic locking
-    this.updatedAt = LocalDateTime.now();
   }
 
   /** Anti-sniping: gia hạn thêm extraSeconds nếu bid trong X giây cuối */
@@ -121,7 +97,6 @@ public class Auction {
     }
     this.endTime = this.endTime.plusSeconds(extraSeconds);
     this.extendedCount++;
-    this.updatedAt = LocalDateTime.now();
   }
 
   public boolean isExpired() {
@@ -130,20 +105,6 @@ public class Auction {
 
   public boolean isRunning() {
     return this.status == AuctionStatus.RUNNING;
-  }
-
-  public void addActiveBidder(int userId) {
-    if (!activeBidderIds.contains(userId)) {
-      activeBidderIds.add(userId);
-    }
-  }
-
-  public void removeActiveBidder(int userId) {
-    activeBidderIds.remove(Integer.valueOf(userId));
-  }
-
-  public List<Integer> getActiveBidderIds() {
-    return new ArrayList<>(activeBidderIds);
   }
 
   public int getId() {
@@ -218,24 +179,8 @@ public class Auction {
     this.extendedCount = extendedCount;
   }
 
-  public int getVersion() {
-    return version;
-  }
-
-  public void setVersion(int version) {
-    this.version = version;
-  }
-
-  public LocalDateTime getCreatedAt() {
-    return createdAt;
-  }
-
-  public LocalDateTime getUpdatedAt() {
-    return updatedAt;
-  }
-
-  public void setUpdatedAt(LocalDateTime updatedAt) {
-    this.updatedAt = updatedAt;
+  public ReentrantLock getLock() {
+    return lock;
   }
 
   @Override
@@ -259,8 +204,6 @@ public class Auction {
         + highestBid
         + ", extendedCount="
         + extendedCount
-        + ", version="
-        + version
         + '}';
   }
 }
