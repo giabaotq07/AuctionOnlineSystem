@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class AuctionService {
-  private final AuctionDAO AuctionDAO;
+  private final AuctionDAO auctionDAO;
 
-  public AuctionService(AuctionDAO AuctionDAO) {
-    this.AuctionDAO = AuctionDAO;
+  public AuctionService(AuctionDAO auctionDAO) {
+    this.auctionDAO = auctionDAO;
   }
 
   public Auction createAuctionSession(Auction session) {
@@ -20,11 +20,11 @@ public class AuctionService {
     if (session.getEndTime().isBefore(LocalDateTime.now())) {
       throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
     }
-    return AuctionDAO.addAuction(session);
+    return auctionDAO.addAuction(session);
   }
 
   public Auction getAuctionById(int sessionId) {
-    Auction session = AuctionDAO.getAuctionById(sessionId);
+    Auction session = auctionDAO.getAuctionById(sessionId);
     if (session == null) {
       throw new ServiceException("Khng tm thấy phin đấu gi với ID: " + sessionId);
     }
@@ -32,14 +32,14 @@ public class AuctionService {
   }
 
   public void updateSessionStatus(int sessionId, AuctionStatus status) {
-    boolean ok = AuctionDAO.updateAuctionStatus(sessionId, status);
+    boolean ok = auctionDAO.updateAuctionStatus(sessionId, status);
     if (!ok) {
       throw new ServiceException("Khng thể cập nhật trạng thi cho phin ID: " + sessionId);
     }
   }
 
   public List<Auction> getAllAuction() {
-    return AuctionDAO.getAllAuction();
+    return auctionDAO.getAllAuction();
   }
 
   public boolean closeSessionIfExpired(int sessionId) {
