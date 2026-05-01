@@ -20,6 +20,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 public class LiveController implements AuctionObserver {
@@ -32,6 +33,7 @@ public class LiveController implements AuctionObserver {
   @FXML private Label depositLabel;
   @FXML private Label timeLabel;
   @FXML private TextField bidAmountField;
+  @FXML private TextArea description;
 
   private ScheduledExecutorService scheduler;
 
@@ -50,6 +52,10 @@ public class LiveController implements AuctionObserver {
 
       session.registerObserver(this);
       startCountdownTimer();
+      if (description != null) {
+        // Lấy mô tả từ Item trong session và gán vào TextArea
+        description.setText(session.getItem().getDescription());
+      }
     }
   }
 
