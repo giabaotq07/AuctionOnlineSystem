@@ -3,6 +3,7 @@ package app.models;
 import app.enums.AuctionStatus;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +87,10 @@ public class Auction implements AuctionSubject, Serializable {
   public LocalDateTime getEndTime() {
     return this.endTime;
   }
-
+  public String getFormatEndTime() {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    return endTime.format(formatter);
+  }
   public void setBidDeposit(Double deposit) {
     this.bidDeposit = deposit;
   }

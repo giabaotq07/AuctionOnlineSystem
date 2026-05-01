@@ -85,8 +85,8 @@ public class MessController {
     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     Scene scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
-    // String css = this.getClass().getResource("style.css").toExternalForm();
-    // scene.getStylesheets().add(css);
+    String css = this.getClass().getResource("style.css").toExternalForm();
+    scene.getStylesheets().add(css);
     stage.show();
   }
 }
