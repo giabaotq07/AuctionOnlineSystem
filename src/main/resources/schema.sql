@@ -29,12 +29,13 @@ CREATE TABLE items
     seller_id      INT          NOT NULL,
     name           VARCHAR(100) NOT NULL,
     description    TEXT,
+    image_url      VARCHAR(255) DEFAULT NULL,
     category       VARCHAR(50),
     starting_price BIGINT       NOT NULL CHECK (starting_price > 0),
     step_price     BIGINT       NOT NULL CHECK (step_price > 0),
-    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status         ENUM('AVAILABLE','AUCTIONING','SOLD'),
-    updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    status         ENUM('AVAILABLE','AUCTIONING','SOLD') DEFAULT 'AVAILABLE',
+    updated_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
@@ -46,8 +47,9 @@ CREATE TABLE auction_sessions
     seller_id      INT      NOT NULL,
     winner_id      INT NULL,
     status         ENUM('OPEN','RUNNING','FINISHED','PAID','CANCELLED') DEFAULT 'OPEN',
-    start_time     DATETIME  DEFAULT CURRENT_TIMESTAMP,
+    start_time     DATETIME NULL DEFAULT NULL,
     end_time       DATETIME NOT NULL,
+    deposit_amount BIGINT    DEFAULT 0 CHECK (deposit_amount >= 0),
     highest_bid    BIGINT    DEFAULT 0,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
