@@ -1,6 +1,9 @@
 package app.models;
 
+import app.enums.ItemStatus;
 import app.enums.ItemType;
+
+import java.time.LocalDateTime;
 
 public abstract class Item extends Entity {
   protected int sellerId;
@@ -9,6 +12,9 @@ public abstract class Item extends Entity {
   protected double startingPrice;
   protected double stepPrice;
   protected ItemType type;
+  protected ItemStatus status;
+  protected LocalDateTime createdAt;
+  protected LocalDateTime updatedAt;
 
   public Item(
       String name,
