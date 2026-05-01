@@ -19,11 +19,11 @@ public class TestUserService {
     userDAO = new UserDAO();
     userService = new UserService(userDAO);
     tester =
-            UserFactory.createUser(
-                    "Test User",
-                    new Account("test_account", "test_password"),
-                    new Wallet(),
-                    UserRole.BIDDER);
+        UserFactory.createUser(
+            "Test User",
+            new Account("test_account", "test_password"),
+            new Wallet(),
+            UserRole.BIDDER);
     try {
       tester = userDAO.add(tester);
     } catch (DatabaseException e) {

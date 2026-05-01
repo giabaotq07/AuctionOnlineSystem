@@ -15,6 +15,7 @@ import java.util.List;
 
 public class ItemDAO {
   private final DatabaseConnection connection = DatabaseConnection.getInstance();
+
   private Item mapItem(ResultSet rs) throws SQLException {
     return ItemFactory.createItem(
         rs.getInt("id"),

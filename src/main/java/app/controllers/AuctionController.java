@@ -1,13 +1,13 @@
 package app.controllers;
 
-import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.enums.View;
 import app.enums.CommandType;
 import app.enums.HistoryType;
 import app.enums.ItemType;
+import app.enums.View;
 import app.models.*;
 import app.network.Client;
+import app.util.AlertUtils;
 import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;

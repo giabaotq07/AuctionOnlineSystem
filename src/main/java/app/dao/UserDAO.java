@@ -1,12 +1,12 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import app.util.PasswordUtils;
 import app.exceptions.DatabaseException;
 import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
+import app.util.PasswordUtils;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

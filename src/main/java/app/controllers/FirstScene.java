@@ -1,12 +1,12 @@
 package app.controllers;
 
-import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.enums.View;
 import app.enums.AuctionStatus;
+import app.enums.View;
 import app.models.Auction;
 import app.models.DataStore;
 import app.network.Client;
+import app.util.AlertUtils;
 import java.io.IOException;
 import java.util.List;
 import javafx.animation.KeyFrame;

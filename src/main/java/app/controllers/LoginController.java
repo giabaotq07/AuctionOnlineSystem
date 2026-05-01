@@ -1,15 +1,15 @@
 package app.controllers;
 
-import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.enums.View;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.enums.CommandType;
+import app.enums.View;
 import app.models.DataStore;
 import app.models.MessagePacket;
 import app.models.User;
 import app.network.Client;
+import app.util.AlertUtils;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

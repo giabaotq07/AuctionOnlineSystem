@@ -1,13 +1,13 @@
 package app.controllers;
 
-import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.enums.View;
 import app.dao.UserDAO;
 import app.enums.UserRole;
+import app.enums.View;
 import app.exceptions.UserAlreadyExistsException;
 import app.models.*;
 import app.service.UserService;
+import app.util.AlertUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;

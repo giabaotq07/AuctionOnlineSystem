@@ -25,8 +25,9 @@ public class LoginCommand implements Command {
       MessagePacket<LoginResponse> responsePacket =
           new MessagePacket<>(CommandType.LOGIN, loginResponse);
       clientHandler.sendMessage(responsePacket);
-    }  else {
-      LoginResponse loginResponse = new LoginResponse(false, "Đăng nhập thất bại! Sai tên tài khoản hoặc mật khẩu.", null);
+    } else {
+      LoginResponse loginResponse =
+          new LoginResponse(false, "Đăng nhập thất bại! Sai tên tài khoản hoặc mật khẩu.", null);
       MessagePacket<LoginResponse> responsePacket =
           new MessagePacket<>(CommandType.LOGIN, loginResponse);
       clientHandler.sendMessage(responsePacket);

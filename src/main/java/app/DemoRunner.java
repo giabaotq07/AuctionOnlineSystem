@@ -1,6 +1,5 @@
 package app;
 
-import app.config.DatabaseConnection;
 import app.dao.*;
 import app.enums.HistoryType;
 import app.enums.ItemType;
@@ -17,11 +16,11 @@ public class DemoRunner {
 
     // Khoi tao Database va tao cac bang neu chua co
     System.out.println("Dang kiem tra va khoi tao Database...");
-    UserDAO userDAO = new  UserDAO();
-    ItemDAO itemDAO = new  ItemDAO();
-    AuctionDAO sessionDAO = new  AuctionDAO();
-    BidDAO bidDAO = new  BidDAO();
-    HistoryDAO historyDAO = new  HistoryDAO();
+    UserDAO userDAO = new UserDAO();
+    ItemDAO itemDAO = new ItemDAO();
+    AuctionDAO sessionDAO = new AuctionDAO();
+    BidDAO bidDAO = new BidDAO();
+    HistoryDAO historyDAO = new HistoryDAO();
 
     UserService userService = new UserService(userDAO);
     ItemService itemService = new ItemService(itemDAO);
@@ -64,8 +63,7 @@ public class DemoRunner {
     buyer2 = userService.getUserByAccount("nguoimua2");
     // Kiem tra looi DB neu co
     if (seller == null || buyer1 == null || buyer2 == null) {
-      System.out.println(
-          "Loi tao DB User! Vui long kiem tra MySQL (app.config.connection).");
+      System.out.println("Loi tao DB User! Vui long kiem tra MySQL (app.config.connection).");
       return;
     }
     // 2. Dang san pham (ID se duoc AUTO_INCREMENT)

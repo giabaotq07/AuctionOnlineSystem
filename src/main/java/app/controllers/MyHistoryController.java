@@ -1,10 +1,10 @@
 package app.controllers;
 
-import app.util.AlertUtils;
 import app.config.NavigationManager;
 import app.enums.View;
 import app.models.*;
 import app.network.Client;
+import app.util.AlertUtils;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

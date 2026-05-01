@@ -13,6 +13,7 @@ import java.util.List;
 
 public class HistoryDAO {
   private final DatabaseConnection connection = DatabaseConnection.getInstance();
+
   public boolean addHistoryRecord(HistoryRecord record) {
     String query =
         "INSERT INTO history_records (session_id, type, message, time) VALUES (?, ?, ?, ?)";

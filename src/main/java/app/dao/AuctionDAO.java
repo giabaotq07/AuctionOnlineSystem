@@ -61,8 +61,8 @@ public class AuctionDAO {
   public List<Auction> getAllAuction() {
     List<Auction> sessions = new ArrayList<>();
     try (Connection conn = connection.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(SELECT_JOIN_QUERY);
-         ResultSet rs = stmt.executeQuery()) {
+        PreparedStatement stmt = conn.prepareStatement(SELECT_JOIN_QUERY);
+        ResultSet rs = stmt.executeQuery()) {
       while (rs.next()) {
         sessions.add(mapAuction(rs));
       }

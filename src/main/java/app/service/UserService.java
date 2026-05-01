@@ -1,11 +1,11 @@
 package app.service;
 
-import app.util.PasswordUtils;
 import app.dao.UserDAO;
 import app.exceptions.InvalidCredentialsException;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.User;
+import app.util.PasswordUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +21,7 @@ public class UserService implements IUserService {
   @Override
   public boolean login(String account, String rawPassword) throws InvalidCredentialsException {
     User user = userDAO.getUserByAccount(account);
-      return user != null && PasswordUtils.verify(rawPassword, user.getAccount().getPassword());
+    return user != null && PasswordUtils.verify(rawPassword, user.getAccount().getPassword());
   }
 
   @Override
@@ -69,7 +69,7 @@ public class UserService implements IUserService {
     boolean ok = userDAO.updateUserWallet(user);
     if (!ok) {
       return false;
-      }
+    }
     userCache.put(user.getAccount().getUsername(), user);
     return true;
   }
