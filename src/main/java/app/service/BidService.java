@@ -2,6 +2,8 @@ package app.service;
 
 import app.dao.BidDAO;
 import app.models.BidTransaction;
+
+import java.sql.Connection;
 import java.util.List;
 
 public class BidService {
@@ -14,7 +16,7 @@ public class BidService {
   public void placeBid(int sessionId, int userId, double amount) {
     // Việc kiểm tra bid cao hơn giá hiện tại và ngăn chặn lost update
     // đã được đưa vào Transaction trong BidDAO.placeBid sử dụng Pessimistic Lock.
-    bidDAO.placeBid(sessionId, userId, amount);
+    bidDAO.insertBid(sessionId, userId, amount);
   }
 
   public List<BidTransaction> getBidsBySession(int sessionId) {

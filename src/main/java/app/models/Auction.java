@@ -17,6 +17,7 @@ public class Auction implements AuctionSubject, Serializable {
   private double highestBid;
   private transient List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
   private List<BidTransaction> bidHistory;
+  private int extendedCount;
 
   public Auction(
       int id,
@@ -26,7 +27,8 @@ public class Auction implements AuctionSubject, Serializable {
       AuctionStatus status,
       LocalDateTime startTime,
       LocalDateTime endTime,
-      double highestBid) {
+      double highestBid,
+      int extendedCount) {
 
     this.id = id;
     this.item = item;
@@ -36,6 +38,7 @@ public class Auction implements AuctionSubject, Serializable {
     this.startTime = startTime;
     this.endTime = endTime;
     this.highestBid = highestBid;
+    this.extendedCount = extendedCount;
   }
 
   public Auction(Item item, User seller, LocalDateTime endTime) {
@@ -168,5 +171,13 @@ public class Auction implements AuctionSubject, Serializable {
 
   public void setBidHistory(List<BidTransaction> bidHistory) {
     this.bidHistory = bidHistory;
+  }
+
+  public int getExtendedCount() {
+    return extendedCount;
+  }
+
+  public void setExtendedCount(int extendedCount) {
+    this.extendedCount = extendedCount;
   }
 }
