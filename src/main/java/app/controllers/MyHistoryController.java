@@ -1,8 +1,8 @@
 package app.controllers;
 
-import app.config.AlertUtils;
+import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
+import app.enums.View;
 import app.models.*;
 import app.network.Client;
 import java.io.IOException;

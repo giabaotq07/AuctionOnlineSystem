@@ -2,7 +2,6 @@ package app.dao;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import app.config.DatabaseConnection;
 import app.enums.UserRole;
 import app.exceptions.DatabaseException;
 import app.models.*;
@@ -15,15 +14,19 @@ public class TestUserDao {
 
   @BeforeAll
   public static void setupDatabase() {
-    DatabaseConnection.initializeDatabase();
-    userDAO = UserDAO.getInstance();
+    userDAO = new UserDAO();
     tester =
         UserFactory.createUser(
             "Test User",
             new Account("test_account", "test_password"),
             new Wallet(),
             UserRole.BIDDER);
-    tester = userDAO.add(tester);
+    try {
+      tester = userDAO.add(tester);
+    } catch (DatabaseException e) {
+      System.err.println("Error setting up test user: " + e.getMessage());
+      tester = userDAO.getUserByAccount("test_account");
+    }
   }
 
   @Test

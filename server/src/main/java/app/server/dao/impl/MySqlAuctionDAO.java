@@ -3,7 +3,7 @@ package app.server.dao.impl;
 import app.enums.AuctionStatus;
 import app.models.Auction;
 import app.models.Item;
-import app.server.config.DatabaseConnection;
+import app.server.config.connection;
 import app.server.dao.AuctionDAO;
 import app.server.exception.DaoException;
 import app.server.utils.ItemMapper;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class MySqlAuctionDAO implements AuctionDAO {
-  private final DatabaseConnection connection = DatabaseConnection.getInstance();
+  private final connection connection = connection.getInstance();
 
   @Override
   public int create(Auction auction) {

@@ -14,7 +14,7 @@ public class LoginCommand implements Command {
     LoginRequest loginPacket = (LoginRequest) packet.getData();
     String username = loginPacket.username();
     String password = loginPacket.password();
-    UserDAO userDAO = UserDAO.getInstance();
+    UserDAO userDAO = new UserDAO();
     UserService userService = new UserService(userDAO);
     if (userService.login(username, password)) {
       User user = userService.getUserByAccount(username);

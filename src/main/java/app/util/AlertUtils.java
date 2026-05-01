@@ -1,4 +1,4 @@
-package app.config;
+package app.util;
 
 import javafx.scene.control.Alert;
 

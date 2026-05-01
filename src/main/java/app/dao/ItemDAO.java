@@ -14,18 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ItemDAO {
-  private static ItemDAO instance;
-  private ItemDAO() {}
-  public static ItemDAO getInstance() {
-    if (instance == null) {
-        synchronized (ItemDAO.class) {
-            if (instance == null) {
-            instance = new ItemDAO();
-            }
-        }
-    }
-    return instance;
-  }
+  private final DatabaseConnection connection = DatabaseConnection.getInstance();
   private Item mapItem(ResultSet rs) throws SQLException {
     return ItemFactory.createItem(
         rs.getInt("id"),
@@ -38,7 +27,7 @@ public class ItemDAO {
 
   public Item getById(Integer id) {
     String query = "SELECT * FROM items WHERE id = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, id);
       try (ResultSet rs = pstmt.executeQuery()) {
@@ -55,7 +44,7 @@ public class ItemDAO {
   public List<Item> getAll() {
     List<Item> items = new ArrayList<>();
     String query = "SELECT * FROM items";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query);
         ResultSet rs = pstmt.executeQuery()) {
       while (rs.next()) {
@@ -70,7 +59,7 @@ public class ItemDAO {
   public Item add(Item item) {
     String query =
         "INSERT INTO items (name, description, starting_price, step_price, type) VALUES (?, ?, ?, ?, ?)";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
       pstmt.setString(1, item.getName());
       pstmt.setString(2, item.getDescription());
@@ -95,7 +84,7 @@ public class ItemDAO {
   public boolean update(Item item) {
     String query =
         "UPDATE items SET name = ?, description = ?, starting_price = ?, step_price = ?, type = ? WHERE id = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setString(1, item.getName());
       pstmt.setString(2, item.getDescription());
@@ -111,7 +100,7 @@ public class ItemDAO {
 
   public boolean delete(Integer id) {
     String query = "DELETE FROM items WHERE id = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, id);
       return pstmt.executeUpdate() > 0;

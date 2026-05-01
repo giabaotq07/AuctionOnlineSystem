@@ -16,7 +16,6 @@ public class AuctionService {
   }
 
   public Auction createAuctionSession(Auction session) {
-    // C thể thm logic kiểm tra: thời gian kết thc phải ở tương lai
     if (session.getEndTime().isBefore(LocalDateTime.now())) {
       throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
     }

@@ -1,7 +1,7 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import app.config.PasswordUtils;
+import app.util.PasswordUtils;
 import app.exceptions.DatabaseException;
 import app.models.Account;
 import app.models.User;
@@ -12,18 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO {
-  private static UserDAO instance;
-  private UserDAO() {}
-  public static UserDAO getInstance() {
-    if (instance == null) {
-      synchronized (UserDAO.class) {
-        if (instance == null) {
-          instance = new UserDAO();
-        }
-      }
-    }
-    return instance;
-  }
+  private final DatabaseConnection connection = DatabaseConnection.getInstance();
+
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(
         rs.getInt("id"),
@@ -35,7 +25,7 @@ public class UserDAO {
 
   public User getUserByAccount(String account) {
     String query = "SELECT * FROM users WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
 
       pstmt.setString(1, account);
@@ -50,7 +40,7 @@ public class UserDAO {
 
   public User getById(Integer id) {
     String query = "SELECT * FROM users WHERE id = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
 
       pstmt.setInt(1, id);
@@ -66,7 +56,7 @@ public class UserDAO {
   public List<User> getAll() {
     String query = "SELECT * FROM users";
     List<User> list = new ArrayList<>();
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query);
         ResultSet rs = pstmt.executeQuery()) {
 
@@ -82,7 +72,7 @@ public class UserDAO {
   public User add(User user) {
     String insertSql =
         "INSERT INTO users (account, password, name, role, assets) VALUES (?, ?, ?, ?, ?)";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt =
             conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
       pstmt.setString(1, user.getAccount().getUsername());
@@ -111,7 +101,7 @@ public class UserDAO {
   }
 
   private boolean executeUpdate(String sql, Object... params) {
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(sql)) {
       for (int i = 0; i < params.length; i++) {
         pstmt.setObject(i + 1, params[i]);

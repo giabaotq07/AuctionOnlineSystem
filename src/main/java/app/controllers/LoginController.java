@@ -1,8 +1,8 @@
 package app.controllers;
 
-import app.config.AlertUtils;
+import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
+import app.enums.View;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.enums.CommandType;

@@ -1,6 +1,6 @@
 package app.service;
 
-import app.config.PasswordUtils;
+import app.util.PasswordUtils;
 import app.dao.UserDAO;
 import app.exceptions.InvalidCredentialsException;
 import app.exceptions.UserAlreadyExistsException;

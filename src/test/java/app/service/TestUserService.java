@@ -2,8 +2,9 @@ package app.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import app.config.DatabaseConnection;
 import app.dao.UserDAO;
+import app.enums.UserRole;
+import app.exceptions.DatabaseException;
 import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,15 +16,28 @@ public class TestUserService {
 
   @BeforeAll
   public static void setupDatabase() {
-    DatabaseConnection.initializeDatabase();
-    userDAO = UserDAO.getInstance();
+    userDAO = new UserDAO();
     userService = new UserService(userDAO);
-    tester = userService.getUserByAccount("test_account");
+    tester =
+            UserFactory.createUser(
+                    "Test User",
+                    new Account("test_account", "test_password"),
+                    new Wallet(),
+                    UserRole.BIDDER);
+    try {
+      tester = userDAO.add(tester);
+    } catch (DatabaseException e) {
+      System.err.println("Error inserting test user: " + e.getMessage());
+      tester = userDAO.getUserByAccount("test_account");
+    }
   }
 
   @Test
   public void testLogin() {
-    User logined = userService.login("test_account", "test_password");
+    User logined = null;
+    if (userService.login("test_account", "test_password")) {
+      logined = userService.getUserByAccount("test_account");
+    }
     assertEquals(tester, logined);
   }
 }

@@ -1,6 +1,6 @@
 package app.server.dao.impl;
 
-import app.server.config.DatabaseConnection;
+import app.server.config.connection;
 import app.server.dao.BidDAO;
 import app.server.exception.DaoException;
 import java.sql.*;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MySqlBidDAO implements BidDAO {
-  private final DatabaseConnection connection = DatabaseConnection.getInstance();
+  private final connection connection = connection.getInstance();
 
   @Override
   public int create(BidTransaction bid) {

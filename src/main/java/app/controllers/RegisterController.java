@@ -1,8 +1,8 @@
 package app.controllers;
 
-import app.config.AlertUtils;
+import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
+import app.enums.View;
 import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
@@ -24,7 +24,7 @@ public class RegisterController {
 
   @FXML private PasswordField txtPassword;
 
-  private final UserDAO userDAO = UserDAO.getInstance();
+  private final UserDAO userDAO = new UserDAO();
   private final UserService userService = new UserService(userDAO);
 
   @FXML

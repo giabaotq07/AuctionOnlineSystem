@@ -5,14 +5,14 @@ import app.models.Admin;
 import app.models.Bidder;
 import app.models.Seller;
 import app.models.User;
-import app.server.config.DatabaseConnection;
+import app.server.config.connection;
 import app.server.dao.UserDAO;
 import app.server.exception.DaoException;
 import java.sql.*;
 import java.util.Optional;
 
 public class MySqlUserDAO implements UserDAO {
-  private final DatabaseConnection connection = DatabaseConnection.getInstance();
+  private final connection connection = connection.getInstance();
 
   @Override
   public int create(User user) {

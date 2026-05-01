@@ -10,20 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BidDAO {
-  private static BidDAO instance;
-
-  private BidDAO() {}
-
-  public static BidDAO getInstance() {
-    if (instance == null) {
-      synchronized (BidDAO.class) {
-        if (instance == null) {
-          instance = new BidDAO();
-        }
-      }
-    }
-    return instance;
-  }
+  private final DatabaseConnection connection = DatabaseConnection.getInstance();
 
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(
@@ -35,7 +22,7 @@ public class BidDAO {
   }
 
   public void placeBid(int sessionId, int userId, double bidAmount) {
-    try (Connection conn = DatabaseConnection.getConnection()) {
+    try (Connection conn = connection.getConnection()) {
       conn.setAutoCommit(false);
       try {
         // Lock phiên đấu giá để chống lost update / race condition
@@ -99,7 +86,7 @@ public class BidDAO {
             + "JOIN users u ON b.user_id = u.id "
             + "WHERE b.session_id = ? "
             + "ORDER BY b.bid_amount DESC LIMIT 1";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, sessionId);
       try (ResultSet rs = pstmt.executeQuery()) {
@@ -123,7 +110,7 @@ public class BidDAO {
             + "JOIN users u ON b.user_id = u.id "
             + "WHERE b.session_id = ? "
             + "ORDER BY b.bid_amount DESC LIMIT 1";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, sessionId);
       try (ResultSet rs = pstmt.executeQuery()) {

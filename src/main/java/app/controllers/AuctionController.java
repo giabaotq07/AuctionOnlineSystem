@@ -1,8 +1,8 @@
 package app.controllers;
 
-import app.config.AlertUtils;
+import app.util.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
+import app.enums.View;
 import app.enums.CommandType;
 import app.enums.HistoryType;
 import app.enums.ItemType;
@@ -48,7 +48,7 @@ public class AuctionController {
     }
     if (DataStore.currentUser == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
-      app.config.NavigationManager.getInstance().navigateTo(app.config.View.LOGIN);
+      app.config.NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
 

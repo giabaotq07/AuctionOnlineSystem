@@ -12,22 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryDAO {
-  private static HistoryDAO instance;
-  private HistoryDAO() {}
-  public static HistoryDAO getInstance() {
-    if (instance == null) {
-      synchronized (HistoryDAO.class) {
-        if (instance == null) {
-          instance = new HistoryDAO();
-        }
-      }
-    }
-    return instance;
-  }
+  private final DatabaseConnection connection = DatabaseConnection.getInstance();
   public boolean addHistoryRecord(HistoryRecord record) {
     String query =
         "INSERT INTO history_records (session_id, type, message, time) VALUES (?, ?, ?, ?)";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, record.getSessionId());
       pstmt.setString(2, record.getType().name());
@@ -42,7 +31,7 @@ public class HistoryDAO {
   public List<HistoryRecord> getHistoryBySession(int sessionId) {
     List<HistoryRecord> records = new ArrayList<>();
     String query = "SELECT * FROM history_records WHERE session_id = ? ORDER BY time DESC";
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = connection.getConnection();
         PreparedStatement pstmt = conn.prepareStatement(query)) {
       pstmt.setInt(1, sessionId);
       try (ResultSet rs = pstmt.executeQuery()) {

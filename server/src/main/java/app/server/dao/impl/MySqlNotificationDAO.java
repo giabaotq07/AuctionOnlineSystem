@@ -2,7 +2,7 @@ package app.server.dao.impl;
 
 import app.enums.NotificationType;
 import app.models.Notification;
-import app.server.config.DatabaseConnection;
+import app.server.config.connection;
 import app.server.dao.NotificationDAO;
 import app.server.exception.DaoException;
 import java.sql.*;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MySqlNotificationDAO implements NotificationDAO {
-  private final DatabaseConnection connection = DatabaseConnection.getInstance();
+  private final connection connection = connection.getInstance();
 
   @Override
   public int save(Notification notification) {

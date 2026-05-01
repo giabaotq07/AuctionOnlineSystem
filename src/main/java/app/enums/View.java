@@ -1,4 +1,4 @@
-package app.config;
+package app.enums;
 
 public enum View {
   CONNECT("/app/views/ConnectServerController.fxml"),

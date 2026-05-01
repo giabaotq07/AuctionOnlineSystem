@@ -1,7 +1,7 @@
 package app.server.dao.impl;
 
 import app.models.ChatMessage;
-import app.server.config.DatabaseConnection;
+import app.server.config.connection;
 import app.server.dao.ChatDAO;
 import app.server.exception.DaoException;
 import java.sql.*;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MySqlChatDAO implements ChatDAO {
-  private final DatabaseConnection connection = DatabaseConnection.getInstance();
+  private final connection connection = connection.getInstance();
 
   @Override
   public int save(ChatMessage message) {
