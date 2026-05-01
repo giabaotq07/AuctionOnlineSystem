@@ -2,7 +2,7 @@ package app.service;
 
 import app.dao.AuctionDAO;
 import app.enums.AuctionStatus;
-import app.exceptions.ServiceException;
+import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.BidTransaction;
 import java.time.LocalDateTime;

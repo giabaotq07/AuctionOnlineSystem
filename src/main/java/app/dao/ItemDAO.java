@@ -2,7 +2,7 @@ package app.dao;
 
 import app.config.DatabaseConnection;
 import app.enums.ItemType;
-import app.exceptions.DatabaseException;
+import app.exception.DatabaseException;
 import app.models.Item;
 import app.models.ItemFactory;
 import java.sql.Connection;

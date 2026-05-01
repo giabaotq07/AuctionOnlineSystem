@@ -1,9 +1,9 @@
 package app.service;
 
 import app.dao.UserDAO;
-import app.exceptions.InvalidCredentialsException;
-import app.exceptions.UserAlreadyExistsException;
-import app.exceptions.UserNotFoundException;
+import app.exception.InvalidCredentialsException;
+import app.exception.NotFoundException;
+import app.exception.UserAlreadyExistsException;
 import app.models.User;
 import app.util.PasswordUtils;
 import java.util.List;
@@ -39,7 +39,7 @@ public class UserService implements IUserService {
   public User getUserByAccount(String account) {
     User user = userDAO.getUserByAccount(account);
     if (user == null) {
-      throw new UserNotFoundException("Không tìm thấy user: " + account);
+      throw new NotFoundException("Không tìm thấy user: " + account);
     }
     userCache.putIfAbsent(account, user);
     return userCache.get(account);
@@ -49,7 +49,7 @@ public class UserService implements IUserService {
   public User getUserById(int id) {
     User user = userDAO.getById(id);
     if (user == null) {
-      throw new UserNotFoundException("Không tìm thấy user với ID: " + id);
+      throw new NotFoundException("Không tìm thấy user với ID: " + id);
     }
     return user;
   }

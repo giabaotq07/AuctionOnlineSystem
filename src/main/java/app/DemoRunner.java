@@ -4,8 +4,8 @@ import app.dao.*;
 import app.enums.HistoryType;
 import app.enums.ItemType;
 import app.enums.UserRole;
-import app.exceptions.UserAlreadyExistsException;
-import app.exceptions.UserNotFoundException;
+import app.exception.NotFoundException;
+import app.exception.UserAlreadyExistsException;
 import app.models.*;
 import app.service.*;
 import java.time.LocalDateTime;
@@ -37,7 +37,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.BIDDER);
       userService.register(user);
-    } catch (UserAlreadyExistsException | UserNotFoundException e) {
+    } catch (UserAlreadyExistsException | NotFoundException e) {
       System.out.println(e.getMessage());
     }
     seller = userService.getUserByAccount("nguoiban");
@@ -47,7 +47,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua1", "123456"), new Wallet(), UserRole.BIDDER);
       userService.register(user);
-    } catch (UserAlreadyExistsException | UserNotFoundException e) {
+    } catch (UserAlreadyExistsException | NotFoundException e) {
       System.out.println(e.getMessage());
     }
     buyer1 = userService.getUserByAccount("nguoimua1");
@@ -57,7 +57,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua2", "123456"), new Wallet(), UserRole.BIDDER);
       userService.register(user);
-    } catch (UserAlreadyExistsException | UserNotFoundException e) {
+    } catch (UserAlreadyExistsException | NotFoundException e) {
       System.out.println(e.getMessage());
     }
     buyer2 = userService.getUserByAccount("nguoimua2");

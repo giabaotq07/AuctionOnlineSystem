@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import app.dao.UserDAO;
 import app.enums.UserRole;
-import app.exceptions.DatabaseException;
+import app.exception.DatabaseException;
 import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

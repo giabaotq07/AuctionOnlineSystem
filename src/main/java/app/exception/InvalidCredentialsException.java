@@ -1,4 +1,4 @@
-package app.exceptions;
+package app.exception;
 
 public class InvalidCredentialsException extends ServiceException {
   public InvalidCredentialsException(String message) {

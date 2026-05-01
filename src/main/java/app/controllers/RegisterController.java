@@ -4,7 +4,6 @@ import app.config.NavigationManager;
 import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.enums.View;
-import app.exceptions.UserAlreadyExistsException;
 import app.models.*;
 import app.service.UserService;
 import app.util.AlertUtils;
@@ -45,12 +44,10 @@ public class RegisterController {
 
     User newUser =
         UserFactory.createUser(name, new Account(account, password), new Wallet(), UserRole.BIDDER);
-    try {
-      if (userService.register(newUser)) {
-        newUser = userService.getUserByAccount(newUser.getAccount().getUsername());
-      }
+    if (userService.register(newUser)) {
+      newUser = userService.getUserByAccount(newUser.getAccount().getUsername());
       AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());
-    } catch (UserAlreadyExistsException e) {
+    } else {
       AlertUtils.showError(
           "Thất bại", "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
     }

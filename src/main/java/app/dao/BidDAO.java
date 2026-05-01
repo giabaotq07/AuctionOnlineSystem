@@ -1,8 +1,8 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import app.exceptions.DatabaseException;
-import app.exceptions.ServiceException;
+import app.exception.DatabaseException;
+import app.exception.ServiceException;
 import app.models.*;
 import java.sql.*;
 import java.time.LocalDateTime;

@@ -1,7 +1,7 @@
 package app.service;
 
-import app.exceptions.InvalidCredentialsException;
-import app.exceptions.UserAlreadyExistsException;
+import app.exception.InvalidCredentialsException;
+import app.exception.UserAlreadyExistsException;
 import app.models.User;
 import java.util.List;
 

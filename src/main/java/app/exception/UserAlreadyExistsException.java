@@ -1,4 +1,4 @@
-package app.exceptions;
+package app.exception;
 
 public class UserAlreadyExistsException extends ServiceException {
   public UserAlreadyExistsException(String message) {
