@@ -1,6 +1,8 @@
 package app.models;
 
 import app.enums.AuctionStatus;
+import app.obserser.AuctionObserver;
+
 import java.util.ArrayList;
 import java.util.List;
 

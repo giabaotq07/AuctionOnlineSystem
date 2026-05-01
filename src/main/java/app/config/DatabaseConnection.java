@@ -7,17 +7,19 @@ import java.sql.SQLException;
 
 public final class DatabaseConnection {
   private static volatile DatabaseConnection instance;
-  private final DatabaseConfig config;
+  private final Connection connection;
 
-  private DatabaseConnection(DatabaseConfig config) {
-    this.config = config;
+  private DatabaseConnection() throws SQLException {
+    DatabaseConfig config = DatabaseConfig.load();
+    connection =
+        DriverManager.getConnection(config.getUrl(), config.getUser(), config.getPassword());
   }
 
-  public static DatabaseConnection getInstance() {
+  public static DatabaseConnection getInstance() throws SQLException {
     if (instance == null) {
       synchronized (DatabaseConnection.class) {
         if (instance == null) {
-          instance = new DatabaseConnection(DatabaseConfig.load());
+          instance = new DatabaseConnection();
         }
       }
     }
@@ -25,10 +27,6 @@ public final class DatabaseConnection {
   }
 
   public Connection getConnection() {
-    try {
-      return DriverManager.getConnection(config.getUrl(), config.getUser(), config.getPassword());
-    } catch (SQLException e) {
-      throw new DaoException("Unable to connect to database", e);
-    }
+    return connection;
   }
 }

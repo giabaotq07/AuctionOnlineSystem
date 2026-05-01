@@ -1,4 +1,4 @@
-package app.models;
+package app.obserser;
 
 public interface AuctionSubject {
   void registerObserver(AuctionObserver observer);

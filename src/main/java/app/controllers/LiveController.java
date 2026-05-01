@@ -5,7 +5,7 @@ import app.enums.AuctionStatus;
 import app.enums.CommandType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.AuctionObserver;
+import app.obserser.AuctionObserver;
 import app.models.BidTransaction;
 import app.models.DataStore;
 import app.network.Client;

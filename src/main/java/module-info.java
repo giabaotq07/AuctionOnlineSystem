@@ -18,4 +18,5 @@ module app {
 
   opens app.enums to
       com.google.gson;
+  opens app.obserser to com.google.gson;
 }
