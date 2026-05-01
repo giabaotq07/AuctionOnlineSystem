@@ -81,7 +81,7 @@ public class MessController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/user_interface.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/firstscene.fxml"));
     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     Scene scene = new Scene(loader.load(), 1280, 720);
     stage.setScene(scene);
