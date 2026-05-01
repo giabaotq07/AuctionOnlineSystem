@@ -5,46 +5,44 @@ import java.time.LocalDateTime;
 
 public class BidTransaction implements Serializable {
   private int id;
-  private final User bidder;
+  private final int bidderId;
+  private final String bidderName;
   private final double amount;
   private final LocalDateTime createAt;
+  private boolean isAutoBid;
 
-  public BidTransaction(User bidder, double amount) {
-    this.bidder = bidder;
-    this.amount = amount;
-    this.createAt = LocalDateTime.now();
-  }
-
-  public BidTransaction(int id, User bidder, double amount) {
+  public BidTransaction(
+      int id, int bidderId, String bidderName, double amount, LocalDateTime createAt, boolean isAutoBid) {
     this.id = id;
-    this.bidder = bidder;
-    this.amount = amount;
-    this.createAt = LocalDateTime.now();
-  }
-
-  public BidTransaction(int id, User bidder, double amount, LocalDateTime createAt) {
-    this.id = id;
-    this.bidder = bidder;
+    this.bidderId = bidderId;
+    this.bidderName = bidderName;
     this.amount = amount;
     this.createAt = createAt;
+    this.isAutoBid = isAutoBid;
   }
 
-  public BidTransaction(User bidder, double amount, LocalDateTime createAt) {
-    this.bidder = bidder;
+  public BidTransaction(int bidderId, String bidderName, double amount, boolean isAutoBid) {
+    this.bidderId = bidderId;
+    this.bidderName = bidderName;
     this.amount = amount;
-    this.createAt = createAt;
+    this.createAt = LocalDateTime.now();
+    this.isAutoBid = isAutoBid;
   }
 
   public int getId() {
     return id;
   }
 
+  public String getBidderName() {
+    return bidderName;
+  }
+
   public void setId(int id) {
     this.id = id;
   }
 
-  public User getBidder() {
-    return bidder;
+  public int getBidderId() {
+    return bidderId;
   }
 
   public double getAmount() {
@@ -57,6 +55,6 @@ public class BidTransaction implements Serializable {
 
   @Override
   public String toString() {
-    return bidder.getName() + " đã trả $" + amount + " vào lúc " + createAt.withNano(0);
+    return bidderId + " đã trả $" + amount + " vào lúc " + createAt.withNano(0);
   }
 }

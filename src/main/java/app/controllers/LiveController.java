@@ -127,7 +127,7 @@ public class LiveController implements AuctionObserver {
                   if (!session.getBidHistory().isEmpty()) {
                     BidTransaction lastBidTransaction =
                         session.getBidHistory().get(session.getBidHistory().size() - 1);
-                    winner = lastBidTransaction.getBidder().getName();
+                    winner = lastBidTransaction.getBidderId().getName();
                     price = lastBidTransaction.getAmount();
                   }
                   onAuctionClosed(session.getItem().getName(), winner, price);

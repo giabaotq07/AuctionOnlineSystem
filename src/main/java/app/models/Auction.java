@@ -83,7 +83,7 @@ public class Auction implements AuctionSubject, Serializable {
 
     highestBid = bidTransaction.getAmount();
 
-    winner = bidTransaction.getBidder();
+    winner = bidTransaction.getBidderId();
 
     notifyObserversNewBid(highestBid, winner.getName());
     return true;

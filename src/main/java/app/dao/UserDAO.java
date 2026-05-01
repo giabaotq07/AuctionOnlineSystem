@@ -14,12 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 public class UserDAO {
+  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private static final String TABLE = "users";
+
   private static final String BASE_SELECT =
           "SELECT id, username, password, full_name, assets, role FROM users ";
 
-  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(

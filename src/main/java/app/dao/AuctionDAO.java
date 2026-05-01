@@ -12,10 +12,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class AuctionDAO {
+  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private static final String TABLE = "auction_sessions";
-
-  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private static final String BASE_SELECT =
       """

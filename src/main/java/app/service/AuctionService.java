@@ -67,7 +67,7 @@ public class AuctionService {
             String.format(
                 "-> Phiên %d kết thúc. Winner: %s, Giá: $%.2f",
                 sessionId,
-                highestBidTransaction.getBidder().getName(),
+                highestBidTransaction.getBidderId().getName(),
                 highestBidTransaction.getAmount()));
 
         // Tại đây bạn có thể thêm logic trừ tiền người thắng hoặc cộng tiền người bán

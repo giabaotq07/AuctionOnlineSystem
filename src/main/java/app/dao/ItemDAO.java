@@ -12,16 +12,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class ItemDAO {
+  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private static final String TABLE = "items";
+
   private static final String BASE_SELECT =
       """
           SELECT id, name, seller_id, description, category,
                  starting_price, step_price, status
           FROM items
           """;
-
-  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private Item mapItem(ResultSet rs) throws SQLException {
     return ItemFactory.createItem(

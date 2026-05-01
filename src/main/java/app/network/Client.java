@@ -72,7 +72,7 @@ public class Client {
                             s.getBidHistory().get(s.getBidHistory().size() - 1);
                         s.notifyObserversNewBid(
                             lastBidTransaction.getAmount(),
-                            lastBidTransaction.getBidder().getName());
+                            lastBidTransaction.getBidderId().getName());
                       }
                     });
             break;
