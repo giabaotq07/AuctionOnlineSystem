@@ -77,6 +77,7 @@ public class DemoRunner {
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
     Auction session =
         new Auction(phone.getId(), seller.getId(), LocalDateTime.now().plusSeconds(5));
+    session.start();
     session = sessionService.createAuction(session);
     System.out.println("Phien dau gia tao voi ID: " + session.getId());
     // 4. Mua ban (Bidding)

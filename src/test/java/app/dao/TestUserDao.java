@@ -22,18 +22,18 @@ public class TestUserDao {
             new Wallet(),
             UserRole.BIDDER);
     try {
-      tester = userDAO.add(tester);
+      tester = userDAO.save(tester);
     } catch (DatabaseException e) {
       System.err.println("Error setting up test user: " + e.getMessage());
-      tester = userDAO.getUserByAccount("test_account");
+      tester = userDAO.findByUsername("test_account").orElse(null);
     }
   }
 
   @Test
   void testGetUserByAccount() {
-    User user = userDAO.getUserByAccount("test_account");
+    User user = userDAO.findByUsername("test_account").orElse(null);
     assertEquals(user, tester);
-    user = userDAO.getUserByAccount("non_existent_account");
+    user = userDAO.findByUsername("non_existent_account").orElse(null);
     assertNull(user);
   }
 
@@ -42,13 +42,13 @@ public class TestUserDao {
     User user =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
-    user = userDAO.add(user);
+    user = userDAO.save(user);
     User addedUser =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     assertThrows(
         DatabaseException.class,
-        () -> userDAO.add(addedUser)); // Thử thêm lại để kiểm tra trùng account
+        () -> userDAO.save(addedUser)); // Thử thêm lại để kiểm tra trùng account
     assertNotNull(user);
     assertTrue(user.getId() > 0);
     assertEquals("new_account", user.getAccount().getUsername());
@@ -62,7 +62,7 @@ public class TestUserDao {
     User user =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
-    user = userDAO.add(user);
+    user = userDAO.save(user);
     assertTrue(userDAO.delete(user.getId()));
     assertFalse(userDAO.delete(user.getId())); // Thử xóa lại để kiểm tra đã xóa
   }
@@ -72,10 +72,10 @@ public class TestUserDao {
     User user =
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
-    user = userDAO.add(user);
+    user = userDAO.save(user);
     user.setName("Updated Name");
-    assertTrue(userDAO.updateUserProfile(user));
-    User updatedUser = userDAO.getUserByAccount("new_account");
+    assertTrue(userDAO.updateProfile(user.getId(), user.getName()));
+    User updatedUser = userDAO.findByUsername("new_account").orElse(null);
     assertEquals(user.getName(), updatedUser.getName());
     userDAO.delete(user.getId());
   }

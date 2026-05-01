@@ -29,7 +29,7 @@ import java.util.Optional;
 public class BidService {
 
   // Bước giá tối thiểu mặc định (có thể đưa vào config/DB sau)
-  private static final long DEFAULT_MIN_INCREMENT = 1_000L;
+  private static final long DEFAULT_MIN_INCREMENT = 1L;
 
   // Anti-sniping: nếu bid trong X giây cuối → gia hạn thêm Y giây
   private static final int ANTI_SNIPE_THRESHOLD_SECONDS = 30;

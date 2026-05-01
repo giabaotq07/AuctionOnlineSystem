@@ -25,10 +25,10 @@ public class TestUserService {
             new Wallet(),
             UserRole.BIDDER);
     try {
-      tester = userDAO.add(tester);
+      tester = userDAO.save(tester);
     } catch (DatabaseException e) {
       System.err.println("Error inserting test user: " + e.getMessage());
-      tester = userDAO.getUserByAccount("test_account");
+      tester = userDAO.findByUsername("test_account").orElse(null);
     }
   }
 

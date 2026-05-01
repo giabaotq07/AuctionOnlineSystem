@@ -1,6 +1,5 @@
 package app.config;
 
-import app.exception.DaoException;
 import app.exception.DatabaseException;
 
 import java.sql.Connection;
@@ -9,23 +8,17 @@ import java.sql.SQLException;
 
 public final class DatabaseConnection {
   private static volatile DatabaseConnection instance;
-  private final Connection connection;
+  private final DatabaseConfig config;
 
-  private DatabaseConnection() throws SQLException {
-    DatabaseConfig config = DatabaseConfig.load();
-    connection =
-        DriverManager.getConnection(config.getUrl(), config.getUser(), config.getPassword());
+  private DatabaseConnection(DatabaseConfig config) {
+    this.config = config;
   }
 
   public static DatabaseConnection getInstance() {
     if (instance == null) {
       synchronized (DatabaseConnection.class) {
         if (instance == null) {
-          try {
-            instance = new DatabaseConnection();
-          } catch (SQLException e) {
-            throw new DatabaseException("Không thể khởi tạo kết nối.", e);
-          }
+            instance = new DatabaseConnection(DatabaseConfig.load());
         }
       }
     }
@@ -33,6 +26,10 @@ public final class DatabaseConnection {
   }
 
   public Connection getConnection() {
-    return connection;
+    try {
+      return DriverManager.getConnection(config.getUrl(), config.getUser(), config.getPassword());
+    } catch (SQLException e) {
+      throw new DatabaseException("Unable to connect to database", e);
+    }
   }
 }
