@@ -17,97 +17,97 @@ public class Auction extends Entity {
   private final List<BidTransaction> bidHistory = new ArrayList<>();
 
   public Auction() {
-    super();
-    this.status = AuctionStatus.SCHEDULED;
+  super();
+  this.status = AuctionStatus.SCHEDULED;
   }
 
   public Auction(
-      int id,
-      Item item,
-      int sellerId,
-      LocalDateTime startTime,
-      LocalDateTime endTime) {
-    super(id);
-    this.item = item;
-    this.sellerId = sellerId;
-    this.startTime = startTime;
-    this.endTime = endTime;
-    this.status = AuctionStatus.SCHEDULED;
+   int id,
+   Item item,
+   int sellerId,
+   LocalDateTime startTime,
+   LocalDateTime endTime) {
+  super(id);
+  this.item = item;
+  this.sellerId = sellerId;
+  this.startTime = startTime;
+  this.endTime = endTime;
+  this.status = AuctionStatus.SCHEDULED;
   }
 
   public Item getItem() {
-    return item;
+  return item;
   }
 
   public int getSellerId() {
-    return sellerId;
+  return sellerId;
   }
 
   public AuctionStatus getStatus() {
-    return status;
+  return status;
   }
 
   public void setStatus(AuctionStatus status) {
-    this.status = status;
+  this.status = status;
   }
 
   public LocalDateTime getStartTime() {
-    return startTime;
+  return startTime;
   }
 
   public LocalDateTime getEndTime() {
-    return endTime;
+  return endTime;
   }
 
   public BidTransaction getHighestBid() {
-    return highestBid;
+  return highestBid;
   }
 
   public List<BidTransaction> getBidHistory() {
-    return Collections.unmodifiableList(bidHistory);
+  return Collections.unmodifiableList(bidHistory);
   }
 
   public boolean isRunning() {
-    return status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING;
+  return status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING;
   }
 
   public boolean isEnded() {
-    return status == AuctionStatus.FINISHED || status == AuctionStatus.CANCELED;
+  return status == AuctionStatus.FINISHED || status == AuctionStatus.CANCELED;
   }
 
   public void startAuction() {
-    status = AuctionStatus.OPEN;
+  status = AuctionStatus.OPEN;
   }
 
   public void finishAuction() {
-    status = AuctionStatus.FINISHED;
+  status = AuctionStatus.FINISHED;
   }
 
   public void extendAuction(int seconds) {
-    if (endTime != null) {
-      endTime = endTime.plusSeconds(seconds);
-    }
+  if (endTime != null) {
+   endTime = endTime.plusSeconds(seconds);
+  }
   }
 
   public boolean validateBid(double amount) {
-    double minBid = bidHistory.isEmpty() ? item.getStartPrice() : highestBid.getAmount() + item.getStepPrice();
-    return amount >= minBid;
+  double minBid = bidHistory.isEmpty() ? item.getStartPrice() : highestBid.getAmount() + item.getStepPrice();
+  return amount >= minBid;
   }
 
   public boolean placeBid(BidTransaction bid) {
-    if (!isRunning() || !validateBid(bid.getAmount())) {
-      return false;
-    }
-    highestBid = bid;
-    bidHistory.add(bid);
-    status = AuctionStatus.RUNNING;
-    return true;
+  if (!isRunning() || !validateBid(bid.getAmount())) {
+   return false;
+  }
+  highestBid = bid;
+  bidHistory.add(bid);
+  status = AuctionStatus.RUNNING;
+  return true;
   }
 
   public long getRemainingSeconds() {
-    if (endTime == null) {
-      return 0;
-    }
-    return Math.max(0, Duration.between(LocalDateTime.now(), endTime).getSeconds());
+  if (endTime == null) {
+   return 0;
+  }
+  return Math.max(0, Duration.between(LocalDateTime.now(), endTime).getSeconds());
   }
 }

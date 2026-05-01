@@ -17,7 +17,7 @@ public class AuctionStateManager implements java.io.Serializable {
   }
 
   public void addSession(Auction session) {
-    if (session.getStatus() == AuctionStatus.ACTIVE) {
+    if (session.getStatus() == AuctionStatus.OPEN) {
       activeAuctions.add(session);
     } else {
       completedAuctions.add(session);
@@ -25,7 +25,7 @@ public class AuctionStateManager implements java.io.Serializable {
   }
 
   public void updateSessionStatus(Auction session) {
-    if (session.getStatus() != AuctionStatus.ACTIVE) {
+    if (session.getStatus() != AuctionStatus.OPEN) {
       activeAuctions.remove(session);
       if (!completedAuctions.contains(session)) {
         completedAuctions.add(session);

@@ -11,13 +11,6 @@ public enum CommandType {
   CREATE_AUCTION, // Seller tạo phiên
   CHAT,
 
-  // status
-  OPEN,
-  RUNNING,
-  FINISHED,
-  PAID,
-  CANCELED,
-
   // Server Push (Realtime)
   UPDATE_PRICE, // Notify giá mới cho tất cả Client
   AUCTION_FINISHED, // Thông báo kết thúc phiên

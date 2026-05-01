@@ -1,8 +1,9 @@
 package app.enums;
 
 public enum AuctionStatus {
-  PENDING,
-  ACTIVE,
-  COMPLETED,
-  CANCELLED,
+  OPEN,
+  RUNNING,
+  FINISHED,
+  PAID,
+  CANCELED,
 }

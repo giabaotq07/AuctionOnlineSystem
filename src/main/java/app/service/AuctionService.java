@@ -19,11 +19,11 @@ public class AuctionService {
     if (session.getEndTime().isBefore(LocalDateTime.now())) {
       throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
     }
-    return auctionDAO.addAuction(session);
+    return auctionDAO.save(session);
   }
 
   public Auction getAuctionById(int sessionId) {
-    Auction session = auctionDAO.getAuctionById(sessionId);
+    Auction session = auctionDAO.findById(sessionId);
     if (session == null) {
       throw new ServiceException("Khng tm thấy phin đấu gi với ID: " + sessionId);
     }
@@ -31,24 +31,24 @@ public class AuctionService {
   }
 
   public void updateSessionStatus(int sessionId, AuctionStatus status) {
-    boolean ok = auctionDAO.updateAuctionStatus(sessionId, status);
+    boolean ok = auctionDAO.updateStatus(sessionId, status);
     if (!ok) {
       throw new ServiceException("Khng thể cập nhật trạng thi cho phin ID: " + sessionId);
     }
   }
 
   public List<Auction> getAllAuction() {
-    return auctionDAO.getAllAuction();
+    return auctionDAO.findAll();
   }
 
   public boolean closeSessionIfExpired(int sessionId) {
     try {
       Auction session = getAuctionById(sessionId);
 
-      if (session.getStatus() == AuctionStatus.ACTIVE
+      if (session.getStatus() == AuctionStatus.OPEN
           && LocalDateTime.now().isAfter(session.getEndTime())) {
 
-        updateSessionStatus(sessionId, AuctionStatus.COMPLETED);
+        updateSessionStatus(sessionId, AuctionStatus.FINISHED);
         return true;
       }
     } catch (Exception e) {

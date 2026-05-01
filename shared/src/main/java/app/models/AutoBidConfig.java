@@ -8,51 +8,51 @@ public class AutoBidConfig extends Entity {
   private boolean active;
 
   public AutoBidConfig() {
-    super();
+  super();
   }
 
   public AutoBidConfig(int id, int auctionId, int bidderId, double maxAmount, double increment) {
-    super(id);
-    this.auctionId = auctionId;
-    this.bidderId = bidderId;
-    this.maxAmount = maxAmount;
-    this.increment = increment;
-    this.active = true;
+  super(id);
+  this.auctionId = auctionId;
+  this.bidderId = bidderId;
+  this.maxAmount = maxAmount;
+  this.increment = increment;
+  this.active = true;
   }
 
   public int getAuctionId() {
-    return auctionId;
+  return auctionId;
   }
 
   public int getBidderId() {
-    return bidderId;
+  return bidderId;
   }
 
   public double getMaxAmount() {
-    return maxAmount;
+  return maxAmount;
   }
 
   public double getIncrement() {
-    return increment;
+  return increment;
   }
 
   public boolean isActive() {
-    return active;
+  return active;
   }
 
   public void deactivate() {
-    this.active = false;
+  this.active = false;
   }
 
   public boolean canIncrease(double currentPrice) {
-    return active && currentPrice + increment <= maxAmount;
+  return active && currentPrice + increment <= maxAmount;
   }
 
   public double getNextBid(double currentPrice) {
-    if (!canIncrease(currentPrice)) {
-      return currentPrice;
-    }
-    return currentPrice + increment;
+  if (!canIncrease(currentPrice)) {
+   return currentPrice;
+  }
+  return currentPrice + increment;
   }
 }
 

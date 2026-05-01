@@ -18,10 +18,10 @@ public class BidService {
   }
 
   public List<BidTransaction> getBidsBySession(int sessionId) {
-    return bidDAO.getBidsBySession(sessionId);
+    return bidDAO.findBySession(sessionId);
   }
 
   public BidTransaction getHighestBid(int sessionId) {
-    return bidDAO.getHighestBid(sessionId);
+    return bidDAO.findHighestBid(sessionId);
   }
 }

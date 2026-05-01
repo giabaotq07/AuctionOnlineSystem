@@ -62,7 +62,7 @@ public class BidController {
 
       User bidder = userService.getUserByAccount(userName);
 
-      boolean success = session.placeBid(bidder, amount);
+      boolean success = session.addBid(new BidTransaction(bidder, amount));
       if (success) {
         HistoryStore.history.add(
             new HistoryRecord(

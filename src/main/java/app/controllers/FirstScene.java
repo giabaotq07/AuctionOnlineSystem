@@ -47,7 +47,7 @@ public class FirstScene {
     }
 
     List<Auction> activeS =
-        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.OPEN).toList();
     HBox cardContainer = createContainer(activeS);
     ScrollPane viewport = new ScrollPane();
     viewport.setContent(cardContainer);
@@ -117,7 +117,7 @@ public class FirstScene {
             if (detailArea != null) {
               detailArea.setText(
                   "Id: "
-                      + s.getSessionId()
+                      + s.getId()
                       + "\nPrice: "
                       + s.getCurrentHighestPrice()
                       + "\nitem: "
@@ -144,7 +144,7 @@ public class FirstScene {
                       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
                       List<Auction> actives =
                           DataStore.sessions.stream()
-                              .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
+                              .filter(s -> s.getStatus() == AuctionStatus.OPEN)
                               .toList();
                       vp.setContent(createContainer(actives));
                     }
@@ -172,8 +172,8 @@ public class FirstScene {
 
       String item = "";
 
-      if (s.getItemName() != null) {
-        item = s.getItemName().toLowerCase();
+      if (s.getItem().getName() != null) {
+        item = s.getItem().getName().toLowerCase();
       }
 
       if (item.contains(key)) {
@@ -185,7 +185,7 @@ public class FirstScene {
   private void populateCompletedAuctions() {
     completedAuctionsPane.getChildren().clear();
     List<Auction> completeds =
-        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.COMPLETED).toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.FINISHED).toList();
 
     for (Auction session : completeds) {
       VBox vbox = new VBox();
@@ -373,7 +373,7 @@ public class FirstScene {
     if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
       List<Auction> actives =
-          DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
+          DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.OPEN).toList();
       vp.setContent(createContainer(actives));
     }
     if (completedAuctionsPane != null) {

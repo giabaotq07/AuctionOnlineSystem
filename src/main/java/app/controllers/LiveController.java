@@ -92,10 +92,10 @@ public class LiveController implements AuctionObserver {
     try {
       double bidAmount = Double.parseDouble(bidAmountField.getText());
 
-      if (!session.placeBid(DataStore.currentUser, bidAmount)) {
+      if (!session.addBid(new BidTransaction(DataStore.currentUser, bidAmount))) {
         AlertUtils.showError(
-            "L—i tr gi",
-            "Khng thƒ tr gi! Gi nhp phi l›n hn bng gi hi‡n ti + b›c gi hoc phin ‘u gi ‘ kt thc.");
+            "Lỗi trả giá",
+            "Không thể trả giá! Giá nhập phải lớn hơn bảng giá hiện tại + b›c gi hoc phin ‘u gi ‘ kt thc.");
       } else {
         bidAmountField.clear();
         app.models.MessagePacket<Auction> syncPacket =
@@ -120,7 +120,7 @@ public class LiveController implements AuctionObserver {
                 LocalDateTime endTime = session.getEndTime();
                 if (now.isAfter(endTime)) {
                   scheduler.shutdown();
-                  session.setStatus(AuctionStatus.COMPLETED);
+                  session.setStatus(AuctionStatus.FINISHED);
                   // Gọi thông báo kết thúc
                   String winner = "Không có ai";
                   double price = session.getItem().getStartingPrice();

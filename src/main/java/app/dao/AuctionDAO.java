@@ -9,100 +9,331 @@ import app.models.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AuctionDAO {
-  private final DatabaseConnection connection = DatabaseConnection.getInstance();
-  private final String SELECT_JOIN_QUERY =
-      "SELECT s.*, "
-          + "i.name AS item_name, i.description AS item_desc, i.starting_price, i.step_price, i.type AS item_type, "
-          + "u.name AS seller_name, u.account AS seller_acc, u.assets AS seller_assets, u.role AS seller_role "
-          + "FROM auction_sessions s "
-          + "JOIN items i ON s.item_id = i.id "
-          + "JOIN users u ON s.seller_id = u.id";
+
+  private static final String TABLE = "auction_sessions";
+
+  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+
+  private static final String BASE_SELECT =
+      """
+            SELECT
+                s.id,
+                s.status,
+                s.start_time,
+                s.end_time,
+                s.highest_bid,
+
+                i.id AS item_id,
+                i.name AS item_name,
+                i.seller_id AS item_seller_id,
+                i.description AS item_description,
+                i.starting_price,
+                i.current_price,
+                i.step_price,
+                i.category,
+
+                u.id AS seller_id,
+                u.username,
+                u.password,
+                u.full_name,
+                u.assets,
+                u.role,
+
+                w.id AS winner_id,
+                w.username AS winner_username,
+                w.password AS winner_password,
+                w.full_name AS winner_full_name,
+                w.assets AS winner_assets,
+                w.role AS winner_role
+
+            FROM auction_sessions s
+
+            JOIN items i
+                ON s.item_id = i.id
+
+            JOIN users u
+                ON s.seller_id = u.id
+            LEFT JOIN users w
+                ON s.winner_id = w.id
+            """;
+
+  private User mapWinner(ResultSet rs) throws SQLException {
+
+    int winnerId = rs.getInt("winner_id");
+
+    if (rs.wasNull()) return null;
+
+    return UserFactory.createUser(
+        winnerId,
+        rs.getString("winner_full_name"),
+        new Account(rs.getString("winner_username"), rs.getString("winner_password")),
+        new Wallet(rs.getDouble("winner_assets")),
+        UserRole.valueOf(rs.getString("winner_role")));
+  }
+
+  private Item mapItem(ResultSet rs) throws SQLException {
+
+    return ItemFactory.createItem(
+        rs.getInt("item_id"),
+        rs.getString("item_name"),
+        rs.getInt("item_seller_id"),
+        rs.getString("item_description"),
+        rs.getDouble("starting_price"),
+        rs.getDouble("step_price"),
+        ItemType.valueOf(rs.getString("category")));
+  }
+
+  private User mapUser(ResultSet rs) throws SQLException {
+
+    return UserFactory.createUser(
+        rs.getInt("seller_id"),
+        rs.getString("full_name"),
+        new Account(rs.getString("username"), rs.getString("password")),
+        new Wallet(rs.getDouble("assets")),
+        UserRole.valueOf(rs.getString("role")));
+  }
 
   private Auction mapAuction(ResultSet rs) throws SQLException {
-    Item item =
-        ItemFactory.createItem(
-            rs.getString("item_name"),
-            rs.getString("item_desc"),
-            rs.getDouble("starting_price"),
-            rs.getDouble("step_price"),
-            ItemType.valueOf(rs.getString("item_type")));
-    item.setId(rs.getInt("item_id"));
-    User seller =
-        UserFactory.createUser(
-            rs.getString("seller_name"),
-            new Account(rs.getString("seller_acc"), null),
-            new Wallet(rs.getDouble("seller_assets")),
-            UserRole.valueOf(rs.getString("seller_role")));
-    seller.setId(rs.getInt("seller_id"));
-    Auction session =
-        new Auction(rs.getInt("id"), item, seller, rs.getTimestamp("end_time").toLocalDateTime());
-    session.setStatus(AuctionStatus.valueOf(rs.getString("status")));
-    return session;
+
+    Item item = mapItem(rs);
+
+    User seller = mapUser(rs);
+
+    User winner = mapWinner(rs);
+
+    return new Auction(
+        rs.getInt("id"),
+        item,
+        seller,
+        winner,
+        AuctionStatus.valueOf(rs.getString("status")),
+        rs.getTimestamp("start_time").toLocalDateTime(),
+        rs.getTimestamp("end_time").toLocalDateTime(),
+        rs.getDouble("highest_bid"));
   }
 
-  public Auction getAuctionById(int sessionId) {
-    String query = SELECT_JOIN_QUERY + " WHERE s.id = ?";
-    try (Connection conn = connection.getConnection();
-        PreparedStatement stmt = conn.prepareStatement(query)) {
-      stmt.setInt(1, sessionId);
-      try (ResultSet rs = stmt.executeQuery()) {
+  public Optional<Auction> findById(Integer id) {
+
+    String sql =
+        BASE_SELECT
+            + """
+                WHERE s.id = ?
+                """;
+
+    return findOne(sql, id);
+  }
+
+  public List<Auction> findAll() {
+
+    String sql =
+        BASE_SELECT
+            + """
+                ORDER BY s.id DESC
+                """;
+
+    return findMany(sql);
+  }
+
+  public List<Auction> findByStatus(AuctionStatus status) {
+
+    String sql =
+        BASE_SELECT
+            + """
+                WHERE s.status = ?
+                ORDER BY s.end_time ASC
+                """;
+
+    return findMany(sql, status.name());
+  }
+
+  public List<Auction> findBySeller(Integer sellerId) {
+
+    String sql =
+        BASE_SELECT
+            + """
+                WHERE s.seller_id = ?
+                ORDER BY s.id DESC
+                """;
+
+    return findMany(sql, sellerId);
+  }
+
+  public Auction save(Auction auction) {
+
+    String sql =
+        """
+                INSERT INTO auction_sessions
+                (
+                    item_id,
+                    seller_id,
+                    winner_id,
+                    status,
+                    start_time,
+                    end_time,
+                    highest_bid
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """;
+
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+      ps.setInt(1, auction.getItem().getId());
+
+      ps.setInt(2, auction.getSeller().getId());
+
+      if (auction.getWinner() != null) {
+        ps.setInt(3, auction.getWinner().getId());
+      } else {
+        ps.setNull(3, Types.INTEGER);
+      }
+
+      ps.setString(4, auction.getStatus().name());
+
+      ps.setTimestamp(5, Timestamp.valueOf(auction.getStartTime()));
+
+      ps.setTimestamp(6, Timestamp.valueOf(auction.getEndTime()));
+
+      ps.setDouble(7, auction.getHighestBid());
+
+      int affectedRows = ps.executeUpdate();
+
+      if (affectedRows == 0) {
+
+        throw new DatabaseException("Không thể tạo auction.");
+      }
+
+      try (ResultSet rs = ps.getGeneratedKeys()) {
+
         if (rs.next()) {
-          return mapAuction(rs);
+          auction.setId(rs.getInt(1));
         }
-        return null;
+
+        return auction;
       }
+
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi database khi lấy phiên đấu giá.", e);
+
+      throw new DatabaseException("Lỗi khi tạo auction.", e);
     }
   }
 
-  public List<Auction> getAllAuction() {
-    List<Auction> sessions = new ArrayList<>();
-    try (Connection conn = connection.getConnection();
-        PreparedStatement stmt = conn.prepareStatement(SELECT_JOIN_QUERY);
-        ResultSet rs = stmt.executeQuery()) {
-      while (rs.next()) {
-        sessions.add(mapAuction(rs));
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi database khi lấy danh sách.", e);
-    }
-    return sessions;
+  public boolean updateStatus(Integer auctionId, AuctionStatus status) {
+
+    String sql =
+        """
+                UPDATE auction_sessions
+                SET status = ?
+                WHERE id = ?
+                """;
+
+    return executeUpdate(sql, status.name(), auctionId);
   }
 
-  public boolean updateAuctionStatus(int sessionId, AuctionStatus status) {
-    String query = "UPDATE auction_sessions SET status = ? WHERE id = ?";
-    try (Connection conn = connection.getConnection();
-        PreparedStatement stmt = conn.prepareStatement(query)) {
-      stmt.setString(1, status.name());
-      stmt.setInt(2, sessionId);
-      return stmt.executeUpdate() > 0;
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi database khi cập nhật trạng thái.", e);
-    }
+  public boolean updateHighestBid(Integer auctionId, Double highestBid) {
+
+    String sql =
+        """
+                UPDATE auction_sessions
+                SET highest_bid = ?
+                WHERE id = ?
+                """;
+
+    return executeUpdate(sql, highestBid, auctionId);
   }
 
-  public Auction addAuction(Auction session) {
-    String query =
-        "INSERT INTO auction_sessions (item_id, seller_id, status, end_time) VALUES (?, ?, ?, ?)";
-    try (Connection conn = connection.getConnection();
-        PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-      stmt.setInt(1, session.getItem().getId());
-      stmt.setInt(2, session.getSeller().getId());
-      stmt.setString(3, session.getStatus().name());
-      stmt.setTimestamp(4, Timestamp.valueOf(session.getEndTime()));
-      stmt.executeUpdate();
-      try (ResultSet rs = stmt.getGeneratedKeys()) {
+  public boolean updateWinner(Integer auctionId, Integer winnerId) {
+
+    String sql =
+        """
+            UPDATE auction_sessions
+            SET winner_id = ?
+            WHERE id = ?
+            """;
+
+    return executeUpdate(sql, winnerId, auctionId);
+  }
+
+  public boolean delete(Integer id) {
+
+    String sql =
+        """
+                DELETE FROM auction_sessions
+                WHERE id = ?
+                """;
+
+    return executeUpdate(sql, id);
+  }
+
+  private Optional<Auction> findOne(String sql, Object... params) {
+
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      setParameters(ps, params);
+
+      try (ResultSet rs = ps.executeQuery()) {
+
         if (rs.next()) {
-          session.setId(rs.getInt(1));
-          return session;
+          return Optional.of(mapAuction(rs));
         }
-        throw new DatabaseException("Thêm thất bại, không lấy được ID.");
+
+        return Optional.empty();
       }
+
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi tạo phiên đấu giá mới.", e);
+
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private List<Auction> findMany(String sql, Object... params) {
+
+    List<Auction> auctions = new ArrayList<>();
+
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      setParameters(ps, params);
+
+      try (ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+
+          auctions.add(mapAuction(rs));
+        }
+
+        return auctions;
+      }
+
+    } catch (SQLException e) {
+
+      throw new DatabaseException("Lỗi truy vấn danh sách auctions.", e);
+    }
+  }
+
+  private boolean executeUpdate(String sql, Object... params) {
+
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      setParameters(ps, params);
+
+      return ps.executeUpdate() > 0;
+
+    } catch (SQLException e) {
+
+      throw new DatabaseException("Lỗi cập nhật bảng " + TABLE, e);
+    }
+  }
+
+  private void setParameters(PreparedStatement ps, Object... params) throws SQLException {
+
+    for (int i = 0; i < params.length; i++) {
+      ps.setObject(i + 1, params[i]);
     }
   }
 }

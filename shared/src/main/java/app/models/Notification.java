@@ -11,40 +11,40 @@ public class Notification extends Entity {
   private LocalDateTime createdAt;
 
   public Notification() {
-    super();
+  super();
   }
 
   public Notification(int id, int userId, NotificationType type, String content, boolean read) {
-    super(id);
-    this.userId = userId;
-    this.type = type;
-    this.content = content;
-    this.read = read;
-    this.createdAt = LocalDateTime.now();
+  super(id);
+  this.userId = userId;
+  this.type = type;
+  this.content = content;
+  this.read = read;
+  this.createdAt = LocalDateTime.now();
   }
 
   public int getUserId() {
-    return userId;
+  return userId;
   }
 
   public NotificationType getType() {
-    return type;
+  return type;
   }
 
   public String getContent() {
-    return content;
+  return content;
   }
 
   public boolean isRead() {
-    return read;
+  return read;
   }
 
   public void markRead() {
-    this.read = true;
+  this.read = true;
   }
 
   public LocalDateTime getCreatedAt() {
-    return createdAt;
+  return createdAt;
   }
 }
 

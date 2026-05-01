@@ -70,7 +70,7 @@ public class DemoRunner {
     System.out.println("\n2. Dang san pham moi...");
     Item phone =
         ItemFactory.createItem(
-            "IPhone 16 Pro Max", "Dien thoai moi", 1000, 50, ItemType.ELECTRONICS);
+            "IPhone 16 Pro Max", seller.getId(), "Dien thoai moi", 1000, 50, ItemType.ELECTRONICS);
     phone = itemService.add(phone);
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia
