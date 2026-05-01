@@ -1,34 +1,37 @@
 package app;
 
 import app.dao.*;
+import app.enums.HistoryType;
+import app.enums.ItemType;
+import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
 import app.exceptions.UserNotFoundException;
 import app.models.*;
-import app.services.*;
+import app.service.*;
 import java.time.LocalDateTime;
 
 public class DemoRunner {
-  public static void main(String[] args) {
+  static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
 
     // Khoi tao Database va tao cac bang neu chua co
     System.out.println("Dang kiem tra va khoi tao Database...");
     app.config.DatabaseConnection.initializeDatabase();
 
-    UserDAO userDAO = new UserDAO();
-    ItemDAO itemDAO = new ItemDAO();
-    AuctionSessionDAO sessionDAO = new AuctionSessionDAO();
-    BidDAO bidDAO = new BidDAO();
-    HistoryDAO historyDAO = new HistoryDAO();
+    UserDAO userDAO = UserDAO.getInstance();
+    ItemDAO itemDAO = ItemDAO.getInstance();
+    AuctionDAO sessionDAO = AuctionDAO.getInstance();
+    BidDAO bidDAO = BidDAO.getInstance();
+    HistoryDAO historyDAO = HistoryDAO.getInstance();
 
     UserService userService = new UserService(userDAO);
     ItemService itemService = new ItemService(itemDAO);
-    AuctionSessionService sessionService = new AuctionSessionService(sessionDAO);
+    AuctionService sessionService = new AuctionService(sessionDAO);
     BidService bidService = new BidService(bidDAO);
     HistoryService historyService = new HistoryService(historyDAO);
-    User seller = null;
-    User buyer1 = null;
-    User buyer2 = null;
+    User seller;
+    User buyer1;
+    User buyer2;
     // 1. Dang ky user
     System.out.println("\n1. Dang ky phien ban demo nguoi dung...");
     try {
@@ -75,7 +78,7 @@ public class DemoRunner {
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
-    AuctionSession session = new AuctionSession(phone, seller, LocalDateTime.now().plusSeconds(5));
+    Auction session = new Auction(phone, seller, LocalDateTime.now().plusSeconds(5));
     session = sessionService.createAuctionSession(session);
     System.out.println("Phien dau gia tao voi ID: " + session.getId());
     historyService.logEvent(

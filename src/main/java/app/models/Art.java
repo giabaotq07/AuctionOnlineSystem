@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.ItemType;
+
 public class Art extends Item {
   public Art(
       String name, String description, double startingPrice, double stepPrice, ItemType type) {

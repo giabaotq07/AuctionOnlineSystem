@@ -3,8 +3,11 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.enums.AuctionStatus;
+import app.enums.CommandType;
+import app.models.Auction;
 import app.models.AuctionObserver;
-import app.models.AuctionSession;
+import app.models.BidTransaction;
 import app.models.DataStore;
 import app.network.Client;
 import java.io.IOException;
@@ -20,7 +23,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 public class LiveController implements AuctionObserver {
-  private AuctionSession session;
+  private Auction session;
 
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
@@ -32,7 +35,7 @@ public class LiveController implements AuctionObserver {
 
   private ScheduledExecutorService scheduler;
 
-  public void setSession(AuctionSession session) {
+  public void setSession(Auction session) {
     this.session = session;
     if (session != null && session.getItem() != null) {
       if (itemNameLabel != null) itemNameLabel.setText(session.getItem().getName());
@@ -95,8 +98,8 @@ public class LiveController implements AuctionObserver {
             "Khng thƒ tr gi! Gi nhp phi l›n hn bng gi hi‡n ti + b›c gi hoc phin ‘u gi ‘ kt thc.");
       } else {
         bidAmountField.clear();
-        app.models.MessagePacket<app.models.AuctionSession> syncPacket =
-            new app.models.MessagePacket<>(app.models.CommandType.PLACE_BID, session);
+        app.models.MessagePacket<Auction> syncPacket =
+            new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
         app.network.Client.getInstance().sendRequest(syncPacket);
       }
     } catch (NumberFormatException e) {
@@ -117,15 +120,15 @@ public class LiveController implements AuctionObserver {
                 LocalDateTime endTime = session.getEndTime();
                 if (now.isAfter(endTime)) {
                   scheduler.shutdown();
-                  session.setStatus(app.models.AuctionStatus.COMPLETED);
+                  session.setStatus(AuctionStatus.COMPLETED);
                   // Gọi thông báo kết thúc
                   String winner = "Không có ai";
                   double price = session.getItem().getStartingPrice();
                   if (!session.getBidHistory().isEmpty()) {
-                    app.models.Bid lastBid =
+                    BidTransaction lastBidTransaction =
                         session.getBidHistory().get(session.getBidHistory().size() - 1);
-                    winner = lastBid.getBidder().getName();
-                    price = lastBid.getAmount();
+                    winner = lastBidTransaction.getBidder().getName();
+                    price = lastBidTransaction.getAmount();
                   }
                   onAuctionClosed(session.getItem().getName(), winner, price);
                 } else {

@@ -11,7 +11,19 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDAO implements GenericDAO<User, Integer> {
+public class UserDAO {
+  private static UserDAO instance;
+  private UserDAO() {}
+  public static UserDAO getInstance() {
+    if (instance == null) {
+      synchronized (UserDAO.class) {
+        if (instance == null) {
+          instance = new UserDAO();
+        }
+      }
+    }
+    return instance;
+  }
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(
         rs.getInt("id"),
@@ -36,7 +48,6 @@ public class UserDAO implements GenericDAO<User, Integer> {
     }
   }
 
-  @Override
   public User getById(Integer id) {
     String query = "SELECT * FROM users WHERE id = ?";
     try (Connection conn = DatabaseConnection.getConnection();
@@ -52,7 +63,6 @@ public class UserDAO implements GenericDAO<User, Integer> {
     }
   }
 
-  @Override
   public List<User> getAll() {
     String query = "SELECT * FROM users";
     List<User> list = new ArrayList<>();
@@ -69,7 +79,6 @@ public class UserDAO implements GenericDAO<User, Integer> {
     return list;
   }
 
-  @Override
   public User add(User user) {
     String insertSql =
         "INSERT INTO users (account, password, name, role, assets) VALUES (?, ?, ?, ?, ?)";
@@ -94,7 +103,6 @@ public class UserDAO implements GenericDAO<User, Integer> {
     }
   }
 
-  @Override
   public boolean update(User user) {
     // Basic update updating all fields
     String sql = "UPDATE users SET name = ?, assets = ?, role = ? WHERE id = ?";
@@ -129,7 +137,6 @@ public class UserDAO implements GenericDAO<User, Integer> {
     return executeUpdate(sql, PasswordUtils.hashPassword(newPassword), user.getId());
   }
 
-  @Override
   public boolean delete(Integer id) {
     String sql = "DELETE FROM users WHERE id = ?";
     return executeUpdate(sql, id);

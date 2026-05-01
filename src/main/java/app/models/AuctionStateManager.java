@@ -1,13 +1,14 @@
 package app.models;
 
+import app.enums.AuctionStatus;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AuctionStateManager implements java.io.Serializable {
   private static final AuctionStateManager instance = new AuctionStateManager();
 
-  private final List<AuctionSession> activeAuctions = new ArrayList<>();
-  private final List<AuctionSession> completedAuctions = new ArrayList<>();
+  private final List<Auction> activeAuctions = new ArrayList<>();
+  private final List<Auction> completedAuctions = new ArrayList<>();
 
   private AuctionStateManager() {}
 
@@ -15,7 +16,7 @@ public class AuctionStateManager implements java.io.Serializable {
     return instance;
   }
 
-  public void addSession(AuctionSession session) {
+  public void addSession(Auction session) {
     if (session.getStatus() == AuctionStatus.ACTIVE) {
       activeAuctions.add(session);
     } else {
@@ -23,7 +24,7 @@ public class AuctionStateManager implements java.io.Serializable {
     }
   }
 
-  public void updateSessionStatus(AuctionSession session) {
+  public void updateSessionStatus(Auction session) {
     if (session.getStatus() != AuctionStatus.ACTIVE) {
       activeAuctions.remove(session);
       if (!completedAuctions.contains(session)) {
@@ -32,16 +33,16 @@ public class AuctionStateManager implements java.io.Serializable {
     }
   }
 
-  public List<AuctionSession> getActiveAuctions() {
+  public List<Auction> getActiveAuctions() {
     return new ArrayList<>(activeAuctions);
   }
 
-  public List<AuctionSession> getCompletedAuctions() {
+  public List<Auction> getCompletedAuctions() {
     return new ArrayList<>(completedAuctions);
   }
 
   public void registerObserverToActive(AuctionObserver observer) {
-    for (AuctionSession session : activeAuctions) {
+    for (Auction session : activeAuctions) {
       session.registerObserver(observer);
     }
   }

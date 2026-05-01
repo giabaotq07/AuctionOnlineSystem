@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.ItemType;
+
 public class Vehicle extends Item {
   public Vehicle(
       String name, String description, double startingPrice, double stepPrice, ItemType type) {

@@ -4,9 +4,10 @@ import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.UserDAO;
+import app.enums.UserRole;
 import app.exceptions.UserAlreadyExistsException;
 import app.models.*;
-import app.services.UserService;
+import app.service.UserService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -23,7 +24,7 @@ public class RegisterController {
 
   @FXML private PasswordField txtPassword;
 
-  private final UserDAO userDAO = new UserDAO();
+  private final UserDAO userDAO = UserDAO.getInstance();
   private final UserService userService = new UserService(userDAO);
 
   @FXML
@@ -45,7 +46,9 @@ public class RegisterController {
     User newUser =
         UserFactory.createUser(name, new Account(account, password), new Wallet(), UserRole.BIDDER);
     try {
-      newUser = userService.register(newUser);
+      if (userService.register(newUser)) {
+        newUser = userService.getUserByAccount(newUser.getAccount().getUsername());
+      }
       AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());
     } catch (UserAlreadyExistsException e) {
       AlertUtils.showError(

@@ -3,6 +3,7 @@ package app.dao;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.config.DatabaseConnection;
+import app.enums.UserRole;
 import app.exceptions.DatabaseException;
 import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,7 +16,7 @@ public class TestUserDao {
   @BeforeAll
   public static void setupDatabase() {
     DatabaseConnection.initializeDatabase();
-    userDAO = new UserDAO();
+    userDAO = UserDAO.getInstance();
     tester =
         UserFactory.createUser(
             "Test User",

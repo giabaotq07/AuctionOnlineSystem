@@ -3,6 +3,9 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.enums.CommandType;
+import app.enums.HistoryType;
+import app.enums.ItemType;
 import app.models.*;
 import app.network.Client;
 import java.time.LocalDateTime;
@@ -65,16 +68,16 @@ public class AuctionController {
       int nextId = DataStore.sessions.size() + 1;
       Item item = ItemFactory.createItem(nextId, name, desc, startPrice, stepPrice, type);
 
-      AuctionSession session =
-          new AuctionSession(
+      Auction session =
+          new Auction(
               nextId, item, DataStore.currentUser, LocalDateTime.now().plusMinutes(durationMins));
 
       DataStore.sessions.add(session);
       app.models.AuctionStateManager.getInstance().addSession(session);
 
       // --- NEW CODE: BT U BROADCAST SANG CC CLIENT KHC ---
-      app.models.MessagePacket<app.models.AuctionSession> createPacket =
-          new app.models.MessagePacket<>(app.models.CommandType.CREATE_AUCTION, session);
+      app.models.MessagePacket<Auction> createPacket =
+          new app.models.MessagePacket<>(CommandType.CREATE_AUCTION, session);
       app.network.Client.getInstance().sendRequest(createPacket);
       // --- END NEW CODE ---
 

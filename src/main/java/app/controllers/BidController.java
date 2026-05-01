@@ -1,8 +1,9 @@
 package app.controllers;
 
 import app.dao.UserDAO;
+import app.enums.HistoryType;
 import app.models.*;
-import app.services.UserService;
+import app.service.UserService;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -17,19 +18,19 @@ public class BidController {
   UserDAO userDao;
   UserService userService;
   // ===== INPUT =====
-  @FXML private ListView<AuctionSession> sessionListView;
+  @FXML private ListView<Auction> sessionListView;
 
   @FXML private TextField bidderField;
   @FXML private TextField amountField;
 
   @FXML private TextArea outputArea;
 
-  private AuctionSession session;
+  private Auction session;
 
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
-    userDao = new UserDAO();
+    userDao = UserDAO.getInstance();
     userService = new UserService(userDao);
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
@@ -38,7 +39,7 @@ public class BidController {
 
     sessionListView.setOnMouseClicked(
         e -> {
-          AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+          Auction s = sessionListView.getSelectionModel().getSelectedItem();
           if (s == null) return;
           session = s;
 

@@ -18,7 +18,7 @@ public class MyHistoryController {
   @FXML private Stage stage;
   private Scene scene;
 
-  @FXML private ListView<AuctionSession> sessionListView;
+  @FXML private ListView<Auction> sessionListView;
   @FXML private ListView<HistoryRecord> historyListView;
   @FXML private TextArea detailArea;
 
@@ -31,7 +31,7 @@ public class MyHistoryController {
     // click session → filter history
     sessionListView.setOnMouseClicked(
         e -> {
-          AuctionSession session = sessionListView.getSelectionModel().getSelectedItem();
+          Auction session = sessionListView.getSelectionModel().getSelectedItem();
           if (session == null) return;
 
           int sid = session.getId();

@@ -10,6 +10,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BidDAO {
+  private static BidDAO instance;
+
+  private BidDAO() {}
+
+  public static BidDAO getInstance() {
+    if (instance == null) {
+      synchronized (BidDAO.class) {
+        if (instance == null) {
+          instance = new BidDAO();
+        }
+      }
+    }
+    return instance;
+  }
+
   private User mapUser(ResultSet rs) throws SQLException {
     return UserFactory.createUser(
         rs.getInt("id"),
@@ -76,8 +91,8 @@ public class BidDAO {
     }
   }
 
-  public List<Bid> getBidsBySession(int sessionId) {
-    List<Bid> bids = new ArrayList<>();
+  public List<BidTransaction> getBidsBySession(int sessionId) {
+    List<BidTransaction> bidTransactions = new ArrayList<>();
     String query =
         "SELECT b.bid_amount, b.time, u.id, u.name, u.account, u.password, u.assets, u.role "
             + "FROM bids b "
@@ -92,16 +107,16 @@ public class BidDAO {
           User bidder = mapUser(rs);
           double amount = rs.getDouble("bid_amount");
           LocalDateTime time = rs.getTimestamp("time").toLocalDateTime();
-          bids.add(new Bid(bidder, amount, time));
+          bidTransactions.add(new BidTransaction(bidder, amount, time));
         }
       }
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi lấy danh sách đặt giá của phiên: " + sessionId, e);
     }
-    return bids;
+    return bidTransactions;
   }
 
-  public Bid getHighestBid(int sessionId) {
+  public BidTransaction getHighestBid(int sessionId) {
     String query =
         "SELECT b.bid_amount, b.time, u.id, u.name, u.account, u.password, u.assets, u.role "
             + "FROM bids b "
@@ -114,7 +129,7 @@ public class BidDAO {
       try (ResultSet rs = pstmt.executeQuery()) {
         if (rs.next()) {
           User bidder = mapUser(rs);
-          return new Bid(
+          return new BidTransaction(
               bidder, rs.getDouble("bid_amount"), rs.getTimestamp("time").toLocalDateTime());
         }
       }

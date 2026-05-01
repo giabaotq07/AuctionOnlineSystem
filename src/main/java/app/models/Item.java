@@ -1,5 +1,7 @@
 package app.models;
 
+import app.enums.ItemType;
+
 public class Item extends Entity {
   protected String name;
   protected String description;
