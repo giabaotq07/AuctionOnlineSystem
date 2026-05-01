@@ -1,3 +1,5 @@
 package app.dto;
 
-public record BidRequest() {}
+import app.models.BidTransaction;
+
+public record BidRequest(int sessionId, BidTransaction  bidTransaction) {}

@@ -1,7 +1,6 @@
 package app;
 
 import app.dao.*;
-import app.enums.HistoryType;
 import app.enums.ItemType;
 import app.enums.UserRole;
 import app.exception.NotFoundException;
@@ -14,17 +13,18 @@ public class DemoRunner {
   static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
 
-    // Khoi tao Database va tao cac bang neu chua co
     System.out.println("Dang kiem tra va khoi tao Database...");
     UserDAO userDAO = new UserDAO();
     ItemDAO itemDAO = new ItemDAO();
     AuctionDAO sessionDAO = new AuctionDAO();
+    AutoBidDAO autoBidDAO = new AutoBidDAO();
     BidDAO bidDAO = new BidDAO();
 
     UserService userService = new UserService(userDAO);
     ItemService itemService = new ItemService(itemDAO);
-    AuctionService sessionService = new AuctionService(sessionDAO);
-    BidService bidService = new BidService(bidDAO);
+    AuctionService sessionService = new AuctionService(sessionDAO, bidDAO);
+    BidObserverService observer = new BidObserverService();
+    BidService bidService = new BidService(bidDAO, autoBidDAO, sessionDAO, observer);
     User seller;
     User buyer1;
     User buyer2;
@@ -66,15 +66,18 @@ public class DemoRunner {
     }
     // 2. Dang san pham (ID se duoc AUTO_INCREMENT)
     System.out.println("\n2. Dang san pham moi...");
+    long startingPrice = 1000;
+    long stepPrice = 10;
     Item phone =
         ItemFactory.createItem(
-            "IPhone 16 Pro Max", seller.getId(), "Dien thoai moi", 1000, 50, ItemType.ELECTRONICS);
+            "IPhone 16 Pro Max", seller.getId(), "Dien thoai moi", startingPrice, stepPrice, ItemType.ELECTRONICS);
     phone = itemService.add(phone);
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
-    Auction session = new Auction(phone, seller, LocalDateTime.now().plusSeconds(5));
-    session = sessionService.createAuctionSession(session);
+    Auction session =
+        new Auction(phone.getId(), seller.getId(), LocalDateTime.now().plusSeconds(5));
+    session = sessionService.createAuction(session);
     System.out.println("Phien dau gia tao voi ID: " + session.getId());
     // 4. Mua ban (Bidding)
     System.out.println("\n4. Nguoi mua bat dau dat gia...");
@@ -86,7 +89,8 @@ public class DemoRunner {
     try {
       Thread.sleep(5500);
     } catch (Exception e) {
+      e.printStackTrace();
     }
-    sessionService.handleSessionCompletion(session.getId(), bidService);
+    sessionService.handleCompletion(session.getId());
   }
 }

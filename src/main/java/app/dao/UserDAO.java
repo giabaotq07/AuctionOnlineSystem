@@ -27,7 +27,7 @@ public class UserDAO {
             rs.getInt("id"),
             rs.getString("full_name"),
             new Account(rs.getString("username"), rs.getString("password")),
-            new Wallet(rs.getDouble("assets")),
+            new Wallet(rs.getLong("assets")),
             UserRole.valueOf(rs.getString("role")));
   }
 
@@ -75,7 +75,7 @@ public class UserDAO {
       ps.setString(1, user.getAccount().getUsername());
       ps.setString(2, PasswordUtils.hashPassword(user.getAccount().getPassword()));
       ps.setString(3, user.getName());
-      ps.setDouble(4, user.getWallet().getAssets());
+      ps.setLong(4, user.getWallet().getAssets());
       ps.setString(5, user.getRole().name());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm user.");
@@ -105,7 +105,7 @@ public class UserDAO {
   }
 
   // delta dương = nạp tiền, delta âm = trừ tiền — atomic, tránh race condition
-  public boolean adjustWallet(int id, double delta) {
+  public boolean adjustWallet(int id, long delta) {
     return executeUpdate("UPDATE users SET assets = assets + ? WHERE id = ?", delta, id);
   }
 

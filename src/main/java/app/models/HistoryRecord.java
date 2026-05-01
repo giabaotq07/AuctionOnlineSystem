@@ -11,11 +11,11 @@ public class HistoryRecord implements Serializable {
   private String message;
   private LocalDateTime time;
 
-  public HistoryRecord(int sessionId, HistoryType type, String message, LocalDateTime time) {
+  public HistoryRecord(int sessionId, HistoryType type, String message) {
     this.sessionId = sessionId;
     this.type = type;
     this.message = message;
-    this.time = time;
+    this.time =  LocalDateTime.now();
   }
 
   public int getSessionId() {

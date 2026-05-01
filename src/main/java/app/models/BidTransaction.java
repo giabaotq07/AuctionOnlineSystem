@@ -7,12 +7,12 @@ public class BidTransaction implements Serializable {
   private int id;
   private final int bidderId;
   private final String bidderName;
-  private final double amount;
+  private final long amount;
   private final LocalDateTime createAt;
   private boolean isAutoBid;
 
   public BidTransaction(
-      int id, int bidderId, String bidderName, double amount, LocalDateTime createAt, boolean isAutoBid) {
+      int id, int bidderId, String bidderName, long amount, LocalDateTime createAt, boolean isAutoBid) {
     this.id = id;
     this.bidderId = bidderId;
     this.bidderName = bidderName;
@@ -21,7 +21,7 @@ public class BidTransaction implements Serializable {
     this.isAutoBid = isAutoBid;
   }
 
-  public BidTransaction(int bidderId, String bidderName, double amount, boolean isAutoBid) {
+  public BidTransaction(int bidderId, String bidderName, long amount, boolean isAutoBid) {
     this.bidderId = bidderId;
     this.bidderName = bidderName;
     this.amount = amount;
@@ -45,7 +45,7 @@ public class BidTransaction implements Serializable {
     return bidderId;
   }
 
-  public double getAmount() {
+  public long getAmount() {
     return amount;
   }
 

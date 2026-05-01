@@ -12,11 +12,11 @@ public class ItemService {
   }
 
   public Item add(Item item) {
-    return itemDAO.add(item);
+    return itemDAO.save(item);
   }
 
   public Item getById(int id) {
-    return itemDAO.getById(id);
+    return itemDAO.findById(id).orElse(null);
   }
 
   public boolean update(Item item) {
@@ -28,6 +28,6 @@ public class ItemService {
   }
 
   public List<Item> getAll() {
-    return itemDAO.getAll();
+    return itemDAO.findAll();
   }
 }

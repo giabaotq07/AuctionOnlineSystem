@@ -1,79 +1,83 @@
 package app.service;
 
+import app.config.DatabaseConnection;
 import app.dao.AuctionDAO;
+import app.dao.BidDAO;
 import app.enums.AuctionStatus;
+import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.Auction;
-import app.models.BidTransaction;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class AuctionService {
   private final AuctionDAO auctionDAO;
+  private final BidDAO bidDAO; // inject thẳng, bỏ BidService param
 
-  public AuctionService(AuctionDAO auctionDAO) {
+  public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO) {
     this.auctionDAO = auctionDAO;
+    this.bidDAO = bidDAO;
   }
 
-  public Auction createAuctionSession(Auction session) {
-    if (session.getEndTime().isBefore(LocalDateTime.now())) {
-      throw new ServiceException("Thời gian kết thc khng thể ở qu khứ.");
+  // Trả Auction thẳng — đã throw nếu không tìm thấy
+  public Auction getAuctionById(int id) {
+    return auctionDAO
+        .findById(id)
+        .orElseThrow(() -> new ServiceException("Không tìm thấy phiên ID: " + id));
+  }
+
+  public Auction createAuction(Auction auction) {
+    if (auction.getEndTime().isBefore(LocalDateTime.now())) {
+      throw new ServiceException("Thời gian kết thúc không thể ở quá khứ.");
     }
-    return auctionDAO.save(session);
+    return auctionDAO.save(auction);
   }
 
-  public Auction getAuctionById(int sessionId) {
-    Auction session = auctionDAO.findById(sessionId);
-    if (session == null) {
-      throw new ServiceException("Khng tm thấy phin đấu gi với ID: " + sessionId);
-    }
-    return session;
-  }
-
-  public void updateSessionStatus(int sessionId, AuctionStatus status) {
-    boolean ok = auctionDAO.updateStatus(sessionId, status);
-    if (!ok) {
-      throw new ServiceException("Khng thể cập nhật trạng thi cho phin ID: " + sessionId);
-    }
-  }
-
-  public List<Auction> getAllAuction() {
+  public List<Auction> getAllAuctions() {
     return auctionDAO.findAll();
   }
 
-  public boolean closeSessionIfExpired(int sessionId) {
+  public boolean closeIfExpired(int auctionId) {
+    Auction auction = getAuctionById(auctionId);
+    auction.getLock().lock();
     try {
-      Auction session = getAuctionById(sessionId);
+      if (!auction.isExpired()) return false;
 
-      if (session.getStatus() == AuctionStatus.OPEN
-          && LocalDateTime.now().isAfter(session.getEndTime())) {
+      AuctionStatus s = auction.getStatus();
+      if (s != AuctionStatus.OPEN && s != AuctionStatus.RUNNING) return false;
 
-        updateSessionStatus(sessionId, AuctionStatus.FINISHED);
-        return true;
-      }
-    } catch (Exception e) {
-      System.err.println("Lỗi khi kiểm tra hết hạn phiên " + sessionId + ": " + e.getMessage());
-      e.printStackTrace();
+      auction.finish();
+      auctionDAO.updateStatus(auctionId, AuctionStatus.FINISHED);
+      return true;
+
+    } finally {
+      auction.getLock().unlock();
     }
-    return false;
   }
 
-  public void handleSessionCompletion(int sessionId, BidService bidService) {
-    if (closeSessionIfExpired(sessionId)) {
-      BidTransaction highestBidTransaction = bidService.getHighestBid(sessionId);
-
-      if (highestBidTransaction != null) {
-        System.out.println(
-            String.format(
-                "-> Phiên %d kết thúc. Winner: %s, Giá: $%.2f",
-                sessionId,
-                highestBidTransaction.getBidderId().getName(),
-                highestBidTransaction.getAmount()));
-
-        // Tại đây bạn có thể thêm logic trừ tiền người thắng hoặc cộng tiền người bán
-      } else {
-        System.out.println("-> Phiên " + sessionId + " kết thúc. Không có người đặt giá.");
-      }
+  public void handleCompletion(int auctionId) {
+    if (!closeIfExpired(auctionId)) return;
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      bidDAO
+          .findHighestBid(conn, auctionId)
+          .ifPresentOrElse(
+              bid -> {
+                auctionDAO.updateWinner(auctionId, bid.getBidderId());
+                System.out.printf(
+                    "Phiên %d kết thúc. Winner: %s, Giá: %,d%n",
+                    auctionId, bid.getBidderName(), bid.getAmount());
+              },
+              () -> System.out.println("Phiên " + auctionId + " kết thúc. Không có bid."));
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi xử lý kết thúc phiên.", e);
     }
+  }
+
+  public void updateStatus(int auctionId, AuctionStatus status) {
+    boolean ok = auctionDAO.updateStatus(auctionId, status);
+    if (!ok) throw new ServiceException("Không thể cập nhật trạng thái phiên: " + auctionId);
   }
 }

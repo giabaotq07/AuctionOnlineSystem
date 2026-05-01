@@ -55,8 +55,8 @@ public class AuctionController {
     try {
       String name = nameField.getText();
       String desc = descriptionField.getText();
-      double startPrice = Double.parseDouble(startingPriceField.getText());
-      double stepPrice = Double.parseDouble(stepPriceField.getText());
+      long startPrice = Long.parseLong(startingPriceField.getText());
+      long stepPrice = Long.parseLong(stepPriceField.getText());
       int durationMins = Integer.parseInt(durationField.getText());
       ItemType type = typeComboBox.getValue();
 

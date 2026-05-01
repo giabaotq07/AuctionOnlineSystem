@@ -1,18 +1,27 @@
 package app.controllers;
 
 import app.config.NavigationManager;
+import app.dao.AuctionDAO;
+import app.dao.AutoBidDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
 import app.enums.AuctionStatus;
 import app.enums.CommandType;
 import app.enums.View;
 import app.models.Auction;
+import app.models.Item;
 import app.obserser.AuctionObserver;
 import app.models.BidTransaction;
 import app.models.DataStore;
 import app.network.Client;
+import app.service.BidObserverService;
+import app.service.BidService;
 import app.util.AlertUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +33,12 @@ import javafx.scene.control.TextField;
 
 public class LiveController implements AuctionObserver {
   private Auction session;
+  ItemDAO itemDAO = new ItemDAO();
+  AuctionDAO auctionDAO = new AuctionDAO();
+  BidDAO bidDAO = new BidDAO();
+  AutoBidDAO autoBidDAO = new AutoBidDAO();
+  BidObserverService observerService = new BidObserverService();
+  BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, observerService);
 
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
@@ -37,24 +52,24 @@ public class LiveController implements AuctionObserver {
 
   public void setSession(Auction session) {
     this.session = session;
-    if (session != null && session.getItem() != null) {
-      if (itemNameLabel != null) itemNameLabel.setText(session.getItem().getName());
+    Item item = itemDAO.findById(session.getItemId()).orElse(null);
+    if (item != null) {
+      if (itemNameLabel != null) itemNameLabel.setText(item.getName());
       if (startPriceLabel != null)
-        startPriceLabel.setText(String.format("%,.0f đ", session.getItem().getStartingPrice()));
+        startPriceLabel.setText(item.getStartingPrice() + "đ");
       if (stepPriceLabel != null)
-        stepPriceLabel.setText(String.format("%,.0f đ", session.getItem().getStepPrice()));
+        stepPriceLabel.setText(item.getStepPrice() + "đ");
       if (currentPriceLabel != null)
-        currentPriceLabel.setText(String.format("%,.0f đ", session.getCurrentHighestPrice()));
+        currentPriceLabel.setText(session.getHighestBid() + "đ");
       if (depositLabel != null)
-        depositLabel.setText(String.format("%,.0f đ", session.getItem().getStartingPrice() * 0.2));
-
+        depositLabel.setText(String.format("%,.0f đ", item.getStartingPrice() * 0.2));
       session.registerObserver(this);
       startCountdownTimer();
     }
   }
 
   @Override
-  public void onNewBidPlaced(String itemName, double newPrice, String bidderName) {
+  public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
     Platform.runLater(
         () -> {
           if (currentPriceLabel != null) {
@@ -64,7 +79,7 @@ public class LiveController implements AuctionObserver {
   }
 
   @Override
-  public void onAuctionClosed(String itemName, String winnerName, double finalPrice) {
+  public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
     Platform.runLater(
         () -> {
           AlertUtils.showInfo(
@@ -90,17 +105,17 @@ public class LiveController implements AuctionObserver {
     }
 
     try {
-      double bidAmount = Double.parseDouble(bidAmountField.getText());
-
-      if (!session.addBid(new BidTransaction(DataStore.currentUser, bidAmount))) {
-        AlertUtils.showError(
-            "Lỗi trả giá",
-            "Không thể trả giá! Giá nhập phải lớn hơn bảng giá hiện tại + b›c gi hoc phin ‘u gi ‘ kt thc.");
-      } else {
+      long bidAmount = Long.parseLong(bidAmountField.getText());
+      try {
+        bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
         bidAmountField.clear();
         app.models.MessagePacket<Auction> syncPacket =
-            new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
+                new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
         app.network.Client.getInstance().sendRequest(syncPacket);
+      } catch (Exception e) {
+        AlertUtils.showError(
+                "Lỗi trả giá",
+                "Không thể trả giá! Giá nhập phải lớn hơn bảng giá hiện tại + b›c gi hoc phin ‘u gi ‘ kt thc.");
       }
     } catch (NumberFormatException e) {
       AlertUtils.showError("Lỗi nhập liệu", "Vui lòng nhập một số tiền hợp lệ!");
@@ -123,14 +138,18 @@ public class LiveController implements AuctionObserver {
                   session.setStatus(AuctionStatus.FINISHED);
                   // Gọi thông báo kết thúc
                   String winner = "Không có ai";
-                  double price = session.getItem().getStartingPrice();
-                  if (!session.getBidHistory().isEmpty()) {
+                  long price = Objects.requireNonNull(itemDAO.findById(session.getItemId()).orElse(null)).getStartingPrice();
+                  List<BidTransaction> bidHistory = bidService.getBidHistory(session.getId());
+                  Item item = itemDAO.findById(session.getItemId()).orElse(null);
+                  if (!bidHistory.isEmpty()) {
                     BidTransaction lastBidTransaction =
-                        session.getBidHistory().get(session.getBidHistory().size() - 1);
-                    winner = lastBidTransaction.getBidderId().getName();
+                            bidHistory.getLast();
+                    winner = lastBidTransaction.getBidderName();
                     price = lastBidTransaction.getAmount();
                   }
-                  onAuctionClosed(session.getItem().getName(), winner, price);
+                    if (item != null) {
+                      onAuctionClosed(item.getName(), winner, price);
+                    }
                 } else {
                   long days = ChronoUnit.DAYS.between(now, endTime);
                   LocalDateTime temp = now.plusDays(days);

@@ -54,7 +54,6 @@ CREATE TABLE auction_sessions
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     extended_count INT       DEFAULT 0,
-    version        INT       DEFAULT 0,
     FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
     FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (winner_id) REFERENCES users (id) ON DELETE SET NULL
@@ -81,7 +80,6 @@ CREATE TABLE auto_bids
     UNIQUE (session_id, user_id),
     max_bid          BIGINT NOT NULL,
     increment_amount BIGINT NOT NULL,
-    is_active        BOOLEAN   DEFAULT TRUE,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES auction_sessions (id) ON DELETE CASCADE,

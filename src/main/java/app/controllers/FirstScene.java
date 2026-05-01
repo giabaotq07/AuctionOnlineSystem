@@ -119,9 +119,9 @@ public class FirstScene {
                   "Id: "
                       + s.getId()
                       + "\nPrice: "
-                      + s.getCurrentHighestPrice()
+                      + s.getHighestBid()
                       + "\nitem: "
-                      + s.getItem());
+                      + s.getItemId());
             }
           });
 
@@ -171,10 +171,7 @@ public class FirstScene {
     for (Auction s : DataStore.sessions) {
 
       String item = "";
-
-      if (s.getItem().getName() != null) {
-        item = s.getItem().getName().toLowerCase();
-      }
+        item = String.valueOf(s.getItemId());
 
       if (item.contains(key)) {
         sessionListView.getItems().add(s);
@@ -200,11 +197,11 @@ public class FirstScene {
       imgLabel.setStyle("-fx-text-fill: #aaa;");
       imagePane.getChildren().add(imgLabel);
 
-      Label titleLabel = new Label(session.getItem().getName());
+      Label titleLabel = new Label(String.valueOf(session.getItemId()));
       titleLabel.setWrapText(true);
       titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
-      double finalPrice =
+      long finalPrice =
           session.getBidHistory().isEmpty()
               ? session.getItem().getStartingPrice()
               : session.getBidHistory().get(session.getBidHistory().size() - 1).getAmount();
@@ -216,7 +213,7 @@ public class FirstScene {
 
       Button btnDetail = new Button("Đã bán");
       btnDetail.setDisable(true);
-      btnDetail.setMaxWidth(Double.MAX_VALUE);
+      btnDetail.setMaxWidth(Long.MAX_VALUE);
       btnDetail.setStyle(
           "-fx-background-color: #999999; -fx-text-fill: white; -fx-background-radius: 4;");
 
@@ -270,7 +267,7 @@ public class FirstScene {
     timeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666;");
 
     Button btnDetail = new Button("Chi tiết");
-    btnDetail.setMaxWidth(Double.MAX_VALUE);
+    btnDetail.setMaxWidth(Long.MAX_VALUE);
     btnDetail.setStyle(
         "-fx-background-color: #673ab7; -fx-text-fill: white; -fx-background-radius: 4;");
     btnDetail.setOnAction(

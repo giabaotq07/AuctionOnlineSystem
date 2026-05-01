@@ -45,7 +45,7 @@ public class AuctionStateManager implements java.io.Serializable {
 
   public void registerObserverToActive(AuctionObserver observer) {
     for (Auction session : activeAuctions) {
-      session.registerObserver(observer);
+      //session.registerObserver(observer);
     }
   }
 }

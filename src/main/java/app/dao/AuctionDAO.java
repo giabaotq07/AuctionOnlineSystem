@@ -2,8 +2,6 @@ package app.dao;
 
 import app.config.DatabaseConnection;
 import app.enums.AuctionStatus;
-import app.enums.ItemType;
-import app.enums.UserRole;
 import app.exception.DatabaseException;
 import app.models.*;
 import java.sql.*;
@@ -18,114 +16,68 @@ public class AuctionDAO {
 
   private static final String BASE_SELECT =
       """
-          SELECT
-              s.id,
-              s.status,
-              s.start_time,
-              s.end_time,
-              s.highest_bid,
-              s.extended_count,
+              SELECT
+                  s.id,
+                  s.status,
+                  s.start_time,
+                  s.end_time,
+                  s.highest_bid,
+                  s.extended_count,
+                  s.created_at,
+                  s.updated_at,
+                  i.id  AS item_id,
+                  u.id  AS seller_id,
+                  w.id  AS winner_id
+              FROM auction_sessions s
+              JOIN items i ON s.item_id = i.id
+              JOIN users u ON s.seller_id = u.id
+              LEFT JOIN users w ON s.winner_id = w.id
+              """;
 
-              i.id          AS item_id,
-              i.name        AS item_name,
-              i.seller_id   AS item_seller_id,
-              i.description AS item_description,
-              i.starting_price,
-              i.step_price,
-              i.category,
-
-              u.id        AS seller_id,
-              u.username,
-              u.password,
-              u.full_name,
-              u.assets,
-              u.role,
-
-              w.id        AS winner_id,
-              w.username  AS winner_username,
-              w.password  AS winner_password,
-              w.full_name AS winner_full_name,
-              w.assets    AS winner_assets,
-              w.role      AS winner_role
-
-          FROM auction_sessions s
-          JOIN items i ON s.item_id = i.id
-          JOIN users u ON s.seller_id = u.id
-          LEFT JOIN users w ON s.winner_id = w.id
-          """;
-
-  private Item mapItem(ResultSet rs) throws SQLException {
-    return ItemFactory.createItem(
-        rs.getInt("item_id"),
-        rs.getString("item_name"),
-        rs.getInt("item_seller_id"),
-        rs.getString("item_description"),
-        rs.getDouble("starting_price"),
-        rs.getDouble("step_price"),
-        ItemType.valueOf(rs.getString("category")));
-  }
-
-  private User mapSeller(ResultSet rs) throws SQLException {
-    return UserFactory.createUser(
-        rs.getInt("seller_id"),
-        rs.getString("full_name"),
-        new Account(rs.getString("username"), rs.getString("password")),
-        new Wallet(rs.getDouble("assets")),
-        UserRole.valueOf(rs.getString("role")));
-  }
-
-  private User mapWinner(ResultSet rs) throws SQLException {
-    int winnerId = rs.getInt("winner_id");
-    if (rs.wasNull()) return null;
-    return UserFactory.createUser(
-        winnerId,
-        rs.getString("winner_full_name"),
-        new Account(rs.getString("winner_username"), rs.getString("winner_password")),
-        new Wallet(rs.getDouble("winner_assets")),
-        UserRole.valueOf(rs.getString("winner_role")));
-  }
+  public AuctionDAO() {}
 
   private Auction mapAuction(ResultSet rs) throws SQLException {
     return new Auction(
         rs.getInt("id"),
-        mapItem(rs),
-        mapSeller(rs),
-        mapWinner(rs),
+        rs.getInt("item_id"),
+        rs.getInt("seller_id"),
+        (Integer) rs.getObject("winner_id"),
         AuctionStatus.valueOf(rs.getString("status")),
         rs.getTimestamp("start_time").toLocalDateTime(),
         rs.getTimestamp("end_time").toLocalDateTime(),
-        rs.getDouble("highest_bid"),
-        rs.getInt("extended_count"));
+        rs.getLong("highest_bid"),
+        rs.getInt("extended_count"),
+        rs.getTimestamp("created_at").toLocalDateTime(),
+        rs.getTimestamp("updated_at").toLocalDateTime());
   }
 
   // ── Read methods ──────────────────────────────────────────────
 
   public Optional<Auction> findById(int id) {
-    return findOne(BASE_SELECT + "WHERE s.id = ?", id);
+    return findOne(BASE_SELECT + " WHERE s.id = ?", id);
   }
 
   public List<Auction> findAll() {
-    return findMany(BASE_SELECT + "ORDER BY s.id DESC");
+    return findMany(BASE_SELECT + " ORDER BY s.id DESC");
   }
 
   public List<Auction> findByStatus(AuctionStatus status) {
-    return findMany(BASE_SELECT + "WHERE s.status = ? ORDER BY s.end_time ASC", status.name());
+    return findMany(BASE_SELECT + " WHERE s.status = ? ORDER BY s.end_time ASC", status.name());
   }
 
   public List<Auction> findBySeller(int sellerId) {
-    return findMany(BASE_SELECT + "WHERE s.seller_id = ? ORDER BY s.id DESC", sellerId);
+    return findMany(BASE_SELECT + " WHERE s.seller_id = ? ORDER BY s.id DESC", sellerId);
   }
 
   // ── Transaction methods — nhận Connection từ Service ──────────
 
-  // Lock row để tránh race condition — chỉ dùng trong transaction
   public void lockSession(Connection conn, int sessionId) throws SQLException {
     String sql =
         """
-        SELECT id FROM auction_sessions
-        WHERE id = ? AND status = 'RUNNING'
-        FOR UPDATE
-        """;
+            SELECT id FROM auction_sessions
+            WHERE id = ? AND status = 'RUNNING'
+            FOR UPDATE
+            """;
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);
       try (ResultSet rs = ps.executeQuery()) {
@@ -137,35 +89,34 @@ public class AuctionDAO {
     }
   }
 
-  public double getHighestBid(Connection conn, int sessionId) throws SQLException {
+  public long getHighestBid(Connection conn, int sessionId) throws SQLException {
     String sql = "SELECT highest_bid FROM auction_sessions WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);
       try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? rs.getDouble("highest_bid") : 0;
+        return rs.next() ? rs.getLong("highest_bid") : 0L;
       }
     }
   }
 
-  public void updateHighestBid(Connection conn, int sessionId, double highestBid)
+  public void updateHighestBid(Connection conn, int sessionId, long highestBid)
       throws SQLException {
     String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setDouble(1, highestBid);
+      ps.setLong(1, highestBid);
       ps.setInt(2, sessionId);
       ps.executeUpdate();
     }
   }
 
-  // Anti-sniping — gia hạn thêm Y giây và tăng extended_count
   public void extendEndTime(Connection conn, int sessionId, int extraSeconds) throws SQLException {
     String sql =
         """
-        UPDATE auction_sessions
-        SET end_time = DATE_ADD(end_time, INTERVAL ? SECOND),
-            extended_count = extended_count + 1
-        WHERE id = ?
-        """;
+            UPDATE auction_sessions
+            SET end_time = DATE_ADD(end_time, INTERVAL ? SECOND),
+                extended_count = extended_count + 1
+            WHERE id = ?
+            """;
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, extraSeconds);
       ps.setInt(2, sessionId);
@@ -178,18 +129,18 @@ public class AuctionDAO {
   public Auction save(Auction auction) {
     String sql =
         """
-        INSERT INTO auction_sessions
-            (item_id, seller_id, status, start_time, end_time, highest_bid)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """;
+            INSERT INTO auction_sessions
+                (item_id, seller_id, status, start_time, end_time, highest_bid)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """;
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      ps.setInt(1, auction.getItem().getId());
-      ps.setInt(2, auction.getSeller().getId());
+      ps.setInt(1, auction.getItemId());
+      ps.setInt(2, auction.getSellerId());
       ps.setString(3, auction.getStatus().name());
       ps.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
       ps.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
-      ps.setDouble(6, auction.getHighestBid());
+      ps.setLong(6, auction.getHighestBid());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể tạo auction.");
       }
@@ -216,7 +167,7 @@ public class AuctionDAO {
     return executeUpdate("DELETE FROM auction_sessions WHERE id = ?", id);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────
+  // ── Private helpers ───────────────────────────────────────────
 
   private Optional<Auction> findOne(String sql, Object... params) {
     try (Connection conn = databaseConnection.getConnection();

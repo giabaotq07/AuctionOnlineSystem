@@ -18,7 +18,7 @@ public class MySqlBidDAO implements BidDAO {
    PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
    stmt.setInt(1, bid.getAuctionId());
    stmt.setInt(2, bid.getBidderId());
-   stmt.setDouble(3, bid.getAmount());
+   stmt.setLong(3, bid.getAmount());
    stmt.setTimestamp(4, Timestamp.valueOf(bid.getBidTime()));
    stmt.executeUpdate();
    try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -71,7 +71,7 @@ public class MySqlBidDAO implements BidDAO {
   int id = rs.getInt("id");
   int auctionId = rs.getInt("auction_id");
   int bidderId = rs.getInt("bidder_id");
-  double amount = rs.getDouble("amount");
+  long amount = rs.getLong("amount");
   LocalDateTime bidTime = rs.getTimestamp("bid_time").toLocalDateTime();
   return new BidTransaction(id, auctionId, bidderId, amount, bidTime);
   }

@@ -16,8 +16,8 @@ public final class ItemMapper {
   int id = rs.getInt("id");
   String name = rs.getString("name");
   String description = rs.getString("description");
-  double startPrice = rs.getDouble("start_price");
-  double stepPrice = rs.getDouble("step_price");
+  long startPrice = rs.getLong("start_price");
+  long stepPrice = rs.getLong("step_price");
 
   return switch (category) {
    case ELECTRONICS ->

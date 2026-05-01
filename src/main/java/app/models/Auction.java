@@ -1,11 +1,16 @@
 package app.models;
 
 import app.enums.AuctionStatus;
+import app.obserser.AuctionObserver;
+import app.obserser.AuctionSubject;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Auction {
+public class Auction implements AuctionSubject {
 
   private int id;
   private final int itemId;
@@ -14,19 +19,24 @@ public class Auction {
   private AuctionStatus status;
   private LocalDateTime startTime;
   private LocalDateTime endTime;
-  private long depositAmount;
+  //  private long depositAmount;
   private long highestBid;
   private int extendedCount;
+  private final LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
   private final ReentrantLock lock = new ReentrantLock();
 
-  public Auction(int itemId, int sellerId, LocalDateTime endTime, long depositAmount) {
+  public Auction(int itemId, int sellerId, LocalDateTime endTime
+      // , long depositAmount
+      ) {
     this.itemId = itemId;
     this.sellerId = sellerId;
     this.endTime = endTime;
-    this.depositAmount = depositAmount;
+    //    this.depositAmount = depositAmount;
     this.status = AuctionStatus.OPEN;
     this.highestBid = 0;
     this.extendedCount = 0;
+    this.createdAt = LocalDateTime.now();
   }
 
   public Auction(
@@ -37,9 +47,11 @@ public class Auction {
       AuctionStatus status,
       LocalDateTime startTime,
       LocalDateTime endTime,
-      long depositAmount,
+      //      long depositAmount,
       long highestBid,
-      int extendedCount) {
+      int extendedCount,
+      LocalDateTime createdAt,
+      LocalDateTime updatedAt) {
     this.id = id;
     this.itemId = itemId;
     this.sellerId = sellerId;
@@ -47,9 +59,11 @@ public class Auction {
     this.status = status;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.depositAmount = depositAmount;
+    //    this.depositAmount = depositAmount;
     this.highestBid = highestBid;
     this.extendedCount = extendedCount;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
   }
 
   public void start() {
@@ -107,6 +121,8 @@ public class Auction {
     return this.status == AuctionStatus.RUNNING;
   }
 
+  // setter and getter
+
   public int getId() {
     return id;
   }
@@ -155,13 +171,13 @@ public class Auction {
     this.endTime = endTime;
   }
 
-  public long getDepositAmount() {
-    return depositAmount;
-  }
-
-  public void setDepositAmount(long depositAmount) {
-    this.depositAmount = depositAmount;
-  }
+//  public long getDepositAmount() {
+//    return depositAmount;
+//  }
+//
+//  public void setDepositAmount(long depositAmount) {
+//    this.depositAmount = depositAmount;
+//  }
 
   public long getHighestBid() {
     return highestBid;
@@ -181,6 +197,18 @@ public class Auction {
 
   public ReentrantLock getLock() {
     return lock;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override
@@ -205,5 +233,29 @@ public class Auction {
         + ", extendedCount="
         + extendedCount
         + '}';
+  }
+
+  /////////
+  private transient List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
+  @Override
+  public void registerObserver(AuctionObserver observer) {
+    if (observers == null) observers = new ArrayList<>();
+    if (!observers.contains(observer)) observers.add(observer);
+  }
+
+  @Override
+  public void removeObserver(AuctionObserver observer) {
+    if (observers != null) {
+      observers.remove(observer);
+    }
+  }
+
+  @Override
+  public void notifyObserversNewBid(long price, String bidderName) {
+    if (observers != null) {
+      for (AuctionObserver observer : observers) {
+        observer.onNewBidPlaced(String.valueOf(itemId), price, bidderName);
+      }
+    }
   }
 }

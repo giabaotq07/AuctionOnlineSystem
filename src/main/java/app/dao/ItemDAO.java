@@ -21,7 +21,7 @@ public class ItemDAO {
           SELECT id, name, seller_id, description, category,
                  starting_price, step_price, status
           FROM items
-          """;
+      """;
 
   private Item mapItem(ResultSet rs) throws SQLException {
     return ItemFactory.createItem(
@@ -29,8 +29,8 @@ public class ItemDAO {
         rs.getString("name"),
         rs.getInt("seller_id"),
         rs.getString("description"),
-        rs.getDouble("starting_price"),
-        rs.getDouble("step_price"),
+        rs.getLong("starting_price"),
+        rs.getLong("step_price"),
         ItemType.valueOf(rs.getString("category")));
   }
 
@@ -76,8 +76,8 @@ public class ItemDAO {
       ps.setString(2, item.getName());
       ps.setString(3, item.getDescription());
       ps.setString(4, item.getType().name());
-      ps.setDouble(5, item.getStartingPrice());
-      ps.setDouble(6, item.getStepPrice());
+      ps.setLong(5, item.getStartingPrice());
+      ps.setLong(6, item.getStepPrice());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm item.");
       }

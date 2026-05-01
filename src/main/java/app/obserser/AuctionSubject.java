@@ -5,5 +5,5 @@ public interface AuctionSubject {
 
   void removeObserver(AuctionObserver observer);
 
-  void notifyObserversNewBid(double price, String bidderName);
+  void notifyObserversNewBid(long price, String bidderName);
 }

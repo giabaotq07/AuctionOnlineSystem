@@ -4,7 +4,7 @@ import app.enums.ItemType;
 
 public class Electronics extends Item {
   public Electronics(
-      String name, int sellerId, String description, double startingPrice, double stepPrice) {
+      String name, int sellerId, String description, Long startingPrice, Long stepPrice) {
     this(0, name, sellerId, description, startingPrice, stepPrice);
   }
 
@@ -13,8 +13,8 @@ public class Electronics extends Item {
       String name,
       int sellerId,
       String description,
-      double startingPrice,
-      double stepPrice) {
+      Long startingPrice,
+      Long stepPrice) {
     super(id, name, sellerId, description, startingPrice, stepPrice, ItemType.ELECTRONICS);
   }
 

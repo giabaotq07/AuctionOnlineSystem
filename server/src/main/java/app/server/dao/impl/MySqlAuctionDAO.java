@@ -130,8 +130,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
   private void fillItem(PreparedStatement stmt, Item item) throws SQLException {
   stmt.setString(1, item.getName());
   stmt.setString(2, item.getDescription());
-  stmt.setDouble(3, item.getStartPrice());
-  stmt.setDouble(4, item.getStepPrice());
+  stmt.setLong(3, item.getStartPrice());
+  stmt.setLong(4, item.getStepPrice());
   stmt.setString(5, item.getCategory().name());
   String brand = null;
   String condition = null;

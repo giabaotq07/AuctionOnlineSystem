@@ -44,7 +44,7 @@ public class BidController {
           session = s;
 
           outputArea.setText(
-              "Item: " + s.getItem().getName() + "\nGiá: $" + s.getCurrentHighestPrice());
+              "Item: " + s.getItemId() + "\nGiá: $" + s.getHighestBid());
         });
   }
 
@@ -58,17 +58,23 @@ public class BidController {
       }
 
       String userName = bidderField.getText();
-      double amount = Double.parseDouble(amountField.getText());
+      long amount = Long.parseLong(amountField.getText());
 
       User bidder = userService.getUserByAccount(userName);
-
-      boolean success = session.addBid(new BidTransaction(bidder, amount));
+      boolean success;
+      try {
+        session.updateHighestBid(amount, bidder.getId());
+        success = true;
+      } catch (IllegalArgumentException e) {
+        e.printStackTrace();
+        success = false;
+      }
       if (success) {
         HistoryStore.history.add(
             new HistoryRecord(
                 session.getId(),
                 HistoryType.BID,
-                bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName()));
+                bidder.getName() + " bid $" + amount + " vào " + session.getItemId()));
       }
 
       if (success) {

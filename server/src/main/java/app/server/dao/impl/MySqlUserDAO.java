@@ -22,7 +22,7 @@ public class MySqlUserDAO implements UserDAO {
    stmt.setString(1, user.getUsername());
    stmt.setString(2, user.getPasswordHash());
    stmt.setString(3, user.getRole().name());
-   stmt.setDouble(4, user.getBalance());
+   stmt.setLong(4, user.getBalance());
    stmt.executeUpdate();
    try (ResultSet rs = stmt.getGeneratedKeys()) {
    if (rs.next()) {
@@ -74,7 +74,7 @@ public class MySqlUserDAO implements UserDAO {
   String username = rs.getString("username");
   String passwordHash = rs.getString("password_hash");
   UserRole role = UserRole.valueOf(rs.getString("role"));
-  double balance = rs.getDouble("balance");
+  long balance = rs.getlong("balance");
 
   return switch (role) {
    case ADMIN -> new Admin(id, username, passwordHash, balance);

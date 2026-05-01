@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class UserService implements IUserService {
+public class UserService {
   private final UserDAO userDAO;
   private final Map<String, User> userCache = new ConcurrentHashMap<>();
 
@@ -18,26 +18,23 @@ public class UserService implements IUserService {
     this.userDAO = userDAO;
   }
 
-  @Override
   public boolean login(String account, String rawPassword) throws InvalidCredentialsException {
-    User user = userDAO.getUserByAccount(account);
+    User user = userDAO.findByUsername(account).orElse(null);
     return user != null && PasswordUtils.verify(rawPassword, user.getAccount().getPassword());
   }
 
-  @Override
   public boolean register(User user) throws UserAlreadyExistsException {
-    User exists = userDAO.getUserByAccount(user.getAccount().getUsername());
+    User exists = userDAO.findByUsername(user.getAccount().getUsername()).orElse(null);
     if (exists != null) {
       return false;
     }
-    user = userDAO.add(user);
+    user = userDAO.save(user);
     userCache.put(user.getAccount().getUsername(), user);
     return true;
   }
 
-  @Override
   public User getUserByAccount(String account) {
-    User user = userDAO.getUserByAccount(account);
+    User user = userDAO.findByUsername(account).orElse(null);
     if (user == null) {
       throw new NotFoundException("Không tìm thấy user: " + account);
     }
@@ -45,18 +42,16 @@ public class UserService implements IUserService {
     return userCache.get(account);
   }
 
-  @Override
   public User getUserById(int id) {
-    User user = userDAO.getById(id);
+    User user = userDAO.findById(id).orElse(null);
     if (user == null) {
       throw new NotFoundException("Không tìm thấy user với ID: " + id);
     }
     return user;
   }
 
-  @Override
   public boolean updateProfile(User user) {
-    boolean ok = userDAO.updateUserProfile(user);
+    boolean ok = userDAO.updateProfile(user.getId(), user.getName());
     if (!ok) {
       return false;
     }
@@ -64,17 +59,26 @@ public class UserService implements IUserService {
     return true;
   }
 
-  @Override
-  public boolean updateWallet(User user) {
-    boolean ok = userDAO.updateUserWallet(user);
+  public boolean deposit(User user, long amount) {
+    boolean ok = userDAO.adjustWallet(user.getId(), amount);
     if (!ok) {
       return false;
     }
-    userCache.put(user.getAccount().getUsername(), user);
+    String username = user.getAccount().getUsername();
+    userCache.put(username, userDAO.findById(user.getId()).orElse(null));
     return true;
   }
 
-  @Override
+  public boolean withdraw(User user, long amount) {
+    boolean ok = userDAO.adjustWallet(user.getId(), -amount);
+    if (!ok) {
+      return false;
+    }
+    String username = user.getAccount().getUsername();
+    userCache.put(username, userDAO.findById(user.getId()).orElse(null));
+    return true;
+  }
+
   public boolean deleteUser(int id) {
     boolean ok = userDAO.delete(id);
     if (!ok) {
@@ -84,8 +88,7 @@ public class UserService implements IUserService {
     return true;
   }
 
-  @Override
   public List<User> getAllUsers() {
-    return userDAO.getAll();
+    return userDAO.findAll();
   }
 }

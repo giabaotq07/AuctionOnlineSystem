@@ -1,18 +1,17 @@
 package app.models;
 
 public class Wallet implements java.io.Serializable {
-  private double assets;
+  private long assets;
 
   public Wallet() {
     this.assets = 0;
   }
 
-  public Wallet(double assets) {
+  public Wallet(long assets) {
     this.assets = assets;
   }
 
-  // Dùng synchronized để tại một thời điểm chỉ một luồng được phép sửa tiền
-  public synchronized boolean withdraw(double amount) {
+  public synchronized boolean withdraw(long amount) {
     if (amount <= 0) {
       throw new IllegalArgumentException("So tien rut phai la so duong.");
     }
@@ -20,17 +19,17 @@ public class Wallet implements java.io.Serializable {
       throw new IllegalArgumentException("So tien rut vuot qua so du.");
     }
     this.assets -= amount;
-    return true; // Rút tiền/Đặt cọc thành công
+    return true;
   }
 
-  public synchronized void deposit(double amount) {
+  public synchronized void deposit(long amount) {
     if (amount <= 0) {
       throw new IllegalArgumentException("So tien gui phai la so duong.");
     }
     this.assets += amount;
   }
 
-  public double getAssets() {
+  public long getAssets() {
     return assets;
   }
 }

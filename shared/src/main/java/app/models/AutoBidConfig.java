@@ -3,15 +3,15 @@ package app.models;
 public class AutoBidConfig extends Entity {
   private int auctionId;
   private int bidderId;
-  private double maxAmount;
-  private double increment;
+  private long maxAmount;
+  private long increment;
   private boolean active;
 
   public AutoBidConfig() {
   super();
   }
 
-  public AutoBidConfig(int id, int auctionId, int bidderId, double maxAmount, double increment) {
+  public AutoBidConfig(int id, int auctionId, int bidderId, long maxAmount, long increment) {
   super(id);
   this.auctionId = auctionId;
   this.bidderId = bidderId;
@@ -28,11 +28,11 @@ public class AutoBidConfig extends Entity {
   return bidderId;
   }
 
-  public double getMaxAmount() {
+  public long getMaxAmount() {
   return maxAmount;
   }
 
-  public double getIncrement() {
+  public long getIncrement() {
   return increment;
   }
 
@@ -44,11 +44,11 @@ public class AutoBidConfig extends Entity {
   this.active = false;
   }
 
-  public boolean canIncrease(double currentPrice) {
+  public boolean canIncrease(long currentPrice) {
   return active && currentPrice + increment <= maxAmount;
   }
 
-  public double getNextBid(double currentPrice) {
+  public long getNextBid(long currentPrice) {
   if (!canIncrease(currentPrice)) {
    return currentPrice;
   }

@@ -8,8 +8,8 @@ public class ItemFactory implements java.io.Serializable {
       String name,
       int sellerId,
       String description,
-      double startingPrice,
-      double stepPrice,
+      Long startingPrice,
+      Long stepPrice,
       ItemType type) {
     return switch (type) {
       case ELECTRONICS -> new Electronics(id, name, sellerId, description, startingPrice, stepPrice);
@@ -19,7 +19,7 @@ public class ItemFactory implements java.io.Serializable {
   }
 
   public static Item createItem(
-      String name, int sellerId, String description, double startingPrice, double stepPrice, ItemType type) {
+      String name, int sellerId, String description, Long startingPrice, Long stepPrice, ItemType type) {
     return switch (type) {
       case ELECTRONICS -> new Electronics(name, sellerId, description, startingPrice, stepPrice);
       case ART -> new Art(name, sellerId, description, startingPrice, stepPrice);

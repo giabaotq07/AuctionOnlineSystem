@@ -89,8 +89,8 @@ public class Auction extends Entity {
   }
   }
 
-  public boolean validateBid(double amount) {
-  double minBid = bidHistory.isEmpty() ? item.getStartPrice() : highestBid.getAmount() + item.getStepPrice();
+  public boolean validateBid(long amount) {
+  long minBid = bidHistory.isEmpty() ? item.getStartPrice() : highestBid.getAmount() + item.getStepPrice();
   return amount >= minBid;
   }
 

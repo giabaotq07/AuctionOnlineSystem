@@ -1,8 +1,13 @@
 package app.network;
 
-import app.models.Auction;
-import app.models.BidTransaction;
-import app.models.MessagePacket;
+import app.dao.AuctionDAO;
+import app.dao.AutoBidDAO;
+import app.dao.BidDAO;
+import app.dto.BidRequest;
+import app.models.*;
+import app.service.BidObserverService;
+import app.service.BidService;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
@@ -52,29 +57,21 @@ public class Client {
                 app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
             if (!exists) {
               app.models.DataStore.sessions.add(session);
-              app.models.AuctionStateManager.getInstance().addSession(session);
+              AuctionStateManager.getInstance().addSession(session);
             }
             break;
 
           case PLACE_BID:
-            Auction updatedSession = (Auction) packet.getData();
-            app.models.DataStore.sessions.stream()
-                .filter(s -> s.getId() == updatedSession.getId())
-                .findFirst()
-                .ifPresent(
-                    s -> {
-                      s.getBidHistory().clear();
-                      s.getBidHistory().addAll(updatedSession.getBidHistory());
-                      s.setStatus(updatedSession.getStatus());
-
-                      if (!s.getBidHistory().isEmpty()) {
-                        BidTransaction lastBidTransaction =
-                            s.getBidHistory().get(s.getBidHistory().size() - 1);
-                        s.notifyObserversNewBid(
-                            lastBidTransaction.getAmount(),
-                            lastBidTransaction.getBidderId().getName());
-                      }
-                    });
+            BidRequest bidRequest = (BidRequest) packet.getData();
+            AuctionDAO auctionDAO = new AuctionDAO();
+            BidDAO bidDAO = new BidDAO();
+            AutoBidDAO autoBidDAO = new AutoBidDAO();
+            BidObserverService observerService = new BidObserverService();
+            BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, observerService);
+            bidService.placeBid(
+                bidRequest.sessionId(),
+                bidRequest.bidTransaction().getBidderId(),
+                bidRequest.bidTransaction().getAmount());
             break;
         }
 

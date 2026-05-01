@@ -9,8 +9,8 @@ public abstract class Item extends Entity {
   protected int sellerId;
   protected String name;
   protected String description;
-  protected double startingPrice;
-  protected double stepPrice;
+  protected long startingPrice;
+  protected long stepPrice;
   protected ItemType type;
   protected ItemStatus status;
   protected LocalDateTime createdAt;
@@ -20,8 +20,8 @@ public abstract class Item extends Entity {
       String name,
       int sellerId,
       String description,
-      double startingPrice,
-      double stepPrice,
+      long startingPrice,
+      long stepPrice,
       ItemType type) {
     this(0, name, sellerId, description, startingPrice, stepPrice, type);
   }
@@ -31,8 +31,8 @@ public abstract class Item extends Entity {
       String name,
       int sellerId,
       String description,
-      double startingPrice,
-      double stepPrice,
+      long startingPrice,
+      long stepPrice,
       ItemType type) {
     super(id);
     this.sellerId = sellerId;
@@ -67,19 +67,19 @@ public abstract class Item extends Entity {
     this.description = description;
   }
 
-  public double getStartingPrice() {
+  public long getStartingPrice() {
     return startingPrice;
   }
 
-  public void setStartingPrice(double startingPrice) {
+  public void setStartingPrice(long startingPrice) {
     this.startingPrice = startingPrice;
   }
 
-  public double getStepPrice() {
+  public long getStepPrice() {
     return stepPrice;
   }
 
-  public void setStepPrice(double stepPrice) {
+  public void setStepPrice(Long stepPrice) {
     this.stepPrice = stepPrice;
   }
 
