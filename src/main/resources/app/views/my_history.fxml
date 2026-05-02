@@ -34,11 +34,10 @@
             </HBox>
         </VBox>
     </top>
+
     <!-- ================= CENTER ================= -->
     <center>
-        <VBox spacing="20.0"
-              style="-fx-background-color: #0f1424;">
-
+        <VBox spacing="20.0" style="-fx-background-color: #0f1424;">
             <padding>
                 <Insets top="20" left="40" right="40" bottom="20"/>
             </padding>
@@ -47,30 +46,25 @@
                    style="-fx-font-weight: bold; -fx-font-size: 22px;"
                    textFill="#673ab7"/>
 
-            <!-- ================= HORIZONTAL SCROLL AREA ================= -->
-            <ScrollPane fitToHeight="true"
-                        fitToWidth="true"
-                        hbarPolicy="AS_NEEDED"
+            <!-- Area này được cấu hình để Auto-scroll ngang -->
+            <ScrollPane fx:id="historyScrollPane"
+                        fitToHeight="true"
+                        hbarPolicy="NEVER"
                         vbarPolicy="NEVER"
                         style="-fx-background: transparent;
                                -fx-background-color: transparent;
                                -fx-border-color: transparent;">
-
                 <content>
                     <HBox fx:id="historyContainerPane"
                           spacing="20"
                           alignment="CENTER_LEFT"
                           style="-fx-background-color: #0f1424;">
-
                         <padding>
                             <Insets top="10" left="10" right="10" bottom="10"/>
                         </padding>
-
                     </HBox>
                 </content>
-
             </ScrollPane>
-
         </VBox>
     </center>
 

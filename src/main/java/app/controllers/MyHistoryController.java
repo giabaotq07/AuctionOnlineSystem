@@ -3,87 +3,145 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.dao.AuctionDAO;
 import app.dao.HistoryDAO;
+import app.enums.HistoryType;
+import app.models.Auction;
 import app.models.HistoryRecord;
 import app.network.Client;
-
-import java.io.IOException;
-import java.util.List;
-
-import javafx.event.ActionEvent;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class MyHistoryController {
 
-    @FXML
-    private HBox historyContainerPane;
+    // Khớp fx:id từ file FXML của ông
+    @FXML private ScrollPane historyScrollPane;
+    @FXML private HBox historyContainerPane;
 
-    private final HistoryDAO historyDAO = HistoryDAO.getInstance();
-
-    // layout constants
     private static final double CARD_WIDTH = 280;
-    private static final double SPACING = 15;
+    private static final double SPACING = 20; // Khớp với spacing="20" trong FXML
 
     @FXML
     public void initialize() {
+        // Đợi UI render xong rồi mới tính toán scroll
+        Platform.runLater(() -> {
+            refreshHistoryContainer();
+            startAutoScroll();
+        });
+    }
 
-        List<HistoryRecord> histories = historyDAO.getAllHistory();
-
+    private void refreshHistoryContainer() {
+        if (historyContainerPane == null) return;
         historyContainerPane.getChildren().clear();
-        historyContainerPane.setSpacing(SPACING);
-        historyContainerPane.setAlignment(Pos.CENTER_LEFT);
 
-        for (HistoryRecord r : histories) {
-            historyContainerPane.getChildren().add(createHistoryCard(r));
+        List<HistoryRecord> allHistory = HistoryDAO.getInstance().getAllHistory();
+        List<Auction> allAuctions = AuctionDAO.getInstance().getAllAuction();
+
+        Set<Integer> processedAuctionIds = new HashSet<>();
+
+        for (HistoryRecord record : allHistory) {
+            // Logic lọc theo HistoryType của ông
+            if (record.getType() == HistoryType.BID || record.getType() == HistoryType.ADD_ITEM) {
+                int auctionId = record.getSessionId();
+
+                if (!processedAuctionIds.contains(auctionId)) {
+                    Auction session = allAuctions.stream()
+                            .filter(a -> a.getId() == auctionId)
+                            .findFirst()
+                            .orElse(null);
+
+                    if (session != null) {
+                        historyContainerPane.getChildren().add(createAuctionCard(session, record.getType()));
+                        processedAuctionIds.add(auctionId);
+                    }
+                }
+            }
         }
     }
 
-    // ================= CARD =================
-    private VBox createHistoryCard(HistoryRecord record) {
+    private VBox createAuctionCard(Auction session, HistoryType type) {
+        VBox vbox = new VBox();
+        vbox.setPrefWidth(CARD_WIDTH);
+        vbox.setMinWidth(CARD_WIDTH);
+        vbox.setMaxWidth(CARD_WIDTH);
+        vbox.setStyle("-fx-background-color: #1a1f35; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
 
-        VBox box = new VBox();
-        box.setPrefWidth(CARD_WIDTH);
-        box.setMinWidth(CARD_WIDTH);
-        box.setMaxWidth(CARD_WIDTH);
+        Label badge = new Label(type == HistoryType.ADD_ITEM ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
+        badge.setStyle(type == HistoryType.ADD_ITEM ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;" : "-fx-text-fill: #00ccff; -fx-font-weight: bold;");
 
-        box.setStyle(
-                "-fx-background-color: #1a1f35;"
-                        + "-fx-background-radius: 8;"
-                        + "-fx-padding: 12;"
-                        + "-fx-spacing: 8;"
+        Label titleLabel = new Label(session.getItem().getName());
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
+        titleLabel.setWrapText(true);
+
+        Label priceLabel = new Label(String.format("Giá: %,.0f đ", session.getCurrentHighestPrice()));
+        priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
+
+        Button btnDetail = new Button("Chi tiết");
+        btnDetail.setMaxWidth(Double.MAX_VALUE);
+        btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white; -fx-cursor: hand;");
+        btnDetail.setOnAction(e -> handleGoToLive(session));
+
+        vbox.getChildren().addAll(badge, titleLabel, priceLabel, btnDetail);
+        return vbox;
+    }
+
+    private void startAutoScroll() {
+        if (historyScrollPane == null || historyContainerPane == null) return;
+
+        Timeline scrollTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(3), e -> {
+                    double contentWidth = historyContainerPane.getWidth();
+                    double viewWidth = historyScrollPane.getViewportBounds().getWidth();
+                    double maxScroll = contentWidth - viewWidth;
+
+                    if (maxScroll <= 0) return;
+
+                    double step = CARD_WIDTH + SPACING;
+                    double nextPixel = (historyScrollPane.getHvalue() * maxScroll) + step;
+
+                    if (nextPixel >= maxScroll + 10) { // Thêm tí đệm để reset mượt
+                        nextPixel = 0;
+                    }
+                    historyScrollPane.setHvalue(nextPixel / maxScroll);
+                })
         );
+        scrollTimeline.setCycleCount(Timeline.INDEFINITE);
+        scrollTimeline.play();
 
-        Label type = new Label(record.getType().name());
-        type.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
-
-        Label message = new Label(record.getMessage());
-        message.setWrapText(true);
-        message.setStyle("-fx-text-fill: white;");
-
-        Label time = new Label(String.valueOf(record.getTime()));
-        time.setStyle("-fx-text-fill: #9aa0b4; -fx-font-size: 11px;");
-
-        box.getChildren().addAll(type, message, time);
-
-        return box;
+        historyScrollPane.setOnMouseEntered(ev -> scrollTimeline.pause());
+        historyScrollPane.setOnMouseExited(ev -> scrollTimeline.play());
     }
 
-    // ================= NAV =================
-    @FXML
-    public void SwitchToUI(ActionEvent event) throws IOException {
-
-        if (!Client.getInstance().isConnected()) {
-            AlertUtils.showError(
-                    "Mất kết nối",
-                    "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!"
-            );
-            return;
+    private void handleGoToLive(Auction session) {
+        try {
+            NavigationManager.getInstance().navigateTo(View.LIVE, c -> {
+                if (c instanceof LiveController) ((LiveController) c).setSession(session);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
 
-        NavigationManager.getInstance().navigateTo(View.UI);
+    @FXML
+    public void SwitchToUI() {
+        try {
+            NavigationManager.getInstance().navigateTo(View.UI);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

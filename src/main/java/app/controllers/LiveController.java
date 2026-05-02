@@ -3,6 +3,8 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.dao.AuctionDAO;
+import app.dao.BidDAO;
 import app.enums.AuctionStatus;
 import app.enums.CommandType;
 import app.models.Auction;
@@ -10,6 +12,8 @@ import app.models.AuctionObserver;
 import app.models.BidTransaction;
 import app.models.DataStore;
 import app.network.Client;
+import app.service.AuctionService;
+import app.service.BidService;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -25,6 +29,8 @@ import javafx.scene.control.TextField;
 
 public class LiveController implements AuctionObserver {
   private Auction session;
+  private final AuctionService auctionService;
+  private final BidService bidService;
 
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
@@ -36,6 +42,12 @@ public class LiveController implements AuctionObserver {
   @FXML private TextArea description;
 
   private ScheduledExecutorService scheduler;
+
+  public LiveController() {
+    // Khởi tạo Service bằng cách truyền DAO tương ứng vào
+    this.auctionService = new AuctionService(AuctionDAO.getInstance());
+    this.bidService = new BidService(BidDAO.getInstance());
+  }
 
   public void setSession(Auction session) {
     this.session = session;
@@ -53,7 +65,6 @@ public class LiveController implements AuctionObserver {
       session.registerObserver(this);
       startCountdownTimer();
       if (description != null) {
-        // Lấy mô tả từ Item trong session và gán vào TextArea
         description.setText(session.getItem().getDescription());
       }
     }
@@ -61,33 +72,31 @@ public class LiveController implements AuctionObserver {
 
   @Override
   public void onNewBidPlaced(String itemName, double newPrice, String bidderName) {
-    Platform.runLater(
-        () -> {
-          if (currentPriceLabel != null) {
-            currentPriceLabel.setText(String.format("%,.0f đ", newPrice));
-          }
-        });
+    Platform.runLater(() -> {
+      if (currentPriceLabel != null) {
+        currentPriceLabel.setText(String.format("%,.0f đ", newPrice));
+      }
+    });
   }
 
   @Override
   public void onAuctionClosed(String itemName, String winnerName, double finalPrice) {
-    Platform.runLater(
-        () -> {
-          AlertUtils.showInfo(
+    Platform.runLater(() -> {
+      AlertUtils.showInfo(
               "Kết thúc",
-              "Phiên đấu giá đã kết thúc. Người thắng: " + winnerName + " với giá: " + finalPrice);
-          timeLabel.setText("Phiên đấu giá đã kết thúc!");
-          timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
-          if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
-          }
-        });
+              "Phiên đấu giá đã kết thúc. Người thắng: " + winnerName + " với giá: " + String.format("%,.0f đ", finalPrice));
+      timeLabel.setText("Phiên đấu giá đã kết thúc!");
+      timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
+      if (scheduler != null && !scheduler.isShutdown()) {
+        scheduler.shutdown();
+      }
+    });
   }
 
   @FXML
   public void handlePlaceBid(ActionEvent event) {
     if (!Client.getInstance().isConnected()) {
-      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
     if (DataStore.currentUser == null) {
@@ -97,20 +106,14 @@ public class LiveController implements AuctionObserver {
 
     try {
       double bidAmount = Double.parseDouble(bidAmountField.getText());
-
       if (!session.placeBid(DataStore.currentUser, bidAmount)) {
-        AlertUtils.showError(
-                "Lỗi trả giá",
-                "Không thể trả giá! Giá nhập phải lớn hơn giá hiện tại + bước giá hoặc phiên đấu giá đã kết thúc."
-        );
+        AlertUtils.showError("Lỗi trả giá", "Giá nhập không hợp lệ hoặc phiên đã kết thúc.");
       } else {
         bidAmountField.clear();
-        app.models.MessagePacket<Auction> syncPacket =
-            new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
-        app.network.Client.getInstance().sendRequest(syncPacket);
+        Client.getInstance().sendRequest(new app.models.MessagePacket<>(CommandType.PLACE_BID, session));
       }
     } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi nhập liệu", "Vui lòng nhập một số tiền hợp lệ!");
+      AlertUtils.showError("Lỗi nhập liệu", "Vui lòng nhập số tiền hợp lệ!");
     }
   }
 
@@ -119,53 +122,52 @@ public class LiveController implements AuctionObserver {
       scheduler.shutdownNow();
     }
     scheduler = Executors.newSingleThreadScheduledExecutor();
-    scheduler.scheduleAtFixedRate(
-        () -> {
-          Platform.runLater(
-              () -> {
-                LocalDateTime now = LocalDateTime.now();
-                LocalDateTime endTime = session.getEndTime();
-                if (now.isAfter(endTime)) {
-                  scheduler.shutdown();
-                  session.setStatus(AuctionStatus.COMPLETED);
-                  // Gọi thông báo kết thúc
-                  String winner = "Không có ai";
-                  double price = session.getItem().getStartingPrice();
-                  if (!session.getBidHistory().isEmpty()) {
-                    BidTransaction lastBidTransaction =
-                        session.getBidHistory().get(session.getBidHistory().size() - 1);
-                    winner = lastBidTransaction.getBidder().getName();
-                    price = lastBidTransaction.getAmount();
-                  }
-                  onAuctionClosed(session.getItem().getName(), winner, price);
-                } else {
-                  long days = ChronoUnit.DAYS.between(now, endTime);
-                  LocalDateTime temp = now.plusDays(days);
-                  long hours = ChronoUnit.HOURS.between(temp, endTime);
-                  temp = temp.plusHours(hours);
-                  long minutes = ChronoUnit.MINUTES.between(temp, endTime);
-                  temp = temp.plusMinutes(minutes);
-                  long seconds = ChronoUnit.SECONDS.between(temp, endTime);
+    scheduler.scheduleAtFixedRate(() -> {
+      Platform.runLater(() -> {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endTime = session.getEndTime();
 
-                  String remainingTime =
-                      String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds);
-                  timeLabel.setText(remainingTime);
-                }
-              });
-        },
-        0,
-        1,
-        TimeUnit.SECONDS);
+        if (now.isAfter(endTime)) {
+          scheduler.shutdown();
+
+          // Sử dụng AuctionService để cập nhật trạng thái COMPLETED vào MySQL
+          auctionService.handleSessionCompletion(session.getId(), bidService);
+
+          // Đồng bộ trạng thái đối tượng trên RAM
+          session.setStatus(AuctionStatus.COMPLETED);
+
+          // Lấy thông tin người thắng cuộc từ BidService
+          BidTransaction winBid = bidService.getHighestBid(session.getId());
+          String winner = (winBid != null) ? winBid.getBidder().getName() : "Không có ai";
+          double price = (winBid != null) ? winBid.getAmount() : session.getItem().getStartingPrice();
+
+          // Gửi thông báo đồng bộ tới các Client khác thông qua Server
+          Client.getInstance().sendRequest(new app.models.MessagePacket<>(CommandType.PLACE_BID, session));
+
+          onAuctionClosed(session.getItem().getName(), winner, price);
+        } else {
+          updateCountdownLabel(now, endTime);
+        }
+      });
+    }, 0, 1, TimeUnit.SECONDS);
+  }
+
+  private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime) {
+    long days = ChronoUnit.DAYS.between(now, endTime);
+    LocalDateTime temp = now.plusDays(days);
+    long hours = ChronoUnit.HOURS.between(temp, endTime);
+    temp = temp.plusHours(hours);
+    long minutes = ChronoUnit.MINUTES.between(temp, endTime);
+    temp = temp.plusMinutes(minutes);
+    long seconds = ChronoUnit.SECONDS.between(temp, endTime);
+
+    timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
   }
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-    if (scheduler != null && !scheduler.isShutdown()) {
-      scheduler.shutdown();
-    }
-    if (session != null) {
-      session.removeObserver(this);
-    }
+    if (scheduler != null && !scheduler.isShutdown()) scheduler.shutdown();
+    if (session != null) session.removeObserver(this);
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }
