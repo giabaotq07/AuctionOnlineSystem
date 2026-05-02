@@ -1,0 +1,183 @@
+package app.controllers;
+
+import app.config.NavigationManager;
+import app.dao.AuctionDAO;
+import app.dao.AutoBidDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
+import app.enums.AuctionStatus;
+import app.enums.CommandType;
+import app.enums.View;
+import app.models.Auction;
+import app.models.Item;
+import app.obserser.AuctionObserver;
+import app.models.BidTransaction;
+import app.models.DataStore;
+import app.network.Client;
+import app.service.BidObserverService;
+import app.service.BidService;
+import app.util.AlertUtils;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+
+public class LiveController implements AuctionObserver {
+  private Auction session;
+  ItemDAO itemDAO = new ItemDAO();
+  AuctionDAO auctionDAO = new AuctionDAO();
+  BidDAO bidDAO = new BidDAO();
+  AutoBidDAO autoBidDAO = new AutoBidDAO();
+  BidObserverService observerService = new BidObserverService();
+  BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, observerService);
+
+  @FXML private Label itemNameLabel;
+  @FXML private Label startPriceLabel;
+  @FXML private Label stepPriceLabel;
+  @FXML private Label currentPriceLabel;
+  @FXML private Label depositLabel;
+  @FXML private Label timeLabel;
+  @FXML private TextField bidAmountField;
+
+  private ScheduledExecutorService scheduler;
+
+  public void setSession(Auction session) {
+    this.session = session;
+    Item item = itemDAO.findById(session.getItemId()).orElse(null);
+    if (item != null) {
+      if (itemNameLabel != null) itemNameLabel.setText(item.getName());
+      if (startPriceLabel != null)
+        startPriceLabel.setText(item.getStartingPrice() + "đ");
+      if (stepPriceLabel != null)
+        stepPriceLabel.setText(item.getStepPrice() + "đ");
+      if (currentPriceLabel != null)
+        currentPriceLabel.setText(session.getHighestBid() + "đ");
+      if (depositLabel != null)
+        depositLabel.setText(String.format("%,.0f đ", item.getStartingPrice() * 0.2));
+      session.registerObserver(this);
+      startCountdownTimer();
+    }
+  }
+
+  @Override
+  public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
+    Platform.runLater(
+        () -> {
+          if (currentPriceLabel != null) {
+            currentPriceLabel.setText(String.format("%,.0f đ", newPrice));
+          }
+        });
+  }
+
+  @Override
+  public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
+    Platform.runLater(
+        () -> {
+          AlertUtils.showInfo(
+              "Kết thúc",
+              "Phiên đấu giá đã kết thúc. Người thắng: " + winnerName + " với giá: " + finalPrice);
+          timeLabel.setText("Phiên đấu giá đã kết thúc!");
+          timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
+          if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+          }
+        });
+  }
+
+  @FXML
+  public void handlePlaceBid(ActionEvent event) {
+    if (!Client.getInstance().isConnected()) {
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      return;
+    }
+    if (DataStore.currentUser == null) {
+      AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
+      return;
+    }
+
+    try {
+      long bidAmount = Long.parseLong(bidAmountField.getText());
+      try {
+        bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
+        bidAmountField.clear();
+        app.models.MessagePacket<Auction> syncPacket =
+                new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
+        app.network.Client.getInstance().sendRequest(syncPacket);
+      } catch (Exception e) {
+        AlertUtils.showError(
+                "Lỗi trả giá",
+                "Không thể trả giá! Giá nhập phải lớn hơn bảng giá hiện tại + b›c gi hoc phin ‘u gi ‘ kt thc.");
+      }
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi nhập liệu", "Vui lòng nhập một số tiền hợp lệ!");
+    }
+  }
+
+  private void startCountdownTimer() {
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdownNow();
+    }
+    scheduler = Executors.newSingleThreadScheduledExecutor();
+    scheduler.scheduleAtFixedRate(
+        () -> {
+          Platform.runLater(
+              () -> {
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime endTime = session.getEndTime();
+                if (now.isAfter(endTime)) {
+                  scheduler.shutdown();
+                  session.setStatus(AuctionStatus.FINISHED);
+                  // Gọi thông báo kết thúc
+                  String winner = "Không có ai";
+                  long price = Objects.requireNonNull(itemDAO.findById(session.getItemId()).orElse(null)).getStartingPrice();
+                  List<BidTransaction> bidHistory = bidService.getBidHistory(session.getId());
+                  Item item = itemDAO.findById(session.getItemId()).orElse(null);
+                  if (!bidHistory.isEmpty()) {
+                    BidTransaction lastBidTransaction =
+                            bidHistory.getLast();
+                    winner = lastBidTransaction.getBidderName();
+                    price = lastBidTransaction.getAmount();
+                  }
+                    if (item != null) {
+                      onAuctionClosed(item.getName(), winner, price);
+                    }
+                } else {
+                  long days = ChronoUnit.DAYS.between(now, endTime);
+                  LocalDateTime temp = now.plusDays(days);
+                  long hours = ChronoUnit.HOURS.between(temp, endTime);
+                  temp = temp.plusHours(hours);
+                  long minutes = ChronoUnit.MINUTES.between(temp, endTime);
+                  temp = temp.plusMinutes(minutes);
+                  long seconds = ChronoUnit.SECONDS.between(temp, endTime);
+
+                  String remainingTime =
+                      String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds);
+                  timeLabel.setText(remainingTime);
+                }
+              });
+        },
+        0,
+        1,
+        TimeUnit.SECONDS);
+  }
+
+  @FXML
+  public void SwitchToUI(ActionEvent event) throws IOException {
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdown();
+    }
+    if (session != null) {
+      session.removeObserver(this);
+    }
+    NavigationManager.getInstance().navigateTo(View.UI);
+  }
+}
