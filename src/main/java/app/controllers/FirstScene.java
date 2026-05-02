@@ -3,6 +3,7 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.dao.AuctionDAO;
 import app.enums.AuctionStatus;
 import app.models.Auction;
 import app.models.DataStore;
@@ -58,7 +59,7 @@ public class FirstScene {
                     .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
                     .toList();
 
-    cardContainer = createContainer(activeS);
+    cardContainer = createContainer();
 
     // ===== FIX: container không bị co méo =====
     cardContainer.setAlignment(Pos.CENTER_LEFT);
@@ -141,7 +142,7 @@ public class FirstScene {
                                   .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
                                   .toList();
 
-                  cardContainer = createContainer(actives);
+                  cardContainer = createContainer();
                   vp.setContent(cardContainer);
                 }
 
@@ -158,14 +159,17 @@ public class FirstScene {
 
   // ================= FIXED CARD CONTAINER =================
 
-  private HBox createContainer(List<Auction> sessions) {
+  private HBox createContainer(){
     HBox container = new HBox();
-
     container.setAlignment(Pos.CENTER_LEFT);
     container.setSpacing(SPACING);
+    List<Auction> sessions = AuctionDAO.getInstance().getAllAuction();
+
 
     for (Auction session : sessions) {
-      container.getChildren().add(createAuctionCard(session));
+      if (session.getStatus() == AuctionStatus.ACTIVE) { // Chỉ lấy phiên đang chạy
+        container.getChildren().add(createAuctionCard(session));
+      }
     }
 
     return container;
@@ -340,7 +344,7 @@ public class FirstScene {
                       .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
                       .toList();
 
-      cardContainer = createContainer(actives);
+      cardContainer = createContainer();
       vp.setContent(cardContainer);
     }
 

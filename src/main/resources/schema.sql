@@ -1,4 +1,4 @@
--- Sau đó mới chạy đoạn script CREATE TABLE của bạn
+    -- Sau đó mới chạy đoạn script CREATE TABLE của bạn
 CREATE DATABASE IF NOT EXISTS auction_db;
 USE auction_db;
 CREATE TABLE IF NOT EXISTS users (
