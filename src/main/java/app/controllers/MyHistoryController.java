@@ -3,61 +3,87 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
-import app.models.*;
+import app.dao.HistoryDAO;
+import app.models.HistoryRecord;
 import app.network.Client;
+
 import java.io.IOException;
+import java.util.List;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.stage.Stage;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 public class MyHistoryController {
 
-  @FXML private Stage stage;
-  private Scene scene;
+    @FXML
+    private HBox historyContainerPane;
 
-  @FXML private ListView<Auction> sessionListView;
-  @FXML private ListView<HistoryRecord> historyListView;
-  @FXML private TextArea detailArea;
+    private final HistoryDAO historyDAO = HistoryDAO.getInstance();
 
-  @FXML
-  public void initialize() {
+    // layout constants
+    private static final double CARD_WIDTH = 280;
+    private static final double SPACING = 15;
 
-    // load sessions
-    sessionListView.getItems().setAll(DataStore.sessions);
+    @FXML
+    public void initialize() {
 
-    // click session → filter history
-    sessionListView.setOnMouseClicked(
-        e -> {
-          Auction session = sessionListView.getSelectionModel().getSelectedItem();
-          if (session == null) return;
+        List<HistoryRecord> histories = historyDAO.getAllHistory();
 
-          int sid = session.getId();
+        historyContainerPane.getChildren().clear();
+        historyContainerPane.setSpacing(SPACING);
+        historyContainerPane.setAlignment(Pos.CENTER_LEFT);
 
-          historyListView
-              .getItems()
-              .setAll(HistoryStore.history.stream().filter(h -> h.getSessionId() == sid).toList());
-        });
-
-    // click history → detail
-    historyListView.setOnMouseClicked(
-        e -> {
-          HistoryRecord r = historyListView.getSelectionModel().getSelectedItem();
-          if (r != null) {
-            detailArea.setText(
-                "TYPE: " + r.getType() + "\nTIME: " + r.getTime() + "\nMESSAGE: " + r.getMessage());
-          }
-        });
-  }
-
-  @FXML
-  public void SwitchToUI(ActionEvent event) throws IOException {
-    if (!Client.getInstance().isConnected()) {
-      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
-      return;
+        for (HistoryRecord r : histories) {
+            historyContainerPane.getChildren().add(createHistoryCard(r));
+        }
     }
-    NavigationManager.getInstance().navigateTo(View.UI);
-  }
+
+    // ================= CARD =================
+    private VBox createHistoryCard(HistoryRecord record) {
+
+        VBox box = new VBox();
+        box.setPrefWidth(CARD_WIDTH);
+        box.setMinWidth(CARD_WIDTH);
+        box.setMaxWidth(CARD_WIDTH);
+
+        box.setStyle(
+                "-fx-background-color: #1a1f35;"
+                        + "-fx-background-radius: 8;"
+                        + "-fx-padding: 12;"
+                        + "-fx-spacing: 8;"
+        );
+
+        Label type = new Label(record.getType().name());
+        type.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
+
+        Label message = new Label(record.getMessage());
+        message.setWrapText(true);
+        message.setStyle("-fx-text-fill: white;");
+
+        Label time = new Label(String.valueOf(record.getTime()));
+        time.setStyle("-fx-text-fill: #9aa0b4; -fx-font-size: 11px;");
+
+        box.getChildren().addAll(type, message, time);
+
+        return box;
+    }
+
+    // ================= NAV =================
+    @FXML
+    public void SwitchToUI(ActionEvent event) throws IOException {
+
+        if (!Client.getInstance().isConnected()) {
+            AlertUtils.showError(
+                    "Mất kết nối",
+                    "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!"
+            );
+            return;
+        }
+
+        NavigationManager.getInstance().navigateTo(View.UI);
+    }
 }
