@@ -34,7 +34,7 @@ public class ItemDAO {
         ItemType.valueOf(rs.getString("category")));
   }
 
-  public Optional<Item> findById(int id) {
+  public Optional<Item> findById(int id)  {
     String sql = BASE_SELECT + "WHERE id = ?";
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -47,24 +47,24 @@ public class ItemDAO {
     }
   }
 
-  public List<Item> findAll() {
+  public List<Item> findAll()  {
     return findList(BASE_SELECT + "ORDER BY id DESC");
   }
 
-  public List<Item> findBySeller(int sellerId) {
+  public List<Item> findBySeller(int sellerId)  {
     return findList(BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId);
   }
 
-  public List<Item> findByCategory(ItemType type) {
+  public List<Item> findByCategory(ItemType type)  {
     return findList(BASE_SELECT + "WHERE category = ? ORDER BY id DESC", type.name());
   }
 
   // Chỉ lấy item chưa có phiên đấu giá — dùng cho màn hình tạo phiên của Seller
-  public List<Item> findAvailable() {
+  public List<Item> findAvailable()  {
     return findList(BASE_SELECT + "WHERE status = 'AVAILABLE' ORDER BY id DESC");
   }
 
-  public Item save(Item item) {
+  public Item save(Item item)  {
     String sql =
         """
         INSERT INTO items (seller_id, name, description, category, starting_price, step_price)
@@ -92,7 +92,7 @@ public class ItemDAO {
     }
   }
 
-  public boolean update(Item item) {
+  public boolean update(Item item)  {
     String sql =
         """
         UPDATE items
@@ -110,15 +110,15 @@ public class ItemDAO {
   }
 
   // Gọi khi item bắt đầu / kết thúc đấu giá
-  public boolean updateStatus(int id, ItemStatus status) {
+  public boolean updateStatus(int id, ItemStatus status)  {
     return executeUpdate("UPDATE items SET status = ? WHERE id = ?", status.name(), id);
   }
 
-  public boolean delete(int id) {
+  public boolean delete(int id)  {
     return executeUpdate("DELETE FROM items WHERE id = ?", id);
   }
 
-  private List<Item> findList(String sql, Object... params) {
+  private List<Item> findList(String sql, Object... params)  {
     List<Item> items = new ArrayList<>();
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -134,13 +134,13 @@ public class ItemDAO {
     }
   }
 
-  private boolean executeUpdate(String sql, Object... params) {
+  private boolean executeUpdate(String sql, Object... params)  {
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       return ps.executeUpdate() > 0;
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi cập nhật bảng " + TABLE, e);
+        throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
     }
   }
 

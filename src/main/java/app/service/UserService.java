@@ -1,7 +1,7 @@
 package app.service;
 
 import app.dao.UserDAO;
-import app.exception.InvalidCredentialsException;
+import app.exception.AuthenticationException;
 import app.exception.NotFoundException;
 import app.exception.UserAlreadyExistsException;
 import app.models.User;
@@ -12,25 +12,28 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
   private final UserDAO userDAO;
-  private final Map<String, User> userCache = new ConcurrentHashMap<>();
+  private final Map<Integer, User> userCache = new ConcurrentHashMap<>();
 
   public UserService(UserDAO userDAO) {
     this.userDAO = userDAO;
   }
 
-  public boolean login(String account, String rawPassword) throws InvalidCredentialsException {
+  public User login(String account, String rawPassword) {
     User user = userDAO.findByUsername(account).orElse(null);
-    return user != null && PasswordUtils.verify(rawPassword, user.getAccount().getPassword());
+    if (user != null && PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
+      userCache.put(user.getId(), user);
+      return user;
+    }
+    throw new AuthenticationException("Đăng nhập thất bại: " + account);
   }
 
-  public boolean register(User user) throws UserAlreadyExistsException {
-    User exists = userDAO.findByUsername(user.getAccount().getUsername()).orElse(null);
-    if (exists != null) {
-      return false;
+  public User register(User user) {
+    if (userDAO.findByUsername(user.getAccount().getUsername()).isPresent()) {
+      throw new UserAlreadyExistsException("User đã tồn tại: " + user.getAccount().getUsername());
     }
     user = userDAO.save(user);
-    userCache.put(user.getAccount().getUsername(), user);
-    return true;
+    userCache.put(user.getId(), user);
+    return user;
   }
 
   public User getUserByAccount(String account) {
@@ -38,8 +41,8 @@ public class UserService {
     if (user == null) {
       throw new NotFoundException("Không tìm thấy user: " + account);
     }
-    userCache.putIfAbsent(account, user);
-    return userCache.get(account);
+    userCache.put(user.getId(), user);
+    return user;
   }
 
   public User getUserById(int id) {
@@ -47,6 +50,7 @@ public class UserService {
     if (user == null) {
       throw new NotFoundException("Không tìm thấy user với ID: " + id);
     }
+    userCache.put(id, user);
     return user;
   }
 
@@ -55,8 +59,30 @@ public class UserService {
     if (!ok) {
       return false;
     }
-    userCache.put(user.getAccount().getUsername(), user);
+    user = userDAO.findById(user.getId()).orElse(null);
+    userCache.put(user.getId(), user);
     return true;
+  }
+
+  public void changePassword(String username, String oldPassword, String newPassword) {
+    User user = userDAO.findByUsername(username).orElse(null);
+    if (user == null) {
+      throw new NotFoundException("Không tìm thấy user: " + username);
+    }
+    user = login(user.getAccount().getUsername(), oldPassword);
+    boolean ok = userDAO.updatePassword(user.getId(), newPassword);
+    if (ok) {
+      user.getAccount().setPassword(newPassword);
+      userCache.put(user.getId(), user);
+    }
+  }
+
+  public boolean changeUsername(String oldUsername, String newUsername, String password) {
+    User user = userDAO.findByUsername(oldUsername).orElse(null);
+    if (user == null) {
+      return false;
+    }
+    return userDAO.updateUsername(user.getId(), newUsername);
   }
 
   public boolean deposit(User user, long amount) {
@@ -76,15 +102,6 @@ public class UserService {
     }
     String username = user.getAccount().getUsername();
     userCache.put(username, userDAO.findById(user.getId()).orElse(null));
-    return true;
-  }
-
-  public boolean deleteUser(int id) {
-    boolean ok = userDAO.delete(id);
-    if (!ok) {
-      return false;
-    }
-    userCache.remove(getUserById(id).getAccount().getUsername());
     return true;
   }
 

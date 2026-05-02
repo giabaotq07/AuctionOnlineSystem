@@ -3,7 +3,6 @@ package app;
 import app.dao.*;
 import app.enums.ItemType;
 import app.enums.UserRole;
-import app.exception.NotFoundException;
 import app.exception.UserAlreadyExistsException;
 import app.models.*;
 import app.service.*;
@@ -25,40 +24,37 @@ public class DemoRunner {
     AuctionService sessionService = new AuctionService(sessionDAO, bidDAO);
     BidObserverService observer = new BidObserverService();
     BidService bidService = new BidService(bidDAO, autoBidDAO, sessionDAO, observer);
-    User seller;
-    User buyer1;
-    User buyer2;
+    User seller = null;
+    User buyer1 = null;
+    User buyer2 = null;
     // 1. Dang ky user
     System.out.println("\n1. Dang ky phien ban demo nguoi dung...");
     try {
-      User user =
+      seller =
           UserFactory.createUser(
-              "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.BIDDER);
-      userService.register(user);
-    } catch (UserAlreadyExistsException | NotFoundException e) {
+              "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.SELLER);
+      seller =  userService.register(seller);
+    } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
     }
-    seller = userService.getUserByAccount("nguoiban");
 
     try {
-      User user =
+      buyer1 =
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua1", "123456"), new Wallet(), UserRole.BIDDER);
-      userService.register(user);
-    } catch (UserAlreadyExistsException | NotFoundException e) {
+      buyer1 =  userService.register(buyer1);
+    } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
     }
-    buyer1 = userService.getUserByAccount("nguoimua1");
 
     try {
-      User user =
+      buyer2 =
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua2", "123456"), new Wallet(), UserRole.BIDDER);
-      userService.register(user);
-    } catch (UserAlreadyExistsException | NotFoundException e) {
+      buyer2 = userService.register(buyer2);
+    } catch (UserAlreadyExistsException  e) {
       System.out.println(e.getMessage());
     }
-    buyer2 = userService.getUserByAccount("nguoimua2");
     // Kiem tra looi DB neu co
     if (seller == null || buyer1 == null || buyer2 == null) {
       System.out.println("Loi tao DB User! Vui long kiem tra MySQL (app.config.connection).");

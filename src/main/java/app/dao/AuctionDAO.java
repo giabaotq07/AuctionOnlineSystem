@@ -53,25 +53,29 @@ public class AuctionDAO {
 
   // ── Read methods ──────────────────────────────────────────────
 
-  public Optional<Auction> findById(int id) {
+  public Optional<Auction> findById(int id)  {
     return findOne(BASE_SELECT + " WHERE s.id = ?", id);
   }
 
-  public List<Auction> findAll() {
+  public Optional<Auction> findById(Connection conn, int id)  {
+    return findOne(conn, BASE_SELECT + " WHERE s.id = ?", id);
+  }
+
+  public List<Auction> findAll()  {
     return findMany(BASE_SELECT + " ORDER BY s.id DESC");
   }
 
-  public List<Auction> findByStatus(AuctionStatus status) {
+  public List<Auction> findByStatus(AuctionStatus status)  {
     return findMany(BASE_SELECT + " WHERE s.status = ? ORDER BY s.end_time ASC", status.name());
   }
 
-  public List<Auction> findBySeller(int sellerId) {
+  public List<Auction> findBySeller(int sellerId)  {
     return findMany(BASE_SELECT + " WHERE s.seller_id = ? ORDER BY s.id DESC", sellerId);
   }
 
   // ── Transaction methods — nhận Connection từ Service ──────────
 
-  public void lockSession(Connection conn, int sessionId) throws SQLException {
+  public void lockSession(Connection conn, int sessionId)  {
     String sql =
         """
             SELECT id FROM auction_sessions
@@ -86,16 +90,20 @@ public class AuctionDAO {
               "Phiên đấu giá không tồn tại hoặc không ở trạng thái RUNNING.");
         }
       }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi khóa phiên đấu giá.", e);
     }
   }
 
-  public long getHighestBid(Connection conn, int sessionId) throws SQLException {
+  public long getHighestBid(Connection conn, int sessionId) {
     String sql = "SELECT highest_bid FROM auction_sessions WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? rs.getLong("highest_bid") : 0L;
       }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi lấy giá thầu cao nhất của phiên đấu giá.", e);
     }
   }
 
@@ -109,7 +117,7 @@ public class AuctionDAO {
     }
   }
 
-  public void extendEndTime(Connection conn, int sessionId, int extraSeconds) throws SQLException {
+  public void extendEndTime(Connection conn, int sessionId, int extraSeconds) {
     String sql =
         """
             UPDATE auction_sessions
@@ -121,6 +129,8 @@ public class AuctionDAO {
       ps.setInt(1, extraSeconds);
       ps.setInt(2, sessionId);
       ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi gia hạn thời gian phiên đấu giá.", e);
     }
   }
 
@@ -158,12 +168,12 @@ public class AuctionDAO {
         "UPDATE auction_sessions SET status = ? WHERE id = ?", status.name(), auctionId);
   }
 
-  public boolean updateWinner(int auctionId, int winnerId) {
+  public boolean updateWinner(int auctionId, int winnerId)  {
     return executeUpdate(
         "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
   }
 
-  public boolean delete(int id) {
+  public boolean delete(int id)  {
     return executeUpdate("DELETE FROM auction_sessions WHERE id = ?", id);
   }
 
@@ -172,6 +182,17 @@ public class AuctionDAO {
   private Optional<Auction> findOne(String sql, Object... params) {
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(mapAuction(rs)) : Optional.empty();
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private Optional<Auction> findOne(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? Optional.of(mapAuction(rs)) : Optional.empty();
@@ -197,6 +218,21 @@ public class AuctionDAO {
     }
   }
 
+  private List<Auction> findMany(Connection conn, String sql, Object... params) {
+    List<Auction> auctions = new ArrayList<>();
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          auctions.add(mapAuction(rs));
+        }
+      }
+      return auctions;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn danh sách auctions.", e);
+    }
+  }
+
   private boolean executeUpdate(String sql, Object... params) {
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -207,9 +243,13 @@ public class AuctionDAO {
     }
   }
 
-  private void setParameters(PreparedStatement ps, Object... params) throws SQLException {
+  private void setParameters(PreparedStatement ps, Object... params) {
     for (int i = 0; i < params.length; i++) {
-      ps.setObject(i + 1, params[i]);
+        try {
+            ps.setObject(i + 1, params[i]);
+        } catch (SQLException e) {
+            throw new DatabaseException("Lỗi khi thiết lập tham số cho PreparedStatement.", e);
+        }
     }
   }
 }

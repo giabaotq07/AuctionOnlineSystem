@@ -57,7 +57,7 @@ public class BidService {
     try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
       conn.setAutoCommit(false);
       try {
-        Auction session = requireRunningSession(sessionId);
+        Auction session = requireRunningSession(conn, sessionId);
         validateBidAmount(bidAmount, session.getHighestBid());
 
         bidDAO.insertBid(conn, sessionId, userId, bidAmount, false);
@@ -117,10 +117,10 @@ public class BidService {
 
   // ── Private: Validators ───────────────────────────────────────────────────
 
-  private Auction requireRunningSession(int sessionId) throws SQLException {
+  private Auction requireRunningSession(Connection conn, int sessionId) throws SQLException {
     Auction session =
         sessionDAO
-            .findById(sessionId)
+            .findById(conn, sessionId)
             .orElseThrow(() -> new AuctionException("Phiên đấu giá không tồn tại."));
 
     if (session.getStatus() != AuctionStatus.RUNNING) {
@@ -142,11 +142,7 @@ public class BidService {
   }
 
   /** Lấy giá hiện tại của phiên (dùng nội bộ). */
-  private long getCurrentPrice(int sessionId) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return sessionDAO.findById(sessionId).map(Auction::getHighestBid).orElse(0L);
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi lấy giá hiện tại.", e);
-    }
+  private long getCurrentPrice(Connection conn, int sessionId) {
+      return sessionDAO.findById(conn, sessionId).map(Auction::getHighestBid).orElse(0L);
   }
 }
