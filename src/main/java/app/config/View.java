@@ -5,7 +5,7 @@ public enum View {
   LOGIN("/app/views/login_scene.fxml"),
   ORGANIZE("/app/views/hold_an_auction.fxml"),
   LIVE("/app/views/live_auction.fxml"),
-  MINE("/app/views/my_auction.fxml"),
+  MINE("/app/views/my_history.fxml"),
   REGISTER("/app/views/register_account.fxml"),
   UI("/app/views/firstscene.fxml"),
   MESSAGE("/app/views/mess_chat.fxml"),

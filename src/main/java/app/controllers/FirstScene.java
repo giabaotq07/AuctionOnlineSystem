@@ -349,6 +349,7 @@ public class FirstScene {
     }
   }
 
+
   private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {
     // 1. Kiểm tra kết nối mạng
     if (!Client.getInstance().isConnected()) {
