@@ -3,6 +3,9 @@ package app.controllers;
 import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
+import app.dao.AuctionDAO;
+import app.dao.HistoryDAO;
+import app.dao.ItemDAO;
 import app.enums.CommandType;
 import app.enums.HistoryType;
 import app.enums.ItemType;
@@ -25,15 +28,13 @@ public class AuctionController {
 
   @FXML
   public void initialize() {
+
     if (DataStore.currentUser == null) {
-      // Force them out right away if they somehow load this page without logging in
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
-      Platform.runLater(
-          () -> {
-            NavigationManager.getInstance().navigateTo(View.LOGIN);
-          });
+      Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
       return;
     }
+
     if (typeComboBox != null) {
       typeComboBox.getItems().setAll(ItemType.values());
       typeComboBox.getSelectionModel().selectFirst();
@@ -42,17 +43,20 @@ public class AuctionController {
 
   @FXML
   public void handleAdd(ActionEvent event) {
+
     if (!Client.getInstance().isConnected()) {
-      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
+
     if (DataStore.currentUser == null) {
-      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
-      app.config.NavigationManager.getInstance().navigateTo(app.config.View.LOGIN);
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
 
     try {
+
       String name = nameField.getText();
       String desc = descriptionField.getText();
       double startPrice = Double.parseDouble(startingPriceField.getText());
@@ -61,39 +65,51 @@ public class AuctionController {
       ItemType type = typeComboBox.getValue();
 
       if (name.isEmpty() || desc.isEmpty()) {
-        AlertUtils.showError("Lỗi", "Vui lòng nhập đầy đủ thông tin.");
+        AlertUtils.showError("Lỗi", "Thiếu thông tin.");
         return;
       }
 
-      int nextId = DataStore.sessions.size() + 1;
-      Item item = ItemFactory.createItem(nextId, name, desc, startPrice, stepPrice, type);
+      // ================== 1. SAVE ITEM ==================
+      Item item = ItemFactory.createItem(name, desc, startPrice, stepPrice, type);
+      item = ItemDAO.getInstance().addItem(item);
 
-      Auction session =
-          new Auction(
-              nextId, item, DataStore.currentUser, LocalDateTime.now().plusMinutes(durationMins));
+      // ================== 2. SAVE AUCTION ==================
+      Auction session = new Auction(
+              0,
+              item,
+              DataStore.currentUser,
+              LocalDateTime.now().plusMinutes(durationMins)
+      );
 
+      session = AuctionDAO.getInstance().addAuction(session);
+
+      // ================== 3. UI CACHE (optional) ==================
       DataStore.sessions.add(session);
-      app.models.AuctionStateManager.getInstance().addSession(session);
+      AuctionStateManager.getInstance().addSession(session);
 
-      // --- NEW CODE: BT U BROADCAST SANG CC CLIENT KHC ---
-      app.models.MessagePacket<Auction> createPacket =
-          new app.models.MessagePacket<>(CommandType.CREATE_AUCTION, session);
-      app.network.Client.getInstance().sendRequest(createPacket);
-      // --- END NEW CODE ---
+      // ================== 4. NETWORK ==================
+      MessagePacket<Auction> packet =
+              new MessagePacket<>(CommandType.CREATE_AUCTION, session);
 
-      HistoryStore.history.add(
-          new HistoryRecord(
-              session.getId(),
-              HistoryType.ADD_ITEM,
-              item.getName() + " Giá: " + item.getStartingPrice()));
+      Client.getInstance().sendRequest(packet);
 
-      AlertUtils.showInfo("Thành công", "Phiên đấu giá đã được thêm thành công!");
-      handleBack(event); // Redirect to FirstScene
+      // ================== 5. SAVE HISTORY ==================
+      HistoryDAO.getInstance().addHistoryRecord(
+              new HistoryRecord(
+                      session.getId(),
+                      HistoryType.ADD_ITEM,
+                      item.getName() + " | Giá: " + item.getStartingPrice(),
+                      LocalDateTime.now()
+              )
+      );
+
+      AlertUtils.showInfo("OK", "Tạo phiên thành công");
+      handleBack(event);
 
     } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi nhập liệu", "Giá và thời gian phải là số hợp lệ!");
+      AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");
     } catch (Exception e) {
-      AlertUtils.showError("Lỗi", "Có lỗi xảy ra: " + e.getMessage());
+      AlertUtils.showError("Lỗi", e.getMessage());
       e.printStackTrace();
     }
   }

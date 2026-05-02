@@ -12,7 +12,7 @@ public class ItemService {
   }
 
   public Item add(Item item) {
-    return itemDAO.add(item);
+    return itemDAO.addItem(item);
   }
 
   public Item getById(int id) {

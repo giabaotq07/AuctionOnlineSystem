@@ -7,4 +7,5 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class DataStore implements Serializable {
   public static final List<Auction> sessions = new CopyOnWriteArrayList<>();
   public static User currentUser; // Track the logged-in user
+  public static Auction currentAuction;
 }

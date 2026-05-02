@@ -67,7 +67,7 @@ public class ItemDAO {
     return items;
   }
 
-  public Item add(Item item) {
+  public Item addItem(Item item) {
     String query =
         "INSERT INTO items (name, description, starting_price, step_price, type) VALUES (?, ?, ?, ?, ?)";
     try (Connection conn = DatabaseConnection.getConnection();

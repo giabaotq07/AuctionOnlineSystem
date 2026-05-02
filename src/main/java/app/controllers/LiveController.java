@@ -100,8 +100,9 @@ public class LiveController implements AuctionObserver {
 
       if (!session.placeBid(DataStore.currentUser, bidAmount)) {
         AlertUtils.showError(
-            "L—i tr gi",
-            "Khng thƒ tr gi! Gi nhp phi l›n hn bng gi hi‡n ti + b›c gi hoc phin ‘u gi ‘ kt thc.");
+                "Lỗi trả giá",
+                "Không thể trả giá! Giá nhập phải lớn hơn giá hiện tại + bước giá hoặc phiên đấu giá đã kết thúc."
+        );
       } else {
         bidAmountField.clear();
         app.models.MessagePacket<Auction> syncPacket =

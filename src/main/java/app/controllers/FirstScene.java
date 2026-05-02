@@ -294,7 +294,7 @@ public class FirstScene {
     if (!Client.getInstance().isConnected()) return;
     if (DataStore.currentUser == null) return;
 
-    NavigationManager.getInstance().navigateTo(View.MINE);
+    NavigationManager.getInstance().navigateTo(View.HISTORY);
   }
 
   @FXML
@@ -348,6 +348,7 @@ public class FirstScene {
       populateCompletedAuctions();
     }
   }
+
 
   private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {
     // 1. Kiểm tra kết nối mạng

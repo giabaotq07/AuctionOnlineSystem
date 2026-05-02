@@ -61,4 +61,30 @@ public class HistoryDAO {
     }
     return records;
   }
+  public List<HistoryRecord> getAllHistory() {
+
+    List<HistoryRecord> records = new ArrayList<>();
+
+    String query = "SELECT * FROM history_records ORDER BY time DESC";
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(query);
+         ResultSet rs = pstmt.executeQuery()) {
+
+      while (rs.next()) {
+        HistoryRecord record = new HistoryRecord(
+                rs.getInt("session_id"),
+                HistoryType.valueOf(rs.getString("type")),
+                rs.getString("message"),
+                rs.getTimestamp("time").toLocalDateTime()
+        );
+        records.add(record);
+      }
+
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi lấy toàn bộ lịch sử", e);
+    }
+
+    return records;
+  }
 }
