@@ -65,11 +65,7 @@ public class UserService {
   }
 
   public void changePassword(String username, String oldPassword, String newPassword) {
-    User user = userDAO.findByUsername(username).orElse(null);
-    if (user == null) {
-      throw new NotFoundException("Không tìm thấy user: " + username);
-    }
-    user = login(user.getAccount().getUsername(), oldPassword);
+    User user = login(username, oldPassword);
     boolean ok = userDAO.updatePassword(user.getId(), newPassword);
     if (ok) {
       user.getAccount().setPassword(newPassword);
@@ -77,31 +73,32 @@ public class UserService {
     }
   }
 
-  public boolean changeUsername(String oldUsername, String newUsername, String password) {
-    User user = userDAO.findByUsername(oldUsername).orElse(null);
-    if (user == null) {
-      return false;
+  public void changeUsername(String oldUsername, String newUsername, String password) {
+    User user = login(oldUsername, password);
+    boolean ok = userDAO.updateUsername(user.getId(), newUsername);
+    if (ok) {
+      user.getAccount().setUsername(newUsername);
+      userCache.put(user.getId(), user);
     }
-    return userDAO.updateUsername(user.getId(), newUsername);
   }
 
-  public boolean deposit(User user, long amount) {
+  public boolean deposit(String username, String password, long amount) {
+    User user = login(username, password);
     boolean ok = userDAO.adjustWallet(user.getId(), amount);
     if (!ok) {
       return false;
     }
-    String username = user.getAccount().getUsername();
-    userCache.put(username, userDAO.findById(user.getId()).orElse(null));
+    userCache.put(user.getId(), userDAO.findById(user.getId()).orElse(null));
     return true;
   }
 
-  public boolean withdraw(User user, long amount) {
+  public boolean withdraw(String username, String password, long amount) {
+    User user = login(username, password);
     boolean ok = userDAO.adjustWallet(user.getId(), -amount);
     if (!ok) {
       return false;
     }
-    String username = user.getAccount().getUsername();
-    userCache.put(username, userDAO.findById(user.getId()).orElse(null));
+    userCache.put(user.getId(), userDAO.findById(user.getId()).orElse(null));
     return true;
   }
 
