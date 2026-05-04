@@ -1,6 +1,6 @@
 package app.exception;
 
-public class AuctionException extends RuntimeException {
+public class AuctionException extends ServiceException {
   public AuctionException(String message) {
     super(message);
   }

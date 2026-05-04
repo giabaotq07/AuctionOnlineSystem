@@ -3,7 +3,6 @@ package app.dao;
 import app.config.DatabaseConnection;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
-import app.exception.UserAlreadyExistsException;
 import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
@@ -39,7 +38,6 @@ public class UserDAO {
     return findOne(BASE_SELECT + "WHERE username = ?", username);
   }
 
-  // Overload dùng trong transaction (Service truyền Connection vào)
   public Optional<User> findByUsername(Connection conn, String username) {
     String sql = BASE_SELECT + "WHERE username = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -90,33 +88,38 @@ public class UserDAO {
       }
       return user;
     } catch (SQLException e) {
-      if (e.getErrorCode() == 1062) {
-        throw new UserAlreadyExistsException("Username đã tồn tại.", e);
-      }
       throw new DatabaseException("Lỗi khi thêm user.", e);
     }
   }
 
-  public boolean updateProfile(int id, String fullName) {
-    return executeUpdate("UPDATE users SET full_name = ? WHERE id = ?", fullName, id);
+  public void updateProfile(int id, String fullName) {
+    executeUpdate("UPDATE users SET full_name = ? WHERE id = ?", fullName, id);
   }
 
-  public boolean updateUsername(int id, String newUsername) {
-    return executeUpdate("UPDATE users SET username = ? WHERE id = ?", newUsername, id);
+  public void updateUsername(int id, String newUsername) {
+    executeUpdate("UPDATE users SET username = ? WHERE id = ?", newUsername, id);
   }
 
-  public boolean updatePassword(int id, String newPassword) {
-    return executeUpdate(
+  public void updatePassword(int id, String newPassword) {
+    executeUpdate(
         "UPDATE users SET password = ? WHERE id = ?", PasswordUtils.hashPassword(newPassword), id);
   }
 
-  // delta dương = nạp tiền, delta âm = trừ tiền — atomic, tránh race condition
-  public boolean adjustWallet(int id, long delta) {
-    return executeUpdate("UPDATE users SET assets = assets + ? WHERE id = ?", delta, id);
-  }
-
-  public boolean delete(int id) {
-    return executeUpdate("DELETE FROM users WHERE id = ?", id);
+  public void adjustWallet(int id, long delta) {
+    int rows;
+    if (delta < 0) {
+      rows =
+          executeUpdate(
+              "UPDATE users SET assets = assets + ? WHERE id = ? AND assets >= ?",
+              delta,
+              id,
+              -delta);
+      if (rows == 0) {
+        throw new DatabaseException("Số dư không đủ để thực hiện giao dịch.");
+      }
+    } else {
+      executeUpdate("UPDATE users SET assets = assets + ? WHERE id = ?", delta, id);
+    }
   }
 
   private Optional<User> findOne(String sql, Object... params) {
@@ -131,11 +134,11 @@ public class UserDAO {
     }
   }
 
-  private boolean executeUpdate(String sql, Object... params) {
+  private int executeUpdate(String sql, Object... params) {
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
-      return ps.executeUpdate() > 0;
+      return ps.executeUpdate();
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
     }

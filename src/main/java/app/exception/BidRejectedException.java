@@ -1,6 +1,6 @@
 package app.exception;
 
-public class BidRejectedException extends RuntimeException {
+public class BidRejectedException extends ServiceException {
   public BidRejectedException(String message) {
     super(message);
   }

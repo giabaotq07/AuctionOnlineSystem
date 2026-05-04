@@ -11,7 +11,7 @@ public class Wallet implements java.io.Serializable {
     this.assets = assets;
   }
 
-  public synchronized boolean withdraw(long amount) {
+  public synchronized void withdraw(long amount) {
     if (amount <= 0) {
       throw new IllegalArgumentException("So tien rut phai la so duong.");
     }
@@ -19,7 +19,6 @@ public class Wallet implements java.io.Serializable {
       throw new IllegalArgumentException("So tien rut vuot qua so du.");
     }
     this.assets -= amount;
-    return true;
   }
 
   public synchronized void deposit(long amount) {

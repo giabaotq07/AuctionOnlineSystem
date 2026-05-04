@@ -26,7 +26,7 @@ public class LoginCommand implements Command {
           new ResponsePacket<>(Result.LOGIN, LoginResponse);
       clientHandler.sendMessage(ResponsePacket);
     }
-    User user = userService.getUserByAccount(username);
+    User user = userService.login(username, password);
     clientHandler.setUsername(username);
     Server.registerClient(username, clientHandler);
     System.out.println("[SERVER] " + username + " đã đăng nhập.");
