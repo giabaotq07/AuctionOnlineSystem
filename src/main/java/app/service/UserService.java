@@ -46,6 +46,9 @@ public class UserService {
   }
 
   public User getUserById(int id) {
+    if (userCache.containsKey(id)) {
+      return userCache.get(id);
+    }
     User user = userDAO.findById(id).orElse(null);
     if (user == null) {
       throw new NotFoundException("Không tìm thấy user với ID: " + id);
