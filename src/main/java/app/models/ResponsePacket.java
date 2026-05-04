@@ -18,7 +18,7 @@ public class ResponsePacket<T> implements Serializable {
   }
 
   public void setMessage(String message) {
-            this.message = message;
+          this.message = message;
   }
 
   public void setData(T data) {
