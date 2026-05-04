@@ -1,9 +1,8 @@
 package app.service;
 
 import app.dao.UserDAO;
-import app.exception.AuthenticationException;
+import app.exception.DatabaseException;
 import app.exception.ServiceException;
-import app.exception.UserAlreadyExistsException;
 import app.models.User;
 import app.util.PasswordUtils;
 import java.util.List;
@@ -18,7 +17,7 @@ public class UserService {
   public User login(String username, String rawPassword) {
     User user = userDAO.findByUsername(username).orElse(null);
     if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
-      throw new AuthenticationException("Tên đăng nhập hoặc mật khẩu không đúng");
+      throw new ServiceException("Tên đăng nhập hoặc mật khẩu không đúng");
     }
     return user;
   }
@@ -29,12 +28,13 @@ public class UserService {
     validateNotBlank(user.getName(), "Họ tên");
 
     if (userDAO.findByUsername(user.getAccount().getUsername()).isPresent()) {
-      throw new UserAlreadyExistsException("User đã tồn tại: " + user.getAccount().getUsername());
+      throw new ServiceException("User đã tồn tại: " + user.getAccount().getUsername());
     }
     return userDAO.save(user);
   }
 
   public void updateProfile(User user) {
+    validateNotBlank(user.getName(), "Họ tên");
     userDAO.updateProfile(user.getId(), user.getName());
   }
 
@@ -45,13 +45,26 @@ public class UserService {
 
   public void deposit(int userId, long amount) {
     if (amount <= 0) throw new ServiceException("Số tiền nạp phải > 0");
+    userDAO
+        .findById(userId)
+        .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
     userDAO.adjustWallet(userId, amount);
   }
 
   public void withdraw(String username, String password, long amount) {
     User user = login(username, password);
     if (amount <= 0) throw new ServiceException("Số tiền rút phải > 0");
-    userDAO.adjustWallet(user.getId(), -amount);
+    if (user.getWallet().getAssets() < amount) {
+      throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
+    }
+    try {
+      userDAO.adjustWallet(user.getId(), -amount);
+    } catch (DatabaseException e) {
+      if (e.getMessage().contains("Số dư không đủ")) {
+        throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
+      }
+      throw e;
+    }
   }
 
   public List<User> getAllUsers() {

@@ -39,15 +39,7 @@ public class UserDAO {
   }
 
   public Optional<User> findByUsername(Connection conn, String username) {
-    String sql = BASE_SELECT + "WHERE username = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setString(1, username);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? Optional.of(mapUser(rs)) : Optional.empty();
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Không thể lấy danh sách users.", e);
-    }
+    return findOne(conn, BASE_SELECT + "WHERE username = ?", username);
   }
 
   public List<User> findAll() {
@@ -125,6 +117,17 @@ public class UserDAO {
   private Optional<User> findOne(String sql, Object... params) {
     try (Connection conn = databaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(mapUser(rs)) : Optional.empty();
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private Optional<User> findOne(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? Optional.of(mapUser(rs)) : Optional.empty();
