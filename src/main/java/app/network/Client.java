@@ -14,10 +14,13 @@ import java.util.function.Consumer;
 public class Client {
   private static volatile Client instance;
   private Socket socket;
+  private String username;
   private ObjectOutputStream out;
   private ObjectInputStream in;
-  private Consumer<ResponsePacket<?>> onMessageReceived;
+  private Consumer<Packet> onMessageReceived;
   private boolean isConnected = false;
+
+  private Client() {}
 
   public static Client getInstance() {
     if (instance == null) {
@@ -43,9 +46,10 @@ public class Client {
 
   private void listen() {
     try {
-      ResponsePacket<?> packet;
-      while ((packet = (ResponsePacket<?>) in.readObject()) != null) {
+      Packet packet;
+      while ((packet = (Packet) in.readObject()) != null) {
         System.out.println("[Server] " + packet.getType());
+        // xử lý lại vấn đề thông báo cho controller
         switch (packet.getType()) {
           case LOGIN:
             onMessageReceived.accept(packet);
@@ -72,11 +76,10 @@ public class Client {
                 bidRequest.bidTransaction().getBidderId(),
                 bidRequest.bidTransaction().getAmount());
             break;
-        }
 
-        if (onMessageReceived != null) {
-          // Đẩy về cho Controller xử lýw
-          onMessageReceived.accept(packet);
+          case CHAT:
+            onMessageReceived.accept(packet);
+            break;
         }
       }
     } catch (IOException | ClassNotFoundException e) {
@@ -89,7 +92,7 @@ public class Client {
     return isConnected;
   }
 
-  public void sendRequest(ResponsePacket<?> packet) {
+  public void sendRequest(Packet packet) {
     if (out != null) {
       try {
         out.reset(); // Reset Java object stream cache
@@ -101,7 +104,15 @@ public class Client {
     }
   }
 
-  public void setOnMessageReceived(Consumer<ResponsePacket<?>> handler) {
+  public void setOnMessageReceived(Consumer<Packet> handler) {
     this.onMessageReceived = handler;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
   }
 }

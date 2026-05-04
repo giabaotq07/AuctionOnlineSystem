@@ -35,7 +35,7 @@ CREATE TABLE items
     starting_price BIGINT       NOT NULL CHECK (starting_price > 0),
     step_price     BIGINT       NOT NULL CHECK (step_price > 0),
     created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    status         ENUM('AVAILABLE','AUCTIONING','SOLD') DEFAULT 'AVAILABLE',
+    status         ENUM('AVAILABLE','UNDER_AUCTION','SOLD') DEFAULT 'AVAILABLE',
     updated_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE CASCADE
 );

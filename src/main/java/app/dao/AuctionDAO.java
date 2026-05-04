@@ -1,16 +1,15 @@
 package app.dao;
 
-import app.config.DatabaseConnection;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.models.*;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class AuctionDAO {
-  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
   private static final String TABLE = "auction_sessions";
 
@@ -53,24 +52,21 @@ public class AuctionDAO {
 
   // ── Read methods ──────────────────────────────────────────────
 
-  public Optional<Auction> findById(int id) {
-    return findOne(BASE_SELECT + " WHERE s.id = ?", id);
-  }
-
   public Optional<Auction> findById(Connection conn, int id) {
     return findOne(conn, BASE_SELECT + " WHERE s.id = ?", id);
   }
 
-  public List<Auction> findAll() {
-    return findMany(BASE_SELECT + " ORDER BY s.id DESC");
+  public List<Auction> findAll(Connection conn) {
+    return findMany(conn, BASE_SELECT + " ORDER BY s.id DESC");
   }
 
-  public List<Auction> findByStatus(AuctionStatus status) {
-    return findMany(BASE_SELECT + " WHERE s.status = ? ORDER BY s.end_time ASC", status.name());
+  public List<Auction> findByStatus(Connection conn, AuctionStatus status) {
+    return findMany(
+        conn, BASE_SELECT + " WHERE s.status = ? ORDER BY s.end_time ASC", status.name());
   }
 
-  public List<Auction> findBySeller(int sellerId) {
-    return findMany(BASE_SELECT + " WHERE s.seller_id = ? ORDER BY s.id DESC", sellerId);
+  public List<Auction> findBySeller(Connection conn, int sellerId) {
+    return findMany(conn, BASE_SELECT + " WHERE s.seller_id = ? ORDER BY s.id DESC", sellerId);
   }
 
   // ── Transaction methods — nhận Connection từ Service ──────────
@@ -136,21 +132,19 @@ public class AuctionDAO {
 
   // ── Write methods ─────────────────────────────────────────────
 
-  public Auction save(Auction auction) {
+  public Auction save(Connection conn, Auction auction) {
     String sql =
         """
             INSERT INTO auction_sessions
-                (item_id, seller_id, status, start_time, end_time, highest_bid)
-            VALUES (?, ?, ?, ?, ?, ?)
+                (item_id, seller_id, status, end_time, highest_bid)
+            VALUES (?, ?, ?, ?, ?)
             """;
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setInt(1, auction.getItemId());
       ps.setInt(2, auction.getSellerId());
       ps.setString(3, auction.getStatus().name());
-      ps.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
-      ps.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
-      ps.setLong(6, auction.getHighestBid());
+      ps.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
+      ps.setLong(5, auction.getHighestBid());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể tạo auction.");
       }
@@ -163,33 +157,37 @@ public class AuctionDAO {
     }
   }
 
-  public boolean updateStatus(int auctionId, AuctionStatus status) {
+  public boolean updateStatus(Connection conn, int auctionId, AuctionStatus status) {
     return executeUpdate(
-        "UPDATE auction_sessions SET status = ? WHERE id = ?", status.name(), auctionId);
+        conn, "UPDATE auction_sessions SET status = ? WHERE id = ?", status.name(), auctionId);
   }
 
-  public boolean updateWinner(int auctionId, int winnerId) {
-    return executeUpdate(
-        "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
+  public void updateStartTime(Connection conn, int auctionId, LocalDateTime startTime) {
+    executeUpdate(
+        conn,
+        "UPDATE auction_sessions SET start_time = ? WHERE id = ?",
+        Timestamp.valueOf(startTime),
+        auctionId);
   }
 
-  public boolean delete(int id) {
-    return executeUpdate("DELETE FROM auction_sessions WHERE id = ?", id);
+  public void updateEndTime(Connection conn, int auctionId, LocalDateTime endTime) {
+    executeUpdate(
+        conn,
+        "UPDATE auction_sessions SET end_time = ? WHERE id = ?",
+        Timestamp.valueOf(endTime),
+        auctionId);
+  }
+
+  public void updateWinner(Connection conn, int auctionId, int winnerId) {
+    executeUpdate(
+        conn, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
+  }
+
+  public boolean delete(Connection conn, int id) {
+    return executeUpdate(conn, "DELETE FROM auction_sessions WHERE id = ?", id);
   }
 
   // ── Private helpers ───────────────────────────────────────────
-
-  private Optional<Auction> findOne(String sql, Object... params) {
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? Optional.of(mapAuction(rs)) : Optional.empty();
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
-    }
-  }
 
   private Optional<Auction> findOne(Connection conn, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -199,22 +197,6 @@ public class AuctionDAO {
       }
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
-    }
-  }
-
-  private List<Auction> findMany(String sql, Object... params) {
-    List<Auction> auctions = new ArrayList<>();
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-          auctions.add(mapAuction(rs));
-        }
-      }
-      return auctions;
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn danh sách auctions.", e);
     }
   }
 
@@ -233,9 +215,8 @@ public class AuctionDAO {
     }
   }
 
-  private boolean executeUpdate(String sql, Object... params) {
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
+  private boolean executeUpdate(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       return ps.executeUpdate() > 0;
     } catch (SQLException e) {

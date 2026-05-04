@@ -1,7 +1,6 @@
 package app.enums;
 
-public enum Result {
-  // Auth & User
+public enum PacketType {
   LOGIN,
   LOGOUT,
   REGISTER,

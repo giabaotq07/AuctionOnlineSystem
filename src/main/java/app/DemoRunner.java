@@ -1,9 +1,11 @@
 package app;
 
 import app.dao.*;
+import app.enums.AuctionStatus;
+import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
-import app.exception.UserAlreadyExistsException;
+import app.exception.ServiceException;
 import app.models.*;
 import app.service.*;
 import java.time.LocalDateTime;
@@ -11,7 +13,6 @@ import java.time.LocalDateTime;
 public class DemoRunner {
   static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
-
     System.out.println("Dang kiem tra va khoi tao Database...");
     UserDAO userDAO = new UserDAO();
     ItemDAO itemDAO = new ItemDAO();
@@ -34,7 +35,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.SELLER);
       seller = userService.register(seller);
-    } catch (UserAlreadyExistsException e) {
+    } catch (ServiceException e) {
       System.out.println(e.getMessage());
       seller = userService.login("nguoiban", "123456");
     }
@@ -44,7 +45,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua1", "123456"), new Wallet(), UserRole.BIDDER);
       buyer1 = userService.register(buyer1);
-    } catch (UserAlreadyExistsException e) {
+    } catch (ServiceException e) {
       System.out.println(e.getMessage());
       buyer1 = userService.login("nguoimua1", "123456");
     }
@@ -54,7 +55,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua2", "123456"), new Wallet(), UserRole.BIDDER);
       buyer2 = userService.register(buyer2);
-    } catch (UserAlreadyExistsException e) {
+    } catch (ServiceException e) {
       System.out.println(e.getMessage());
       buyer2 = userService.login("nguoimua2", "123456");
     }
@@ -81,9 +82,14 @@ public class DemoRunner {
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
     Auction session =
         new Auction(phone.getId(), seller.getId(), LocalDateTime.now().plusSeconds(5));
-    session.start();
     session = sessionService.createAuction(session);
     System.out.println("Phien dau gia tao voi ID: " + session.getId());
+    // bắt đầu phiên
+    sessionService.updateStatus(session.getId(), AuctionStatus.RUNNING);
+    session.start();
+    sessionService.setStartTime(session.getId(), LocalDateTime.now());
+    phone.setStatus(ItemStatus.UNDER_AUCTION);
+    itemService.updateStatus(phone.getId(), ItemStatus.UNDER_AUCTION);
     // 4. Mua ban (Bidding)
     System.out.println("\n4. Nguoi mua bat dau dat gia...");
     bidService.placeBid(session.getId(), buyer1.getId(), 1050);
@@ -92,10 +98,14 @@ public class DemoRunner {
     // 6. Cho doi ket thuc
     System.out.println("\n6. Cho 5.5 giay de phien het han...");
     try {
+      sessionService.setEndTime(session.getId(), LocalDateTime.now().plusSeconds(5));
       Thread.sleep(5500);
     } catch (Exception e) {
       e.printStackTrace();
     }
     sessionService.handleCompletion(session.getId());
+    // giả sử đã bán
+    phone.setStatus(ItemStatus.SOLD);
+    itemService.updateStatus(phone.getId(), ItemStatus.SOLD);
   }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class BidDAO {
+  public BidDAO() {}
 
   private static final String BID_SELECT =
       """

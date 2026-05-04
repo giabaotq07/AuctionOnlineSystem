@@ -62,4 +62,12 @@ public class BidTransaction implements Serializable {
   public String toString() {
     return bidderId + " đã trả $" + amount + " vào lúc " + createAt.withNano(0);
   }
+
+  public boolean isAutoBid() {
+    return isAutoBid;
+  }
+
+  public void setAutoBid(boolean autoBid) {
+    isAutoBid = autoBid;
+  }
 }

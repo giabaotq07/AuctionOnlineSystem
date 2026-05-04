@@ -1,10 +1,13 @@
 package app.service;
 
+import app.config.DatabaseConnection;
 import app.dao.UserDAO;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.User;
 import app.util.PasswordUtils;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 public class UserService {
@@ -15,40 +18,60 @@ public class UserService {
   }
 
   public User login(String username, String rawPassword) {
-    User user = userDAO.findByUsername(username).orElse(null);
-    if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
-      throw new ServiceException("Tên đăng nhập hoặc mật khẩu không đúng");
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      User user = userDAO.findByUsername(conn, username).orElse(null);
+      if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
+        throw new ServiceException("Tên đăng nhập hoặc mật khẩu không đúng");
+      }
+      return user;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi đăng nhập.", e);
     }
-    return user;
   }
 
   public User register(User user) {
     validateNotBlank(user.getAccount().getUsername(), "Tên đăng nhập");
     validateNotBlank(user.getAccount().getPassword(), "Mật khẩu");
     validateNotBlank(user.getName(), "Họ tên");
-
-    if (userDAO.findByUsername(user.getAccount().getUsername()).isPresent()) {
-      throw new ServiceException("User đã tồn tại: " + user.getAccount().getUsername());
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      if (userDAO.findByUsername(conn, user.getAccount().getUsername()).isPresent()) {
+        throw new ServiceException("User đã tồn tại: " + user.getAccount().getUsername());
+      }
+      return userDAO.save(conn, user);
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi đăng ký.", e);
     }
-    return userDAO.save(user);
   }
 
   public void updateProfile(User user) {
     validateNotBlank(user.getName(), "Họ tên");
-    userDAO.updateProfile(user.getId(), user.getName());
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      userDAO.updateProfile(conn, user.getId(), user.getName());
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi cập nhật hồ sơ.", e);
+    }
   }
 
   public void changePassword(String username, String oldPassword, String newPassword) {
     validateNotBlank(newPassword, "Mật khẩu mới");
-    userDAO.updatePassword(login(username, oldPassword).getId(), newPassword);
+    int userId = login(username, oldPassword).getId();
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      userDAO.updatePassword(conn, userId, newPassword);
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi đổi mật khẩu.", e);
+    }
   }
 
   public void deposit(int userId, long amount) {
     if (amount <= 0) throw new ServiceException("Số tiền nạp phải > 0");
-    userDAO
-        .findById(userId)
-        .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
-    userDAO.adjustWallet(userId, amount);
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      userDAO
+          .findById(conn, userId)
+          .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+      userDAO.adjustWallet(conn, userId, amount);
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi nạp tiền.", e);
+    }
   }
 
   public void withdraw(String username, String password, long amount) {
@@ -58,17 +81,25 @@ public class UserService {
       throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
     }
     try {
-      userDAO.adjustWallet(user.getId(), -amount);
+      try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+        userDAO.adjustWallet(conn, user.getId(), -amount);
+      }
     } catch (DatabaseException e) {
       if (e.getMessage().contains("Số dư không đủ")) {
         throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
       }
       throw e;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi rút tiền.", e);
     }
   }
 
   public List<User> getAllUsers() {
-    return userDAO.findAll();
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      return userDAO.findAll(conn);
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi kết nối khi tải danh sách users.", e);
+    }
   }
 
   private void validateNotBlank(String value, String fieldName) {
