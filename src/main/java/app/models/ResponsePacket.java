@@ -1,25 +1,19 @@
 package app.models;
 
-import app.enums.CommandType;
+import app.enums.Result;
 import java.io.Serializable;
 
-public class MessagePacket<T> implements Serializable {
-  private CommandType type;
+public class ResponsePacket<T> implements Serializable {
+  private Result type;
   private String message;
   private T data;
 
-  public MessagePacket(CommandType type, T data) {
+  public ResponsePacket(Result type, T data) {
     this.type = type;
     this.data = data;
   }
 
-  public static <T> MessagePacket<T> error(String msg) {
-    MessagePacket<T> packet = new MessagePacket<>(CommandType.ERROR, null);
-    packet.message = msg;
-    return packet;
-  }
-
-  public void setType(CommandType type) {
+  public void setType(Result type) {
     this.type = type;
   }
 
@@ -31,7 +25,7 @@ public class MessagePacket<T> implements Serializable {
     this.data = data;
   }
 
-  public CommandType getType() {
+  public Result getType() {
     return type;
   }
 

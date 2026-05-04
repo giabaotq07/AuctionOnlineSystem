@@ -1,7 +1,7 @@
 package app.network;
 
-import app.enums.CommandType;
-import app.models.MessagePacket;
+import app.enums.Result;
+import app.models.ResponsePacket;
 import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
@@ -12,12 +12,12 @@ public class ClientHandler implements Runnable {
   private ObjectOutputStream writer;
   private String username;
 
-  private static final Map<CommandType, Command> COMMANDS = new HashMap<>();
+  private static final Map<Result, Command> COMMANDS = new HashMap<>();
 
   static {
-    COMMANDS.put(CommandType.LOGIN, new LoginCommand());
-    COMMANDS.put(CommandType.CHAT, new ChatCommand());
-    COMMANDS.put(CommandType.PLACE_BID, new PlaceBidCommand());
+    COMMANDS.put(Result.LOGIN, new LoginCommand());
+    COMMANDS.put(Result.CHAT, new ChatCommand());
+    COMMANDS.put(Result.PLACE_BID, new PlaceBidCommand());
   }
 
   public ClientHandler(Socket socket) {
@@ -30,8 +30,8 @@ public class ClientHandler implements Runnable {
       writer = new ObjectOutputStream(socket.getOutputStream());
       writer.flush();
       ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
-      MessagePacket<?> packet;
-      while ((packet = (MessagePacket<?>) reader.readObject()) != null) {
+      ResponsePacket<?> packet;
+      while ((packet = (ResponsePacket<?>) reader.readObject()) != null) {
         handlePacket(packet);
       }
     } catch (IOException | ClassNotFoundException e) {
@@ -39,7 +39,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void handlePacket(MessagePacket<?> packet) {
+  private void handlePacket(ResponsePacket<?> packet) {
     Command command = COMMANDS.get(packet.getType());
     if (command != null) {
       command.execute(this, packet);
@@ -48,7 +48,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  public void sendMessage(MessagePacket<?> packet) {
+  public void sendMessage(ResponsePacket<?> packet) {
     if (writer != null) {
       try {
         writer.reset(); // Reset Java object stream cache

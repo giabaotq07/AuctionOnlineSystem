@@ -3,15 +3,15 @@ package app.network;
 import app.dao.UserDAO;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
-import app.enums.CommandType;
+import app.enums.Result;
 import app.exception.AuthenticationException;
-import app.models.MessagePacket;
+import app.models.ResponsePacket;
 import app.models.User;
 import app.service.UserService;
 
 public class LoginCommand implements Command {
   @Override
-  public void execute(ClientHandler clientHandler, MessagePacket<?> packet) {
+  public void execute(ClientHandler clientHandler, ResponsePacket<?> packet) {
     LoginRequest loginPacket = (LoginRequest) packet.getData();
     String username = loginPacket.username();
     String password = loginPacket.password();
@@ -20,19 +20,19 @@ public class LoginCommand implements Command {
     try {
       userService.login(username, password);
     } catch (AuthenticationException e) {
-      LoginResponse loginResponse =
+      LoginResponse LoginResponse =
           new LoginResponse(false, "Đăng nhập thất bại! Sai tên tài khoản hoặc mật khẩu.", null);
-      MessagePacket<LoginResponse> responsePacket =
-          new MessagePacket<>(CommandType.LOGIN, loginResponse);
-      clientHandler.sendMessage(responsePacket);
+      ResponsePacket<LoginResponse> ResponsePacket =
+          new ResponsePacket<>(Result.LOGIN, LoginResponse);
+      clientHandler.sendMessage(ResponsePacket);
     }
     User user = userService.getUserByAccount(username);
     clientHandler.setUsername(username);
     Server.registerClient(username, clientHandler);
     System.out.println("[SERVER] " + username + " đã đăng nhập.");
-    LoginResponse loginResponse = new LoginResponse(true, "Đăng nhập thành công!", user);
-    MessagePacket<LoginResponse> responsePacket =
-        new MessagePacket<>(CommandType.LOGIN, loginResponse);
-    clientHandler.sendMessage(responsePacket);
+    LoginResponse LoginResponse = new LoginResponse(true, "Đăng nhập thành công!", user);
+    ResponsePacket<LoginResponse> ResponsePacket =
+        new ResponsePacket<>(Result.LOGIN, LoginResponse);
+    clientHandler.sendMessage(ResponsePacket);
   }
 }

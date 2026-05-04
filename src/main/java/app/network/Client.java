@@ -16,7 +16,7 @@ public class Client {
   private Socket socket;
   private ObjectOutputStream out;
   private ObjectInputStream in;
-  private Consumer<MessagePacket<?>> onMessageReceived;
+  private Consumer<ResponsePacket<?>> onMessageReceived;
   private boolean isConnected = false;
 
   public static Client getInstance() {
@@ -43,8 +43,8 @@ public class Client {
 
   private void listen() {
     try {
-      MessagePacket<?> packet;
-      while ((packet = (MessagePacket<?>) in.readObject()) != null) {
+      ResponsePacket<?> packet;
+      while ((packet = (ResponsePacket<?>) in.readObject()) != null) {
         System.out.println("[Server] " + packet.getType());
         switch (packet.getType()) {
           case LOGIN:
@@ -89,7 +89,7 @@ public class Client {
     return isConnected;
   }
 
-  public void sendRequest(MessagePacket<?> packet) {
+  public void sendRequest(ResponsePacket<?> packet) {
     if (out != null) {
       try {
         out.reset(); // Reset Java object stream cache
@@ -101,7 +101,7 @@ public class Client {
     }
   }
 
-  public void setOnMessageReceived(Consumer<MessagePacket<?>> handler) {
+  public void setOnMessageReceived(Consumer<ResponsePacket<?>> handler) {
     this.onMessageReceived = handler;
   }
 }

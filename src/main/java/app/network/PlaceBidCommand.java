@@ -1,18 +1,18 @@
 package app.network;
 
-import app.enums.CommandType;
-import app.models.MessagePacket;
+import app.enums.Result;
+import app.models.ResponsePacket;
 
 public class PlaceBidCommand implements Command {
   @Override
-  public void execute(ClientHandler clientHandler, MessagePacket<?> packet) {
+  public void execute(ClientHandler clientHandler, ResponsePacket<?> packet) {
     // Implement place bid logic based on packet payload
     System.out.println(
         "[SERVER] Handling PLACE_BID command from user: " + clientHandler.getUsername());
     // For now, simulating success
-    MessagePacket<String> response =
-        new MessagePacket<>(CommandType.SUCCESS, "BidTransaction placed successfully.");
-    response.setMessage("System");
-    clientHandler.sendMessage(response);
+    ResponsePacket<String> responsePacket =
+        new ResponsePacket<>(Result.SUCCESS, "BidTransaction placed successfully.");
+    responsePacket.setMessage("System");
+    clientHandler.sendMessage(responsePacket);
   }
 }

@@ -4,7 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import app.dao.UserDAO;
 import app.enums.UserRole;
-import app.exception.DatabaseException;
+import app.exception.AuthenticationException;
+import app.exception.UserAlreadyExistsException;
 import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ public class TestUserService {
             UserRole.BIDDER);
     try {
       tester = userDAO.save(tester);
-    } catch (DatabaseException e) {
+    } catch (UserAlreadyExistsException e) {
       System.err.println("Error inserting test user: " + e.getMessage());
       tester = userDAO.findByUsername("test_account").orElse(null);
     }
@@ -34,9 +35,12 @@ public class TestUserService {
 
   @Test
   public void testLogin() {
-    User logined = null;
-    if (userService.login("test_account", "test_password")) {
-      logined = userService.getUserByAccount("test_account");
+    User logined;
+    try {
+      logined = userService.login("test_account", "test_password");
+    } catch (AuthenticationException e) {
+      System.err.println("Login failed: " + e.getMessage());
+      logined = null;
     }
     assertEquals(tester, logined);
   }

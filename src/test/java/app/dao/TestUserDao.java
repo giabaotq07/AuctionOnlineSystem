@@ -3,7 +3,7 @@ package app.dao;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.enums.UserRole;
-import app.exception.DatabaseException;
+import app.exception.UserAlreadyExistsException;
 import app.models.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ public class TestUserDao {
             UserRole.BIDDER);
     try {
       tester = userDAO.save(tester);
-    } catch (DatabaseException e) {
+    } catch (UserAlreadyExistsException e) {
       System.err.println("Error setting up test user: " + e.getMessage());
       tester = userDAO.findByUsername("test_account").orElse(null);
     }
@@ -47,7 +47,7 @@ public class TestUserDao {
         UserFactory.createUser(
             "New User", new Account("new_account", "new_password"), new Wallet(), UserRole.BIDDER);
     assertThrows(
-        DatabaseException.class,
+        UserAlreadyExistsException.class,
         () -> userDAO.save(addedUser)); // Thử thêm lại để kiểm tra trùng account
     assertNotNull(user);
     assertTrue(user.getId() > 0);
