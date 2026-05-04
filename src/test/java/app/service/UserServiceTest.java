@@ -8,7 +8,7 @@ import app.config.DatabaseConnection;
 import app.dao.BaseDAOTest;
 import app.dao.UserDAO;
 import app.enums.UserRole;
-import app.exception.AuthenticationException;
+import app.exception.ServiceException;
 import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
@@ -20,12 +20,11 @@ import org.junit.jupiter.api.Test;
 
 public class UserServiceTest extends BaseDAOTest {
   private User tester;
-  private UserDAO userDAO;
   private UserService userService;
 
   @BeforeEach
   public void setupDatabase() throws Exception {
-    userDAO = new UserDAO();
+    UserDAO userDAO = new UserDAO();
     userService = new UserService(userDAO);
 
     try (Connection conn = DatabaseConnection.getInstance().getConnection();
@@ -45,7 +44,9 @@ public class UserServiceTest extends BaseDAOTest {
             new Account("test_account", "test_password"),
             new Wallet(),
             UserRole.BIDDER);
-    tester = userDAO.save(tester);
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      tester = userDAO.save(conn, tester);
+    }
   }
 
   @Test
@@ -59,12 +60,11 @@ public class UserServiceTest extends BaseDAOTest {
 
   @Test
   public void testLogin_wrongPassword_shouldThrow() {
-    assertThrows(AuthenticationException.class, () -> userService.login("test_account", "wrong"));
+    assertThrows(ServiceException.class, () -> userService.login("test_account", "wrong"));
   }
 
   @Test
   public void testLogin_unknownUser_shouldThrow() {
-    assertThrows(
-        AuthenticationException.class, () -> userService.login("unknown", "test_password"));
+    assertThrows(ServiceException.class, () -> userService.login("unknown", "test_password"));
   }
 }

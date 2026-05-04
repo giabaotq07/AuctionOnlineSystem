@@ -86,6 +86,26 @@ public abstract class Item extends Entity {
     return type;
   }
 
+  public ItemStatus getStatus() {
+    return status;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public void setStatus(ItemStatus status) {
+    this.status = status;
+  }
+
+  public void setStepPrice(long stepPrice) {
+    this.stepPrice = stepPrice;
+  }
+
   public void setType(ItemType type) {
     this.type = type;
   }

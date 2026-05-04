@@ -1,6 +1,5 @@
 package app.dao;
 
-import app.config.DatabaseConnection;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.exception.DatabaseException;
@@ -12,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class ItemDAO {
-  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+  public ItemDAO() {}
 
   private static final String TABLE = "items";
 
@@ -34,10 +33,9 @@ public class ItemDAO {
         ItemType.valueOf(rs.getString("category")));
   }
 
-  public Optional<Item> findById(int id) {
+  public Optional<Item> findById(Connection conn, int id) {
     String sql = BASE_SELECT + "WHERE id = ?";
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, id);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? Optional.of(mapItem(rs)) : Optional.empty();
@@ -47,31 +45,29 @@ public class ItemDAO {
     }
   }
 
-  public List<Item> findAll() {
-    return findList(BASE_SELECT + "ORDER BY id DESC");
+  public List<Item> findAll(Connection conn) {
+    return findList(conn, BASE_SELECT + "ORDER BY id DESC");
   }
 
-  public List<Item> findBySeller(int sellerId) {
-    return findList(BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId);
+  public List<Item> findBySeller(Connection conn, int sellerId) {
+    return findList(conn, BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId);
   }
 
-  public List<Item> findByCategory(ItemType type) {
-    return findList(BASE_SELECT + "WHERE category = ? ORDER BY id DESC", type.name());
+  public List<Item> findByCategory(Connection conn, ItemType type) {
+    return findList(conn, BASE_SELECT + "WHERE category = ? ORDER BY id DESC", type.name());
   }
 
-  // Chỉ lấy item chưa có phiên đấu giá — dùng cho màn hình tạo phiên của Seller
-  public List<Item> findAvailable() {
-    return findList(BASE_SELECT + "WHERE status = 'AVAILABLE' ORDER BY id DESC");
+  public List<Item> findAvailable(Connection conn) {
+    return findList(conn, BASE_SELECT + "WHERE status = 'AVAILABLE' ORDER BY id DESC");
   }
 
-  public Item save(Item item) {
+  public Item save(Connection conn, Item item) {
     String sql =
         """
         INSERT INTO items (seller_id, name, description, category, starting_price, step_price)
         VALUES (?, ?, ?, ?, ?, ?)
         """;
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setInt(1, item.getSellerId());
       ps.setString(2, item.getName());
       ps.setString(3, item.getDescription());
@@ -84,6 +80,7 @@ public class ItemDAO {
       try (ResultSet rs = ps.getGeneratedKeys()) {
         if (rs.next()) {
           item.setId(rs.getInt(1));
+          updateStatus(conn, item.getId(), ItemStatus.AVAILABLE);
         }
       }
       return item;
@@ -92,14 +89,15 @@ public class ItemDAO {
     }
   }
 
-  public boolean update(Item item) {
+  public void update(Connection conn, Item item) {
     String sql =
         """
         UPDATE items
         SET name = ?, description = ?, starting_price = ?, step_price = ?, category = ?
         WHERE id = ?
         """;
-    return executeUpdate(
+    executeUpdate(
+        conn,
         sql,
         item.getName(),
         item.getDescription(),
@@ -110,18 +108,13 @@ public class ItemDAO {
   }
 
   // Gọi khi item bắt đầu / kết thúc đấu giá
-  public boolean updateStatus(int id, ItemStatus status) {
-    return executeUpdate("UPDATE items SET status = ? WHERE id = ?", status.name(), id);
+  public void updateStatus(Connection conn, int id, ItemStatus status) {
+    executeUpdate(conn, "UPDATE items SET status = ? WHERE id = ?", status.name(), id);
   }
 
-  public boolean delete(int id) {
-    return executeUpdate("DELETE FROM items WHERE id = ?", id);
-  }
-
-  private List<Item> findList(String sql, Object... params) {
+  private List<Item> findList(Connection conn, String sql, Object... params) {
     List<Item> items = new ArrayList<>();
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
@@ -134,9 +127,8 @@ public class ItemDAO {
     }
   }
 
-  private boolean executeUpdate(String sql, Object... params) {
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
+  private boolean executeUpdate(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       return ps.executeUpdate() > 0;
     } catch (SQLException e) {

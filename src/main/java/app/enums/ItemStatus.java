@@ -2,6 +2,7 @@ package app.enums;
 
 public enum ItemStatus {
   AVAILABLE,
-  AUCTIONING,
-  SOLD
+  UNDER_AUCTION,
+  SOLD,
+  DELETE
 }

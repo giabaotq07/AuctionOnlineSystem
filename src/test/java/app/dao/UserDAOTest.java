@@ -47,60 +47,72 @@ class UserDAOTest extends BaseDAOTest {
   // ───── save ─────
 
   @Test
-  void save_shouldPersistUserAndReturnGeneratedId() {
-    User saved = userDAO.save(makeUser("alice"));
+  void save_shouldPersistUserAndReturnGeneratedId() throws Exception {
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      User saved = userDAO.save(conn, makeUser("alice"));
 
-    assertTrue(saved.getId() > 0);
+      assertTrue(saved.getId() > 0);
 
-    User stored = userDAO.findById(saved.getId()).orElseThrow();
-    assertEquals("alice", stored.getAccount().getUsername());
-    assertEquals("Nguyen Van A", stored.getName());
-    assertEquals(UserRole.BIDDER, stored.getRole());
-    assertEquals(1_000_000L, stored.getWallet().getAssets());
-    assertNotEquals("rawPassword", stored.getAccount().getPassword());
-    assertTrue(PasswordUtils.verify("rawPassword", stored.getAccount().getPassword()));
+      User stored = userDAO.findById(conn, saved.getId()).orElseThrow();
+      assertEquals("alice", stored.getAccount().getUsername());
+      assertEquals("Nguyen Van A", stored.getName());
+      assertEquals(UserRole.BIDDER, stored.getRole());
+      assertEquals(1_000_000L, stored.getWallet().getAssets());
+      assertNotEquals("rawPassword", stored.getAccount().getPassword());
+      assertTrue(PasswordUtils.verify("rawPassword", stored.getAccount().getPassword()));
+    }
   }
 
   @Test
-  void save_duplicateUsername_shouldThrow() {
-    userDAO.save(makeUser("bob"));
+  void save_duplicateUsername_shouldThrow() throws Exception {
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      userDAO.save(conn, makeUser("bob"));
 
-    assertThrows(DatabaseException.class, () -> userDAO.save(makeUser("bob")));
+      assertThrows(DatabaseException.class, () -> userDAO.save(conn, makeUser("bob")));
+    }
   }
 
   // ───── findById ─────
 
   @Test
-  void findById_existingUser_shouldReturnUser() {
-    User saved = userDAO.save(makeUser("charlie"));
+  void findById_existingUser_shouldReturnUser() throws Exception {
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      User saved = userDAO.save(conn, makeUser("charlie"));
 
-    Optional<User> found = userDAO.findById(saved.getId());
+      Optional<User> found = userDAO.findById(conn, saved.getId());
 
-    assertTrue(found.isPresent());
-    assertEquals("charlie", found.get().getAccount().getUsername());
+      assertTrue(found.isPresent());
+      assertEquals("charlie", found.get().getAccount().getUsername());
+    }
   }
 
   @Test
-  void findById_nonExisting_shouldReturnEmpty() {
-    Optional<User> found = userDAO.findById(99999);
+  void findById_nonExisting_shouldReturnEmpty() throws Exception {
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      Optional<User> found = userDAO.findById(conn, 99999);
 
-    assertTrue(found.isEmpty());
+      assertTrue(found.isEmpty());
+    }
   }
 
   // ───── findByUsername ─────
 
   @Test
-  void findByUsername_existingUser_shouldReturnUser() {
-    userDAO.save(makeUser("dave"));
+  void findByUsername_existingUser_shouldReturnUser() throws Exception {
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      userDAO.save(conn, makeUser("dave"));
 
-    Optional<User> found = userDAO.findByUsername("dave");
+      Optional<User> found = userDAO.findByUsername(conn, "dave");
 
-    assertTrue(found.isPresent());
-    assertEquals("Nguyen Van A", found.get().getName());
+      assertTrue(found.isPresent());
+      assertEquals("Nguyen Van A", found.get().getName());
+    }
   }
 
   @Test
-  void findByUsername_nonExisting_shouldReturnEmpty() {
-    assertTrue(userDAO.findByUsername("ghost").isEmpty());
+  void findByUsername_nonExisting_shouldReturnEmpty() throws Exception {
+    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+      assertTrue(userDAO.findByUsername(conn, "ghost").isEmpty());
+    }
   }
 }

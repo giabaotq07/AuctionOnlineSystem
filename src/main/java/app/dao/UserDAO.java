@@ -1,6 +1,5 @@
 package app.dao;
 
-import app.config.DatabaseConnection;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
 import app.models.Account;
@@ -14,7 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class UserDAO {
-  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+
+  public UserDAO() {}
 
   private static final String TABLE = "users";
 
@@ -30,23 +30,18 @@ public class UserDAO {
         UserRole.valueOf(rs.getString("role")));
   }
 
-  public Optional<User> findById(int id) {
-    return findOne(BASE_SELECT + "WHERE id = ?", id);
-  }
-
-  public Optional<User> findByUsername(String username) {
-    return findOne(BASE_SELECT + "WHERE username = ?", username);
+  public Optional<User> findById(Connection conn, int id) {
+    return findOne(conn, BASE_SELECT + "WHERE id = ?", id);
   }
 
   public Optional<User> findByUsername(Connection conn, String username) {
     return findOne(conn, BASE_SELECT + "WHERE username = ?", username);
   }
 
-  public List<User> findAll() {
+  public List<User> findAll(Connection conn) {
     String sql = BASE_SELECT + "ORDER BY id";
     List<User> users = new ArrayList<>();
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
+    try (PreparedStatement ps = conn.prepareStatement(sql);
         ResultSet rs = ps.executeQuery()) {
       while (rs.next()) {
         users.add(mapUser(rs));
@@ -57,14 +52,13 @@ public class UserDAO {
     }
   }
 
-  public User save(User user) {
+  public User save(Connection conn, User user) {
     String sql =
         """
         INSERT INTO users (username, password, full_name, assets, role)
         VALUES (?, ?, ?, ?, ?)
         """;
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setString(1, user.getAccount().getUsername());
       ps.setString(2, PasswordUtils.hashPassword(user.getAccount().getPassword()));
       ps.setString(3, user.getName());
@@ -84,24 +78,28 @@ public class UserDAO {
     }
   }
 
-  public void updateProfile(int id, String fullName) {
-    executeUpdate("UPDATE users SET full_name = ? WHERE id = ?", fullName, id);
+  public void updateProfile(Connection conn, int id, String fullName) {
+    executeUpdate(conn, "UPDATE users SET full_name = ? WHERE id = ?", fullName, id);
   }
 
-  public void updateUsername(int id, String newUsername) {
-    executeUpdate("UPDATE users SET username = ? WHERE id = ?", newUsername, id);
+  public void updateUsername(Connection conn, int id, String newUsername) {
+    executeUpdate(conn, "UPDATE users SET username = ? WHERE id = ?", newUsername, id);
   }
 
-  public void updatePassword(int id, String newPassword) {
+  public void updatePassword(Connection conn, int id, String newPassword) {
     executeUpdate(
-        "UPDATE users SET password = ? WHERE id = ?", PasswordUtils.hashPassword(newPassword), id);
+        conn,
+        "UPDATE users SET password = ? WHERE id = ?",
+        PasswordUtils.hashPassword(newPassword),
+        id);
   }
 
-  public void adjustWallet(int id, long delta) {
+  public void adjustWallet(Connection conn, int id, long delta) {
     int rows;
     if (delta < 0) {
       rows =
           executeUpdate(
+              conn,
               "UPDATE users SET assets = assets + ? WHERE id = ? AND assets >= ?",
               delta,
               id,
@@ -110,19 +108,7 @@ public class UserDAO {
         throw new DatabaseException("Số dư không đủ để thực hiện giao dịch.");
       }
     } else {
-      executeUpdate("UPDATE users SET assets = assets + ? WHERE id = ?", delta, id);
-    }
-  }
-
-  private Optional<User> findOne(String sql, Object... params) {
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? Optional.of(mapUser(rs)) : Optional.empty();
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+      executeUpdate(conn, "UPDATE users SET assets = assets + ? WHERE id = ?", delta, id);
     }
   }
 
@@ -137,9 +123,8 @@ public class UserDAO {
     }
   }
 
-  private int executeUpdate(String sql, Object... params) {
-    try (Connection conn = databaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql)) {
+  private int executeUpdate(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       return ps.executeUpdate();
     } catch (SQLException e) {
