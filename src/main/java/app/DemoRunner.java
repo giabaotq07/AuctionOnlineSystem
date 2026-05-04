@@ -36,6 +36,7 @@ public class DemoRunner {
       seller = userService.register(seller);
     } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
+      seller = userService.login("nguoiban", "123456");
     }
 
     try {
@@ -45,6 +46,7 @@ public class DemoRunner {
       buyer1 = userService.register(buyer1);
     } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
+      buyer1 = userService.login("nguoimua1", "123456");
     }
 
     try {
@@ -54,6 +56,7 @@ public class DemoRunner {
       buyer2 = userService.register(buyer2);
     } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
+      buyer2 = userService.login("nguoimua2", "123456");
     }
     // Kiem tra looi DB neu co
     if (seller == null || buyer1 == null || buyer2 == null) {

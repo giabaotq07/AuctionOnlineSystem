@@ -5,7 +5,7 @@ import app.models.Item;
 import java.util.List;
 
 public class ItemService {
-  private final ItemDAO itemDAO;
+  private ItemDAO itemDAO;
 
   public ItemService(ItemDAO itemDAO) {
     this.itemDAO = itemDAO;
