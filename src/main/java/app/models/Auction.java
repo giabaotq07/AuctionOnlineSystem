@@ -3,7 +3,6 @@ package app.models;
 import app.enums.AuctionStatus;
 import app.obserser.AuctionObserver;
 import app.obserser.AuctionSubject;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -171,13 +170,13 @@ public class Auction implements AuctionSubject {
     this.endTime = endTime;
   }
 
-//  public long getDepositAmount() {
-//    return depositAmount;
-//  }
-//
-//  public void setDepositAmount(long depositAmount) {
-//    this.depositAmount = depositAmount;
-//  }
+  //  public long getDepositAmount() {
+  //    return depositAmount;
+  //  }
+  //
+  //  public void setDepositAmount(long depositAmount) {
+  //    this.depositAmount = depositAmount;
+  //  }
 
   public long getHighestBid() {
     return highestBid;
@@ -237,6 +236,7 @@ public class Auction implements AuctionSubject {
 
   /////////
   private transient List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
+
   @Override
   public void registerObserver(AuctionObserver observer) {
     if (observers == null) observers = new ArrayList<>();

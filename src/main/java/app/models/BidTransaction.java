@@ -12,7 +12,12 @@ public class BidTransaction implements Serializable {
   private boolean isAutoBid;
 
   public BidTransaction(
-      int id, int bidderId, String bidderName, long amount, LocalDateTime createAt, boolean isAutoBid) {
+      int id,
+      int bidderId,
+      String bidderName,
+      long amount,
+      LocalDateTime createAt,
+      boolean isAutoBid) {
     this.id = id;
     this.bidderId = bidderId;
     this.bidderName = bidderName;

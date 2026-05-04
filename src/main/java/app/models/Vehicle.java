@@ -9,12 +9,7 @@ public class Vehicle extends Item {
   }
 
   public Vehicle(
-      int id,
-      String name,
-      int sellerId,
-      String description,
-      Long startingPrice,
-      Long stepPrice) {
+      int id, String name, int sellerId, String description, Long startingPrice, Long stepPrice) {
     super(id, name, sellerId, description, startingPrice, stepPrice, ItemType.VEHICLE);
   }
 

@@ -12,14 +12,20 @@ public class ItemFactory implements java.io.Serializable {
       Long stepPrice,
       ItemType type) {
     return switch (type) {
-      case ELECTRONICS -> new Electronics(id, name, sellerId, description, startingPrice, stepPrice);
+      case ELECTRONICS ->
+          new Electronics(id, name, sellerId, description, startingPrice, stepPrice);
       case ART -> new Art(id, name, sellerId, description, startingPrice, stepPrice);
       case VEHICLE -> new Vehicle(id, name, sellerId, description, startingPrice, stepPrice);
     };
   }
 
   public static Item createItem(
-      String name, int sellerId, String description, Long startingPrice, Long stepPrice, ItemType type) {
+      String name,
+      int sellerId,
+      String description,
+      Long startingPrice,
+      Long stepPrice,
+      ItemType type) {
     return switch (type) {
       case ELECTRONICS -> new Electronics(name, sellerId, description, startingPrice, stepPrice);
       case ART -> new Art(name, sellerId, description, startingPrice, stepPrice);

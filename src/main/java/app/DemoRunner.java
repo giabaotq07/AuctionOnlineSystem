@@ -33,7 +33,7 @@ public class DemoRunner {
       seller =
           UserFactory.createUser(
               "Nguoi Ban", new Account("nguoiban", "123456"), new Wallet(), UserRole.SELLER);
-      seller =  userService.register(seller);
+      seller = userService.register(seller);
     } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
     }
@@ -42,7 +42,7 @@ public class DemoRunner {
       buyer1 =
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua1", "123456"), new Wallet(), UserRole.BIDDER);
-      buyer1 =  userService.register(buyer1);
+      buyer1 = userService.register(buyer1);
     } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
     }
@@ -52,7 +52,7 @@ public class DemoRunner {
           UserFactory.createUser(
               "Nguoi Mua", new Account("nguoimua2", "123456"), new Wallet(), UserRole.BIDDER);
       buyer2 = userService.register(buyer2);
-    } catch (UserAlreadyExistsException  e) {
+    } catch (UserAlreadyExistsException e) {
       System.out.println(e.getMessage());
     }
     // Kiem tra looi DB neu co
@@ -66,7 +66,12 @@ public class DemoRunner {
     long stepPrice = 10;
     Item phone =
         ItemFactory.createItem(
-            "IPhone 16 Pro Max", seller.getId(), "Dien thoai moi", startingPrice, stepPrice, ItemType.ELECTRONICS);
+            "IPhone 16 Pro Max",
+            seller.getId(),
+            "Dien thoai moi",
+            startingPrice,
+            stepPrice,
+            ItemType.ELECTRONICS);
     phone = itemService.add(phone);
     System.out.println("San pham " + phone.getName() + " da dang voi ID: " + phone.getId());
     // 3. Tao phien dau gia

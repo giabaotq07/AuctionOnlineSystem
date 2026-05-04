@@ -11,7 +11,6 @@ import app.models.Auction;
 import app.models.BidTransaction;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -143,6 +142,6 @@ public class BidService {
 
   /** Lấy giá hiện tại của phiên (dùng nội bộ). */
   private long getCurrentPrice(Connection conn, int sessionId) {
-      return sessionDAO.findById(conn, sessionId).map(Auction::getHighestBid).orElse(0L);
+    return sessionDAO.findById(conn, sessionId).map(Auction::getHighestBid).orElse(0L);
   }
 }

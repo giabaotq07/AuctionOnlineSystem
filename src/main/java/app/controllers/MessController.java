@@ -81,19 +81,19 @@ public class MessController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-      FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/firstscene.fxml"));
-      Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-      Scene scene = new Scene(loader.load(), 1280, 720);
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/firstscene.fxml"));
+    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    Scene scene = new Scene(loader.load(), 1280, 720);
 
-      // Dùng đường dẫn tuyệt đối bắt đầu bằng dấu / để tránh nhầm thư mục
-      java.net.URL cssResource = getClass().getResource("/app/views/style.css");
-      if (cssResource != null) {
-          scene.getStylesheets().add(cssResource.toExternalForm());
-      } else {
-          System.out.println("Cảnh báo: Không tìm thấy file style.css!");
-      }
+    // Dùng đường dẫn tuyệt đối bắt đầu bằng dấu / để tránh nhầm thư mục
+    java.net.URL cssResource = getClass().getResource("/app/views/style.css");
+    if (cssResource != null) {
+      scene.getStylesheets().add(cssResource.toExternalForm());
+    } else {
+      System.out.println("Cảnh báo: Không tìm thấy file style.css!");
+    }
 
-      stage.setScene(scene);
-      stage.show();
+    stage.setScene(scene);
+    stage.show();
   }
 }

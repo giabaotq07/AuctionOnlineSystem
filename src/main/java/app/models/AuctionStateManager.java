@@ -2,7 +2,6 @@ package app.models;
 
 import app.enums.AuctionStatus;
 import app.obserser.AuctionObserver;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class AuctionStateManager implements java.io.Serializable {
 
   public void registerObserverToActive(AuctionObserver observer) {
     for (Auction session : activeAuctions) {
-      //session.registerObserver(observer);
+      // session.registerObserver(observer);
     }
   }
 }

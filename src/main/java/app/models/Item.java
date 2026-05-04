@@ -2,7 +2,6 @@ package app.models;
 
 import app.enums.ItemStatus;
 import app.enums.ItemType;
-
 import java.time.LocalDateTime;
 
 public abstract class Item extends Entity {

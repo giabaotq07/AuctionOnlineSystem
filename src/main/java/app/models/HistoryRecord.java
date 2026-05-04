@@ -1,7 +1,6 @@
 package app.models;
 
 import app.enums.HistoryType;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -15,7 +14,7 @@ public class HistoryRecord implements Serializable {
     this.sessionId = sessionId;
     this.type = type;
     this.message = message;
-    this.time =  LocalDateTime.now();
+    this.time = LocalDateTime.now();
   }
 
   public int getSessionId() {

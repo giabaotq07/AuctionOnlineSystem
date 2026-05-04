@@ -1,7 +1,6 @@
 package app.config;
 
 import app.exception.DatabaseException;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -18,7 +17,7 @@ public final class DatabaseConnection {
     if (instance == null) {
       synchronized (DatabaseConnection.class) {
         if (instance == null) {
-            instance = new DatabaseConnection(DatabaseConfig.load());
+          instance = new DatabaseConnection(DatabaseConfig.load());
         }
       }
     }

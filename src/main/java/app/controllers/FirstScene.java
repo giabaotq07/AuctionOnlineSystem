@@ -7,10 +7,8 @@ import app.enums.AuctionStatus;
 import app.models.Auction;
 import app.models.DataStore;
 import app.network.Client;
-
 import java.io.IOException;
 import java.util.List;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
@@ -47,16 +45,13 @@ public class FirstScene {
 
     if (btnAuth != null) {
       btnAuth.setText(
-              DataStore.currentUser != null
-                      ? "Xin chào, " + DataStore.currentUser.getName()
-                      : "Đăng nhập / Đăng ký"
-      );
+          DataStore.currentUser != null
+              ? "Xin chào, " + DataStore.currentUser.getName()
+              : "Đăng nhập / Đăng ký");
     }
 
     List<Auction> activeS =
-            DataStore.sessions.stream()
-                    .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
-                    .toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
 
     cardContainer = createContainer(activeS);
 
@@ -82,28 +77,29 @@ public class FirstScene {
       activeAuctionsPane.getChildren().add(viewport);
 
       // ===== AUTO SCROLL FIXED =====
-      autoScroll = new Timeline(
-              new KeyFrame(Duration.seconds(3), e -> {
+      autoScroll =
+          new Timeline(
+              new KeyFrame(
+                  Duration.seconds(3),
+                  e -> {
+                    double contentWidth = cardContainer.getWidth();
+                    double viewWidth = viewport.getViewportBounds().getWidth();
 
-                double contentWidth = cardContainer.getWidth();
-                double viewWidth = viewport.getViewportBounds().getWidth();
+                    double maxScroll = contentWidth - viewWidth;
+                    if (maxScroll <= 0) return;
 
-                double maxScroll = contentWidth - viewWidth;
-                if (maxScroll <= 0) return;
+                    double currentPixel = viewport.getHvalue() * maxScroll;
 
-                double currentPixel = viewport.getHvalue() * maxScroll;
+                    double step = CARD_WIDTH + SPACING;
 
-                double step = CARD_WIDTH + SPACING;
+                    double nextPixel = currentPixel + step;
 
-                double nextPixel = currentPixel + step;
+                    if (nextPixel >= maxScroll) {
+                      nextPixel = 0;
+                    }
 
-                if (nextPixel >= maxScroll) {
-                  nextPixel = 0;
-                }
-
-                viewport.setHvalue(nextPixel / maxScroll);
-              })
-      );
+                    viewport.setHvalue(nextPixel / maxScroll);
+                  }));
 
       autoScroll.setCycleCount(Timeline.INDEFINITE);
       autoScroll.play();
@@ -121,35 +117,36 @@ public class FirstScene {
 
       searchField.textProperty().addListener((obs, o, n) -> searchSessions(n));
 
-      Timeline timeline = new Timeline(
-              new KeyFrame(Duration.seconds(5), e -> {
+      Timeline timeline =
+          new Timeline(
+              new KeyFrame(
+                  Duration.seconds(5),
+                  e -> {
+                    String key = searchField != null ? searchField.getText() : "";
 
-                String key = searchField != null ? searchField.getText() : "";
+                    if (key == null || key.isBlank()) {
+                      sessionListView.getItems().setAll(DataStore.sessions);
+                    } else {
+                      searchSessions(key);
+                    }
 
-                if (key == null || key.isBlank()) {
-                  sessionListView.getItems().setAll(DataStore.sessions);
-                } else {
-                  searchSessions(key);
-                }
+                    if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
 
-                if (activeAuctionsPane != null && !activeAuctionsPane.getChildren().isEmpty()) {
+                      ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
 
-                  ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
-
-                  List<Auction> actives =
+                      List<Auction> actives =
                           DataStore.sessions.stream()
-                                  .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
-                                  .toList();
+                              .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
+                              .toList();
 
-                  cardContainer = createContainer(actives);
-                  vp.setContent(cardContainer);
-                }
+                      cardContainer = createContainer(actives);
+                      vp.setContent(cardContainer);
+                    }
 
-                if (completedAuctionsPane != null) {
-                  populateCompletedAuctions();
-                }
-              })
-      );
+                    if (completedAuctionsPane != null) {
+                      populateCompletedAuctions();
+                    }
+                  }));
 
       timeline.setCycleCount(Timeline.INDEFINITE);
       timeline.play();
@@ -182,12 +179,11 @@ public class FirstScene {
     vbox.setMaxWidth(CARD_WIDTH);
 
     vbox.setStyle(
-            "-fx-background-color: #1a1f35;"
-                    + "-fx-background-radius: 8;"
-                    + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-                    + "-fx-padding: 15;"
-                    + "-fx-spacing: 10;"
-    );
+        "-fx-background-color: #1a1f35;"
+            + "-fx-background-radius: 8;"
+            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
+            + "-fx-padding: 15;"
+            + "-fx-spacing: 10;");
 
     // ===== IMAGE (RESTORED) =====
     StackPane imagePane = new StackPane();
@@ -205,7 +201,7 @@ public class FirstScene {
 
     // ===== PRICE =====
     Label priceLabel =
-            new Label(String.format("Giá hiện tại: %,.0f đ", session.getCurrentHighestPrice()));
+        new Label(String.format("Giá hiện tại: %,.0f đ", session.getCurrentHighestPrice()));
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     // ===== TIME =====
@@ -217,16 +213,15 @@ public class FirstScene {
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white;");
     btnDetail.setOnAction(
-            e -> {
-              try {
-                // Gọi hàm để mở màn hình LIVE với dữ liệu của phiên đấu giá hiện tại
-                openLiveWithSession(session, e);
-              } catch (IOException ex) {
-                // Nếu lỗi, nó chỉ in ra Console mà không báo lên giao diện
-                ex.printStackTrace();
-              }
-            });
-
+        e -> {
+          try {
+            // Gọi hàm để mở màn hình LIVE với dữ liệu của phiên đấu giá hiện tại
+            openLiveWithSession(session, e);
+          } catch (IOException ex) {
+            // Nếu lỗi, nó chỉ in ra Console mà không báo lên giao diện
+            ex.printStackTrace();
+          }
+        });
 
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
 
@@ -261,9 +256,7 @@ public class FirstScene {
     completedAuctionsPane.getChildren().clear();
 
     List<Auction> completeds =
-            DataStore.sessions.stream()
-                    .filter(s -> s.getStatus() == AuctionStatus.COMPLETED)
-                    .toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.COMPLETED).toList();
 
     for (Auction session : completeds) {
 
@@ -336,9 +329,7 @@ public class FirstScene {
       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
 
       List<Auction> actives =
-              DataStore.sessions.stream()
-                      .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
-                      .toList();
+          DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
 
       cardContainer = createContainer(actives);
       vp.setContent(cardContainer);
@@ -348,7 +339,6 @@ public class FirstScene {
       populateCompletedAuctions();
     }
   }
-
 
   private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {
     // 1. Kiểm tra kết nối mạng
@@ -366,13 +356,13 @@ public class FirstScene {
 
     // 3. Chuyển sang màn LIVE và truyền dữ liệu phiên đấu giá vào Controller của màn đó
     NavigationManager.getInstance()
-            .navigateTo(
-                    View.LIVE,
-                    controller -> {
-                      if (controller instanceof LiveController) {
-                        ((LiveController) controller).setSession(session);
-                      }
-                    });
+        .navigateTo(
+            View.LIVE,
+            controller -> {
+              if (controller instanceof LiveController) {
+                ((LiveController) controller).setSession(session);
+              }
+            });
   }
 
   private void pauseScroll() {

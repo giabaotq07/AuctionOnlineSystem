@@ -7,7 +7,6 @@ import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.Auction;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
