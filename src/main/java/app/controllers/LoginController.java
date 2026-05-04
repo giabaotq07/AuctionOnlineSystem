@@ -1,13 +1,16 @@
 package app.controllers;
 
+import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
-import app.dao.UserDAO;
-import app.models.CommandType;
+import app.dto.LoginRequest;
+import app.dto.LoginResponse;
+import app.enums.CommandType;
+import app.models.DataStore;
 import app.models.MessagePacket;
 import app.models.User;
 import app.network.Client;
-import java.io.IOException;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -22,63 +25,47 @@ public class LoginController {
   @FXML private Stage stage;
   @FXML private Scene scene;
   @FXML private Label lblRegister;
-  private UserDAO userDAO;
+  private LoginRequest loginRequest;
+  private LoginResponse response;
+  private User user;
 
   @FXML
-  public void initialize() {
-    userDAO = new UserDAO();
+  private void initialize() {
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet -> {
+              Platform.runLater(
+                  () -> {
+                    loginButton.setDisable(false);
+                    if (packet.getType() == CommandType.LOGIN) {
+                      response = (LoginResponse) packet.getData();
+                    }
+                    if (response.success()) {
+                      DataStore.currentUser = response.user();
+                      SwitchToUI();
+                    } else {
+                      AlertUtils.showError("Đăng nhập thất bại", response.message());
+                    }
+                  });
+            });
   }
 
   @FXML
-  public void handleLogin(ActionEvent event) {
+  public void handleLogin(ActionEvent actionEvent) {
+    loginButton.setDisable(true);
     String userInput = account.getText();
     String passInput = password.getText();
-
-    // 1. Kiểm tra rỗng ở phía Client trước khi đụng vào Database
     if (userInput.isEmpty() || passInput.isEmpty()) {
       showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Vui lòng nhập đầy đủ account và Password!");
+      loginButton.setDisable(false);
       return;
     }
-    // 2. Mang đi gọi hàm kiểm tra từ UserDao
-    // (Thay đổi tên hàm checkCredentials cho đúng với method ông đã viết trong UserDao nhé)
-    boolean isLoginSuccessful = userDAO.checkLogin(userInput, passInput);
-
-    // 3. Xử lý kết quả trả về
-    if (isLoginSuccessful) {
-      sendLoginRequest(userInput);
-      // Nhảy sang màn hình chính
-      try {
-        // gửi lệnh đăng nhập tới server
-        SwitchToUI(event);
-      } catch (IOException e) {
-        e.printStackTrace();
-        System.out.println("Không thể chuyển sang giao diện chính sau khi đăng nhập thành công.");
-      }
-    } else {
-      // Thông báo lỗi
-      showAlert(
-          Alert.AlertType.ERROR, "Lỗi đăng nhập", "Tên đăng nhập hoặc mật khẩu không chính xác!");
-    }
-  }
-
-  public void sendLoginRequest(String account) {
-    User user;
-    UserDAO userDao = new UserDAO();
-    user = userDao.loadUsers(account);
-    if (user == null) {
-      System.out.println("ko thấy user");
-      return;
-    }
-    try {
-      Client.getInstance().connect();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, user.getName()));
+    loginRequest = new LoginRequest(userInput, passInput);
+    Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, loginRequest));
   }
 
   @FXML
-  public void SwitchToUI(ActionEvent event) throws IOException {
+  public void SwitchToUI() {
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 

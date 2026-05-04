@@ -30,6 +30,6 @@ Các Design Patterns được áp dụng:
 ## Cài đặt & Chạy dự án
 
 1. **Clone repository:**
-   ```bash
-   git clone [https://github.com/username/online-auction-system.git](https://github.com/username/online-auction-system.git)
-   cd online-auction-system
+  ```bash
+  git clone [https://github.com/username/online-auction-system.git](https://github.com/username/online-auction-system.git)
+  cd online-auction-system

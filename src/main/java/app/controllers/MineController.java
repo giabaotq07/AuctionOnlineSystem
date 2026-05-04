@@ -5,12 +5,10 @@ import app.config.View;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class MineController {
   @FXML private Stage stage;
-  private Scene scene;
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {

@@ -1,19 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.LoginController">
-   <children>
-      <Pane layoutX="330.0" layoutY="250.0" prefHeight="380.0" prefWidth="550.0" styleClass="card" />
-      <Label layoutX="330.0" layoutY="280.0" prefWidth="550.0" styleClass="title-label" text="ĐĂNG NHẬP" />
-      <TextField fx:id="account" layoutX="383.0" layoutY="354.0" prefHeight="40.0" prefWidth="451.0" promptText="Username" />
-      <Button fx:id="loginButton" layoutX="523.0" layoutY="494.0" prefWidth="170.0" mnemonicParsing="false" onAction="#handleLogin" styleClass="primary-button" text="Đăng Nhập" />
-      <PasswordField fx:id="password" layoutX="383.0" layoutY="410.0" prefHeight="40.0" prefWidth="451.0" promptText="Password" />
-      <Label fx:id="lblRegister" alignment="CENTER" layoutX="438.0" layoutY="553.0" prefHeight="35.0" prefWidth="361.0" text="Chưa có tài khoản? Đăng ký ngay" styleClass="link-label" onMouseEntered="#handleMouseEntered" onMouseExited="#handleMouseExited"  onMouseClicked="#switchToRegister"/>
-   </children>
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0a0b10;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.LoginController">
+  <children>
+   <VBox alignment="CENTER" layoutX="390.0" layoutY="110.0" prefWidth="500.0" spacing="20.0"
+  style="-fx-background-color: #161b26; -fx-background-radius: 12; -fx-padding: 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 15, 0, 0, 0);">
+  <children>
+  <HBox alignment="TOP_RIGHT" prefWidth="200.0">
+    <Label text="X" textFill="#2563eb" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-cursor: hand;" />
+  </HBox>
+
+  <Label text="LOPPY AUCTION" textFill="WHITE" style="-fx-font-size: 28px; -fx-font-weight: bold;" />
+
+  <HBox alignment="CENTER" spacing="5">
+    <Label text="Bạn chưa có tài khoản? " style="-fx-font-size: 16px; -fx-text-fill: #9ca3af;" />
+    <Label fx:id="lblRegister" text="Đăng Ký Ngay" onMouseClicked="#switchToRegister" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2563eb; -fx-cursor: hand;" />
+  </HBox>
+
+  <VBox spacing="10.0" prefWidth="420.0">
+    <Label text="Tên đăng nhập / Email" style="-fx-font-size: 14px; -fx-text-fill: #9ca3af;" />
+    <TextField fx:id="account" promptText="Nhập tên đăng nhập/Email"
+  style="-fx-font-size: 14px; -fx-padding: 15; -fx-background-color: #0f121a; -fx-text-fill: white; -fx-border-color: #2d3748; -fx-border-radius: 8; -fx-background-radius: 8;" />
+  </VBox>
+
+  <VBox spacing="10.0" prefWidth="420.0">
+    <Label text="Mật khẩu" style="-fx-font-size: 14px; -fx-text-fill: #9ca3af;" />
+    <PasswordField fx:id="password" promptText="Mật khẩu"
+  style="-fx-font-size: 14px; -fx-padding: 15; -fx-background-color: #0f121a; -fx-text-fill: white; -fx-border-color: #2d3748; -fx-border-radius: 8; -fx-background-radius: 8;" />
+  </VBox>
+
+  <HBox alignment="CENTER_LEFT" prefWidth="420.0">
+    <Label text="Quên mật khẩu?" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #3b82f6; -fx-underline: false; -fx-cursor: hand;" />
+  </HBox>
+
+  <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" prefHeight="50.0" prefWidth="420.0" text="ĐĂNG NHẬP"
+  style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;">
+    <VBox.margin>
+  <Insets top="10.0" />
+    </VBox.margin>
+  </Button>
+  </children>
+   </VBox>
+  </children>
 </AnchorPane>

@@ -1,6 +1,6 @@
 package app.controllers;
 
-import app.models.CommandType;
+import app.enums.CommandType;
 import app.models.MessagePacket;
 import app.network.Client;
 import java.io.IOException;
@@ -81,12 +81,19 @@ public class MessController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/user_interface.fxml"));
+    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/firstscene.fxml"));
     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     Scene scene = new Scene(loader.load(), 1280, 720);
+
+    // Dùng đường dẫn tuyệt đối bắt đầu bằng dấu / để tránh nhầm thư mục
+    java.net.URL cssResource = getClass().getResource("/app/views/style.css");
+    if (cssResource != null) {
+      scene.getStylesheets().add(cssResource.toExternalForm());
+    } else {
+      System.out.println("Cảnh báo: Không tìm thấy file style.css!");
+    }
+
     stage.setScene(scene);
-    // String css = this.getClass().getResource("style.css").toExternalForm();
-    // scene.getStylesheets().add(css);
     stage.show();
   }
 }

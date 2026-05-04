@@ -1,28 +1,34 @@
 package app.config;
 
+import app.exception.DatabaseException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class DatabaseConnection {
-  private static Connection connection = null;
-  private static final String URL = "jdbc:mysql://localhost:3306/auction_db";
-  private static final String USER = "root"; // Đổi thành user MySQL của cậu
-  private static final String PASSWORD = "123456"; // Đổi thành pass MySQL của cậu
+public final class DatabaseConnection {
+  private static volatile DatabaseConnection instance;
+  private final DatabaseConfig config;
 
-  // Private constructor để ngăn tạo object từ bên ngoài
-  public static Connection getConnection() throws SQLException {
-    return DriverManager.getConnection(URL, USER, PASSWORD);
+  private DatabaseConnection(DatabaseConfig config) {
+    this.config = config;
   }
 
-  public static void closeConnection() {
-    if (connection != null) {
-      try {
-        connection.close();
-        System.out.println("Đóng kết nối MySQL thành công!");
-      } catch (SQLException e) {
-        e.printStackTrace();
+  public static DatabaseConnection getInstance() {
+    if (instance == null) {
+      synchronized (DatabaseConnection.class) {
+        if (instance == null) {
+          instance = new DatabaseConnection(DatabaseConfig.load());
+        }
       }
+    }
+    return instance;
+  }
+
+  public Connection getConnection() {
+    try {
+      return DriverManager.getConnection(config.getUrl(), config.getUser(), config.getPassword());
+    } catch (SQLException e) {
+      throw new DatabaseException("Unable to connect to database", e);
     }
   }
 }

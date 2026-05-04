@@ -1,35 +1,65 @@
 package app.models;
 
-public class BidTransaction {
-  private int userId, auctionId, amount;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
-  public BidTransaction(int amount, int auctionId, int userId) {
+public class BidTransaction implements Serializable {
+  private int id;
+  private final int bidderId;
+  private final String bidderName;
+  private final long amount;
+  private final LocalDateTime createAt;
+  private boolean isAutoBid;
+
+  public BidTransaction(
+      int id,
+      int bidderId,
+      String bidderName,
+      long amount,
+      LocalDateTime createAt,
+      boolean isAutoBid) {
+    this.id = id;
+    this.bidderId = bidderId;
+    this.bidderName = bidderName;
     this.amount = amount;
-    this.auctionId = auctionId;
-    this.userId = userId;
+    this.createAt = createAt;
+    this.isAutoBid = isAutoBid;
   }
 
-  public int getAmount() {
+  public BidTransaction(int bidderId, String bidderName, long amount, boolean isAutoBid) {
+    this.bidderId = bidderId;
+    this.bidderName = bidderName;
+    this.amount = amount;
+    this.createAt = LocalDateTime.now();
+    this.isAutoBid = isAutoBid;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getBidderName() {
+    return bidderName;
+  }
+
+  public void setId(int id) {
+    this.id = id;
+  }
+
+  public int getBidderId() {
+    return bidderId;
+  }
+
+  public long getAmount() {
     return amount;
   }
 
-  public void setAmount(int amount) {
-    this.amount = amount;
+  public LocalDateTime getCreateAt() {
+    return createAt;
   }
 
-  public int getAuctionId() {
-    return auctionId;
-  }
-
-  public void setAuctionId(int auctionId) {
-    this.auctionId = auctionId;
-  }
-
-  public int getUserId() {
-    return userId;
-  }
-
-  public void setUserId(int userId) {
-    this.userId = userId;
+  @Override
+  public String toString() {
+    return bidderId + " đã trả $" + amount + " vào lúc " + createAt.withNano(0);
   }
 }

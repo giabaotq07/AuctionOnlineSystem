@@ -1,6 +1,9 @@
 package app.controllers;
 
+import app.dao.UserDAO;
+import app.enums.HistoryType;
 import app.models.*;
+import app.service.UserService;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,18 +15,23 @@ import javafx.stage.Stage;
 
 public class BidController {
 
-  @FXML private ListView<AuctionSession> sessionListView;
+  UserDAO userDao;
+  UserService userService;
+  // ===== INPUT =====
+  @FXML private ListView<Auction> sessionListView;
 
   @FXML private TextField bidderField;
   @FXML private TextField amountField;
 
   @FXML private TextArea outputArea;
 
-  private AuctionSession session;
+  private Auction session;
 
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
+    userDao = UserDAO.getInstance();
+    userService = new UserService(userDao);
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
 
@@ -31,7 +39,7 @@ public class BidController {
 
     sessionListView.setOnMouseClicked(
         e -> {
-          AuctionSession s = sessionListView.getSelectionModel().getSelectedItem();
+          Auction s = sessionListView.getSelectionModel().getSelectedItem();
           if (s == null) return;
           session = s;
 
@@ -52,13 +60,13 @@ public class BidController {
       String userName = bidderField.getText();
       double amount = Double.parseDouble(amountField.getText());
 
-      User bidder = new User("b1", userName);
+      User bidder = userService.getUserByAccount(userName);
 
       boolean success = session.placeBid(bidder, amount);
       if (success) {
         HistoryStore.history.add(
             new HistoryRecord(
-                session.getSessionId(),
+                session.getId(),
                 HistoryType.BID,
                 bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName()));
       }

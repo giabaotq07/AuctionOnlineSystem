@@ -1,217 +1,155 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import app.config.PasswordUtils;
+import app.enums.UserRole;
+import app.exception.DatabaseException;
+import app.models.Account;
 import app.models.User;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import app.models.UserFactory;
+import app.models.Wallet;
+import app.util.PasswordUtils;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class UserDAO {
-  // Trả về true nếu đăng nhập thành công
-  public boolean checkLogin(String account, String password) {
-    String query = "SELECT id FROM users WHERE account = ? AND password = ?";
+  private final DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
 
-    // Dùng try-with-resources để tự động đóng kết nối (rất hợp với JDK bản mới)
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query)) {
+  private static final String TABLE = "users";
 
-      pstmt.setString(1, account);
-      pstmt.setString(
-          2,
-          PasswordUtils.hashPassword(
-              password)); // Ở hệ thống thực tế, bạn sẽ phải hash mật khẩu trước khi so sánh
+  private static final String BASE_SELECT =
+      "SELECT id, username, password, full_name, assets, role FROM users ";
 
-      try (ResultSet rs = pstmt.executeQuery()) {
-        return rs.next(); // Nếu ResultSet có dữ liệu -> Sai/Đúng
-      }
-
-    } catch (SQLException e) {
-      return false;
-    }
+  private User mapUser(ResultSet rs) throws SQLException {
+    return UserFactory.createUser(
+        rs.getInt("id"),
+        rs.getString("full_name"),
+        new Account(rs.getString("username"), rs.getString("password")),
+        new Wallet(rs.getLong("assets")),
+        UserRole.valueOf(rs.getString("role")));
   }
 
-  public User loadUsers(String account) {
-    String query = "SELECT * FROM users WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query)) {
-      pstmt.setString(1, account);
-      try (ResultSet rs = pstmt.executeQuery()) {
-        if (rs.next()) {
-          String id = rs.getString("id");
-          String username = rs.getString("account");
-          String password = rs.getString("password");
-          String name = rs.getString("name");
-          return new User(id, name, username, password);
-        }
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    return null;
+  public Optional<User> findById(int id) {
+    return findOne(BASE_SELECT + "WHERE id = ?", id);
   }
 
-  public User addUser(String account, String password, String name) {
-    String insertSql = "INSERT INTO users (account, password, name) VALUES (?, ?, ?)";
-    int generatedId = -1;
-
-    // 1. Chú ý tham số thứ 2: Statement.RETURN_GENERATED_KEYS
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt =
-            conn.prepareStatement(insertSql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
-
-      pstmt.setString(1, account);
-      pstmt.setString(2, PasswordUtils.hashPassword(password)); // Nhớ hash mật khẩu nhé!
-      pstmt.setString(3, name);
-
-      // 2. Chạy lệnh INSERT
-      int rowsAffected = pstmt.executeUpdate();
-
-      // 3. Nếu INSERT thành công (ảnh hưởng > 0 dòng)
-      if (rowsAffected > 0) {
-        // Lấy ra danh sách các khóa (ID) vừa được tạo
-        try (ResultSet rs = pstmt.getGeneratedKeys()) {
-          if (rs.next()) {
-            generatedId = rs.getInt(1); // Cột 1 chính là ID tự tăng
-            System.out.println("Đăng ký thành công! ID tự động của user là: " + generatedId);
-            return loadUsers(account); // Trả về user vừa tạo dựa trên account
-          }
-        }
-      }
-    } catch (SQLException e) {
-      // Mã 1062 là Duplicate Entry (Trùng lặp khóa chính hoặc cột UNIQUE)
-      if (e.getErrorCode() == 1062) {
-        System.out.println("Tài khoản '" + account + "' đã có người sử dụng!");
-      } else {
-        System.err.println("Lỗi SQL khi thêm User: " + e.getMessage());
-        e.printStackTrace(); // In ra lỗi khác nếu có
-      }
-    } catch (Exception ex) {
-      System.err.println("Lỗi không xác định khi thêm User: " + ex.getMessage());
-      ex.printStackTrace();
-    }
-    return null; // Trả về null nếu có lỗi hoặc không thành công
+  public Optional<User> findByUsername(String username) {
+    return findOne(BASE_SELECT + "WHERE username = ?", username);
   }
 
-  public boolean deleteUser(String account) {
-    String deleteSql = "DELETE FROM users WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
-      pstmt.setString(1, account);
-      int rowsAffected = pstmt.executeUpdate();
-      if (rowsAffected > 0) {
-        System.out.println("User deleted: " + account);
-        return true; // Trả về true sau khi xóa thành công
-      } else {
-        System.out.println("User '" + account + "' không tồn tại.");
-        return false; // Trả về false nếu không tìm thấy user
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-      return false;
-    }
+  public Optional<User> findByUsername(Connection conn, String username) {
+    return findOne(conn, BASE_SELECT + "WHERE username = ?", username);
   }
 
-  public User updateUser(User user) {
-    String updateSql = "UPDATE users SET name = ?, password = ? WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
-
-      pstmt.setString(1, user.getName());
-      pstmt.setString(2, PasswordUtils.hashPassword(user.getPassword()));
-      pstmt.setString(3, user.getAccount());
-
-      int rowsAffected = pstmt.executeUpdate();
-      if (rowsAffected > 0) {
-        System.out.println("User updated: " + user.getAccount());
-        return loadUsers(user.getAccount());
-      } else {
-        System.out.println("User '" + user.getAccount() + "' không tồn tại.");
-        return null;
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    return null;
-  }
-
-  public void updateUserBalance(User user) {
-    String updateSql = "UPDATE users SET assets = ? WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
-
-      pstmt.setDouble(1, user.getAssets());
-      pstmt.setString(2, user.getAccount());
-
-      int rowsAffected = pstmt.executeUpdate();
-      if (rowsAffected > 0) {
-        System.out.println("User balance updated: " + user.getAccount());
-      } else {
-        System.out.println("User '" + user.getAccount() + "' không tồn tại.");
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-  }
-
-  public List<User> getAllUsers() {
-    String query = "SELECT * FROM users";
-    List<User> list = new ArrayList<>();
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query);
-        ResultSet rs = pstmt.executeQuery()) {
-
+  public List<User> findAll() {
+    String sql = BASE_SELECT + "ORDER BY id";
+    List<User> users = new ArrayList<>();
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ResultSet rs = ps.executeQuery()) {
       while (rs.next()) {
-        String id = rs.getString("id");
-        String account = rs.getString("account");
-        String name = rs.getString("name");
-        String password = rs.getString("password");
-        list.add(new User(id, name, account, password));
+        users.add(mapUser(rs));
       }
+      return users;
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Không thể lấy danh sách users.", e);
     }
-    return list;
   }
 
-  public User getUserById(int id) {
-    String query = "SELECT * FROM users WHERE id = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-      pstmt.setInt(1, id);
-      try (ResultSet rs = pstmt.executeQuery()) {
+  public User save(User user) {
+    String sql =
+        """
+        INSERT INTO users (username, password, full_name, assets, role)
+        VALUES (?, ?, ?, ?, ?)
+        """;
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+      ps.setString(1, user.getAccount().getUsername());
+      ps.setString(2, PasswordUtils.hashPassword(user.getAccount().getPassword()));
+      ps.setString(3, user.getName());
+      ps.setLong(4, user.getWallet().getAssets());
+      ps.setString(5, user.getRole().name());
+      if (ps.executeUpdate() == 0) {
+        throw new DatabaseException("Không thể thêm user.");
+      }
+      try (ResultSet rs = ps.getGeneratedKeys()) {
         if (rs.next()) {
-          String strId = rs.getString("id");
-          String account = rs.getString("account");
-          String name = rs.getString("name");
-          String password = rs.getString("password");
-          return new User(strId, name, account, password);
+          user.setId(rs.getInt(1));
         }
       }
+      return user;
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Lỗi khi thêm user.", e);
     }
-    return null;
   }
 
-  public String getUserRole(String account) {
-    String query = "SELECT role FROM users WHERE account = ?";
-    try (Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement pstmt = conn.prepareStatement(query)) {
+  public void updateProfile(int id, String fullName) {
+    executeUpdate("UPDATE users SET full_name = ? WHERE id = ?", fullName, id);
+  }
 
-      pstmt.setString(1, account);
-      try (ResultSet rs = pstmt.executeQuery()) {
-        if (rs.next()) {
-          return rs.getString("role");
-        }
+  public void updateUsername(int id, String newUsername) {
+    executeUpdate("UPDATE users SET username = ? WHERE id = ?", newUsername, id);
+  }
+
+  public void updatePassword(int id, String newPassword) {
+    executeUpdate(
+        "UPDATE users SET password = ? WHERE id = ?", PasswordUtils.hashPassword(newPassword), id);
+  }
+
+  public void adjustWallet(int id, long delta) {
+    int rows;
+    if (delta < 0) {
+      rows =
+          executeUpdate(
+              "UPDATE users SET assets = assets + ? WHERE id = ? AND assets >= ?",
+              delta,
+              id,
+              -delta);
+      if (rows == 0) {
+        throw new DatabaseException("Số dư không đủ để thực hiện giao dịch.");
+      }
+    } else {
+      executeUpdate("UPDATE users SET assets = assets + ? WHERE id = ?", delta, id);
+    }
+  }
+
+  private Optional<User> findOne(String sql, Object... params) {
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(mapUser(rs)) : Optional.empty();
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
     }
-    return null;
+  }
+
+  private Optional<User> findOne(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(mapUser(rs)) : Optional.empty();
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private int executeUpdate(String sql, Object... params) {
+    try (Connection conn = databaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      return ps.executeUpdate();
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private void setParameters(PreparedStatement ps, Object... params) throws SQLException {
+    for (int i = 0; i < params.length; i++) {
+      ps.setObject(i + 1, params[i]);
+    }
   }
 }
