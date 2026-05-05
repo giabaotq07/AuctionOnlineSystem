@@ -9,4 +9,3 @@ public class App {
     Application.launch(Main.class, args);
   }
 }
-/
