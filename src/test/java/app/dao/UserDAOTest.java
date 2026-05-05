@@ -10,7 +10,7 @@ import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
-import app.util.PasswordUtils;
+import app.utils.PasswordUtils;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Optional;

@@ -5,7 +5,7 @@ import app.dao.UserDAO;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.User;
-import app.util.PasswordUtils;
+import app.utils.PasswordUtils;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;

@@ -2,6 +2,7 @@ package app.network;
 
 import app.enums.PacketType;
 import app.models.Packet;
+import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
@@ -9,7 +10,7 @@ import java.util.Map;
 
 public class ClientHandler implements Runnable {
   private final Socket socket;
-  private ObjectOutputStream writer;
+  private BufferedWriter writer;
   private String username;
 
   private static final Map<PacketType, Command> COMMANDS = new HashMap<>();
@@ -27,14 +28,15 @@ public class ClientHandler implements Runnable {
   @Override
   public void run() {
     try {
-      writer = new ObjectOutputStream(socket.getOutputStream());
+      writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
       writer.flush();
-      ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
-      Packet packet;
-      while ((packet = (Packet) reader.readObject()) != null) {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      String json;
+      while ((json = reader.readLine()) != null) {
+        Packet packet = JsonUtil.fromJson(json, Packet.class);
         handlePacket(packet);
       }
-    } catch (IOException | ClassNotFoundException e) {
+    } catch (IOException e) {
       close();
     }
   }
@@ -51,8 +53,9 @@ public class ClientHandler implements Runnable {
   public void sendMessage(Packet packet) {
     if (writer != null) {
       try {
-        writer.reset();
-        writer.writeObject(packet);
+        String json = JsonUtil.toJson(packet);
+        writer.write(json);
+        writer.newLine();
         writer.flush();
       } catch (IOException e) {
         System.err.println(

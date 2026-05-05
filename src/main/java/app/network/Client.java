@@ -7,6 +7,7 @@ import app.dto.BidRequest;
 import app.models.*;
 import app.service.BidObserverService;
 import app.service.BidService;
+import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
@@ -15,8 +16,8 @@ public class Client {
   private static volatile Client instance;
   private Socket socket;
   private String username;
-  private ObjectOutputStream out;
-  private ObjectInputStream in;
+  private BufferedWriter writer;
+  private BufferedReader reader;
   private Consumer<Packet> onMessageReceived;
   private boolean isConnected = false;
 
@@ -35,9 +36,9 @@ public class Client {
     System.out.println("[CLIENT] Đang kết nối...");
     socket = new Socket("127.0.0.1", 5000);
     System.out.println("[CLIENT] Kết nối thành công!");
-    out = new ObjectOutputStream(socket.getOutputStream());
-    out.flush();
-    in = new ObjectInputStream(socket.getInputStream());
+    writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+    writer.flush();
+    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     Thread thread = new Thread(this::listen);
     thread.setDaemon(true);
     thread.start();
@@ -46,13 +47,15 @@ public class Client {
 
   private void listen() {
     try {
-      Packet packet;
-      while ((packet = (Packet) in.readObject()) != null) {
+      String json;
+      while ((json = reader.readLine()) != null) {
+        Packet packet = JsonUtil.fromJson(json, Packet.class);
         System.out.println("[Server] " + packet.getType());
         // xử lý lại vấn đề thông báo cho controller
         switch (packet.getType()) {
-          case LOGIN:
+          case LOGIN, CHAT:
             onMessageReceived.accept(packet);
+            System.out.println("[CLIENT] Nhận được tin nhắn: " + packet.getData());
             break;
           case CREATE_AUCTION:
             Auction session = (Auction) packet.getData();
@@ -76,13 +79,9 @@ public class Client {
                 bidRequest.bidTransaction().getBidderId(),
                 bidRequest.bidTransaction().getAmount());
             break;
-
-          case CHAT:
-            onMessageReceived.accept(packet);
-            break;
         }
       }
-    } catch (IOException | ClassNotFoundException e) {
+    } catch (IOException e) {
       System.err.println("Mất kết nối Server.");
       isConnected = false;
     }
@@ -93,11 +92,12 @@ public class Client {
   }
 
   public void sendRequest(Packet packet) {
-    if (out != null) {
+    if (writer != null) {
       try {
-        out.reset(); // Reset Java object stream cache
-        out.writeObject(packet);
-        out.flush();
+        String json = JsonUtil.toJson(packet);
+        writer.write(json);
+        writer.newLine();
+        writer.flush();
       } catch (IOException e) {
         e.printStackTrace();
       }
