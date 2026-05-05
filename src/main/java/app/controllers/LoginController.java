@@ -16,6 +16,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 public class LoginController {
@@ -25,12 +26,23 @@ public class LoginController {
   @FXML private Stage stage;
   @FXML private Scene scene;
   @FXML private Label lblRegister;
+  @FXML private AnchorPane rootPane;
   private LoginRequest loginRequest;
   private LoginResponse response;
   private User user;
 
   @FXML
   private void initialize() {
+    String url = getClass()
+            .getResource("/app/views/images/background_login.png")
+            .toExternalForm();
+
+    rootPane.setStyle(
+            "-fx-background-image: url('" + url + "');" +
+                    "-fx-background-size: cover;" +
+                    "-fx-background-position: center center;" +
+                    "-fx-background-repeat: no-repeat;"
+    );
     Client.getInstance()
         .setOnMessageReceived(
             packet -> {
