@@ -59,20 +59,24 @@ public class Client {
           case PLACE_BID:
             Auction updatedSession = (Auction) packet.getData();
             app.models.DataStore.sessions.stream()
-                .filter(s -> s.getId() == updatedSession.getId())
-                .findFirst()
-                .ifPresent(
-                    s -> {
+                    .filter(s -> s.getId() == updatedSession.getId())
+                    .findFirst()
+                    .ifPresent(s -> {
+                      // 1. Cập nhật dữ liệu mới từ Server vào RAM Client
                       s.getBidHistory().clear();
                       s.getBidHistory().addAll(updatedSession.getBidHistory());
                       s.setStatus(updatedSession.getStatus());
 
+                      // 2. Kiểm tra và bắn thông báo cho UI
                       if (!s.getBidHistory().isEmpty()) {
-                        BidTransaction lastBidTransaction =
-                            s.getBidHistory().get(s.getBidHistory().size() - 1);
+                        BidTransaction lastBid = s.getBidHistory().get(s.getBidHistory().size() - 1);
+
+                        // SỬA TẠI ĐÂY: Chỉ truyền ĐÚNG 2 tham số (Giá và Tên người đặt)
+                        // Bỏ cái tham số tên sản phẩm đi để không còn lỗi "Expected 2 but found 3"
                         s.notifyObserversNewBid(
-                            lastBidTransaction.getAmount(),
-                            lastBidTransaction.getBidder().getName());
+                                lastBid.getAmount(),
+                                lastBid.getBidder().getName()
+                        );
                       }
                     });
             break;

@@ -1,9 +1,12 @@
 package app.controllers;
 
 import app.dao.UserDAO;
+import app.dao.BidDAO;
+import app.dao.HistoryDAO;
 import app.enums.HistoryType;
 import app.models.*;
 import app.service.UserService;
+import app.service.BidService;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -17,6 +20,9 @@ public class BidController {
 
   UserDAO userDao;
   UserService userService;
+  // DAO / Service để xử lý bid và lịch sử
+  private BidService bidService;
+  private HistoryDAO historyDAO;
   // ===== INPUT =====
   @FXML private ListView<Auction> sessionListView;
 
@@ -32,6 +38,9 @@ public class BidController {
   public void initialize() {
     userDao = UserDAO.getInstance();
     userService = new UserService(userDao);
+    // Khởi tạo service/dao cần thiết
+    bidService = new BidService(BidDAO.getInstance());
+    historyDAO = HistoryDAO.getInstance();
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
 
@@ -61,24 +70,40 @@ public class BidController {
       double amount = Double.parseDouble(amountField.getText());
 
       User bidder = userService.getUserByAccount(userName);
-
-      boolean success = session.placeBid(bidder, amount);
-      if (success) {
-        HistoryStore.history.add(
-            new HistoryRecord(
-                session.getId(),
-                HistoryType.BID,
-                bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName()));
+      if (bidder == null) {
+        outputArea.setText("Người dùng không tồn tại!");
+        return;
       }
 
-      if (success) {
-        outputArea.setText("Đặt giá thành công!");
-      } else {
-        outputArea.setText("Đặt giá thất bại!");
+      try {
+        bidService.placeBid(session.getId(), bidder.getId(), amount);
+
+        // ✅ CẬP NHẬT OUTPUT NGAY LẬP TỨC từ dữ liệu trong database
+        BidTransaction highestBid = bidService.getHighestBid(session.getId());
+        if (highestBid != null) {
+          outputArea.setText(
+              "Item: " + session.getItem().getName()
+              + "\nGiá hiện tại: $" + String.format("%.2f", highestBid.getAmount())
+              + "\nNguời trả giá cao nhất: " + highestBid.getBidder().getName());
+        }
+
+        // Lưu lịch sử vào database
+        HistoryRecord record = new HistoryRecord(
+            session.getId(),
+            HistoryType.BID,
+            bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName());
+        historyDAO.addHistoryRecord(record);
+
+        amountField.clear();
+        bidderField.clear();
+      } catch (Exception e) {
+        outputArea.setText("Lỗi đặt giá: " + e.getMessage());
       }
 
+    } catch (NumberFormatException e) {
+      outputArea.setText("Lỗi dữ liệu! Vui lòng nhập số hợp lệ.");
     } catch (Exception e) {
-      outputArea.setText("Lỗi dữ liệu!");
+      outputArea.setText("Lỗi: " + e.getMessage());
     }
   }
 

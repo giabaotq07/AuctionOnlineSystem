@@ -35,10 +35,11 @@ public class BidDAO {
   }
 
   public void placeBid(int sessionId, int userId, double bidAmount) {
+    // Giữ nguyên việc lấy Connection và setAutoCommit(false) của bạn
     try (Connection conn = DatabaseConnection.getConnection()) {
       conn.setAutoCommit(false);
       try {
-        // Lock phiên đấu giá để chống lost update / race condition
+        // 1. Lock phiên đấu giá (Giữ nguyên SQL của bạn)
         String lockSql = "SELECT id FROM auction_sessions WHERE id = ? FOR UPDATE";
         try (PreparedStatement checkStmt = conn.prepareStatement(lockSql)) {
           checkStmt.setInt(1, sessionId);
@@ -49,7 +50,7 @@ public class BidDAO {
           }
         }
 
-        // Lấy giá cao nhất TRONG VÒNG LOCK
+        // 2. Lấy giá cao nhất (Giữ nguyên SQL của bạn)
         String maxSql = "SELECT MAX(bid_amount) FROM bids WHERE session_id = ?";
         double currentMax = 0;
         try (PreparedStatement maxStmt = conn.prepareStatement(maxSql)) {
@@ -61,27 +62,32 @@ public class BidDAO {
           }
         }
 
-        // Validate
+        // 3. So sánh giá (Giữ nguyên logic của bạn)
         if (bidAmount <= currentMax) {
           throw new ServiceException("Giá đặt mới phải cao hơn giá hiện tại ($" + currentMax + ")");
         }
 
-        // Ghi dữ liệu
-        String insertSql =
-            "INSERT INTO bids (session_id, user_id, bid_amount, time) VALUES (?, ?, ?, ?)";
+        // 4. Ghi dữ liệu - Đảm bảo tên cột 'time' khớp với DB của bạn
+        String insertSql = "INSERT INTO bids (session_id, user_id, bid_amount, time) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
           pstmt.setInt(1, sessionId);
           pstmt.setInt(2, userId);
           pstmt.setDouble(3, bidAmount);
           pstmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+
           if (pstmt.executeUpdate() == 0) {
             throw new DatabaseException("Đặt giá thất bại, không có hàng nào được thêm.");
           }
         }
+
+        // QUAN TRỌNG: Phải commit để MySQL lưu dữ liệu
         conn.commit();
+        System.out.println("[Server] Đã lưu bid vào MySQL thành công.");
+
       } catch (Exception e) {
-        conn.rollback();
-        if (e instanceof RuntimeException) throw (RuntimeException) e;
+        conn.rollback(); // Nếu lỗi thì trả lại trạng thái cũ
+        // Giữ nguyên cách bạn ném Exception
+        if (e instanceof ServiceException || e instanceof DatabaseException) throw e;
         throw new DatabaseException("Lỗi db khi thực hiện đặt giá.", e);
       } finally {
         conn.setAutoCommit(true);
@@ -137,5 +143,27 @@ public class BidDAO {
       throw new DatabaseException("Lỗi khi lấy giá cao nhất của phiên: " + sessionId, e);
     }
     return null;
+  }
+
+  // ✅ Thêm method để lấy highest bid amount (giá cao nhất) từ database
+  public double getHighestBidAmount(int sessionId) {
+    String query = "SELECT MAX(bid_amount) AS max_bid FROM bids WHERE session_id = ?";
+    try (Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(query)) {
+      pstmt.setInt(1, sessionId);
+      try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+          double maxBid = rs.getDouble("max_bid");
+          // Nếu NULL (chưa có bid nào), trả về 0
+          if (rs.wasNull()) {
+            return 0;
+          }
+          return maxBid;
+        }
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi lấy giá cao nhất của phiên: " + sessionId, e);
+    }
+    return 0;
   }
 }

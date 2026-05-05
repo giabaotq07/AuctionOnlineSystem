@@ -4,11 +4,13 @@ import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.AuctionDAO;
+import app.dao.BidDAO;
 import app.dao.HistoryDAO;
 import app.enums.HistoryType;
 import app.models.Auction;
 import app.models.HistoryRecord;
 import app.network.Client;
+import app.service.BidService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -34,6 +36,9 @@ public class MyHistoryController {
 
     private static final double CARD_WIDTH = 280;
     private static final double SPACING = 20; // Khớp với spacing="20" trong FXML
+
+    // ✅ Thêm BidService để lấy highest bid từ database
+    private final BidService bidService = new BidService(BidDAO.getInstance());
 
     @FXML
     public void initialize() {
@@ -87,7 +92,10 @@ public class MyHistoryController {
         titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
         titleLabel.setWrapText(true);
 
-        Label priceLabel = new Label(String.format("Giá: %,.0f đ", session.getCurrentHighestPrice()));
+        // ✅ Lấy giá cao nhất từ database thay vì in-memory
+        double highestBid = bidService.getHighestBidAmount(session.getId());
+        double displayPrice = (highestBid > 0) ? highestBid : session.getItem().getStartingPrice();
+        Label priceLabel = new Label(String.format("Giá: %,.0f đ", displayPrice));
         priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
         Button btnDetail = new Button("Chi tiết");

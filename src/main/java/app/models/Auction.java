@@ -104,8 +104,10 @@ public class Auction implements AuctionSubject, Serializable {
   }
 
   public double getCurrentHighestPrice() {
-    if (bidTransactionHistory.isEmpty()) return item.getStartingPrice();
-    return bidTransactionHistory.getLast().getAmount();
+    return bidTransactionHistory.stream()
+            .mapToDouble(BidTransaction::getAmount)
+            .max()
+            .orElse(item.getStartingPrice());   // trả về startingPrice nếu chưa có bid nào
   }
 
   public synchronized boolean placeBid(User bidder, double bidAmount) {

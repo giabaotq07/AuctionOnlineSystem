@@ -57,8 +57,14 @@ public class LiveController implements AuctionObserver {
         startPriceLabel.setText(String.format("%,.0f đ", session.getItem().getStartingPrice()));
       if (stepPriceLabel != null)
         stepPriceLabel.setText(String.format("%,.0f đ", session.getItem().getStepPrice()));
-      if (currentPriceLabel != null)
-        currentPriceLabel.setText(String.format("%,.0f đ", session.getCurrentHighestPrice()));
+
+      // ✅ Lấy giá cao nhất từ database thay vì in-memory
+      if (currentPriceLabel != null) {
+        double highestBid = bidService.getHighestBidAmount(session.getId());
+        double displayPrice = (highestBid > 0) ? highestBid : session.getItem().getStartingPrice();
+        currentPriceLabel.setText(String.format("%,.0f đ", displayPrice));
+      }
+
       if (depositLabel != null)
         depositLabel.setText(String.format("%,.0f đ", session.getItem().getStartingPrice() * 0.2));
 
@@ -99,6 +105,7 @@ public class LiveController implements AuctionObserver {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
+
     if (DataStore.currentUser == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
@@ -106,12 +113,36 @@ public class LiveController implements AuctionObserver {
 
     try {
       double bidAmount = Double.parseDouble(bidAmountField.getText());
-      if (!session.placeBid(DataStore.currentUser, bidAmount)) {
-        AlertUtils.showError("Lỗi trả giá", "Giá nhập không hợp lệ hoặc phiên đã kết thúc.");
-      } else {
-        bidAmountField.clear();
-        Client.getInstance().sendRequest(new app.models.MessagePacket<>(CommandType.PLACE_BID, session));
+
+      // KIỂM TRA SƠ BỘ: Nếu giá nhập thấp hơn giá đang hiển thị thì chặn luôn ở Client cho nhanh
+      double highestBid = bidService.getHighestBidAmount(session.getId());
+      double currentHighestPrice = (highestBid > 0) ? highestBid : session.getItem().getStartingPrice();
+
+      if (bidAmount <= currentHighestPrice) {
+        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
+        return;
       }
+
+      // Gọi BidService để lưu vào MySQL
+      try {
+        bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
+
+        // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
+        BidTransaction highestBidTransaction = bidService.getHighestBid(session.getId());
+        if (highestBidTransaction != null) {
+          currentPriceLabel.setText(String.format("%,.0f đ", highestBidTransaction.getAmount()));
+        }
+
+        bidAmountField.clear();
+        AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
+
+        // Gửi yêu cầu lên Server để đồng bộ với các Client khác
+        Client.getInstance().sendRequest(new app.models.MessagePacket<>(CommandType.PLACE_BID, session));
+
+      } catch (Exception e) {
+        AlertUtils.showError("Lỗi đặt giá", e.getMessage());
+      }
+
     } catch (NumberFormatException e) {
       AlertUtils.showError("Lỗi nhập liệu", "Vui lòng nhập số tiền hợp lệ!");
     }

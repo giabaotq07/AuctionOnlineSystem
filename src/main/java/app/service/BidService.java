@@ -24,4 +24,9 @@ public class BidService {
   public BidTransaction getHighestBid(int sessionId) {
     return bidDAO.getHighestBid(sessionId);
   }
+
+  // ✅ Thêm method để lấy highest bid amount từ database
+  public double getHighestBidAmount(int sessionId) {
+    return bidDAO.getHighestBidAmount(sessionId);
+  }
 }

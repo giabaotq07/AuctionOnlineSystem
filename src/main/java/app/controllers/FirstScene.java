@@ -4,10 +4,12 @@ import app.config.AlertUtils;
 import app.config.NavigationManager;
 import app.config.View;
 import app.dao.AuctionDAO;
+import app.dao.BidDAO;
 import app.enums.AuctionStatus;
 import app.models.Auction;
 import app.models.DataStore;
 import app.network.Client;
+import app.service.BidService;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,6 +38,9 @@ public class FirstScene {
   @FXML private StackPane completedAuctionsPane;
 
   private Timeline autoScroll;
+
+  // ✅ Thêm BidService để lấy highest bid từ database
+  private final BidService bidService = new BidService(BidDAO.getInstance());
 
   // Hằng số kích thước Card
   private static final double CARD_WIDTH = 280;
@@ -208,7 +213,10 @@ public class FirstScene {
     titleLabel.setWrapText(true);
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: white;");
 
-    Label priceLabel = new Label(String.format("Giá hiện tại: %,.0f đ", session.getCurrentHighestPrice()));
+    // ✅ Lấy giá cao nhất từ database thay vì in-memory
+    double highestBid = bidService.getHighestBidAmount(session.getId());
+    double displayPrice = (highestBid > 0) ? highestBid : session.getItem().getStartingPrice();
+    Label priceLabel = new Label(String.format("Giá hiện tại: %,.0f đ", displayPrice));
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     Label timeLabel = new Label("Kết thúc: " + session.getFormatEndTime());
