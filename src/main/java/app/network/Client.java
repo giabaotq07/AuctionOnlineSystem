@@ -14,6 +14,7 @@ public class Client {
   private ObjectInputStream in;
   private Consumer<MessagePacket<?>> onMessageReceived;
   private boolean isConnected = false;
+  private String myUsername;
 
   public static Client getInstance() {
     if (instance == null) {
@@ -80,11 +81,11 @@ public class Client {
                       }
                     });
             break;
-        }
-
-        if (onMessageReceived != null) {
-          // Đẩy về cho Controller xử lýw
-          onMessageReceived.accept(packet);
+          case CHAT:
+            if (onMessageReceived != null) {
+              onMessageReceived.accept(packet);
+            }
+            break;
         }
       }
     } catch (IOException | ClassNotFoundException e) {
@@ -107,6 +108,13 @@ public class Client {
         e.printStackTrace();
       }
     }
+  }
+  public void setMyUsername(String username) {
+    this.myUsername = username;
+  }
+
+  public String getMyUsername() {
+    return myUsername;
   }
 
   public void setOnMessageReceived(Consumer<MessagePacket<?>> handler) {
