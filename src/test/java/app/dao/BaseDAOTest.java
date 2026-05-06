@@ -21,12 +21,13 @@ public abstract class BaseDAOTest {
     logger.info("Setting up database properties for tests...");
 
     // Create database if it doesn't exist
-    try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "25122007");
-         Statement stmt = conn.createStatement()) {
-        stmt.execute("CREATE DATABASE IF NOT EXISTS auction_db_test");
-        logger.info("Database auction_db_test ensured.");
+    try (Connection conn =
+            DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "25122007");
+        Statement stmt = conn.createStatement()) {
+      stmt.execute("CREATE DATABASE IF NOT EXISTS auction_db_test");
+      logger.info("Database auction_db_test ensured.");
     } catch (Exception e) {
-        logger.warn("Could not create database automatically. Proceeding anyway...", e);
+      logger.warn("Could not create database automatically. Proceeding anyway...", e);
     }
 
     System.setProperty("db.url", "jdbc:mysql://localhost:3306/auction_db_test");

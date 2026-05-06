@@ -103,7 +103,8 @@ class UserDAOTest extends BaseDAOTest {
 
   @Test
   void findById_nonExisting_shouldReturnEmpty() throws Exception {
-    logger.warn("Running test: findById_nonExisting_shouldReturnEmpty - checking non-existent data");
+    logger.warn(
+        "Running test: findById_nonExisting_shouldReturnEmpty - checking non-existent data");
     try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
       Optional<User> found = userDAO.findById(conn, 99999);
 
@@ -130,7 +131,8 @@ class UserDAOTest extends BaseDAOTest {
 
   @Test
   void findByUsername_nonExisting_shouldReturnEmpty() throws Exception {
-    logger.warn("Running test: findByUsername_nonExisting_shouldReturnEmpty - checking non-existent data");
+    logger.warn(
+        "Running test: findByUsername_nonExisting_shouldReturnEmpty - checking non-existent data");
     try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
       assertTrue(userDAO.findByUsername(conn, "ghost").isEmpty());
       logger.info("Test passed: Empty optional returned for non-existent username");
