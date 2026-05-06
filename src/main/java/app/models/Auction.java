@@ -1,8 +1,8 @@
 package app.models;
 
 import app.enums.AuctionStatus;
-import app.obserser.AuctionObserver;
-import app.obserser.AuctionSubject;
+import app.observer.AuctionObserver;
+import app.observer.AuctionSubject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

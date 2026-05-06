@@ -1,4 +1,4 @@
-package app.obserser;
+package app.observer;
 
 public interface AuctionObserver {
   void onNewBidPlaced(String itemName, long newPrice, String bidderName);

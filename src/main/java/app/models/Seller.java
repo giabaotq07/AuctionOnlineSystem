@@ -1,7 +1,7 @@
 package app.models;
 
 import app.enums.UserRole;
-import app.obserser.AuctionObserver;
+import app.observer.AuctionObserver;
 
 public class Seller extends User implements AuctionObserver {
   public Seller(int id, String name, Account account, Wallet wallet) {
