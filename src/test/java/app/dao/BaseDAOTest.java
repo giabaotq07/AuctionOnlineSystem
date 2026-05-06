@@ -32,7 +32,7 @@ public abstract class BaseDAOTest {
 
     System.setProperty("db.url", "jdbc:mysql://localhost:3306/auction_db_test");
     System.setProperty("db.user", "root");
-    System.setProperty("db.password", "25122007");
+    System.setProperty("db.password", "123456");
 
     try {
       Field field = DatabaseConnection.class.getDeclaredField("instance");

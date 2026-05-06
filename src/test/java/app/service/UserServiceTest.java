@@ -7,12 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import app.config.DatabaseConnection;
 import app.dao.BaseDAOTest;
 import app.dao.UserDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
+import app.utils.PasswordUtils;
 import java.sql.Connection;
 import java.sql.Statement;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +28,12 @@ public class UserServiceTest extends BaseDAOTest {
 
   private User tester;
   private UserService userService;
+  private UserDAO userDAO;
 
   @BeforeEach
   public void setupDatabase() throws Exception {
     logger.info("Initializing UserService test database and mock data...");
-    UserDAO userDAO = new UserDAO();
+    userDAO = new MySqlUserDAO();
     userService = new UserService(userDAO);
 
     try (Connection conn = DatabaseConnection.getInstance().getConnection();
@@ -51,16 +54,11 @@ public class UserServiceTest extends BaseDAOTest {
     tester =
         UserFactory.createUser(
             "Test User",
-            new Account("test_account", "test_password"),
+            new Account("test_account", PasswordUtils.hashPassword("test_password")),
             new Wallet(),
             UserRole.BIDDER);
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      tester = userDAO.save(conn, tester);
-      logger.info("Mock user created and saved.");
-    } catch (Exception e) {
-      logger.error("Error saving mock user", e);
-      throw e;
-    }
+    tester = userDAO.save(tester);
+    logger.info("Mock user created and saved.");
   }
 
   @Test
