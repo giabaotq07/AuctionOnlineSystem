@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import app.config.DatabaseConnection;
 import app.dao.BaseDAOTest;
 import app.dao.UserDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.Account;
@@ -24,7 +25,7 @@ public class UserServiceTest extends BaseDAOTest {
 
   @BeforeEach
   public void setupDatabase() throws Exception {
-    UserDAO userDAO = new UserDAO();
+    UserDAO userDAO = new MySqlUserDAO();
     userService = new UserService(userDAO);
 
     try (Connection conn = DatabaseConnection.getInstance().getConnection();
@@ -44,9 +45,8 @@ public class UserServiceTest extends BaseDAOTest {
             new Account("test_account", "test_password"),
             new Wallet(),
             UserRole.BIDDER);
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      tester = userDAO.save(conn, tester);
-    }
+    // register via service so password is hashed consistently
+    tester = userService.register(tester);
   }
 
   @Test
