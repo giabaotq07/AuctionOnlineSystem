@@ -3,6 +3,9 @@ package app.network;
 import app.dao.AuctionDAO;
 import app.dao.AutoBidDAO;
 import app.dao.BidDAO;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlAutoBidDAO;
+import app.dao.impl.MySqlBidDAO;
 import app.dto.BidRequest;
 import app.models.*;
 import app.service.BidObserverService;
@@ -69,9 +72,9 @@ public class Client {
 
           case PLACE_BID:
             BidRequest bidRequest = (BidRequest) packet.getData();
-            AuctionDAO auctionDAO = new AuctionDAO();
-            BidDAO bidDAO = new BidDAO();
-            AutoBidDAO autoBidDAO = new AutoBidDAO();
+            AuctionDAO auctionDAO = new MySqlAuctionDAO();
+            BidDAO bidDAO = new MySqlBidDAO();
+            AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
             BidObserverService observerService = new BidObserverService();
             BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, observerService);
             bidService.placeBid(

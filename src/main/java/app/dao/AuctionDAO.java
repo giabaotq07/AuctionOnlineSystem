@@ -1,236 +1,37 @@
 package app.dao;
 
 import app.enums.AuctionStatus;
-import app.exception.DatabaseException;
-import app.models.*;
-import java.sql.*;
+import app.models.Auction;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class AuctionDAO {
+public interface AuctionDAO {
+  Optional<Auction> findById(int id);
 
-  private static final String TABLE = "auction_sessions";
+  List<Auction> findAll();
 
-  private static final String BASE_SELECT =
-      """
-              SELECT
-                  s.id,
-                  s.status,
-                  s.start_time,
-                  s.end_time,
-                  s.highest_bid,
-                  s.extended_count,
-                  s.created_at,
-                  s.updated_at,
-                  i.id  AS item_id,
-                  u.id  AS seller_id,
-                  w.id  AS winner_id
-              FROM auction_sessions s
-              JOIN items i ON s.item_id = i.id
-              JOIN users u ON s.seller_id = u.id
-              LEFT JOIN users w ON s.winner_id = w.id
-              """;
+  List<Auction> findByStatus(AuctionStatus status);
 
-  public AuctionDAO() {}
+  List<Auction> findBySeller(int sellerId);
 
-  private Auction mapAuction(ResultSet rs) throws SQLException {
-    return new Auction(
-        rs.getInt("id"),
-        rs.getInt("item_id"),
-        rs.getInt("seller_id"),
-        (Integer) rs.getObject("winner_id"),
-        AuctionStatus.valueOf(rs.getString("status")),
-        rs.getTimestamp("start_time").toLocalDateTime(),
-        rs.getTimestamp("end_time").toLocalDateTime(),
-        rs.getLong("highest_bid"),
-        rs.getInt("extended_count"),
-        rs.getTimestamp("created_at").toLocalDateTime(),
-        rs.getTimestamp("updated_at").toLocalDateTime());
-  }
+  Auction save(Auction auction);
 
-  // ── Read methods ──────────────────────────────────────────────
+  boolean updateStatus(int auctionId, AuctionStatus status);
 
-  public Optional<Auction> findById(Connection conn, int id) {
-    return findOne(conn, BASE_SELECT + " WHERE s.id = ?", id);
-  }
+  void updateStartTime(int auctionId, LocalDateTime startTime);
 
-  public List<Auction> findAll(Connection conn) {
-    return findMany(conn, BASE_SELECT + " ORDER BY s.id DESC");
-  }
+  void updateEndTime(int auctionId, LocalDateTime endTime);
 
-  public List<Auction> findByStatus(Connection conn, AuctionStatus status) {
-    return findMany(
-        conn, BASE_SELECT + " WHERE s.status = ? ORDER BY s.end_time ASC", status.name());
-  }
+  void updateWinner(int auctionId, int winnerId);
 
-  public List<Auction> findBySeller(Connection conn, int sellerId) {
-    return findMany(conn, BASE_SELECT + " WHERE s.seller_id = ? ORDER BY s.id DESC", sellerId);
-  }
+  void updateHighestBid(int sessionId, long highestBid);
 
-  // ── Transaction methods — nhận Connection từ Service ──────────
+  long getHighestBid(int sessionId);
 
-  public void lockSession(Connection conn, int sessionId) {
-    String sql =
-        """
-            SELECT id FROM auction_sessions
-            WHERE id = ? AND status = 'RUNNING'
-            FOR UPDATE
-            """;
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
-      try (ResultSet rs = ps.executeQuery()) {
-        if (!rs.next()) {
-          throw new DatabaseException(
-              "Phiên đấu giá không tồn tại hoặc không ở trạng thái RUNNING.");
-        }
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi khóa phiên đấu giá.", e);
-    }
-  }
+  void lockSession(int sessionId);
 
-  public long getHighestBid(Connection conn, int sessionId) {
-    String sql = "SELECT highest_bid FROM auction_sessions WHERE id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? rs.getLong("highest_bid") : 0L;
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi lấy giá thầu cao nhất của phiên đấu giá.", e);
-    }
-  }
+  void extendEndTime(int sessionId, int extraSeconds);
 
-  public void updateHighestBid(Connection conn, int sessionId, long highestBid)
-      throws SQLException {
-    String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setLong(1, highestBid);
-      ps.setInt(2, sessionId);
-      ps.executeUpdate();
-    }
-  }
-
-  public void extendEndTime(Connection conn, int sessionId, int extraSeconds) {
-    String sql =
-        """
-            UPDATE auction_sessions
-            SET end_time = DATE_ADD(end_time, INTERVAL ? SECOND),
-                extended_count = extended_count + 1
-            WHERE id = ?
-            """;
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, extraSeconds);
-      ps.setInt(2, sessionId);
-      ps.executeUpdate();
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi gia hạn thời gian phiên đấu giá.", e);
-    }
-  }
-
-  // ── Write methods ─────────────────────────────────────────────
-
-  public Auction save(Connection conn, Auction auction) {
-    String sql =
-        """
-            INSERT INTO auction_sessions
-                (item_id, seller_id, status, end_time, highest_bid)
-            VALUES (?, ?, ?, ?, ?)
-            """;
-    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      ps.setInt(1, auction.getItemId());
-      ps.setInt(2, auction.getSellerId());
-      ps.setString(3, auction.getStatus().name());
-      ps.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
-      ps.setLong(5, auction.getHighestBid());
-      if (ps.executeUpdate() == 0) {
-        throw new DatabaseException("Không thể tạo auction.");
-      }
-      try (ResultSet rs = ps.getGeneratedKeys()) {
-        if (rs.next()) auction.setId(rs.getInt(1));
-      }
-      return auction;
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi tạo auction.", e);
-    }
-  }
-
-  public boolean updateStatus(Connection conn, int auctionId, AuctionStatus status) {
-    return executeUpdate(
-        conn, "UPDATE auction_sessions SET status = ? WHERE id = ?", status.name(), auctionId);
-  }
-
-  public void updateStartTime(Connection conn, int auctionId, LocalDateTime startTime) {
-    executeUpdate(
-        conn,
-        "UPDATE auction_sessions SET start_time = ? WHERE id = ?",
-        Timestamp.valueOf(startTime),
-        auctionId);
-  }
-
-  public void updateEndTime(Connection conn, int auctionId, LocalDateTime endTime) {
-    executeUpdate(
-        conn,
-        "UPDATE auction_sessions SET end_time = ? WHERE id = ?",
-        Timestamp.valueOf(endTime),
-        auctionId);
-  }
-
-  public void updateWinner(Connection conn, int auctionId, int winnerId) {
-    executeUpdate(
-        conn, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
-  }
-
-  public boolean delete(Connection conn, int id) {
-    return executeUpdate(conn, "DELETE FROM auction_sessions WHERE id = ?", id);
-  }
-
-  // ── Private helpers ───────────────────────────────────────────
-
-  private Optional<Auction> findOne(Connection conn, String sql, Object... params) {
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? Optional.of(mapAuction(rs)) : Optional.empty();
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
-    }
-  }
-
-  private List<Auction> findMany(Connection conn, String sql, Object... params) {
-    List<Auction> auctions = new ArrayList<>();
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-          auctions.add(mapAuction(rs));
-        }
-      }
-      return auctions;
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn danh sách auctions.", e);
-    }
-  }
-
-  private boolean executeUpdate(Connection conn, String sql, Object... params) {
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      return ps.executeUpdate() > 0;
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi cập nhật bảng " + TABLE, e);
-    }
-  }
-
-  private void setParameters(PreparedStatement ps, Object... params) {
-    for (int i = 0; i < params.length; i++) {
-      try {
-        ps.setObject(i + 1, params[i]);
-      } catch (SQLException e) {
-        throw new DatabaseException("Lỗi khi thiết lập tham số cho PreparedStatement.", e);
-      }
-    }
-  }
+  boolean delete(int id);
 }
