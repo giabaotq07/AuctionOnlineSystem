@@ -9,4 +9,3 @@ public class AppException extends RuntimeException {
     super(message, cause);
   }
 }
-

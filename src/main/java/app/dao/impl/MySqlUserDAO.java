@@ -77,7 +77,7 @@ public class MySqlUserDAO implements UserDAO {
         INSERT INTO users (username, password, full_name, assets, role)
         VALUES (?, ?, ?, ?, ?)
         """;
-      try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setString(1, user.getAccount().getUsername());
       // Expect password to be already hashed by service layer
       ps.setString(2, user.getAccount().getPassword());
