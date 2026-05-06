@@ -173,9 +173,6 @@
     <profiles>
         <profile>
             <id>client</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <app.mainClass>app.App</app.mainClass>
             </properties>
