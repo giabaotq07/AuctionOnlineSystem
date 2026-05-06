@@ -1,0 +1,31 @@
+name: Vạn Bảo Các CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+     branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+                java-version: '25' # Thay đổi phiên bản phù hợp với dự án của bạn (vd: 17, 21)
+                distribution: 'temurin'
+                cache: maven # Tối ưu hóa thời gian build bằng cách cache các dependency
+
+      - name: Build
+        run: mvn package
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: van-bao-cac-backend
+          path: target/*.jar
