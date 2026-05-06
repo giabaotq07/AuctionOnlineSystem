@@ -1,6 +1,7 @@
 package app.controllers;
 
 import app.dao.UserDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.enums.HistoryType;
 import app.models.*;
 import app.service.UserService;
@@ -30,7 +31,7 @@ public class BidController {
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
-    userDao = UserDAO.getInstance();
+    userDao = new MySqlUserDAO();
     userService = new UserService(userDao);
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
@@ -60,7 +61,10 @@ public class BidController {
       String userName = bidderField.getText();
       double amount = Double.parseDouble(amountField.getText());
 
-      User bidder = userService.getUserByAccount(userName);
+      User bidder =
+          userDao
+              .findByUsername(userName)
+              .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user."));
 
       boolean success = session.placeBid(bidder, amount);
       if (success) {

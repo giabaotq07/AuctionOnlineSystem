@@ -1,16 +1,12 @@
 package app.service;
 
-import app.config.DatabaseConnection;
 import app.dao.AuctionDAO;
 import app.dao.AutoBidDAO;
 import app.dao.BidDAO;
 import app.enums.AuctionStatus;
-import app.exception.AuctionException;
-import app.exception.DatabaseException;
+import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.BidTransaction;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,24 +49,7 @@ public class BidService {
   // ── 1. Đặt giá thủ công ──────────────────────────────────────────────────
 
   public void placeBid(int sessionId, int userId, long bidAmount) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      conn.setAutoCommit(false);
-      try {
-        Auction session = requireRunningSession(conn, sessionId);
-        validateBidAmount(bidAmount, session.getHighestBid());
-
-        bidDAO.insertBid(conn, sessionId, userId, bidAmount, false);
-        sessionDAO.updateHighestBid(conn, sessionId, bidAmount);
-        //        applyAntiSnipe(conn, session);
-
-        conn.commit();
-      } catch (Exception e) {
-        conn.rollback();
-        throw e;
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi kết nối khi đặt giá.", e);
-    }
+    bidDAO.placeBidAtomic(sessionId, userId, bidAmount, DEFAULT_MIN_INCREMENT);
 
     // Notify ngoài transaction (không ảnh hưởng tính toàn vẹn dữ liệu)
     observerService.notifyBidUpdated(sessionId);
@@ -85,29 +64,17 @@ public class BidService {
 
   /** Trả về danh sách bid theo giá giảm dần (dùng cho bảng lịch sử). */
   public List<BidTransaction> getBidHistory(int sessionId) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return bidDAO.findBySession(conn, sessionId);
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi tải lịch sử bid.", e);
-    }
+    return bidDAO.findBySession(sessionId);
   }
 
   /** Trả về danh sách bid theo thời gian tăng dần (dùng cho line chart). */
   public List<BidTransaction> getBidHistoryForChart(int sessionId) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return bidDAO.findBySessionForChart(conn, sessionId);
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi tải dữ liệu biểu đồ.", e);
-    }
+    return bidDAO.findBySessionForChart(sessionId);
   }
 
   /** Trả về bid cao nhất hiện tại của phiên (Optional.empty nếu chưa có bid). */
   public Optional<BidTransaction> getHighestBid(int sessionId) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return bidDAO.findHighestBid(conn, sessionId);
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi tải bid cao nhất.", e);
-    }
+    return bidDAO.findHighestBid(sessionId);
   }
 
   // ── Private: Auto-Bid Engine ──────────────────────────────────────────────
@@ -116,14 +83,14 @@ public class BidService {
 
   // ── Private: Validators ───────────────────────────────────────────────────
 
-  private Auction requireRunningSession(Connection conn, int sessionId) throws SQLException {
+  private Auction requireRunningSession(int sessionId) {
     Auction session =
         sessionDAO
-            .findById(conn, sessionId)
-            .orElseThrow(() -> new AuctionException("Phiên đấu giá không tồn tại."));
+            .findById(sessionId)
+            .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
 
     if (session.getStatus() != AuctionStatus.RUNNING) {
-      throw new AuctionException(
+      throw new ServiceException(
           "Phiên đấu giá đã " + session.getStatus().name().toLowerCase() + ".");
     }
     return session;
@@ -131,7 +98,7 @@ public class BidService {
 
   private void validateBidAmount(long bidAmount, long currentPrice) {
     if (bidAmount < currentPrice + DEFAULT_MIN_INCREMENT) {
-      throw new AuctionException(
+      throw new ServiceException(
           "Giá đặt phải cao hơn giá hiện tại ít nhất "
               + DEFAULT_MIN_INCREMENT
               + " VNĐ. "
@@ -141,7 +108,7 @@ public class BidService {
   }
 
   /** Lấy giá hiện tại của phiên (dùng nội bộ). */
-  private long getCurrentPrice(Connection conn, int sessionId) {
-    return sessionDAO.findById(conn, sessionId).map(Auction::getHighestBid).orElse(0L);
+  private long getCurrentPrice(int sessionId) {
+    return sessionDAO.findById(sessionId).map(Auction::getHighestBid).orElse(0L);
   }
 }
