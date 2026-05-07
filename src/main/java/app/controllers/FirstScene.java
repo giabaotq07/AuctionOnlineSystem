@@ -1,8 +1,8 @@
 package app.controllers;
 
-import app.config.AlertUtils;
+import app.utils.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
+import app.enums.View;
 import app.enums.AuctionStatus;
 import app.models.Auction;
 import app.models.DataStore;
@@ -51,7 +51,7 @@ public class FirstScene {
     }
 
     List<Auction> activeS =
-        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.RUNNING).toList();
 
     cardContainer = createContainer(activeS);
 
@@ -136,7 +136,7 @@ public class FirstScene {
 
                       List<Auction> actives =
                           DataStore.sessions.stream()
-                              .filter(s -> s.getStatus() == AuctionStatus.ACTIVE)
+                              .filter(s -> s.getStatus() == AuctionStatus.RUNNING)
                               .toList();
 
                       cardContainer = createContainer(actives);
@@ -201,11 +201,11 @@ public class FirstScene {
 
     // ===== PRICE =====
     Label priceLabel =
-        new Label(String.format("Giá hiện tại: %,.0f đ", session.getCurrentHighestPrice()));
+        new Label(String.format("Giá hiện tại: " + session.getHighestBid() + "đ"));
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     // ===== TIME =====
-    Label timeLabel = new Label("Kết thúc: " + session.getFormatEndTime());
+    Label timeLabel = new Label("Kết thúc: " + session.getEndTime());
     timeLabel.setStyle("-fx-text-fill: #9aa0b4; -fx-font-size: 12px;");
 
     // ===== BUTTON =====
@@ -256,7 +256,7 @@ public class FirstScene {
     completedAuctionsPane.getChildren().clear();
 
     List<Auction> completeds =
-        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.COMPLETED).toList();
+        DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.FINISHED).toList();
 
     for (Auction session : completeds) {
 
@@ -329,7 +329,7 @@ public class FirstScene {
       ScrollPane vp = (ScrollPane) activeAuctionsPane.getChildren().get(0);
 
       List<Auction> actives =
-          DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.ACTIVE).toList();
+          DataStore.sessions.stream().filter(s -> s.getStatus() == AuctionStatus.RUNNING).toList();
 
       cardContainer = createContainer(actives);
       vp.setContent(cardContainer);

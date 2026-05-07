@@ -1,14 +1,13 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
 import app.enums.AuctionStatus;
-import app.enums.CommandType;
+import app.enums.PacketType;
+import app.enums.View;
 import app.models.Auction;
-import app.models.AuctionObserver;
 import app.models.BidTransaction;
 import app.models.DataStore;
+import app.models.Packet;
 import app.network.Client;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -16,6 +15,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import app.observer.AuctionObserver;
+import app.utils.AlertUtils;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -104,8 +106,8 @@ public class LiveController implements AuctionObserver {
             "Khng thƒ tr gi! Gi nhp phi l›n hn bng gi hi‡n ti + b›c gi hoc phin ‘u gi ‘ kt thc.");
       } else {
         bidAmountField.clear();
-        app.models.MessagePacket<Auction> syncPacket =
-            new app.models.MessagePacket<>(CommandType.PLACE_BID, session);
+        Packet syncPacket =
+            new Packet(PacketType.PLACE_BID, session);
         app.network.Client.getInstance().sendRequest(syncPacket);
       }
     } catch (NumberFormatException e) {
@@ -126,7 +128,7 @@ public class LiveController implements AuctionObserver {
                 LocalDateTime endTime = session.getEndTime();
                 if (now.isAfter(endTime)) {
                   scheduler.shutdown();
-                  session.setStatus(AuctionStatus.COMPLETED);
+                  session.setStatus(AuctionStatus.FINISHED);
                   // Gọi thông báo kết thúc
                   String winner = "Không có ai";
                   double price = session.getItem().getStartingPrice();

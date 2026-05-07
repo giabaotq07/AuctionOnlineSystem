@@ -45,7 +45,7 @@ public class BidController {
           session = s;
 
           outputArea.setText(
-              "Item: " + s.getItem().getName() + "\nGiá: $" + s.getCurrentHighestPrice());
+              "Item: " + s.getItem().getName() + "\nGiá: $" + s.getHighestBid());
         });
   }
 
