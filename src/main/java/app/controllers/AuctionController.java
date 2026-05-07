@@ -1,13 +1,13 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
-import app.enums.CommandType;
 import app.enums.HistoryType;
 import app.enums.ItemType;
+import app.enums.PacketType;
+import app.enums.View;
 import app.models.*;
 import app.network.Client;
+import app.utils.AlertUtils;
 import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -48,15 +48,15 @@ public class AuctionController {
     }
     if (DataStore.currentUser == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
-      app.config.NavigationManager.getInstance().navigateTo(app.config.View.LOGIN);
+      app.config.NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
 
     try {
       String name = nameField.getText();
       String desc = descriptionField.getText();
-      double startPrice = Double.parseDouble(startingPriceField.getText());
-      double stepPrice = Double.parseDouble(stepPriceField.getText());
+      long startPrice = Long.parseLong(startingPriceField.getText());
+      long stepPrice = Long.parseLong(stepPriceField.getText());
       int durationMins = Integer.parseInt(durationField.getText());
       ItemType type = typeComboBox.getValue();
 
@@ -66,19 +66,20 @@ public class AuctionController {
       }
 
       int nextId = DataStore.sessions.size() + 1;
-      Item item = ItemFactory.createItem(nextId, name, desc, startPrice, stepPrice, type);
+      Item item = ItemFactory.createItem(name, nextId, desc, startPrice, stepPrice, type);
 
       Auction session =
           new Auction(
-              nextId, item, DataStore.currentUser, LocalDateTime.now().plusMinutes(durationMins));
+              item.getId(),
+              DataStore.currentUser.getId(),
+              LocalDateTime.now().plusMinutes(durationMins));
 
       DataStore.sessions.add(session);
       app.models.AuctionStateManager.getInstance().addSession(session);
 
       // --- NEW CODE: BT U BROADCAST SANG CC CLIENT KHC ---
-      app.models.MessagePacket<Auction> createPacket =
-          new app.models.MessagePacket<>(CommandType.CREATE_AUCTION, session);
-      app.network.Client.getInstance().sendRequest(createPacket);
+      Packet createPacket = new Packet(PacketType.CREATE_AUCTION, session);
+      Client.getInstance().sendRequest(createPacket);
       // --- END NEW CODE ---
 
       HistoryStore.history.add(

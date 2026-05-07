@@ -1,12 +1,11 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
-import app.dao.HistoryDAO;
+import app.enums.View;
 import app.models.DataStore;
 import app.models.HistoryRecord;
 import app.network.Client;
+import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.List;
 import javafx.event.ActionEvent;

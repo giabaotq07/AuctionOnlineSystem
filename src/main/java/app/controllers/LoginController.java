@@ -1,15 +1,15 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
-import app.enums.CommandType;
+import app.enums.PacketType;
+import app.enums.View;
 import app.models.DataStore;
-import app.models.MessagePacket;
+import app.models.Packet;
 import app.models.User;
 import app.network.Client;
+import app.utils.AlertUtils;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -37,7 +37,7 @@ public class LoginController {
               Platform.runLater(
                   () -> {
                     loginButton.setDisable(false);
-                    if (packet.getType() == CommandType.LOGIN) {
+                    if (packet.getType() == PacketType.LOGIN) {
                       response = (LoginResponse) packet.getData();
                     }
                     if (response.success()) {
@@ -61,7 +61,7 @@ public class LoginController {
       return;
     }
     loginRequest = new LoginRequest(userInput, passInput);
-    Client.getInstance().sendRequest(new MessagePacket<>(CommandType.LOGIN, loginRequest));
+    Client.getInstance().sendRequest(new Packet(PacketType.LOGIN, loginRequest));
   }
 
   @FXML

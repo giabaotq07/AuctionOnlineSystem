@@ -1,14 +1,14 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
 import app.dao.UserDAO;
 import app.dao.impl.MySqlUserDAO;
 import app.enums.UserRole;
+import app.enums.View;
 import app.exception.ServiceException;
 import app.models.*;
 import app.service.UserService;
+import app.utils.AlertUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;

@@ -1,7 +1,8 @@
 package app.controllers;
 
-import app.enums.CommandType;
-import app.models.MessagePacket;
+import app.dto.ChatMessage;
+import app.enums.PacketType;
+import app.models.Packet;
 import app.network.Client;
 import java.io.IOException;
 import javafx.application.Platform;
@@ -56,19 +57,20 @@ public class MessController {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
       // Nếu muốn gửi tin nhắn chat:
-      client.sendRequest(new MessagePacket<>(CommandType.CHAT, text));
+      client.sendRequest(new Packet(PacketType.CHAT, text));
       myTextArea.clear();
     }
   }
 
-  public void addBubble(MessagePacket<?> packet) {
+  public void addBubble(Packet packet) {
     Platform.runLater(
         () -> {
           // Lấy tên người gửi (nếu null thì hiện Hệ thống)
-          String name = (packet.getMessage() != null) ? packet.getMessage() : "Hệ thống";
+          ChatMessage chatMessage = (ChatMessage) packet.getData();
+          String name = chatMessage.sender();
 
           // Lấy nội dung tin nhắn
-          String msg = (packet.getData() != null) ? packet.getData().toString() : "";
+          String msg = chatMessage.content();
 
           // Tạo một Label duy nhất theo định dạng [name]: msg
           Label line = new Label("[" + name + "]: " + msg);

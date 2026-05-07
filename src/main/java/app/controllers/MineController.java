@@ -1,7 +1,7 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.config.View;
+import app.enums.View;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

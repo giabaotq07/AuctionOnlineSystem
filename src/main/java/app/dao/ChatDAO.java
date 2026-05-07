@@ -1,6 +1,6 @@
 package app.dao;
 
-import app.models.ChatMessage;
+import app.dto.ChatMessage;
 import java.util.List;
 
 public interface ChatDAO {
