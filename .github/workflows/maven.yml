@@ -39,12 +39,6 @@ jobs:
                 distribution: 'temurin'
                 cache: maven # Tối ưu hóa thời gian build bằng cách cache các dependency
 
-      - name: Run Tests
-        run: |
-          # Chạy lệnh test của bạn ở đây
-          # Đảm bảo code của bạn kết nối tới localhost:3306
-          mvn test
-
       - name: Build
         run: mvn package
 
