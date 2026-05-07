@@ -5,10 +5,9 @@ import app.enums.View;
 import app.models.DataStore;
 import app.models.HistoryRecord;
 import app.network.Client;
+import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.List;
-
-import app.utils.AlertUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;

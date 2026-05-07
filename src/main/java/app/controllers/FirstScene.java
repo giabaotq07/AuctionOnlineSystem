@@ -1,12 +1,12 @@
 package app.controllers;
 
-import app.utils.AlertUtils;
 import app.config.NavigationManager;
-import app.enums.View;
 import app.enums.AuctionStatus;
+import app.enums.View;
 import app.models.Auction;
 import app.models.DataStore;
 import app.network.Client;
+import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.List;
 import javafx.animation.KeyFrame;
@@ -200,8 +200,7 @@ public class FirstScene {
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: white;");
 
     // ===== PRICE =====
-    Label priceLabel =
-        new Label(String.format("Giá hiện tại: " + session.getHighestBid() + "đ"));
+    Label priceLabel = new Label(String.format("Giá hiện tại: " + session.getHighestBid() + "đ"));
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     // ===== TIME =====

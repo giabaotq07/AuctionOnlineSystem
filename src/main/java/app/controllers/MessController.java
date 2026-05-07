@@ -66,7 +66,7 @@ public class MessController {
     Platform.runLater(
         () -> {
           // Lấy tên người gửi (nếu null thì hiện Hệ thống)
-            ChatMessage chatMessage = (ChatMessage) packet.getData();
+          ChatMessage chatMessage = (ChatMessage) packet.getData();
           String name = chatMessage.sender();
 
           // Lấy nội dung tin nhắn

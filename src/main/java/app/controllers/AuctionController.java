@@ -1,13 +1,13 @@
 package app.controllers;
 
-import app.utils.AlertUtils;
 import app.config.NavigationManager;
-import app.enums.View;
-import app.enums.PacketType;
 import app.enums.HistoryType;
 import app.enums.ItemType;
+import app.enums.PacketType;
+import app.enums.View;
 import app.models.*;
 import app.network.Client;
+import app.utils.AlertUtils;
 import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -70,14 +70,15 @@ public class AuctionController {
 
       Auction session =
           new Auction(
-              item.getId(), DataStore.currentUser.getId(), LocalDateTime.now().plusMinutes(durationMins));
+              item.getId(),
+              DataStore.currentUser.getId(),
+              LocalDateTime.now().plusMinutes(durationMins));
 
       DataStore.sessions.add(session);
       app.models.AuctionStateManager.getInstance().addSession(session);
 
       // --- NEW CODE: BT U BROADCAST SANG CC CLIENT KHC ---
-      Packet createPacket =
-          new Packet(PacketType.CREATE_AUCTION, session);
+      Packet createPacket = new Packet(PacketType.CREATE_AUCTION, session);
       Client.getInstance().sendRequest(createPacket);
       // --- END NEW CODE ---
 
