@@ -22,7 +22,7 @@ public abstract class BaseDAOTest {
 
     // Create database if it doesn't exist
     try (Connection conn =
-            DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "25122007");
+            DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "123456");
         Statement stmt = conn.createStatement()) {
       stmt.execute("CREATE DATABASE IF NOT EXISTS auction_db_test");
       logger.info("Database auction_db_test ensured.");
