@@ -21,7 +21,10 @@ public class UserTest {
     try {
       user =
           UserFactory.createUser(
-              "Tester", new Account("test_account", "test_password"), new Wallet(), UserRole.BIDDER);
+              "Tester",
+              new Account("test_account", "test_password"),
+              new Wallet(),
+              UserRole.BIDDER);
       logger.info("Test User created successfully.");
     } catch (Exception e) {
       logger.error("Failed to create Test User", e);
