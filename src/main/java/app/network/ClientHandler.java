@@ -1,7 +1,8 @@
 package app.network;
 
-import app.enums.CommandType;
-import app.models.MessagePacket;
+import app.enums.PacketType;
+import app.models.Packet;
+import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
@@ -9,15 +10,15 @@ import java.util.Map;
 
 public class ClientHandler implements Runnable {
   private final Socket socket;
-  private ObjectOutputStream writer;
+  private BufferedWriter writer;
   private String username;
 
-  private static final Map<CommandType, Command> COMMANDS = new HashMap<>();
+  private static final Map<PacketType, Command> COMMANDS = new HashMap<>();
 
   static {
-    COMMANDS.put(CommandType.LOGIN, new LoginCommand());
-    COMMANDS.put(CommandType.CHAT, new ChatCommand());
-    COMMANDS.put(CommandType.PLACE_BID, new PlaceBidCommand());
+    COMMANDS.put(PacketType.LOGIN, new LoginCommand());
+    COMMANDS.put(PacketType.CHAT, new ChatCommand());
+    COMMANDS.put(PacketType.PLACE_BID, new PlaceBidCommand());
   }
 
   public ClientHandler(Socket socket) {
@@ -27,19 +28,20 @@ public class ClientHandler implements Runnable {
   @Override
   public void run() {
     try {
-      writer = new ObjectOutputStream(socket.getOutputStream());
+      writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
       writer.flush();
-      ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
-      MessagePacket<?> packet;
-      while ((packet = (MessagePacket<?>) reader.readObject()) != null) {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      String json;
+      while ((json = reader.readLine()) != null) {
+        Packet packet = JsonUtil.fromJson(json, Packet.class);
         handlePacket(packet);
       }
-    } catch (IOException | ClassNotFoundException e) {
+    } catch (IOException e) {
       close();
     }
   }
 
-  private void handlePacket(MessagePacket<?> packet) {
+  private void handlePacket(Packet packet) {
     Command command = COMMANDS.get(packet.getType());
     if (command != null) {
       command.execute(this, packet);
@@ -48,14 +50,16 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  public void sendMessage(MessagePacket<?> packet) {
+  public void sendMessage(Packet packet) {
     if (writer != null) {
       try {
-        writer.reset(); // Reset Java object stream cache
-        writer.writeObject(packet);
+        String json = JsonUtil.toJson(packet);
+        writer.write(json);
+        writer.newLine();
         writer.flush();
       } catch (IOException e) {
-        e.printStackTrace();
+        System.err.println(
+            "[SERVER] Failed to send message to " + username + ": " + e.getMessage());
       }
     }
   }

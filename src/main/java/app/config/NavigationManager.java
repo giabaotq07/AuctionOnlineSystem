@@ -1,5 +1,6 @@
 package app.config;
 
+import app.enums.View;
 import java.io.IOException;
 import java.util.function.Consumer;
 import javafx.fxml.FXMLLoader;

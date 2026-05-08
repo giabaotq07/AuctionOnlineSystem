@@ -1,13 +1,14 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
 import app.dao.UserDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.enums.UserRole;
-import app.exceptions.UserAlreadyExistsException;
+import app.enums.View;
+import app.exception.ServiceException;
 import app.models.*;
 import app.service.UserService;
+import app.utils.AlertUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -24,7 +25,7 @@ public class RegisterController {
   @FXML private TextField txtAccount;
   @FXML private PasswordField txtPassword;
 
-  private final UserDAO userDAO = UserDAO.getInstance();
+  private final UserDAO userDAO = new MySqlUserDAO();
   private final UserService userService = new UserService(userDAO);
 
   @FXML
@@ -66,11 +67,9 @@ public class RegisterController {
     User newUser =
         UserFactory.createUser(name, new Account(account, password), new Wallet(), UserRole.BIDDER);
     try {
-      if (userService.register(newUser)) {
-        newUser = userService.getUserByAccount(newUser.getAccount().getUsername());
-      }
+      newUser = userService.register(newUser);
       AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());
-    } catch (UserAlreadyExistsException e) {
+    } catch (ServiceException e) {
       AlertUtils.showError(
           "Thất bại", "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
     }

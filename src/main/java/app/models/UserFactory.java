@@ -12,8 +12,7 @@ public class UserFactory implements java.io.Serializable {
   }
 
   public static User createUser(
-      int id, String name, Account account, Wallet wallet, String roleStr) {
-    UserRole role = UserRole.valueOf(roleStr.toUpperCase());
+      int id, String name, Account account, Wallet wallet, UserRole role) {
     return switch (role) {
       case ADMIN -> new Admin(id, name, account, wallet);
       case SELLER -> new Seller(id, name, account, wallet);

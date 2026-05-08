@@ -1,14 +1,13 @@
 package app.network;
 
-import app.enums.CommandType;
-import app.models.MessagePacket;
+import app.enums.PacketType;
+import app.models.Packet;
 
 public class ChatCommand implements Command {
   @Override
-  public void execute(ClientHandler clientHandler, MessagePacket<?> packet) {
+  public void execute(ClientHandler clientHandler, Packet packet) {
     String content = (String) packet.getData();
-    MessagePacket<String> chatPacket = new MessagePacket<>(CommandType.CHAT, content);
-    chatPacket.setMessage(clientHandler.getUsername());
+    Packet chatPacket = new Packet(PacketType.CHAT, content);
     Server.broadcast(chatPacket);
   }
 }

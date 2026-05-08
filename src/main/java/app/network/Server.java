@@ -1,6 +1,6 @@
 package app.network;
 
-import app.models.MessagePacket;
+import app.models.Packet;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -50,7 +50,7 @@ public class Server {
     authenticatedClients.remove(username);
   }
 
-  public static void broadcast(MessagePacket<?> packet) {
+  public static void broadcast(Packet packet) {
     authenticatedClients.values().forEach(h -> h.sendMessage(packet));
   }
 }

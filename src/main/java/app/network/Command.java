@@ -1,7 +1,7 @@
 package app.network;
 
-import app.models.MessagePacket;
+import app.models.Packet;
 
 public interface Command {
-  void execute(ClientHandler clientHandler, MessagePacket<?> packet);
+  void execute(ClientHandler clientHandler, Packet packet);
 }

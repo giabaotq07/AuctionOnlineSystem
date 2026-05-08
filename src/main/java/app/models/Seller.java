@@ -1,6 +1,7 @@
 package app.models;
 
 import app.enums.UserRole;
+import app.observer.AuctionObserver;
 
 public class Seller extends User implements AuctionObserver {
   public Seller(int id, String name, Account account, Wallet wallet) {
@@ -17,7 +18,7 @@ public class Seller extends User implements AuctionObserver {
   }
 
   @Override
-  public void onNewBidPlaced(String itemName, double newPrice, String bidderName) {
+  public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
     System.out.println(
         "["
             + getName()
@@ -30,7 +31,7 @@ public class Seller extends User implements AuctionObserver {
   }
 
   @Override
-  public void onAuctionClosed(String itemName, String winnerName, double finalPrice) {
+  public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
     System.out.println(
         "["
             + getName()

@@ -1,6 +1,7 @@
 package app.models;
 
 import app.enums.AuctionStatus;
+import app.observer.AuctionObserver;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class AuctionStateManager implements java.io.Serializable {
   }
 
   public void addSession(Auction session) {
-    if (session.getStatus() == AuctionStatus.ACTIVE) {
+    if (session.getStatus() == AuctionStatus.OPEN) {
       activeAuctions.add(session);
     } else {
       completedAuctions.add(session);
@@ -25,7 +26,7 @@ public class AuctionStateManager implements java.io.Serializable {
   }
 
   public void updateSessionStatus(Auction session) {
-    if (session.getStatus() != AuctionStatus.ACTIVE) {
+    if (session.getStatus() != AuctionStatus.OPEN) {
       activeAuctions.remove(session);
       if (!completedAuctions.contains(session)) {
         completedAuctions.add(session);
@@ -43,7 +44,7 @@ public class AuctionStateManager implements java.io.Serializable {
 
   public void registerObserverToActive(AuctionObserver observer) {
     for (Auction session : activeAuctions) {
-      session.registerObserver(observer);
+      // session.registerObserver(observer);
     }
   }
 }

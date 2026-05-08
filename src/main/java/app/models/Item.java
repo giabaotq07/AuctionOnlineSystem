@@ -1,31 +1,40 @@
 package app.models;
 
+import app.enums.ItemStatus;
 import app.enums.ItemType;
+import java.time.LocalDateTime;
 
-public class Item extends Entity {
+public abstract class Item extends Entity {
+  protected int sellerId;
   protected String name;
   protected String description;
-  protected double startingPrice;
-  protected double stepPrice;
+  protected long startingPrice;
+  protected long stepPrice;
   protected ItemType type;
+  protected ItemStatus status;
+  protected LocalDateTime createdAt;
+  protected LocalDateTime updatedAt;
 
   public Item(
-      String name, String description, double startingPrice, double stepPrice, ItemType type) {
-    this.name = name;
-    this.description = description;
-    this.startingPrice = startingPrice;
-    this.stepPrice = stepPrice;
-    this.type = type;
+      String name,
+      int sellerId,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type) {
+    this(0, name, sellerId, description, startingPrice, stepPrice, type);
   }
 
   public Item(
       int id,
       String name,
+      int sellerId,
       String description,
-      double startingPrice,
-      double stepPrice,
+      long startingPrice,
+      long stepPrice,
       ItemType type) {
-    this.id = id;
+    super(id);
+    this.sellerId = sellerId;
     this.name = name;
     this.description = description;
     this.startingPrice = startingPrice;
@@ -33,13 +42,12 @@ public class Item extends Entity {
     this.type = type;
   }
 
-  @Override
-  public int getId() {
-    return id;
+  public int getSellerId() {
+    return sellerId;
   }
 
-  public void setId(int id) {
-    this.id = id;
+  public void setSellerId(int sellerId) {
+    this.sellerId = sellerId;
   }
 
   public String getName() {
@@ -54,23 +62,53 @@ public class Item extends Entity {
     return description;
   }
 
-  public double getStartingPrice() {
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public long getStartingPrice() {
     return startingPrice;
   }
 
-  public double getStepPrice() {
+  public void setStartingPrice(long startingPrice) {
+    this.startingPrice = startingPrice;
+  }
+
+  public long getStepPrice() {
     return stepPrice;
+  }
+
+  public void setStepPrice(Long stepPrice) {
+    this.stepPrice = stepPrice;
   }
 
   public ItemType getType() {
     return type;
   }
 
+  public ItemStatus getStatus() {
+    return status;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  public void setStatus(ItemStatus status) {
+    this.status = status;
+  }
+
+  public void setStepPrice(long stepPrice) {
+    this.stepPrice = stepPrice;
+  }
+
   public void setType(ItemType type) {
     this.type = type;
   }
 
-  public double getPrice() {
-    return startingPrice;
-  }
+  public abstract void printInfo();
 }
