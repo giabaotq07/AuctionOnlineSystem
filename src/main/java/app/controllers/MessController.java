@@ -1,23 +1,31 @@
 package app.controllers;
 
-import app.dto.ChatMessage;
+import app.config.NavigationManager;
+import app.dto.ChatRequest;
+import app.dto.ChatResponse;
 import app.enums.PacketType;
+import app.enums.View;
 import app.models.Packet;
 import app.network.Client;
-import java.io.IOException;
+import app.utils.JsonUtil;
+import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Scene;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 public class MessController {
+
   @FXML private TextArea myTextArea;
   @FXML private VBox chatBox;
   @FXML private ScrollPane scrollPane;
@@ -28,74 +36,98 @@ public class MessController {
   public void initialize() {
     client = Client.getInstance();
 
-    // 2. Tự động cuộn xuống khi có tin nhắn mới
     chatBox
         .heightProperty()
         .addListener(
-            (observable, oldValue, newValue) -> {
+            (obs, oldVal, newVal) -> {
               scrollPane.setVvalue(1.0d);
             });
 
-    // 3. Đăng ký lắng nghe phản hồi từ Server
-    setupNetworkListener();
-  }
-
-  private void setupNetworkListener() {
     client.setOnMessageReceived(
         packet -> {
-          // Dùng Platform.runLater để đảm bảo an toàn cho UI
-          Platform.runLater(
-              () -> {
-                addBubble(packet);
-                // Hoặc kiểm tra switch-case nếu bạn muốn xử lý riêng từng loại
-              });
+          if (packet.getType() == PacketType.CHAT) {
+            ChatResponse chatResponse = JsonUtil.fromJson(packet.getData(), ChatResponse.class);
+            String sender = chatResponse.sender();
+            Platform.runLater(() -> addBubble(sender, chatResponse.content(), false));
+          }
         });
+  }
+
+  // =========================
+  // ADD MESSAGE BUBBLE
+  // =========================
+  public void addBubble(String sender, String content, boolean isMe) {
+
+    HBox row = new HBox();
+    row.setPadding(new Insets(10));
+    row.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+
+    VBox messageGroup = new VBox(4);
+    messageGroup.setMaxWidth(520);
+    messageGroup.setAlignment(isMe ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
+
+    // NAME
+    Label nameLabel = new Label(isMe ? "Bạn" : sender);
+    nameLabel.setStyle(
+        "-fx-text-fill: #94a3b8;" + "-fx-font-size: 11px;" + "-fx-font-weight: bold;");
+
+    // BUBBLE
+    TextFlow bubble = getTextFlow(isMe);
+
+    // TEXT PARSE
+    String[] words = content.split(" ");
+
+    for (String word : words) {
+      Text t = new Text(word + " ");
+      t.setFont(Font.font("Segoe UI", 14));
+      t.setFill(Color.WHITE);
+
+      if (word.startsWith("@")) {
+        t.setFill(Color.web("#fbbf24"));
+        t.setStyle("-fx-font-weight: bold; -fx-underline: true;");
+      }
+
+      bubble.getChildren().add(t);
+    }
+
+    messageGroup.getChildren().addAll(nameLabel, bubble);
+    row.getChildren().add(messageGroup);
+
+    chatBox.getChildren().add(row);
+  }
+
+  private static TextFlow getTextFlow(boolean isMe) {
+    TextFlow bubble = new TextFlow();
+    bubble.setPadding(new Insets(10, 14, 10, 14));
+
+    if (isMe) {
+      bubble.setStyle(
+          "-fx-background-color: #4f46e5;"
+              + "-fx-background-radius: 14 14 4 14;"
+              + "-fx-effect: dropshadow(gaussian, rgba(79,70,229,0.25), 10, 0, 0, 3);");
+    } else {
+      bubble.setStyle(
+          "-fx-background-color: #161b26;"
+              + "-fx-background-radius: 14 14 14 4;"
+              + "-fx-border-color: #2d3748;"
+              + "-fx-border-radius: 14 14 14 4;");
+    }
+    return bubble;
   }
 
   @FXML
   public void send() {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
-      // Nếu muốn gửi tin nhắn chat:
-      client.sendRequest(new Packet(PacketType.CHAT, text));
+      ChatRequest chatRequest = new ChatRequest(client.getCurrentUser(), text, LocalDateTime.now());
+      client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJsonElement(chatRequest)));
+      addBubble(Client.getInstance().getCurrentUser().getName(), chatRequest.content(), true);
       myTextArea.clear();
     }
   }
 
-  public void addBubble(Packet packet) {
-    Platform.runLater(
-        () -> {
-          // Lấy tên người gửi (nếu null thì hiện Hệ thống)
-          ChatMessage chatMessage = (ChatMessage) packet.getData();
-          String name = chatMessage.sender();
-
-          // Lấy nội dung tin nhắn
-          String msg = chatMessage.content();
-
-          // Tạo một Label duy nhất theo định dạng [name]: msg
-          Label line = new Label("[" + name + "]: " + msg);
-          line.setWrapText(true);
-
-          // Thêm trực tiếp vào chatBox
-          chatBox.getChildren().add(line);
-        });
-  }
-
   @FXML
-  public void SwitchToUI(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/firstscene.fxml"));
-    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    Scene scene = new Scene(loader.load(), 1280, 720);
-
-    // Dùng đường dẫn tuyệt đối bắt đầu bằng dấu / để tránh nhầm thư mục
-    java.net.URL cssResource = getClass().getResource("/app/views/style.css");
-    if (cssResource != null) {
-      scene.getStylesheets().add(cssResource.toExternalForm());
-    } else {
-      System.out.println("Cảnh báo: Không tìm thấy file style.css!");
-    }
-
-    stage.setScene(scene);
-    stage.show();
+  public void SwitchToUI(ActionEvent event) {
+    NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

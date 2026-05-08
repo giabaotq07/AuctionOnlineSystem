@@ -1,13 +1,18 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.enums.HistoryType;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlBidDAO;
+import app.dao.impl.MySqlItemDAO;
 import app.enums.ItemType;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.*;
 import app.network.Client;
+import app.service.AuctionService;
+import app.service.ItemService;
 import app.utils.AlertUtils;
+import app.utils.JsonUtil;
 import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -23,17 +28,17 @@ public class AuctionController {
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
 
+  Client client = Client.getInstance();
+
   @FXML
   public void initialize() {
+
     if (DataStore.currentUser == null) {
-      // Force them out right away if they somehow load this page without logging in
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
-      Platform.runLater(
-          () -> {
-            NavigationManager.getInstance().navigateTo(View.LOGIN);
-          });
+      Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
       return;
     }
+
     if (typeComboBox != null) {
       typeComboBox.getItems().setAll(ItemType.values());
       typeComboBox.getSelectionModel().selectFirst();
@@ -42,17 +47,20 @@ public class AuctionController {
 
   @FXML
   public void handleAdd(ActionEvent event) {
-    if (!Client.getInstance().isConnected()) {
-      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
+
+    if (Client.getInstance().isConnected()) {
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
+
     if (DataStore.currentUser == null) {
-      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
-      app.config.NavigationManager.getInstance().navigateTo(View.LOGIN);
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
 
     try {
+
       String name = nameField.getText();
       String desc = descriptionField.getText();
       long startPrice = Long.parseLong(startingPriceField.getText());
@@ -61,40 +69,43 @@ public class AuctionController {
       ItemType type = typeComboBox.getValue();
 
       if (name.isEmpty() || desc.isEmpty()) {
-        AlertUtils.showError("Lỗi", "Vui lòng nhập đầy đủ thông tin.");
+        AlertUtils.showError("Lỗi", "Thiếu thông tin.");
         return;
       }
 
-      int nextId = DataStore.sessions.size() + 1;
-      Item item = ItemFactory.createItem(name, nextId, desc, startPrice, stepPrice, type);
+      // ================== 1. SAVE ITEM ==================
+      ItemService itemService = new ItemService(new MySqlItemDAO());
+      Item item =
+          ItemFactory.createItem(
+              name, client.getCurrentUser().getId(), desc, startPrice, stepPrice, type);
+      item = itemService.add(item);
 
+      // ================== 2. SAVE AUCTION ==================
       Auction session =
           new Auction(
               item.getId(),
               DataStore.currentUser.getId(),
               LocalDateTime.now().plusMinutes(durationMins));
 
+      AuctionService auctionService = new AuctionService(new MySqlAuctionDAO(), new MySqlBidDAO());
+      session = auctionService.createAuction(session);
+
+      // ================== 3. UI CACHE (optional) ==================
       DataStore.sessions.add(session);
-      app.models.AuctionStateManager.getInstance().addSession(session);
+      AuctionStateManager.getInstance().addSession(session);
 
-      // --- NEW CODE: BT U BROADCAST SANG CC CLIENT KHC ---
-      Packet createPacket = new Packet(PacketType.CREATE_AUCTION, session);
-      Client.getInstance().sendRequest(createPacket);
-      // --- END NEW CODE ---
+      // ================== 4. NETWORK ==================
+      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJsonElement(session));
 
-      HistoryStore.history.add(
-          new HistoryRecord(
-              session.getId(),
-              HistoryType.ADD_ITEM,
-              item.getName() + " Giá: " + item.getStartingPrice()));
+      Client.getInstance().sendRequest(packet);
 
-      AlertUtils.showInfo("Thành công", "Phiên đấu giá đã được thêm thành công!");
-      handleBack(event); // Redirect to FirstScene
+      AlertUtils.showInfo("OK", "Tạo phiên thành công");
+      handleBack(event);
 
     } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi nhập liệu", "Giá và thời gian phải là số hợp lệ!");
+      AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");
     } catch (Exception e) {
-      AlertUtils.showError("Lỗi", "Có lỗi xảy ra: " + e.getMessage());
+      AlertUtils.showError("Lỗi", e.getMessage());
       e.printStackTrace();
     }
   }

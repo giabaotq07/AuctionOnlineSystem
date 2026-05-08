@@ -78,6 +78,12 @@
             <artifactId>logback-classic</artifactId>
             <version>1.5.32</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson-extras</artifactId>
+            <version>2.13.2-rc1</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -86,13 +92,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler.plugin.version}</version>
-                <configuration>
-                    <release>${maven.compiler.release}</release>
-                    <excludes>
-                        <!-- Loại bỏ một thư mục cụ thể và toàn bộ nội dung bên trong -->
-                        <exclude>**/controllers/**</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
 
             <plugin>
@@ -131,6 +130,9 @@
                     <noManPages>true</noManPages>
                     <stripDebug>true</stripDebug>
                     <noHeaderFiles>true</noHeaderFiles>
+                    <options>
+                        <option>--enable-native-access=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
             </plugin>
 

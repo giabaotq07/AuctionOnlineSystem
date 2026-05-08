@@ -1,16 +1,24 @@
 package app.network;
 
 import app.enums.PacketType;
+import app.exception.AppException;
 import app.models.Packet;
+import app.models.User;
 import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientHandler implements Runnable {
+  private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
   private final Socket socket;
   private BufferedWriter writer;
+  private BufferedReader reader;
+  private User user;
   private String username;
 
   private static final Map<PacketType, Command> COMMANDS = new HashMap<>();
@@ -30,51 +38,72 @@ public class ClientHandler implements Runnable {
     try {
       writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
       writer.flush();
-      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-      String json;
-      while ((json = reader.readLine()) != null) {
-        Packet packet = JsonUtil.fromJson(json, Packet.class);
-        handlePacket(packet);
-      }
+      reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      listen();
     } catch (IOException e) {
+      logger.error("Error initializing client handler", e);
       close();
+    }
+  }
+
+  public void listen() {
+    try {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        try {
+          Packet packet = JsonUtil.fromJson(line, Packet.class);
+          handlePacket(packet);
+        } catch (AppException e) {
+          // Lỗi JSON: Log lại và tiếp tục nghe gói tiếp theo
+          logger.error("Gói tin không hợp lệ: {}", e.getMessage());
+        }
+      }
+    } catch (SocketException e) {
+      // Hứng lỗi "Connection reset" ở đây
+      logger.info("Client {} đã ngắt kết nối đột ngột (Connection reset).", username);
+    } catch (IOException e) {
+      logger.error("Lỗi I/O khi lắng nghe Client: {}", e.getMessage());
+    } finally {
+      close(); // Đảm bảo dọn dẹp tài nguyên và xóa khỏi danh sách Server
     }
   }
 
   private void handlePacket(Packet packet) {
     Command command = COMMANDS.get(packet.getType());
     if (command != null) {
+      logger.info("[Server] Processing command: {}", packet.getType());
       command.execute(this, packet);
     } else {
-      System.out.println("[SERVER] Unrecognized command type: " + packet.getType());
+      logger.warn("[SERVER] Unrecognized command type: {}", packet.getType());
     }
   }
 
   public void sendMessage(Packet packet) {
     if (writer != null) {
       try {
-        String json = JsonUtil.toJson(packet);
-        writer.write(json);
+        writer.write(JsonUtil.toJson(packet));
         writer.newLine();
         writer.flush();
+        logger.debug("Sent message to {}", username);
       } catch (IOException e) {
-        System.err.println(
-            "[SERVER] Failed to send message to " + username + ": " + e.getMessage());
+        logger.error("[SERVER] Failed to send message to {}: {}", username, e.getMessage());
       }
     }
   }
 
-  public String getUsername() {
-    return username;
+  public User getUser() {
+    return user;
   }
 
-  public void setUsername(String username) {
-    this.username = username;
+  public void setUser(User user) {
+    this.user = user;
+    this.username = user.getName();
   }
 
   private void close() {
     if (this.username != null) {
       Server.removeClient(this.username);
+      logger.info("Client {} disconnected", username);
     }
     try {
       socket.close();

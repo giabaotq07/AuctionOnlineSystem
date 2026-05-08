@@ -1,15 +1,8 @@
 package app.network;
 
-import app.dao.AuctionDAO;
-import app.dao.AutoBidDAO;
-import app.dao.BidDAO;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlAutoBidDAO;
-import app.dao.impl.MySqlBidDAO;
-import app.dto.BidRequest;
-import app.models.*;
-import app.service.BidObserverService;
-import app.service.BidService;
+import app.exception.AppException;
+import app.models.Packet;
+import app.models.User;
 import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
@@ -18,13 +11,11 @@ import java.util.function.Consumer;
 public class Client {
   private static volatile Client instance;
   private Socket socket;
-  private String username;
+  private User currentUser;
   private BufferedWriter writer;
   private BufferedReader reader;
   private Consumer<Packet> onMessageReceived;
   private boolean isConnected = false;
-
-  private Client() {}
 
   public static Client getInstance() {
     if (instance == null) {
@@ -50,43 +41,37 @@ public class Client {
 
   private void listen() {
     try {
-      String json;
-      while ((json = reader.readLine()) != null) {
-        Packet packet = JsonUtil.fromJson(json, Packet.class);
-        System.out.println("[Server] " + packet.getType());
-        // xử lý lại vấn đề thông báo cho controller
-        switch (packet.getType()) {
-          case LOGIN, CHAT:
-            onMessageReceived.accept(packet);
-            System.out.println("[CLIENT] Nhận được tin nhắn: " + packet.getData());
-            break;
-          case CREATE_AUCTION:
-            Auction session = (Auction) packet.getData();
-            boolean exists =
-                app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
-            if (!exists) {
-              app.models.DataStore.sessions.add(session);
-              AuctionStateManager.getInstance().addSession(session);
-            }
-            break;
-
-          case PLACE_BID:
-            BidRequest bidRequest = (BidRequest) packet.getData();
-            AuctionDAO auctionDAO = new MySqlAuctionDAO();
-            BidDAO bidDAO = new MySqlBidDAO();
-            AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-            BidObserverService observerService = new BidObserverService();
-            BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, observerService);
-            bidService.placeBid(
-                bidRequest.sessionId(),
-                bidRequest.bidTransaction().getBidderId(),
-                bidRequest.bidTransaction().getAmount());
-            break;
+      String line;
+      Packet packet;
+      while ((line = reader.readLine()) != null) {
+        try {
+          packet = JsonUtil.fromJson(line, Packet.class);
+          System.out.println("[Server] " + packet);
+          switch (packet.getType()) {
+            case LOGIN:
+              System.out.println("[Server] " + packet);
+              if (onMessageReceived != null) {
+                onMessageReceived.accept(packet);
+              }
+              break;
+            case CREATE_AUCTION:
+            case PLACE_BID:
+            case CHAT:
+              System.out.println("[Server] " + packet);
+              if (onMessageReceived != null) {
+                onMessageReceived.accept(packet);
+              }
+              break;
+          }
+        } catch (AppException e) {
+          System.out.println(e.getMessage());
         }
       }
     } catch (IOException e) {
       System.err.println("Mất kết nối Server.");
       isConnected = false;
+    } finally {
+      closeResources();
     }
   }
 
@@ -101,8 +86,9 @@ public class Client {
         writer.write(json);
         writer.newLine();
         writer.flush();
+        System.out.println("[Client] " + json);
       } catch (IOException e) {
-        e.printStackTrace();
+        System.err.println("Lỗi");
       }
     }
   }
@@ -111,11 +97,22 @@ public class Client {
     this.onMessageReceived = handler;
   }
 
-  public String getUsername() {
-    return username;
+  public User getCurrentUser() {
+    return currentUser;
   }
 
-  public void setUsername(String username) {
-    this.username = username;
+  public void setCurrentUser(User currentUser) {
+    this.currentUser = currentUser;
+  }
+
+  private void closeResources() {
+    try {
+      isConnected = false;
+      if (reader != null) reader.close();
+      if (writer != null) writer.close();
+      if (socket != null) socket.close();
+    } catch (IOException e) {
+      System.err.println("Lỗi khi đóng kết nối: " + e.getMessage());
+    }
   }
 }

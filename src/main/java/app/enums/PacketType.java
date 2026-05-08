@@ -1,6 +1,8 @@
 package app.enums;
 
-public enum PacketType {
+import java.io.Serializable;
+
+public enum PacketType implements Serializable {
   LOGIN,
   LOGOUT,
   REGISTER,

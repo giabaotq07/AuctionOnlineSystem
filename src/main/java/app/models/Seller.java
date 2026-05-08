@@ -6,10 +6,12 @@ import app.observer.AuctionObserver;
 public class Seller extends User implements AuctionObserver {
   public Seller(int id, String name, Account account, Wallet wallet) {
     super(id, name, account, wallet);
+    role = UserRole.SELLER;
   }
 
   public Seller(String name, Account account, Wallet wallet) {
     super(name, account, wallet);
+    role = UserRole.SELLER;
   }
 
   @Override

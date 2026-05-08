@@ -1,118 +1,156 @@
 package app.controllers;
 
 import app.config.NavigationManager;
+import app.dao.*;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlAutoBidDAO;
+import app.dao.impl.MySqlBidDAO;
+import app.dao.impl.MySqlItemDAO;
 import app.enums.View;
-import app.models.DataStore;
-import app.models.HistoryRecord;
+import app.models.Auction;
+import app.models.Item;
+import app.models.User;
 import app.network.Client;
-import app.utils.AlertUtils;
-import java.io.IOException;
+import app.service.BidObserverService;
+import app.service.BidService;
 import java.util.List;
-import javafx.event.ActionEvent;
+import java.util.Objects;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class MyHistoryController {
 
-  @FXML private Stage stage;
-  private Scene scene;
+  // Khớp fx:id từ file FXML của ông
+  @FXML private ScrollPane historyScrollPane;
+  @FXML private HBox historyContainerPane;
 
-  // nếu bạn vẫn muốn giữ session list
-  @FXML private VBox historyContainerPane;
+  private static final double CARD_WIDTH = 280;
+  private static final double SPACING = 20; // Khớp với spacing="20" trong FXML
 
-  private HBox cardContainer;
-  private ScrollPane scrollPane;
-
-  private final HistoryDAO historyDAO = HistoryDAO.getInstance();
+  // ✅ Thêm BidService để lấy highest bid từ database
+  private BidDAO bidDAO = new MySqlBidDAO();
+  private AuctionDAO auctionDAO = new MySqlAuctionDAO();
+  private AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
+  private BidObserverService bidObserverService = new BidObserverService();
+  private ItemDAO itemDAO = new MySqlItemDAO();
+  private Client client = Client.getInstance();
+  private User currentUser = client.getCurrentUser();
+  private final BidService bidService =
+      new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
 
   @FXML
   public void initialize() {
+    // Đợi UI render xong rồi mới tính toán scroll
+    Platform.runLater(
+        () -> {
+          refreshHistoryContainer();
+          startAutoScroll();
+        });
+  }
 
-    // giả sử bạn lấy sessionId từ current user / selected auction
-    int sessionId = DataStore.currentSessionId;
-
-    List<HistoryRecord> histories = historyDAO.getHistoryBySession(sessionId);
-
-    cardContainer = createContainer(histories);
-
-    scrollPane = new ScrollPane();
-    scrollPane.setContent(cardContainer);
-
-    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-    scrollPane.setFitToHeight(true);
-    scrollPane.setStyle("-fx-background-color: transparent;");
-
-    scrollPane.setPrefHeight(320);
-    scrollPane.setPrefWidth(900);
-
-    if (historyContainerPane != null) {
-      historyContainerPane.getChildren().clear();
-      historyContainerPane.getChildren().add(scrollPane);
+  private void refreshHistoryContainer() {
+    if (historyContainerPane == null) return;
+    historyContainerPane.getChildren().clear();
+    List<Auction> allAuctions = auctionDAO.findAll();
+    for (Auction auction : allAuctions) {
+      int auctionId = auction.getId();
+      historyContainerPane.getChildren().add(createAuctionCard(auction));
     }
   }
 
-  // ================= CARD =================
+  private VBox createAuctionCard(Auction session) {
+    VBox vbox = new VBox();
+    vbox.setPrefWidth(CARD_WIDTH);
+    vbox.setMinWidth(CARD_WIDTH);
+    vbox.setMaxWidth(CARD_WIDTH);
+    vbox.setStyle(
+        "-fx-background-color: #1a1f35; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
 
-  private VBox createHistoryCard(HistoryRecord record) {
+    Label badge =
+        new Label(currentUser.getId() == session.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
+    ;
+    badge.setStyle(
+        currentUser.getId() == session.getSellerId()
+            ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
+            : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
 
-    VBox box = new VBox();
-    box.setPrefWidth(280);
-    box.setMinWidth(280);
-    box.setMaxWidth(280);
+    Item item = itemDAO.findById(session.getItemId()).orElse(null);
+    Label titleLabel = new Label(item.getName());
+    titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
+    titleLabel.setWrapText(true);
 
-    box.setStyle(
-        "-fx-background-color: #1a1f35;"
-            + "-fx-background-radius: 8;"
-            + "-fx-padding: 12;"
-            + "-fx-spacing: 8;");
+    // ✅ Lấy giá cao nhất từ database thay vì in-memory
+    long highestBid =
+        Objects.requireNonNull(bidService.getHighestBid(session.getId()).orElse(null)).getAmount();
+    long displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
+    Label priceLabel = new Label(String.format("Giá: %,.0f đ", displayPrice));
+    priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
-    Label type = new Label(record.getType().name());
-    type.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
+    Button btnDetail = new Button("Chi tiết");
+    btnDetail.setMaxWidth(Double.MAX_VALUE);
+    btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white; -fx-cursor: hand;");
+    btnDetail.setOnAction(e -> handleGoToLive(session));
 
-    Label message = new Label(record.getMessage());
-    message.setWrapText(true);
-    message.setStyle("-fx-text-fill: white;");
-
-    Label time = new Label(String.valueOf(record.getTime()));
-    time.setStyle("-fx-text-fill: #9aa0b4; -fx-font-size: 11px;");
-
-    box.getChildren().addAll(type, message, time);
-
-    return box;
+    vbox.getChildren().addAll(badge, titleLabel, priceLabel, btnDetail);
+    return vbox;
   }
 
-  // ================= CONTAINER =================
+  private void startAutoScroll() {
+    if (historyScrollPane == null || historyContainerPane == null) return;
 
-  private HBox createContainer(List<HistoryRecord> records) {
+    Timeline scrollTimeline =
+        new Timeline(
+            new KeyFrame(
+                Duration.seconds(3),
+                e -> {
+                  double contentWidth = historyContainerPane.getWidth();
+                  double viewWidth = historyScrollPane.getViewportBounds().getWidth();
+                  double maxScroll = contentWidth - viewWidth;
 
-    HBox container = new HBox();
-    container.setAlignment(Pos.CENTER_LEFT);
-    container.setSpacing(30);
+                  if (maxScroll <= 0) return;
 
-    for (HistoryRecord r : records) {
-      container.getChildren().add(createHistoryCard(r));
+                  double step = CARD_WIDTH + SPACING;
+                  double nextPixel = (historyScrollPane.getHvalue() * maxScroll) + step;
+
+                  if (nextPixel >= maxScroll + 10) { // Thêm tí đệm để reset mượt
+                    nextPixel = 0;
+                  }
+                  historyScrollPane.setHvalue(nextPixel / maxScroll);
+                }));
+    scrollTimeline.setCycleCount(Timeline.INDEFINITE);
+    scrollTimeline.play();
+
+    historyScrollPane.setOnMouseEntered(ev -> scrollTimeline.pause());
+    historyScrollPane.setOnMouseExited(ev -> scrollTimeline.play());
+  }
+
+  private void handleGoToLive(Auction session) {
+    try {
+      NavigationManager.getInstance()
+          .navigateTo(
+              View.LIVE,
+              c -> {
+                if (c instanceof LiveController) ((LiveController) c).setSession(session);
+              });
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-
-    return container;
   }
-
-  // ================= NAV =================
 
   @FXML
-  public void SwitchToUI(ActionEvent event) throws IOException {
-
-    if (!Client.getInstance().isConnected()) {
-      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server. Vui lòng kết nối lại!");
-      return;
+  public void SwitchToUI() {
+    try {
+      NavigationManager.getInstance().navigateTo(View.UI);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-
-    NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

@@ -1,14 +1,12 @@
 package app.models;
 
 import app.enums.UserRole;
-import java.time.LocalDateTime;
 
 public abstract class User extends Entity {
   protected String name;
   protected final Account account;
   protected final Wallet wallet;
-  protected LocalDateTime createdAt;
-  protected LocalDateTime updatedAt;
+  protected transient UserRole role;
 
   public User(int id, String name, Account account, Wallet wallet) {
     this.id = id;

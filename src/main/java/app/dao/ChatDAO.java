@@ -1,10 +1,10 @@
 package app.dao;
 
-import app.dto.ChatMessage;
+import app.dto.ChatResponse;
 import java.util.List;
 
 public interface ChatDAO {
-  int save(ChatMessage message);
+  int save(ChatResponse message);
 
-  List<ChatMessage> getConversation(int conversationId);
+  List<ChatResponse> getConversation(int conversationId);
 }

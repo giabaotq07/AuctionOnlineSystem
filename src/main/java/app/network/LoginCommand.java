@@ -9,11 +9,16 @@ import app.exception.ServiceException;
 import app.models.Packet;
 import app.models.User;
 import app.service.UserService;
+import app.utils.JsonUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoginCommand implements Command {
+  private static final Logger logger = LoggerFactory.getLogger(LoginCommand.class);
+
   @Override
   public void execute(ClientHandler clientHandler, Packet packet) {
-    LoginRequest loginPacket = (LoginRequest) packet.getData();
+    LoginRequest loginPacket = JsonUtil.fromJson(packet.getData(), LoginRequest.class);
     String username = loginPacket.username();
     String password = loginPacket.password();
     UserDAO userDAO = new MySqlUserDAO();
@@ -24,15 +29,15 @@ public class LoginCommand implements Command {
     } catch (ServiceException e) {
       LoginResponse loginResponse =
           new LoginResponse(false, "Đăng nhập thất bại! Sai tên tài khoản hoặc mật khẩu.", null);
-      Packet responsePacket = new Packet(PacketType.LOGIN, loginResponse);
+      Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginResponse));
       clientHandler.sendMessage(responsePacket);
       return;
     }
-    clientHandler.setUsername(username);
-    Server.registerClient(username, clientHandler);
-    System.out.println("[SERVER] " + username + " đã đăng nhập.");
+    clientHandler.setUser(user);
+    Server.registerClient(user.getId(), clientHandler);
+    logger.info("[SERVER] {} đã đăng nhập.", username);
     LoginResponse loginResponse = new LoginResponse(true, "Đăng nhập thành công!", user);
-    Packet responsePacket = new Packet(PacketType.LOGIN, loginResponse);
+    Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginResponse));
     clientHandler.sendMessage(responsePacket);
   }
 }
