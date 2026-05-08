@@ -11,11 +11,33 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.AnchorPane;
 
 public class ConnectServerController {
   @FXML private Button connectButton;
   @FXML private Label statusLabel;
+  @FXML private AnchorPane rootPane;
   private static final int CONNECTION_TIMEOUT = 5000; // 5 seconds
+
+  @FXML
+  private void initialize() {
+    // Load background image giống login
+    try {
+      String url = getClass()
+          .getResource("/app/views/images/background_login.png")
+          .toExternalForm();
+      if (rootPane != null) {
+        rootPane.setStyle(
+            "-fx-background-image: url('" + url + "');"
+                + "-fx-background-size: cover;"
+                + "-fx-background-position: center center;"
+                + "-fx-background-repeat: no-repeat;"
+                + "-fx-background-color: #0a0f16;");
+      }
+    } catch (Exception e) {
+      System.err.println("Không load được background: " + e.getMessage());
+    }
+  }
 
   @FXML
   public void ConnectServer(ActionEvent event) {
