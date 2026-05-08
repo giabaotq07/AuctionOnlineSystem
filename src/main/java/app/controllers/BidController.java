@@ -1,20 +1,19 @@
 package app.controllers;
 
+import app.config.NavigationManager;
 import app.dao.UserDAO;
-import app.dao.BidDAO;
-import app.dao.HistoryDAO;
+import app.dao.impl.*;
 import app.enums.HistoryType;
+import app.enums.View;
 import app.models.*;
-import app.service.UserService;
+import app.network.Client;
+import app.service.BidObserverService;
 import app.service.BidService;
-import java.io.IOException;
+import app.service.ItemService;
+import app.service.UserService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.stage.Stage;
 
 public class BidController {
 
@@ -22,7 +21,7 @@ public class BidController {
   UserService userService;
   // DAO / Service để xử lý bid và lịch sử
   private BidService bidService;
-  private HistoryDAO historyDAO;
+  private ItemService itemService;
   // ===== INPUT =====
   @FXML private ListView<Auction> sessionListView;
 
@@ -36,11 +35,15 @@ public class BidController {
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
-    userDao = UserDAO.getInstance();
-    userService = new UserService(userDao);
+    userService = new UserService(new MySqlUserDAO());
+    itemService = new ItemService(new MySqlItemDAO());
     // Khởi tạo service/dao cần thiết
-    bidService = new BidService(BidDAO.getInstance());
-    historyDAO = HistoryDAO.getInstance();
+    bidService =
+        new BidService(
+            new MySqlBidDAO(),
+            new MySqlAutoBidDAO(),
+            new MySqlAuctionDAO(),
+            new BidObserverService());
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
 
@@ -49,11 +52,9 @@ public class BidController {
     sessionListView.setOnMouseClicked(
         e -> {
           Auction s = sessionListView.getSelectionModel().getSelectedItem();
-          if (s == null) return;
-          session = s;
+          Item item = itemService.getById(s.getItemId());
 
-          outputArea.setText(
-              "Item: " + s.getItem().getName() + "\nGiá: $" + s.getCurrentHighestPrice());
+          outputArea.setText("Item: " + item.getName() + "\nGiá: $" + s.getHighestBid());
         });
   }
 
@@ -67,32 +68,31 @@ public class BidController {
       }
 
       String userName = bidderField.getText();
-      double amount = Double.parseDouble(amountField.getText());
-
-      User bidder = userService.getUserByAccount(userName);
-      if (bidder == null) {
-        outputArea.setText("Người dùng không tồn tại!");
-        return;
-      }
-
+      long amount = Long.parseLong(amountField.getText());
+      User bidder = Client.getInstance().getCurrentUser();
+      Item item = itemService.getById(bidder.getId());
       try {
         bidService.placeBid(session.getId(), bidder.getId(), amount);
 
         // ✅ CẬP NHẬT OUTPUT NGAY LẬP TỨC từ dữ liệu trong database
-        BidTransaction highestBid = bidService.getHighestBid(session.getId());
-        if (highestBid != null) {
-          outputArea.setText(
-              "Item: " + session.getItem().getName()
-              + "\nGiá hiện tại: $" + String.format("%.2f", highestBid.getAmount())
-              + "\nNguời trả giá cao nhất: " + highestBid.getBidder().getName());
-        }
+        bidService
+            .getHighestBid(session.getId())
+            .ifPresent(
+                highestBid ->
+                    outputArea.setText(
+                        "Item: "
+                            + item.getName()
+                            + "\nGiá hiện tại: "
+                            + highestBid.getAmount()
+                            + "\nNguời trả giá cao nhất: "
+                            + highestBid.getBidderName()));
 
         // Lưu lịch sử vào database
-        HistoryRecord record = new HistoryRecord(
-            session.getId(),
-            HistoryType.BID,
-            bidder.getName() + " bid $" + amount + " vào " + session.getItem().getName());
-        historyDAO.addHistoryRecord(record);
+        HistoryRecord record =
+            new HistoryRecord(
+                session.getId(),
+                HistoryType.BID,
+                bidder.getName() + " bid $" + amount + " vào " + item.getName());
 
         amountField.clear();
         bidderField.clear();
@@ -108,11 +108,7 @@ public class BidController {
   }
 
   @FXML
-  public void handleBack(ActionEvent event) throws IOException {
-    FXMLLoader loader = new FXMLLoader(getClass().getResource("/app/views/FirstScene.fxml"));
-    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-    Scene scene = new Scene(loader.load(), 1280, 720);
-    stage.setScene(scene);
-    stage.show();
+  public void handleBack(ActionEvent event) {
+    NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

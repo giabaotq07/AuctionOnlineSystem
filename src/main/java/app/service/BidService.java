@@ -111,9 +111,4 @@ public class BidService {
   private long getCurrentPrice(int sessionId) {
     return sessionDAO.findById(sessionId).map(Auction::getHighestBid).orElse(0L);
   }
-
-  // ✅ Thêm method để lấy highest bid amount từ database
-  public double getHighestBidAmount(int sessionId) {
-    return bidDAO.getHighestBidAmount(sessionId);
-  }
 }

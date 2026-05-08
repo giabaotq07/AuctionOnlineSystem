@@ -1,13 +1,14 @@
 package app.models;
 
 import app.enums.PacketType;
+import com.google.gson.JsonElement;
 import java.io.Serializable;
 
 public class Packet implements Serializable {
   private PacketType type;
-  private Object data;
+  private JsonElement data;
 
-  public Packet(PacketType type, Object data) {
+  public Packet(PacketType type, JsonElement data) {
     this.type = type;
     this.data = data;
   }
@@ -16,7 +17,7 @@ public class Packet implements Serializable {
     this.type = type;
   }
 
-  public void setData(Object data) {
+  public void setData(JsonElement data) {
     this.data = data;
   }
 
@@ -24,7 +25,12 @@ public class Packet implements Serializable {
     return type;
   }
 
-  public Object getData() {
+  public JsonElement getData() {
     return data;
+  }
+
+  @Override
+  public String toString() {
+    return "Packet{" + "type=" + type + ", data=" + data + '}';
   }
 }

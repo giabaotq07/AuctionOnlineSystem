@@ -7,6 +7,7 @@ import java.util.Objects;
 public abstract class Entity implements Serializable {
   protected int id;
   protected LocalDateTime createdAt;
+  protected LocalDateTime updatedAt;
 
   public Entity(int id) {
     this.id = id;
@@ -31,6 +32,14 @@ public abstract class Entity implements Serializable {
 
   public void setCreatedAt(LocalDateTime createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
   }
 
   @Override

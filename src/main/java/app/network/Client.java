@@ -1,8 +1,9 @@
 package app.network;
 
-import app.models.Auction;
-import app.models.BidTransaction;
-import app.models.MessagePacket;
+import app.exception.AppException;
+import app.models.Packet;
+import app.models.User;
+import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
@@ -10,11 +11,11 @@ import java.util.function.Consumer;
 public class Client {
   private static volatile Client instance;
   private Socket socket;
-  private ObjectOutputStream out;
-  private ObjectInputStream in;
-  private Consumer<MessagePacket<?>> onMessageReceived;
+  private User currentUser;
+  private BufferedWriter writer;
+  private BufferedReader reader;
+  private Consumer<Packet> onMessageReceived;
   private boolean isConnected = false;
-  private String myUsername;
 
   public static Client getInstance() {
     if (instance == null) {
@@ -29,9 +30,9 @@ public class Client {
     System.out.println("[CLIENT] Đang kết nối...");
     socket = new Socket("127.0.0.1", 5000);
     System.out.println("[CLIENT] Kết nối thành công!");
-    out = new ObjectOutputStream(socket.getOutputStream());
-    out.flush();
-    in = new ObjectInputStream(socket.getInputStream());
+    writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+    writer.flush();
+    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     Thread thread = new Thread(this::listen);
     thread.setDaemon(true);
     thread.start();
@@ -40,57 +41,37 @@ public class Client {
 
   private void listen() {
     try {
-      MessagePacket<?> packet;
-      while ((packet = (MessagePacket<?>) in.readObject()) != null) {
-        System.out.println("[Server] " + packet.getType());
-        switch (packet.getType()) {
-          case LOGIN:
-            onMessageReceived.accept(packet);
-            break;
-          case CREATE_AUCTION:
-            Auction session = (Auction) packet.getData();
-            boolean exists =
-                app.models.DataStore.sessions.stream().anyMatch(s -> s.getId() == session.getId());
-            if (!exists) {
-              app.models.DataStore.sessions.add(session);
-              app.models.AuctionStateManager.getInstance().addSession(session);
-            }
-            break;
-
-          case PLACE_BID:
-            Auction updatedSession = (Auction) packet.getData();
-            app.models.DataStore.sessions.stream()
-                    .filter(s -> s.getId() == updatedSession.getId())
-                    .findFirst()
-                    .ifPresent(s -> {
-                      // 1. Cập nhật dữ liệu mới từ Server vào RAM Client
-                      s.getBidHistory().clear();
-                      s.getBidHistory().addAll(updatedSession.getBidHistory());
-                      s.setStatus(updatedSession.getStatus());
-
-                      // 2. Kiểm tra và bắn thông báo cho UI
-                      if (!s.getBidHistory().isEmpty()) {
-                        BidTransaction lastBid = s.getBidHistory().get(s.getBidHistory().size() - 1);
-
-                        // SỬA TẠI ĐÂY: Chỉ truyền ĐÚNG 2 tham số (Giá và Tên người đặt)
-                        // Bỏ cái tham số tên sản phẩm đi để không còn lỗi "Expected 2 but found 3"
-                        s.notifyObserversNewBid(
-                                lastBid.getAmount(),
-                                lastBid.getBidder().getName()
-                        );
-                      }
-                    });
-            break;
-          case CHAT:
-            if (onMessageReceived != null) {
-              onMessageReceived.accept(packet);
-            }
-            break;
+      String line;
+      Packet packet;
+      while ((line = reader.readLine()) != null) {
+        try {
+          packet = JsonUtil.fromJson(line, Packet.class);
+          System.out.println("[Server] " + packet);
+          switch (packet.getType()) {
+            case LOGIN:
+              System.out.println("[Server] " + packet);
+              if (onMessageReceived != null) {
+                onMessageReceived.accept(packet);
+              }
+              break;
+            case CREATE_AUCTION:
+            case PLACE_BID:
+            case CHAT:
+              System.out.println("[Server] " + packet);
+              if (onMessageReceived != null) {
+                onMessageReceived.accept(packet);
+              }
+              break;
+          }
+        } catch (AppException e) {
+          System.out.println(e.getMessage());
         }
       }
-    } catch (IOException | ClassNotFoundException e) {
+    } catch (IOException e) {
       System.err.println("Mất kết nối Server.");
       isConnected = false;
+    } finally {
+      closeResources();
     }
   }
 
@@ -98,26 +79,40 @@ public class Client {
     return isConnected;
   }
 
-  public void sendRequest(MessagePacket<?> packet) {
-    if (out != null) {
+  public void sendRequest(Packet packet) {
+    if (writer != null) {
       try {
-        out.reset(); // Reset Java object stream cache
-        out.writeObject(packet);
-        out.flush();
+        String json = JsonUtil.toJson(packet);
+        writer.write(json);
+        writer.newLine();
+        writer.flush();
+        System.out.println("[Client] " + json);
       } catch (IOException e) {
-        e.printStackTrace();
+        System.err.println("Lỗi");
       }
     }
   }
-  public void setMyUsername(String username) {
-    this.myUsername = username;
-  }
 
-  public String getMyUsername() {
-    return myUsername;
-  }
-
-  public void setOnMessageReceived(Consumer<MessagePacket<?>> handler) {
+  public void setOnMessageReceived(Consumer<Packet> handler) {
     this.onMessageReceived = handler;
+  }
+
+  public User getCurrentUser() {
+    return currentUser;
+  }
+
+  public void setCurrentUser(User currentUser) {
+    this.currentUser = currentUser;
+  }
+
+  private void closeResources() {
+    try {
+      isConnected = false;
+      if (reader != null) reader.close();
+      if (writer != null) writer.close();
+      if (socket != null) socket.close();
+    } catch (IOException e) {
+      System.err.println("Lỗi khi đóng kết nối: " + e.getMessage());
+    }
   }
 }

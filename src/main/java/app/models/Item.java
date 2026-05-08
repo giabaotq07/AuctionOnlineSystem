@@ -2,7 +2,6 @@ package app.models;
 
 import app.enums.ItemStatus;
 import app.enums.ItemType;
-import java.time.LocalDateTime;
 
 public abstract class Item extends Entity {
   protected int sellerId;
@@ -12,8 +11,6 @@ public abstract class Item extends Entity {
   protected long stepPrice;
   protected ItemType type;
   protected ItemStatus status;
-  protected LocalDateTime createdAt;
-  protected LocalDateTime updatedAt;
 
   public Item(
       String name,
@@ -78,7 +75,7 @@ public abstract class Item extends Entity {
     return stepPrice;
   }
 
-  public void setStepPrice(Long stepPrice) {
+  public void setStepPrice(long stepPrice) {
     this.stepPrice = stepPrice;
   }
 
@@ -86,28 +83,16 @@ public abstract class Item extends Entity {
     return type;
   }
 
+  public void setType(ItemType type) {
+    this.type = type;
+  }
+
   public ItemStatus getStatus() {
     return status;
   }
 
-  public LocalDateTime getUpdatedAt() {
-    return updatedAt;
-  }
-
-  public void setUpdatedAt(LocalDateTime updatedAt) {
-    this.updatedAt = updatedAt;
-  }
-
   public void setStatus(ItemStatus status) {
     this.status = status;
-  }
-
-  public void setStepPrice(long stepPrice) {
-    this.stepPrice = stepPrice;
-  }
-
-  public void setType(ItemType type) {
-    this.type = type;
   }
 
   public abstract void printInfo();

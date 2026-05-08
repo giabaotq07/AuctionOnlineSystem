@@ -1,16 +1,18 @@
 package app.controllers;
 
-import app.config.AlertUtils;
 import app.config.NavigationManager;
-import app.config.View;
-import app.dao.AuctionDAO;
-import app.dao.HistoryDAO;
-import app.dao.ItemDAO;
-import app.enums.CommandType;
-import app.enums.HistoryType;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlBidDAO;
+import app.dao.impl.MySqlItemDAO;
 import app.enums.ItemType;
+import app.enums.PacketType;
+import app.enums.View;
 import app.models.*;
 import app.network.Client;
+import app.service.AuctionService;
+import app.service.ItemService;
+import app.utils.AlertUtils;
+import app.utils.JsonUtil;
 import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -25,6 +27,8 @@ public class AuctionController {
   @FXML private TextField stepPriceField;
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
+
+  Client client = Client.getInstance();
 
   @FXML
   public void initialize() {
@@ -44,7 +48,7 @@ public class AuctionController {
   @FXML
   public void handleAdd(ActionEvent event) {
 
-    if (!Client.getInstance().isConnected()) {
+    if (Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
@@ -59,8 +63,8 @@ public class AuctionController {
 
       String name = nameField.getText();
       String desc = descriptionField.getText();
-      double startPrice = Double.parseDouble(startingPriceField.getText());
-      double stepPrice = Double.parseDouble(stepPriceField.getText());
+      long startPrice = Long.parseLong(startingPriceField.getText());
+      long stepPrice = Long.parseLong(stepPriceField.getText());
       int durationMins = Integer.parseInt(durationField.getText());
       ItemType type = typeComboBox.getValue();
 
@@ -70,38 +74,30 @@ public class AuctionController {
       }
 
       // ================== 1. SAVE ITEM ==================
-      Item item = ItemFactory.createItem(name, desc, startPrice, stepPrice, type);
-      item = ItemDAO.getInstance().addItem(item);
+      ItemService itemService = new ItemService(new MySqlItemDAO());
+      Item item =
+          ItemFactory.createItem(
+              name, client.getCurrentUser().getId(), desc, startPrice, stepPrice, type);
+      item = itemService.add(item);
 
       // ================== 2. SAVE AUCTION ==================
-      Auction session = new Auction(
-              0,
-              item,
-              DataStore.currentUser,
-              LocalDateTime.now().plusMinutes(durationMins)
-      );
+      Auction session =
+          new Auction(
+              item.getId(),
+              DataStore.currentUser.getId(),
+              LocalDateTime.now().plusMinutes(durationMins));
 
-      session = AuctionDAO.getInstance().addAuction(session);
+      AuctionService auctionService = new AuctionService(new MySqlAuctionDAO(), new MySqlBidDAO());
+      session = auctionService.createAuction(session);
 
       // ================== 3. UI CACHE (optional) ==================
       DataStore.sessions.add(session);
       AuctionStateManager.getInstance().addSession(session);
 
       // ================== 4. NETWORK ==================
-      MessagePacket<Auction> packet =
-              new MessagePacket<>(CommandType.CREATE_AUCTION, session);
+      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJsonElement(session));
 
       Client.getInstance().sendRequest(packet);
-
-      // ================== 5. SAVE HISTORY ==================
-      HistoryDAO.getInstance().addHistoryRecord(
-              new HistoryRecord(
-                      session.getId(),
-                      HistoryType.ADD_ITEM,
-                      item.getName() + " | Giá: " + item.getStartingPrice(),
-                      LocalDateTime.now()
-              )
-      );
 
       AlertUtils.showInfo("OK", "Tạo phiên thành công");
       handleBack(event);

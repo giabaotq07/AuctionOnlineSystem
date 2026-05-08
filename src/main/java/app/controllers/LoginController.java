@@ -7,42 +7,37 @@ import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;
 import app.models.Packet;
-import app.models.User;
 import app.network.Client;
 import app.utils.AlertUtils;
+import app.utils.JsonUtil;
+import java.util.Objects;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Stage;
 
 public class LoginController {
   @FXML private TextField account;
   @FXML private PasswordField password;
   @FXML private Button loginButton;
-  @FXML private Stage stage;
-  @FXML private Scene scene;
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
-  private LoginRequest loginRequest;
   private LoginResponse response;
-  private User user;
 
   @FXML
   private void initialize() {
-    String url = getClass()
-            .getResource("/app/views/images/background_login.png")
+    String url =
+        Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
             .toExternalForm();
 
     rootPane.setStyle(
-            "-fx-background-image: url('" + url + "');" +
-                    "-fx-background-size: cover;" +
-                    "-fx-background-position: center center;" +
-                    "-fx-background-repeat: no-repeat;"
-    );
+        "-fx-background-image: url('"
+            + url
+            + "');"
+            + "-fx-background-size: cover;"
+            + "-fx-background-position: center center;"
+            + "-fx-background-repeat: no-repeat;");
     Client.getInstance()
         .setOnMessageReceived(
             packet -> {
@@ -50,9 +45,10 @@ public class LoginController {
                   () -> {
                     loginButton.setDisable(false);
                     if (packet.getType() == PacketType.LOGIN) {
-                      response = (LoginResponse) packet.getData();
+                      response = JsonUtil.fromJson(packet.getData(), LoginResponse.class);
                     }
                     if (response.success()) {
+                      Client.getInstance().setCurrentUser(response.user());
                       DataStore.currentUser = response.user();
                       SwitchToUI();
                     } else {
@@ -63,17 +59,18 @@ public class LoginController {
   }
 
   @FXML
-  public void handleLogin(ActionEvent actionEvent) {
+  public void handleLogin() {
     loginButton.setDisable(true);
     String userInput = account.getText();
     String passInput = password.getText();
     if (userInput.isEmpty() || passInput.isEmpty()) {
-      showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Vui lòng nhập đầy đủ account và Password!");
+      showAlert();
       loginButton.setDisable(false);
       return;
     }
-    loginRequest = new LoginRequest(userInput, passInput);
-    Client.getInstance().sendRequest(new Packet(PacketType.LOGIN, loginRequest));
+    LoginRequest loginRequest = new LoginRequest(userInput, passInput);
+    Client.getInstance()
+        .sendRequest(new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginRequest)));
   }
 
   @FXML
@@ -81,11 +78,11 @@ public class LoginController {
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 
-  private void showAlert(Alert.AlertType alertType, String title, String content) {
-    Alert alert = new Alert(alertType);
-    alert.setTitle(title);
+  private void showAlert() {
+    Alert alert = new Alert(Alert.AlertType.WARNING);
+    alert.setTitle("Cảnh báo");
     alert.setHeaderText(null);
-    alert.setContentText(content);
+    alert.setContentText("Vui lòng nhập đầy đủ account và Password!");
     alert.showAndWait();
   }
 

@@ -23,12 +23,13 @@ public class ConnectServerController {
   private void initialize() {
     // Load background image giống login
     try {
-      String url = getClass()
-          .getResource("/app/views/images/background_login.png")
-          .toExternalForm();
+      String url =
+          getClass().getResource("/app/views/images/background_login.png").toExternalForm();
       if (rootPane != null) {
         rootPane.setStyle(
-            "-fx-background-image: url('" + url + "');"
+            "-fx-background-image: url('"
+                + url
+                + "');"
                 + "-fx-background-size: cover;"
                 + "-fx-background-position: center center;"
                 + "-fx-background-repeat: no-repeat;"

@@ -5,6 +5,7 @@ import app.dao.UserDAO;
 import app.dao.impl.MySqlUserDAO;
 import app.enums.UserRole;
 import app.enums.View;
+import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.*;
 import app.service.UserService;
@@ -32,12 +33,13 @@ public class RegisterController {
   private void initialize() {
     // Load background image giống login
     try {
-      String url = getClass()
-          .getResource("/app/views/images/background_login.png")
-          .toExternalForm();
+      String url =
+          getClass().getResource("/app/views/images/background_login.png").toExternalForm();
       if (rootPane != null) {
         rootPane.setStyle(
-            "-fx-background-image: url('" + url + "');"
+            "-fx-background-image: url('"
+                + url
+                + "');"
                 + "-fx-background-size: cover;"
                 + "-fx-background-position: center center;"
                 + "-fx-background-repeat: no-repeat;"
@@ -69,7 +71,7 @@ public class RegisterController {
     try {
       newUser = userService.register(newUser);
       AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());
-    } catch (ServiceException e) {
+    } catch (DatabaseException | ServiceException e) {
       AlertUtils.showError(
           "Thất bại", "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
     }
