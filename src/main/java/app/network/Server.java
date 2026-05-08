@@ -34,6 +34,7 @@ public class Server {
     while (true) {
       try {
         Socket socket = serverSocket.accept();
+        System.out.println("[SERVER] Client mới kết nối: " + socket.getRemoteSocketAddress());
         clientPool.execute(new ClientHandler(socket));
       } catch (IOException e) {
         e.printStackTrace();

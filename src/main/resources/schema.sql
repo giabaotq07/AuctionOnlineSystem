@@ -1,3 +1,16 @@
+SET
+FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS history_records;
+DROP TABLE IF EXISTS bids;
+DROP TABLE IF EXISTS auction_sessions;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS auto_bids;
+
+SET
+FOREIGN_KEY_CHECKS = 1;
+
     -- Sau đó mới chạy đoạn script CREATE TABLE của bạn
 CREATE DATABASE IF NOT EXISTS auction_db;
 USE auction_db;
