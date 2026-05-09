@@ -20,7 +20,7 @@ public class Electronics extends Item {
       === Art Item ===
       ID: %d | Name: %s
       Description: %s
-      Starting Price: %.2f | Step: %.2f
+      Starting Price: %d | Step: %d
       %n""",
         getId(), getName(), getDescription(), getStartingPrice(), getStepPrice());
   }

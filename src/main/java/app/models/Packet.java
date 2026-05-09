@@ -6,9 +6,9 @@ import java.io.Serializable;
 
 public class Packet implements Serializable {
   private PacketType type;
-  private JsonElement data;
+  private String data;
 
-  public Packet(PacketType type, JsonElement data) {
+  public Packet(PacketType type, String data) {
     this.type = type;
     this.data = data;
   }
@@ -17,7 +17,7 @@ public class Packet implements Serializable {
     this.type = type;
   }
 
-  public void setData(JsonElement data) {
+  public void setData(String data) {
     this.data = data;
   }
 
@@ -25,7 +25,7 @@ public class Packet implements Serializable {
     return type;
   }
 
-  public JsonElement getData() {
+  public String getData() {
     return data;
   }
 

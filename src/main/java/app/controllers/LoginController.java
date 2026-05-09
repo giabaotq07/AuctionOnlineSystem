@@ -43,23 +43,21 @@ public class LoginController {
             + "-fx-background-repeat: no-repeat;");
     Client.getInstance()
         .setOnMessageReceived(
-            packet -> {
-              Platform.runLater(
-                  () -> {
-                    loginButton.setDisable(false);
-                    if (packet.getType() == PacketType.LOGIN) {
-                      response = JsonUtil.fromJson(packet.getData(), LoginResponse.class);
-                    }
-                    if (response.success()) {
-                      User user = UserFactory.createUser(response.user());
-                      Client.getInstance().setCurrentUser(user);
-                      DataStore.currentUser = user;
-                      SwitchToUI();
-                    } else {
-                      AlertUtils.showError("Đăng nhập thất bại", response.message());
-                    }
-                  });
-            });
+            packet -> Platform.runLater(
+                () -> {
+                  loginButton.setDisable(false);
+                  if (packet.getType() == PacketType.LOGIN) {
+                    response = JsonUtil.fromJson(packet.getData(), LoginResponse.class);
+                  }
+                  if (response.success()) {
+                    User user = UserFactory.createUser(response.user());
+                    Client.getInstance().setCurrentUser(user);
+                    DataStore.currentUser = user;
+                    SwitchToUI();
+                  } else {
+                    AlertUtils.showError("Đăng nhập thất bại", response.message());
+                  }
+                }));
   }
 
   @FXML
@@ -75,7 +73,7 @@ public class LoginController {
     LoginRequest loginRequest = new LoginRequest(userInput, passInput);
     try {
       Client.getInstance()
-          .sendRequest(new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginRequest)));
+          .sendRequest(new Packet(PacketType.LOGIN, JsonUtil.toJson(loginRequest)));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
       loginButton.setDisable(false);

@@ -5,6 +5,8 @@ import app.enums.View;
 import app.network.Client;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Objects;
+
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -24,7 +26,7 @@ public class ConnectServerController {
     // Load background image giống login
     try {
       String url =
-          getClass().getResource("/app/views/images/background_login.png").toExternalForm();
+          Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png")).toExternalForm();
       if (rootPane != null) {
         rootPane.setStyle(
             "-fx-background-image: url('"

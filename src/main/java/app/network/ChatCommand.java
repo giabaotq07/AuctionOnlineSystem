@@ -13,7 +13,7 @@ public class ChatCommand implements Command {
     ChatResponse chatResponse =
         new ChatResponse(
             chatRequest.sender().name(), chatRequest.content(), chatRequest.timestamp());
-    Packet chatPacket = new Packet(PacketType.CHAT, JsonUtil.toJsonElement(chatResponse));
+    Packet chatPacket = new Packet(PacketType.CHAT, JsonUtil.toJson(chatResponse));
     Server.broadcast(chatPacket, chatRequest.sender().id());
   }
 }

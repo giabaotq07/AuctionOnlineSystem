@@ -18,6 +18,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
+import java.util.Objects;
+
 public class RegisterController {
 
   @FXML private AnchorPane rootPane;
@@ -34,7 +36,7 @@ public class RegisterController {
     // Load background image giống login
     try {
       String url =
-          getClass().getResource("/app/views/images/background_login.png").toExternalForm();
+          Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png")).toExternalForm();
       if (rootPane != null) {
         rootPane.setStyle(
             "-fx-background-image: url('"

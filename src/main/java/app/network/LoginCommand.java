@@ -30,7 +30,7 @@ public class LoginCommand implements Command {
     } catch (ServiceException e) {
       LoginResponse loginResponse =
           new LoginResponse(false, "Đăng nhập thất bại! Sai tên tài khoản hoặc mật khẩu.", null);
-      Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginResponse));
+      Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJson(loginResponse));
       clientHandler.sendMessage(responsePacket);
       return;
     }
@@ -39,7 +39,7 @@ public class LoginCommand implements Command {
     logger.info("[SERVER] {} đã đăng nhập.", username);
     LoginResponse loginResponse =
         new LoginResponse(true, "Đăng nhập thành công!", new UserData(user));
-    Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginResponse));
+    Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJson(loginResponse));
     clientHandler.sendMessage(responsePacket);
   }
 }

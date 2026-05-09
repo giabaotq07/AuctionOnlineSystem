@@ -92,10 +92,9 @@ public class AuctionController {
 
       // ================== 3. UI CACHE (optional) ==================
       DataStore.sessions.add(session);
-      AuctionStateManager.getInstance().addSession(session);
 
       // ================== 4. NETWORK ==================
-      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJsonElement(session));
+      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(session));
       Client.getInstance().sendRequest(packet);
 
       AlertUtils.showInfo("OK", "Tạo phiên thành công");

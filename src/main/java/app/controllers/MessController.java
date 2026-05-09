@@ -42,9 +42,7 @@ public class MessController {
     chatBox
         .heightProperty()
         .addListener(
-            (obs, oldVal, newVal) -> {
-              scrollPane.setVvalue(1.0d);
-            });
+            (obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
 
     client.setOnMessageReceived(
         packet -> {
@@ -125,7 +123,7 @@ public class MessController {
       ChatRequest chatRequest =
           new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
       try {
-        client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJsonElement(chatRequest)));
+        client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJson(chatRequest)));
       } catch (IOException e) {
         AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
         return;
