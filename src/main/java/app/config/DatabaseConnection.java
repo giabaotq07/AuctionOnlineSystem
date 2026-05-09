@@ -1,34 +1,33 @@
 package app.config;
 
-import app.exception.DatabaseException;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public final class DatabaseConnection {
-  private static volatile DatabaseConnection instance;
-  private final DatabaseConfig config;
 
-  private DatabaseConnection(DatabaseConfig config) {
-    this.config = config;
+  private static final HikariDataSource dataSource;
+
+  static {
+    HikariConfig config = new HikariConfig();
+
+    config.setJdbcUrl(DatabaseConfig.load().getUrl());
+    config.setUsername(DatabaseConfig.load().getUser());
+    config.setPassword(DatabaseConfig.load().getPassword());
+
+    config.setMaximumPoolSize(10);
+    config.setMinimumIdle(2);
+    config.setIdleTimeout(600000);
+    config.setConnectionTimeout(30000);
+    config.setMaxLifetime(1800000);
+
+    dataSource = new HikariDataSource(config);
   }
 
-  public static DatabaseConnection getInstance() {
-    if (instance == null) {
-      synchronized (DatabaseConnection.class) {
-        if (instance == null) {
-          instance = new DatabaseConnection(DatabaseConfig.load());
-        }
-      }
-    }
-    return instance;
-  }
+  private DatabaseConnection() {}
 
-  public Connection getConnection() {
-    try {
-      return DriverManager.getConnection(config.getUrl(), config.getUser(), config.getPassword());
-    } catch (SQLException e) {
-      throw new DatabaseException("Unable to connect to database", e);
-    }
+  public static Connection getConnection() throws SQLException {
+    return dataSource.getConnection();
   }
 }

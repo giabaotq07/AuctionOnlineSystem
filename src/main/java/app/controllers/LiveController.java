@@ -67,6 +67,16 @@ public class LiveController implements AuctionObserver {
 
   @FXML
   public void initialize() {
+    Platform.runLater(
+        () -> {
+          bidAmountField
+              .getScene()
+              .getWindow()
+              .setOnCloseRequest(
+                  event -> {
+                    shutdownScheduler();
+                  });
+        });
     Client.getInstance()
         .setOnMessageReceived(
             packet ->
@@ -141,7 +151,7 @@ public class LiveController implements AuctionObserver {
 
   public void notifyUpdateBid() {
     int bidderId = placeBidResponse.bidderId();
-    long highestBid = placeBidResponse.highestBidAmount();
+    long highestBid = placeBidResponse.amount();
     // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
     if (bidderId == Client.getInstance().getCurrentUser().getId()) {
       AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
@@ -167,8 +177,16 @@ public class LiveController implements AuctionObserver {
     }
     long bidAmount;
     long currentPrice;
-    bidAmount = Long.parseLong(bidAmountField.getText());
-    currentPrice = Long.parseLong(currentPriceLabel.getText());
+    try {
+      bidAmount = Long.parseLong(bidAmountField.getText());
+      currentPrice = Long.parseLong(currentPriceLabel.getText());
+      if (bidAmount <= 0 || currentPrice <= 0) {
+        throw new NumberFormatException();
+      }
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "phải nhập vào số nguyên dương");
+      return;
+    }
     PlaceBidRequest request =
         new PlaceBidRequest(
             session.getId(), DataStore.currentUser.getId(), bidAmount, currentPrice);
@@ -192,7 +210,7 @@ public class LiveController implements AuctionObserver {
                   scheduler.shutdown();
 
                   // Sử dụng AuctionService để cập nhật trạng thái COMPLETED vào MySQL
-                  if (session.isRunning()) {
+                  if (auctionService.getAuctionById(session.getId()).isRunning()) {
                     auctionService.handleCompletion(session.getId());
                   }
                   // Đồng bộ trạng thái đối tượng trên RAM
@@ -229,6 +247,12 @@ public class LiveController implements AuctionObserver {
     long seconds = ChronoUnit.SECONDS.between(temp, endTime);
 
     timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
+  }
+
+  private void shutdownScheduler() {
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdownNow();
+    }
   }
 
   @FXML

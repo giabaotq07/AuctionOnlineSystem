@@ -18,7 +18,7 @@ public class TransactionManager {
 
   // Dùng khi cần trả về kết quả (SELECT, INSERT lấy ID, ...)
   public <T> T runInTransaction(Function<Connection, T> work) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+    try (Connection conn = DatabaseConnection.getConnection()) {
       conn.setAutoCommit(false);
       try {
         T result = work.apply(conn);

@@ -37,7 +37,7 @@ class UserDAOTest extends BaseDAOTest {
   void cleanUp() throws Exception {
     logger.info("Cleaning up database before test execution...");
     userDAO = new MySqlUserDAO();
-    try (Connection conn = DatabaseConnection.getInstance().getConnection();
+    try (Connection conn = DatabaseConnection.getConnection();
         Statement stmt = conn.createStatement()) {
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
       stmt.execute("TRUNCATE TABLE bids");
@@ -58,7 +58,7 @@ class UserDAOTest extends BaseDAOTest {
   @Test
   void save_shouldPersistUserAndReturnGeneratedId() throws Exception {
     logger.info("Running test: save_shouldPersistUserAndReturnGeneratedId");
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+    try (Connection conn = DatabaseConnection.getConnection()) {
       User saved = userDAO.save(makeUser("alice"));
 
       assertTrue(saved.getId() > 0);
@@ -101,7 +101,7 @@ class UserDAOTest extends BaseDAOTest {
   void findById_nonExisting_shouldReturnEmpty() throws Exception {
     logger.warn(
         "Running test: findById_nonExisting_shouldReturnEmpty - checking non-existent data");
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+    try (Connection conn = DatabaseConnection.getConnection()) {
       Optional<User> found = userDAO.findById(99999);
 
       assertTrue(found.isEmpty());

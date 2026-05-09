@@ -15,7 +15,7 @@ public abstract class BaseDAO {
 
   /** Execute action within a connection, auto-close when done. */
   protected <T> T withConnection(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+    try (Connection conn = DatabaseConnection.getConnection()) {
       return action.apply(conn);
     } catch (SQLException e) {
       throw new DatabaseException(errorMessage, e);
@@ -37,7 +37,7 @@ public abstract class BaseDAO {
    * original autoCommit state in finally block.
    */
   protected <T> T runInTransaction(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+    try (Connection conn = DatabaseConnection.getConnection()) {
       boolean originalAutoCommit = conn.getAutoCommit();
       conn.setAutoCommit(false);
       try {

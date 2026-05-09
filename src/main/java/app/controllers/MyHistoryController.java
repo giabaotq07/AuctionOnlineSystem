@@ -11,6 +11,7 @@ import app.models.Auction;
 import app.models.Item;
 import app.models.User;
 import app.network.Client;
+import app.service.AuctionService;
 import app.service.BidObserverService;
 import app.service.BidService;
 import java.util.List;
@@ -44,6 +45,7 @@ public class MyHistoryController {
   private User currentUser = client.getCurrentUser();
   private final BidService bidService =
       new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
+  private AuctionService auctionService = new AuctionService(auctionDAO, bidDAO);
 
   @FXML
   public void initialize() {
@@ -58,7 +60,7 @@ public class MyHistoryController {
   private void refreshHistoryContainer() {
     if (historyContainerPane == null) return;
     historyContainerPane.getChildren().clear();
-    List<Auction> allAuctions = auctionDAO.findAll();
+    List<Auction> allAuctions = auctionService.getAllAuctions();
     for (Auction auction : allAuctions) {
       int auctionId = auction.getId();
       historyContainerPane.getChildren().add(createAuctionCard(auction));

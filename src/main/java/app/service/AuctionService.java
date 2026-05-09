@@ -7,15 +7,18 @@ import app.enums.AuctionStatus;
 import app.exception.ServiceException;
 import app.models.Auction;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuctionService {
-  private final AuctionDAO auctionDAO;
-  private final BidDAO bidDAO;
-  private final TransactionManager txManager;
-  private final Logger logger = LoggerFactory.getLogger(AuctionService.class);
+  private List<Auction> cache = new ArrayList<>();
+  private long lastRefresh = 0;
+  private AuctionDAO auctionDAO;
+  private BidDAO bidDAO;
+  private TransactionManager txManager;
+  private Logger logger = LoggerFactory.getLogger(AuctionService.class);
 
   public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO) {
     this.auctionDAO = auctionDAO;
@@ -36,7 +39,16 @@ public class AuctionService {
   }
 
   public List<Auction> getAllAuctions() {
-    return auctionDAO.findAll();
+
+    // cache 2 giây
+    if (System.currentTimeMillis() - lastRefresh < 2000) {
+      return cache;
+    }
+
+    cache = auctionDAO.findAll();
+    lastRefresh = System.currentTimeMillis();
+
+    return cache;
   }
 
   public void handleCompletion(int auctionId) {

@@ -36,7 +36,7 @@ public class UserServiceTest extends BaseDAOTest {
     userDAO = new MySqlUserDAO();
     userService = new UserService(userDAO);
 
-    try (Connection conn = DatabaseConnection.getInstance().getConnection();
+    try (Connection conn = DatabaseConnection.getConnection();
         Statement stmt = conn.createStatement()) {
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
       stmt.execute("TRUNCATE TABLE bids");

@@ -7,6 +7,7 @@ module app {
   requires ch.qos.logback.classic;
   requires com.google.gson;
   requires atlantafx.base;
+  requires com.zaxxer.hikari;
 
   opens app to
       javafx.fxml;

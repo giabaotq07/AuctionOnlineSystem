@@ -49,7 +49,7 @@ public abstract class BaseDAOTest {
             Objects.requireNonNull(BaseDAOTest.class.getResourceAsStream("/schema.sql"))
                 .readAllBytes());
 
-    try (Connection conn = DatabaseConnection.getInstance().getConnection();
+    try (Connection conn = DatabaseConnection.getConnection();
         Statement stmt = conn.createStatement()) {
       for (String statement : sql.split(";")) {
         String trimmed = statement.trim();

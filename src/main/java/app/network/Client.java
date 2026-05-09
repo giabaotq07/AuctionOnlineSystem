@@ -50,22 +50,8 @@ public class Client {
       while ((line = reader.readLine()) != null) {
         try {
           packet = JsonUtil.fromJson(line, Packet.class);
-          switch (packet.getType()) {
-            case LOGIN:
-              if (onMessageReceived != null) {
-                onMessageReceived.accept(packet);
-              }
-              break;
-            case CREATE_AUCTION:
-            case PLACE_BID:
-              if (onMessageReceived != null) {
-                onMessageReceived.accept(packet);
-              }
-            case CHAT:
-              if (onMessageReceived != null) {
-                onMessageReceived.accept(packet);
-              }
-              break;
+          if (onMessageReceived != null) {
+            onMessageReceived.accept(packet);
           }
         } catch (AppException e) {
           logger.info(e.getMessage());

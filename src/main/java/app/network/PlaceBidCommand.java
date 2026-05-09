@@ -19,13 +19,12 @@ import app.service.AuctionService;
 import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
-import app.utils.AlertUtils;
 import app.utils.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PlaceBidCommand implements Command {
-  private Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
+  private final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final AuctionService auctionService;
   private final BidService bidService;
   private final ItemService itemService;
@@ -55,11 +54,11 @@ public class PlaceBidCommand implements Command {
         throw new NumberFormatException();
       }
       if (bidAmount <= currentPrice) {
-        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
+        logger.error("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
         return;
       }
     } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi", "Giá nhập phải là số nguyên dương");
+      logger.error("Lỗi", "Giá nhập phải là số nguyên dương");
       return;
     }
 
@@ -83,6 +82,6 @@ public class PlaceBidCommand implements Command {
     PlaceBidResponse response = new PlaceBidResponse(bidderId, amount);
     Packet packetResponse = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(response));
     clientHandler.sendMessage(packetResponse);
-    Server.broadcast(packetResponse, session.getId());
+    Server.broadcast(packetResponse, clientHandler.getUser().getId());
   }
 }
