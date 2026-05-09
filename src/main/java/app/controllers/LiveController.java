@@ -9,10 +9,11 @@ import app.dao.impl.MySqlAuctionDAO;
 import app.dao.impl.MySqlAutoBidDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
+import app.data.PlaceBidRequest;
+import app.data.PlaceBidResponse;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
-import app.exception.ServiceException;
 import app.models.*;
 import app.network.Client;
 import app.observer.AuctionObserver;
@@ -22,6 +23,7 @@ import app.service.BidService;
 import app.service.ItemService;
 import app.utils.AlertUtils;
 import app.utils.JsonUtil;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
@@ -40,7 +42,7 @@ public class LiveController implements AuctionObserver {
   private final AuctionService auctionService;
   private final BidService bidService;
   private final ItemService itemService;
-
+  private PlaceBidResponse placeBidResponse;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
@@ -61,6 +63,21 @@ public class LiveController implements AuctionObserver {
     this.auctionService = new AuctionService(auctionDAO, bidDAO);
     this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
     this.itemService = new ItemService(itemDAO);
+  }
+
+  @FXML
+  public void initialize() {
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.PLACE_BID) {
+                        placeBidResponse =
+                            JsonUtil.fromJson(packet.getData(), PlaceBidResponse.class);
+                        notifyUpdateBid();
+                      }
+                    }));
   }
 
   public void setSession(Auction session) {
@@ -122,13 +139,23 @@ public class LiveController implements AuctionObserver {
         });
   }
 
+  public void notifyUpdateBid() {
+    int bidderId = placeBidResponse.bidderId();
+    long highestBid = placeBidResponse.highestBidAmount();
+    // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
+    if (bidderId == Client.getInstance().getCurrentUser().getId()) {
+      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
+    }
+    currentPriceLabel.setText("" + highestBid);
+    bidAmountField.clear();
+  }
+
   @FXML
-  public void handlePlaceBid(ActionEvent event) {
+  public void handlePlaceBid(ActionEvent event) throws IOException {
     if (!Client.getInstance().connected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
-
     if (!session.isRunning()) {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
@@ -138,46 +165,15 @@ public class LiveController implements AuctionObserver {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
-
     long bidAmount;
     long currentPrice;
-    try {
-      bidAmount = Long.parseLong(bidAmountField.getText());
-      currentPrice = Long.parseLong(currentPriceLabel.getText());
-      if (bidAmount <= 0) {
-        throw new NumberFormatException();
-      }
-      if (bidAmount <= currentPrice) {
-        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
-        return;
-      }
-    } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi", "Giá nhập phải là số nguyên dương");
-      return;
-    }
-
-    // KIỂM TRA SƠ BỘ: Nếu giá nhập thấp hơn giá đang hiển thị thì chặn luôn ở Client cho nhanh
-
-    // Gọi BidService để lưu vào MySQL
-    try {
-      bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
-
-      // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
-      BidTransaction highestBidTransaction =
-          bidService.getHighestBid(session.getId()).orElseThrow();
-      currentPriceLabel.setText("" + highestBidTransaction.getAmount());
-
-      bidAmountField.clear();
-      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
-
-      // Gửi yêu cầu lên Server để đồng bộ với các Client khác
-      Client.getInstance().sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJson(session)));
-
-    } catch (ServiceException e) {
-      AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
-    } catch (Exception e) {
-      AlertUtils.showError("Lỗi đặt giá", e.getMessage());
-    }
+    bidAmount = Long.parseLong(bidAmountField.getText());
+    currentPrice = Long.parseLong(currentPriceLabel.getText());
+    PlaceBidRequest request =
+        new PlaceBidRequest(
+            session.getId(), DataStore.currentUser.getId(), bidAmount, currentPrice);
+    Packet packet = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(request));
+    Client.getInstance().sendRequest(packet);
   }
 
   private void startCountdownTimer() {

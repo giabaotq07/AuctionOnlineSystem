@@ -47,12 +47,11 @@ public class BidService {
   }
 
   // ── 1. Đặt giá thủ công ──────────────────────────────────────────────────
-
   public void placeBid(int sessionId, int userId, long bidAmount) {
     bidDAO.placeBidAtomic(sessionId, userId, bidAmount, DEFAULT_MIN_INCREMENT);
 
     // Notify ngoài transaction (không ảnh hưởng tính toàn vẹn dữ liệu)
-    observerService.notifyBidUpdated(sessionId);
+    // observerService.notifyBidUpdated(sessionId);
 
     // Trigger auto-bid của các đối thủ
     //    triggerAutoBids(sessionId, userId, bidAmount);

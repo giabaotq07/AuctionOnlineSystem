@@ -14,7 +14,7 @@ public final class DatabaseConfig {
   public static DatabaseConfig load() {
     String url = System.getProperty("db.url", "jdbc:mysql://localhost:3306/auction_db");
     String user = System.getProperty("db.user", "root");
-    String pass = System.getProperty("db.password", "123456");
+    String pass = System.getProperty("db.password", "25122007");
     return new DatabaseConfig(url, user, pass);
   }
 

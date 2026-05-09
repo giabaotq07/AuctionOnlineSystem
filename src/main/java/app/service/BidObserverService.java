@@ -23,6 +23,7 @@ public class BidObserverService {
   }
 
   // BidService gọi sau mỗi bid thành công
+  /*
   public void notifyBidUpdated(int sessionId) {
     List<PrintWriter> clients = subscribers.getOrDefault(sessionId, List.of());
 
@@ -32,4 +33,5 @@ public class BidObserverService {
       client.println(message); // đẩy xuống từng client qua socket
     }
   }
+   */
 }

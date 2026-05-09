@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 
 public class BidTransaction implements Serializable {
   private int id;
-  private final int bidderId;
-  private final String bidderName;
-  private final long amount;
-  private final LocalDateTime createAt;
+  private int bidderId;
+  private String bidderName;
+  private long amount;
+  private LocalDateTime createAt;
   private boolean isAutoBid;
 
   public BidTransaction(
@@ -50,8 +50,16 @@ public class BidTransaction implements Serializable {
     return bidderId;
   }
 
+  public void setBidderId(int bidderId) {
+    this.bidderId = bidderId;
+  }
+
   public long getAmount() {
     return amount;
+  }
+
+  public void setAmount(long amount) {
+    this.amount = amount;
   }
 
   public LocalDateTime getCreateAt() {

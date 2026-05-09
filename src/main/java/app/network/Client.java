@@ -58,6 +58,9 @@ public class Client {
               break;
             case CREATE_AUCTION:
             case PLACE_BID:
+              if (onMessageReceived != null) {
+                onMessageReceived.accept(packet);
+              }
             case CHAT:
               if (onMessageReceived != null) {
                 onMessageReceived.accept(packet);
