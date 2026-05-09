@@ -1,15 +1,14 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Objects;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseDAOTest {
@@ -30,7 +29,7 @@ public abstract class BaseDAOTest {
 
     // 1. Create DB if not exists
     try (Connection conn = DriverManager.getConnection(TEST_DB_URL, USER, PASS);
-         Statement stmt = conn.createStatement()) {
+        Statement stmt = conn.createStatement()) {
 
       stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + TEST_DB_NAME);
       logger.info("Database {} ensured.", TEST_DB_NAME);
@@ -50,14 +49,13 @@ public abstract class BaseDAOTest {
     // 4. Load schema
     logger.info("Initializing schema...");
 
-    String sql = new String(
-        Objects.requireNonNull(
-            BaseDAOTest.class.getResourceAsStream("/schema.sql")
-        ).readAllBytes()
-    );
+    String sql =
+        new String(
+            Objects.requireNonNull(BaseDAOTest.class.getResourceAsStream("/schema.sql"))
+                .readAllBytes());
 
     try (Connection conn = DatabaseConnection.getConnection();
-         Statement stmt = conn.createStatement()) {
+        Statement stmt = conn.createStatement()) {
 
       for (String s : sql.split(";")) {
         String trimmed = s.trim();

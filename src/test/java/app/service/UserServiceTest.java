@@ -35,12 +35,12 @@ public class UserServiceTest extends BaseDAOTest {
     // ❌ KHÔNG truncate SQL thủ công nữa
     userDAO.deleteAll(); // 👉 bạn cần implement method này
 
-    tester = UserFactory.createUser(
-        "Test User",
-        new Account("test_account", PasswordUtils.hashPassword("test_password")),
-        new Wallet(),
-        UserRole.BIDDER
-    );
+    tester =
+        UserFactory.createUser(
+            "Test User",
+            new Account("test_account", PasswordUtils.hashPassword("test_password")),
+            new Wallet(),
+            UserRole.BIDDER);
 
     tester = userDAO.save(tester);
 
@@ -58,13 +58,11 @@ public class UserServiceTest extends BaseDAOTest {
 
   @Test
   void testLogin_wrongPassword_shouldThrow() {
-    assertThrows(ServiceException.class,
-        () -> userService.login("test_account", "wrong"));
+    assertThrows(ServiceException.class, () -> userService.login("test_account", "wrong"));
   }
 
   @Test
   void testLogin_unknownUser_shouldThrow() {
-    assertThrows(ServiceException.class,
-        () -> userService.login("unknown", "test_password"));
+    assertThrows(ServiceException.class, () -> userService.login("unknown", "test_password"));
   }
 }
