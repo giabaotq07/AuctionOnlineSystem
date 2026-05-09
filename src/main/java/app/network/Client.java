@@ -82,10 +82,10 @@ public class Client {
 
   public void sendRequest(Packet packet) throws IOException {
     if (writer != null) {
-        String json = JsonUtil.toJson(packet);
-        writer.write(json);
-        writer.newLine();
-        writer.flush();
+      String json = JsonUtil.toJson(packet);
+      writer.write(json);
+      writer.newLine();
+      writer.flush();
     }
   }
 

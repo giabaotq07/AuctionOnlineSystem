@@ -12,7 +12,6 @@ import app.models.UserFactory;
 import app.network.Client;
 import app.utils.AlertUtils;
 import app.utils.JsonUtil;
-
 import java.io.IOException;
 import java.util.Objects;
 import javafx.application.Platform;

@@ -10,7 +10,6 @@ import app.models.Packet;
 import app.network.Client;
 import app.utils.AlertUtils;
 import app.utils.JsonUtil;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import javafx.application.Platform;

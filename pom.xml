@@ -13,31 +13,48 @@
     <properties>
         <!-- Build -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>25</maven.compiler.release>
 
         <!-- Main class -->
         <app.module>app</app.module>
         <app.mainClass>app.App</app.mainClass>
 
-        <!-- Versions -->
+        <!-- Java -->
+        <java.version>25</java.version>
         <javafx.version>25.0.1</javafx.version>
-        <junit.version>5.12.2</junit.version>
+
+        <!-- Dependencies -->
+
+        <junit.version>5.13.0</junit.version>
+
         <gson.version>2.14.0</gson.version>
+
         <mysql.version>9.3.0</mysql.version>
+
         <atlantafx.version>2.1.0</atlantafx.version>
+
         <slf4j.version>2.0.17</slf4j.version>
+
         <logback.version>1.5.18</logback.version>
 
-        <!-- Plugins -->
+        <!-- Maven Plugins -->
         <compiler.plugin.version>3.14.1</compiler.plugin.version>
+
         <surefire.plugin.version>3.5.4</surefire.plugin.version>
+
         <javafx.plugin.version>0.0.8</javafx.plugin.version>
+
         <exec.plugin.version>3.5.0</exec.plugin.version>
-        <spotless.plugin.version>2.44.4</spotless.plugin.version>
+
+        <!-- IMPORTANT -->
+        <spotless.plugin.version>3.4.0</spotless.plugin.version>
+
+        <google.java.format.version>1.35.0</google.java.format.version>
+
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
 
-        <!-- Formatter -->
-        <google.java.format.version>1.25.2</google.java.format.version>
+        <!-- Checkstyle engine -->
+        <checkstyle.version>10.26.0</checkstyle.version>
+
     </properties>
 
     <dependencies>
@@ -101,14 +118,40 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
 
-            <!-- Java compiler -->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler.plugin.version}</version>
+
                 <configuration>
-                    <release>${maven.compiler.release}</release>
+                    <release>${java.version}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
@@ -120,7 +163,6 @@
 
                 <configuration>
                     <mainClass>${app.module}/${app.mainClass}</mainClass>
-                    <launcher>app</launcher>
 
                     <jlinkZipName>app</jlinkZipName>
                     <jlinkImageName>app</jlinkImageName>
@@ -130,21 +172,6 @@
 
                     <noHeaderFiles>true</noHeaderFiles>
                     <noManPages>true</noManPages>
-
-                    <options>
-                        <option>--enable-native-access=ALL-UNNAMED</option>
-                        <option>--enable-native-access=javafx.graphics</option>
-                    </options>
-                </configuration>
-            </plugin>
-
-            <!-- Run app -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec.plugin.version}</version>
-                <configuration>
-                    <mainClass>${app.mainClass}</mainClass>
                 </configuration>
             </plugin>
 
@@ -159,19 +186,24 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${checkstyle.plugin.version}</version>
+                <version>3.6.0</version>
 
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
-                    <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                 </configuration>
 
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+
                 <executions>
                     <execution>
-                        <id>checkstyle-validation</id>
                         <phase>validate</phase>
-
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -195,16 +227,20 @@
 
                         <removeUnusedImports/>
 
+                        <formatAnnotations/>
+
+                        <trimTrailingWhitespace/>
+
+                        <endWithNewline/>
+
                     </java>
                 </configuration>
-
                 <executions>
                     <execution>
-                        <id>spotless-check</id>
-                        <phase>verify</phase>
+                        <phase>validate</phase>
 
                         <goals>
-                            <goal>check</goal>
+                            <goal>apply</goal>
                         </goals>
                     </execution>
                 </executions>
