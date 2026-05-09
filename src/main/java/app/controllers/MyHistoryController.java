@@ -14,7 +14,6 @@ import app.network.Client;
 import app.service.BidObserverService;
 import app.service.BidService;
 import java.util.List;
-import java.util.Objects;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
