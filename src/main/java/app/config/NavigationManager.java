@@ -2,6 +2,7 @@ package app.config;
 
 import app.enums.View;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.function.Consumer;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -44,7 +45,8 @@ public class NavigationManager {
 
       Scene scene = new Scene(root);
 
-      String css = getClass().getResource("/app/views/style.css").toExternalForm();
+      String css =
+          Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
       scene.getStylesheets().add(css);
 
       primaryStage.setScene(scene);

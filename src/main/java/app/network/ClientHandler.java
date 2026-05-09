@@ -102,7 +102,7 @@ public class ClientHandler implements Runnable {
 
   private void close() {
     if (this.username != null) {
-      Server.removeClient(this.username);
+      Server.removeClient(this.user.getId());
       logger.info("Client {} disconnected", username);
     }
     try {

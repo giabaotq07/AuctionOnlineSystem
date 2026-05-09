@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BidObserverService {
+  public BidObserverService() {}
 
   // Map: sessionId → danh sách socket của các client đang xem
   private final Map<Integer, List<PrintWriter>> subscribers = new ConcurrentHashMap<>();

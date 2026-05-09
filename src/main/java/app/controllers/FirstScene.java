@@ -232,7 +232,7 @@ public class FirstScene {
     titleLabel.setWrapText(true);
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: white;");
     long highestBid = 0;
-    long displayPrice = 0;
+    long displayPrice;
     // ✅ Lấy giá cao nhất từ database thay vì in-memory
     if (bidService.getHighestBid(session.getId()).isPresent()) {
       highestBid = bidService.getHighestBid(session.getId()).get().getAmount();

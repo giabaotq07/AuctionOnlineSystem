@@ -82,6 +82,7 @@ public class MyHistoryController {
             : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
 
     Item item = itemDAO.findById(session.getItemId()).orElse(null);
+    assert item != null;
     Label titleLabel = new Label(item.getName());
     titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
     titleLabel.setWrapText(true);

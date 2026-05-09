@@ -73,12 +73,11 @@ public class LiveController implements AuctionObserver {
 
       if (currentPriceLabel != null) {
         long highestBid = 0;
-        long displayPrice = 0;
+        long displayPrice;
         // ✅ Lấy giá cao nhất từ database thay vì in-memory
         if (bidService.getHighestBid(session.getId()).isPresent()) {
           highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
         }
-        displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
         displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
         currentPriceLabel.setText("" + displayPrice);
       }
@@ -99,7 +98,7 @@ public class LiveController implements AuctionObserver {
     Platform.runLater(
         () -> {
           if (currentPriceLabel != null) {
-            currentPriceLabel.setText(String.format("%,.0f đ", newPrice));
+            currentPriceLabel.setText(newPrice + " đ");
           }
         });
   }
@@ -140,7 +139,7 @@ public class LiveController implements AuctionObserver {
       return;
     }
 
-    long bidAmount = 0;
+    long bidAmount;
     long currentPrice;
     try {
       bidAmount = Long.parseLong(bidAmountField.getText());
@@ -172,8 +171,7 @@ public class LiveController implements AuctionObserver {
       AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
 
       // Gửi yêu cầu lên Server để đồng bộ với các Client khác
-      Client.getInstance()
-          .sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJsonElement(session)));
+      Client.getInstance().sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJson(session)));
 
     } catch (ServiceException e) {
       AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");

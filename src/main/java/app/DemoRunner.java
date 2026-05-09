@@ -20,6 +20,7 @@ import app.service.*;
 import java.time.LocalDateTime;
 
 public class DemoRunner {
+
   static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
     System.out.println("Dang kiem tra va khoi tao Database...");

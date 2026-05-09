@@ -10,6 +10,7 @@ import app.exception.ServiceException;
 import app.models.*;
 import app.service.UserService;
 import app.utils.AlertUtils;
+import java.util.Objects;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -34,7 +35,8 @@ public class RegisterController {
     // Load background image giống login
     try {
       String url =
-          getClass().getResource("/app/views/images/background_login.png").toExternalForm();
+          Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
+              .toExternalForm();
       if (rootPane != null) {
         rootPane.setStyle(
             "-fx-background-image: url('"

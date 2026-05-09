@@ -1,8 +1,8 @@
 module app {
   requires javafx.controls;
   requires javafx.fxml;
-  requires javafx.graphics;
-  requires java.sql;
+  requires transitive javafx.graphics;
+  requires transitive java.sql;
   requires org.slf4j;
   requires ch.qos.logback.classic;
   requires com.google.gson;
@@ -25,4 +25,7 @@ module app {
   exports app.service;
   exports app.models;
   exports app.enums;
+  exports app.observer;
+  exports app.data;
+  exports app.dao;
 }

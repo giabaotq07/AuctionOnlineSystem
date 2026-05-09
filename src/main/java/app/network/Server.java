@@ -68,8 +68,8 @@ public class Server {
     authenticatedClients.put(userId, handler);
   }
 
-  public static void removeClient(String username) {
-    authenticatedClients.remove(username);
+  public static void removeClient(int userId) {
+    authenticatedClients.remove(userId);
   }
 
   public static void broadcast(Packet packet, int excludeUser) {
