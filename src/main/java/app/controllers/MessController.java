@@ -1,8 +1,9 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dto.ChatRequest;
-import app.dto.ChatResponse;
+import app.data.ChatRequest;
+import app.data.ChatResponse;
+import app.data.UserData;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Packet;
@@ -119,7 +120,8 @@ public class MessController {
   public void send() {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
-      ChatRequest chatRequest = new ChatRequest(client.getCurrentUser(), text, LocalDateTime.now());
+      ChatRequest chatRequest =
+          new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
       client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJsonElement(chatRequest)));
       addBubble(Client.getInstance().getCurrentUser().getName(), chatRequest.content(), true);
       myTextArea.clear();

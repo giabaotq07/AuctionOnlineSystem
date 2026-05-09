@@ -1,12 +1,14 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dto.LoginRequest;
-import app.dto.LoginResponse;
+import app.data.LoginRequest;
+import app.data.LoginResponse;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;
 import app.models.Packet;
+import app.models.User;
+import app.models.UserFactory;
 import app.network.Client;
 import app.utils.AlertUtils;
 import app.utils.JsonUtil;
@@ -48,8 +50,9 @@ public class LoginController {
                       response = JsonUtil.fromJson(packet.getData(), LoginResponse.class);
                     }
                     if (response.success()) {
-                      Client.getInstance().setCurrentUser(response.user());
-                      DataStore.currentUser = response.user();
+                      User user = UserFactory.createUser(response.user());
+                      Client.getInstance().setCurrentUser(user);
+                      DataStore.currentUser = user;
                       SwitchToUI();
                     } else {
                       AlertUtils.showError("Đăng nhập thất bại", response.message());

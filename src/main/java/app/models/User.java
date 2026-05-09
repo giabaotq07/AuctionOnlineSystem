@@ -6,7 +6,7 @@ public abstract class User extends Entity {
   protected String name;
   protected final Account account;
   protected final Wallet wallet;
-  protected transient UserRole role;
+  protected UserRole role;
 
   public User(int id, String name, Account account, Wallet wallet) {
     this.id = id;
