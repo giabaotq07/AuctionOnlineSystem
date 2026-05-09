@@ -33,7 +33,7 @@ class UserDAOTest extends BaseDAOTest {
   // =========================
   private void cleanDatabase() {
     try (var conn = DatabaseConnection.getConnection();
-         var stmt = conn.createStatement()) {
+        var stmt = conn.createStatement()) {
 
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
 

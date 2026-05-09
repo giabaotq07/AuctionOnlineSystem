@@ -59,14 +59,12 @@ public class UserServiceTest extends BaseDAOTest {
 
   @Test
   void login_shouldFail_whenPasswordWrong() {
-    assertThrows(ServiceException.class,
-        () -> userService.login("test_account", "wrong_password"));
+    assertThrows(ServiceException.class, () -> userService.login("test_account", "wrong_password"));
   }
 
   @Test
   void login_shouldFail_whenUserNotFound() {
-    assertThrows(ServiceException.class,
-        () -> userService.login("unknown_user", "test_password"));
+    assertThrows(ServiceException.class, () -> userService.login("unknown_user", "test_password"));
   }
 
   // =========================
@@ -76,19 +74,14 @@ public class UserServiceTest extends BaseDAOTest {
   private User createTestUser() {
     return UserFactory.createUser(
         "Test User",
-        new Account(
-            "test_account",
-            PasswordUtils.hashPassword("test_password")
-        ),
+        new Account("test_account", PasswordUtils.hashPassword("test_password")),
         new Wallet(),
-        UserRole.BIDDER
-    );
+        UserRole.BIDDER);
   }
 
   /**
-   * IMPORTANT:
-   * không dùng truncate SQL nữa → dùng DAO abstraction
-   * (clean hơn, test independent DB engine)
+   * IMPORTANT: không dùng truncate SQL nữa → dùng DAO abstraction (clean hơn, test independent DB
+   * engine)
    */
   private void cleanDatabase() {
     logger.info("Cleaning test data...");

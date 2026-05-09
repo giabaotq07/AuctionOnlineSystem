@@ -2,15 +2,14 @@ package app.dao;
 
 import app.config.DatabaseConnection;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.util.Objects;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.Statement;
-import java.util.Objects;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseDAOTest {
@@ -31,7 +30,7 @@ public abstract class BaseDAOTest {
   void globalSetup() {
     createDatabaseIfNotExists();
     configureTestEnvironment();
-    reloadConnectionPool();   // FIXED
+    reloadConnectionPool(); // FIXED
     initSchema();
   }
 
@@ -41,7 +40,7 @@ public abstract class BaseDAOTest {
   @BeforeEach
   void cleanData() {
     try (Connection conn = DatabaseConnection.getConnection();
-         Statement stmt = conn.createStatement()) {
+        Statement stmt = conn.createStatement()) {
 
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
 
@@ -63,7 +62,7 @@ public abstract class BaseDAOTest {
     logger.info("[DB] Ensuring test database exists...");
 
     try (Connection conn = java.sql.DriverManager.getConnection(DB_HOST, USER, PASS);
-         Statement stmt = conn.createStatement()) {
+        Statement stmt = conn.createStatement()) {
 
       stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + TEST_DB);
       logger.info("[DB] Ready: {}", TEST_DB);
@@ -109,7 +108,7 @@ public abstract class BaseDAOTest {
     String sql = loadSchemaFile();
 
     try (Connection conn = DatabaseConnection.getConnection();
-         Statement stmt = conn.createStatement()) {
+        Statement stmt = conn.createStatement()) {
 
       executeSqlScript(stmt, sql);
       logger.info("[SCHEMA] OK");
@@ -125,10 +124,8 @@ public abstract class BaseDAOTest {
   private String loadSchemaFile() {
     try {
       return new String(
-          Objects.requireNonNull(
-              BaseDAOTest.class.getResourceAsStream("/schema.sql")
-          ).readAllBytes()
-      );
+          Objects.requireNonNull(BaseDAOTest.class.getResourceAsStream("/schema.sql"))
+              .readAllBytes());
     } catch (Exception e) {
       throw new RuntimeException("Cannot load schema.sql", e);
     }
