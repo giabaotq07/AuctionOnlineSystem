@@ -122,6 +122,19 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   }
 
   @Override
+  public void deleteAll() {
+    runWithConnection(
+        conn -> {
+          try {
+            conn.createStatement().execute("DELETE FROM users");
+          } catch (SQLException e) {
+            throw new DatabaseException("Lỗi kết nối", e);
+          }
+        },
+        "Failed to clean users");
+  }
+
+  @Override
   public void adjustWallet(int id, long delta) {
     runInTransaction(
         conn -> {

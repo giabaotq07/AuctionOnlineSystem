@@ -16,4 +16,6 @@ public interface UserDAO {
   void update(User user);
 
   void adjustWallet(int id, long delta);
+
+  void deleteAll();
 }

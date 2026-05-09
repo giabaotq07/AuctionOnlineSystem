@@ -1,7 +1,6 @@
 SET
 FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS history_records;
 DROP TABLE IF EXISTS bids;
 DROP TABLE IF EXISTS auction_sessions;
 DROP TABLE IF EXISTS items;
