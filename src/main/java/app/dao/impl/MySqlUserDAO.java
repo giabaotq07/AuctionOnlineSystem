@@ -1,6 +1,6 @@
 package app.dao.impl;
 
-import app.config.DatabaseConnection;
+import app.dao.BaseDAO;
 import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
@@ -13,10 +13,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-public class MySqlUserDAO implements UserDAO {
+public class MySqlUserDAO extends BaseDAO implements UserDAO {
 
   public MySqlUserDAO() {}
 
@@ -125,27 +123,39 @@ public class MySqlUserDAO implements UserDAO {
 
   @Override
   public void adjustWallet(int id, long delta) {
-    int rows;
-    if (delta < 0) {
-      rows =
-          withConnection(
-              conn ->
-                  executeUpdate(
-                      conn,
-                      "UPDATE users SET assets = assets + ? WHERE id = ? AND assets >= ?",
-                      delta,
-                      id,
-                      -delta),
-              "Lỗi kết nối khi cập nhật ví.");
-      if (rows == 0) {
-        throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
-      }
-    } else {
-      runWithConnection(
-          conn ->
-              executeUpdate(conn, "UPDATE users SET assets = assets + ? WHERE id = ?", delta, id),
-          "Lỗi kết nối khi cập nhật ví.");
-    }
+    runInTransaction(
+        conn -> {
+          // Lock the row for update to prevent race conditions
+          String lockSql = "SELECT assets FROM users WHERE id = ? FOR UPDATE";
+          long currentAssets;
+          try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+              if (!rs.next()) {
+                throw new ServiceException("Người dùng không tồn tại: " + id);
+              }
+              currentAssets = rs.getLong("assets");
+            }
+          } catch (SQLException e) {
+            throw new DatabaseException("Lỗi khi khóa hàng người dùng.", e);
+          }
+
+          // Validate sufficient balance for withdrawals
+          if (delta < 0 && currentAssets < -delta) {
+            throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
+          }
+
+          // Update with new balance
+          String updateSql = "UPDATE users SET assets = assets + ? WHERE id = ?";
+          try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+            ps.setLong(1, delta);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+          } catch (SQLException e) {
+            throw new DatabaseException("Lỗi khi cập nhật ví.", e);
+          }
+        },
+        "Lỗi kết nối khi cập nhật ví.");
   }
 
   private Optional<User> findOne(Connection conn, String sql, Object... params) {
@@ -172,22 +182,5 @@ public class MySqlUserDAO implements UserDAO {
     for (int i = 0; i < params.length; i++) {
       ps.setObject(i + 1, params[i]);
     }
-  }
-
-  private <T> T withConnection(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return action.apply(conn);
-    } catch (SQLException e) {
-      throw new DatabaseException(errorMessage, e);
-    }
-  }
-
-  private void runWithConnection(Consumer<Connection> action, String errorMessage) {
-    withConnection(
-        conn -> {
-          action.accept(conn);
-          return null;
-        },
-        errorMessage);
   }
 }

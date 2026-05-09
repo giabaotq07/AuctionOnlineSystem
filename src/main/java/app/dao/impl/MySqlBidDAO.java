@@ -1,6 +1,6 @@
 package app.dao.impl;
 
-import app.config.DatabaseConnection;
+import app.dao.BaseDAO;
 import app.dao.BidDAO;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
@@ -10,10 +10,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-public class MySqlBidDAO implements BidDAO {
+public class MySqlBidDAO extends BaseDAO implements BidDAO {
   public MySqlBidDAO() {}
 
   private static final String BID_SELECT =
@@ -160,23 +158,6 @@ public class MySqlBidDAO implements BidDAO {
     return bids;
   }
 
-  private <T> T withConnection(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return action.apply(conn);
-    } catch (SQLException e) {
-      throw new DatabaseException(errorMessage, e);
-    }
-  }
-
-  private void runWithConnection(Consumer<Connection> action, String errorMessage) {
-    withConnection(
-        conn -> {
-          action.accept(conn);
-          return null;
-        },
-        errorMessage);
-  }
-
   private void updateHighestBid(Connection conn, int sessionId, long highestBid) {
     String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -205,30 +186,9 @@ public class MySqlBidDAO implements BidDAO {
     }
   }
 
-  private void runInTransaction(Consumer<Connection> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      boolean originalAutoCommit = conn.getAutoCommit();
-      conn.setAutoCommit(false);
-      try {
-        action.accept(conn);
-        conn.commit(); // chạy logic chính thành công thì commit
-      } catch (RuntimeException e) {
-        conn.rollback();
-        throw e;
-      } catch (SQLException e) {
-        conn.rollback();
-        throw new DatabaseException(errorMessage, e);
-      } finally {
-        conn.setAutoCommit(originalAutoCommit);
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException(errorMessage, e);
-    }
-  }
-
   /**
-   * Lớp này dùng để lưu snapshot của phiên đấu giá khi đã khóa bản ghi (FOR UPDATE). Giúp tránh
-   * phải truy vấn lại nhiều lần trong cùng 1 transaction.
+   * Immutable snapshot of auction state captured under row lock (FOR UPDATE). Prevents re-querying
+   * within same transaction.
    */
   private static class AuctionSnapshot {
     private final AuctionStatus status;

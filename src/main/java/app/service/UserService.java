@@ -63,9 +63,7 @@ public class UserService {
   public void withdraw(String username, String password, long amount) {
     User user = login(username, password);
     if (amount <= 0) throw new ServiceException("Số tiền rút phải > 0");
-    if (user.getWallet().getAssets() < amount) {
-      throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
-    }
+    // Note: balance check is now atomic inside adjustWallet transaction (not here)
     userDAO.adjustWallet(user.getId(), -amount);
   }
 

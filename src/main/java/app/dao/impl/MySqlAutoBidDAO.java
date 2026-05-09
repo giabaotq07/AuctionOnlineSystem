@@ -1,26 +1,25 @@
 package app.dao.impl;
 
-import app.config.DatabaseConnection;
 import app.dao.AutoBidDAO;
+import app.dao.BaseDAO;
 import app.exception.DatabaseException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.function.Consumer;
 
-public class MySqlAutoBidDAO implements AutoBidDAO {
+public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
 
   public MySqlAutoBidDAO() {}
 
   @Override
   public void delete(int sessionId, int userId) {
-    withConnection(
+    runWithConnection(
         conn -> delete(conn, sessionId, userId), "Lỗi kết nối khi xóa cấu hình auto-bid.");
   }
 
   @Override
   public void upsert(int sessionId, int userId, long maxBid, long increment) {
-    withConnection(
+    runWithConnection(
         conn -> upsert(conn, sessionId, userId, maxBid, increment),
         "Lỗi kết nối khi lưu cấu hình auto-bid.");
   }
@@ -53,14 +52,6 @@ public class MySqlAutoBidDAO implements AutoBidDAO {
       ps.executeUpdate();
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi lưu cấu hình auto-bid.", e);
-    }
-  }
-
-  private void withConnection(Consumer<Connection> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      action.accept(conn);
-    } catch (SQLException e) {
-      throw new DatabaseException(errorMessage, e);
     }
   }
 }

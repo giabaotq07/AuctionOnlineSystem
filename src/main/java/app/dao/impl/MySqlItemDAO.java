@@ -1,6 +1,6 @@
 package app.dao.impl;
 
-import app.config.DatabaseConnection;
+import app.dao.BaseDAO;
 import app.dao.ItemDAO;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
@@ -11,10 +11,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-public class MySqlItemDAO implements ItemDAO {
+public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   public MySqlItemDAO() {}
 
   private static final String TABLE = "items";
@@ -177,22 +175,5 @@ public class MySqlItemDAO implements ItemDAO {
     for (int i = 0; i < params.length; i++) {
       ps.setObject(i + 1, params[i]);
     }
-  }
-
-  private <T> T withConnection(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return action.apply(conn);
-    } catch (SQLException e) {
-      throw new DatabaseException(errorMessage, e);
-    }
-  }
-
-  private void runWithConnection(Consumer<Connection> action, String errorMessage) {
-    withConnection(
-        conn -> {
-          action.accept(conn);
-          return null;
-        },
-        errorMessage);
   }
 }
