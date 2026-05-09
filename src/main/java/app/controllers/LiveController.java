@@ -125,7 +125,7 @@ public class LiveController implements AuctionObserver {
 
   @FXML
   public void handlePlaceBid(ActionEvent event) {
-    if (Client.getInstance().connected()) {
+    if (!Client.getInstance().connected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
