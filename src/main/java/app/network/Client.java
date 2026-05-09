@@ -1,12 +1,15 @@
 package app.network;
 
 import app.exception.AppException;
+import app.exception.ConnectException;
 import app.models.Packet;
 import app.models.User;
 import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Client {
   private static volatile Client instance;
@@ -15,7 +18,8 @@ public class Client {
   private BufferedWriter writer;
   private BufferedReader reader;
   private Consumer<Packet> onMessageReceived;
-  private boolean isConnected = false;
+  private boolean connected = false;
+  Logger logger = LoggerFactory.getLogger(Client.class);
 
   public static Client getInstance() {
     if (instance == null) {
@@ -27,16 +31,16 @@ public class Client {
   }
 
   public void connect() throws IOException {
-    System.out.println("[CLIENT] Đang kết nối...");
+    logger.info("[CLIENT] Đang kết nối...");
     socket = new Socket("127.0.0.1", 5000);
-    System.out.println("[CLIENT] Kết nối thành công!");
+    logger.info("[CLIENT] Kết nối thành công!");
     writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
     writer.flush();
     reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     Thread thread = new Thread(this::listen);
     thread.setDaemon(true);
     thread.start();
-    isConnected = true;
+    connected = true;
   }
 
   private void listen() {
@@ -46,10 +50,8 @@ public class Client {
       while ((line = reader.readLine()) != null) {
         try {
           packet = JsonUtil.fromJson(line, Packet.class);
-          System.out.println("[Server] " + packet);
           switch (packet.getType()) {
             case LOGIN:
-              System.out.println("[Server] " + packet);
               if (onMessageReceived != null) {
                 onMessageReceived.accept(packet);
               }
@@ -57,39 +59,33 @@ public class Client {
             case CREATE_AUCTION:
             case PLACE_BID:
             case CHAT:
-              System.out.println("[Server] " + packet);
               if (onMessageReceived != null) {
                 onMessageReceived.accept(packet);
               }
               break;
           }
         } catch (AppException e) {
-          System.out.println(e.getMessage());
+          logger.info(e.getMessage());
         }
       }
     } catch (IOException e) {
-      System.err.println("Mất kết nối Server.");
-      isConnected = false;
+      connected = false;
+      throw new ConnectException("Mất kết nối" + e.getMessage());
     } finally {
       closeResources();
     }
   }
 
-  public boolean isConnected() {
-    return isConnected;
+  public boolean connected() {
+    return connected;
   }
 
-  public void sendRequest(Packet packet) {
+  public void sendRequest(Packet packet) throws IOException {
     if (writer != null) {
-      try {
         String json = JsonUtil.toJson(packet);
         writer.write(json);
         writer.newLine();
         writer.flush();
-        System.out.println("[Client] " + json);
-      } catch (IOException e) {
-        System.err.println("Lỗi");
-      }
     }
   }
 
@@ -107,12 +103,13 @@ public class Client {
 
   private void closeResources() {
     try {
-      isConnected = false;
+      logger.info("[CLIENT] Closing resources");
+      connected = false;
       if (reader != null) reader.close();
       if (writer != null) writer.close();
       if (socket != null) socket.close();
     } catch (IOException e) {
-      System.err.println("Lỗi khi đóng kết nối: " + e.getMessage());
+      logger.warn("Lỗi khi đóng kết nối: {}", e.getMessage());
     }
   }
 }

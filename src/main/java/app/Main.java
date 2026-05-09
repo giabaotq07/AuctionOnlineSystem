@@ -3,6 +3,8 @@ package app;
 import app.config.NavigationManager;
 import atlantafx.base.theme.PrimerDark;
 import java.io.IOException;
+import java.util.Objects;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -16,9 +18,9 @@ public class Main extends Application {
     FXMLLoader fxmlLoader =
         new FXMLLoader(Main.class.getResource("/app/views/ConnectServerController.fxml"));
     Scene scene = new Scene(fxmlLoader.load(), 1280, 720);
-    String css = getClass().getResource("/app/views/style.css").toExternalForm();
+    String css = Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
     scene.getStylesheets().add(css);
-    Image icon = new Image(getClass().getResourceAsStream("/app/views/icon.png"));
+    Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/app/views/icon.png")));
     stage.getIcons().add(icon);
     stage.setTitle("LoPPy");
     stage.setScene(scene);

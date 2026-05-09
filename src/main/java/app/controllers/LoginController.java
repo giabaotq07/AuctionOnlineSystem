@@ -12,6 +12,8 @@ import app.models.UserFactory;
 import app.network.Client;
 import app.utils.AlertUtils;
 import app.utils.JsonUtil;
+
+import java.io.IOException;
 import java.util.Objects;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -72,8 +74,13 @@ public class LoginController {
       return;
     }
     LoginRequest loginRequest = new LoginRequest(userInput, passInput);
-    Client.getInstance()
-        .sendRequest(new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginRequest)));
+    try {
+      Client.getInstance()
+          .sendRequest(new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginRequest)));
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+      loginButton.setDisable(false);
+    }
   }
 
   @FXML
