@@ -1,7 +1,7 @@
 package app.dao.impl;
 
-import app.config.DatabaseConnection;
 import app.dao.AuctionDAO;
+import app.dao.BaseDAO;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.models.*;
@@ -10,10 +10,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-public class MySqlAuctionDAO implements AuctionDAO {
+public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
 
   private static final String TABLE = "auction_sessions";
 
@@ -93,11 +91,6 @@ public class MySqlAuctionDAO implements AuctionDAO {
   // ── Transaction methods — nhận Connection từ Service ──────────
 
   @Override
-  public void lockSession(int sessionId) {
-    runWithConnection(conn -> lockSession(conn, sessionId), "Lỗi kết nối khi khóa phiên đấu giá.");
-  }
-
-  @Override
   public void lockSession(Connection conn, int sessionId) {
     String sql =
         """
@@ -138,13 +131,6 @@ public class MySqlAuctionDAO implements AuctionDAO {
   }
 
   @Override
-  public void updateHighestBid(int sessionId, long highestBid) {
-    runWithConnection(
-        conn -> updateHighestBid(conn, sessionId, highestBid),
-        "Lỗi kết nối khi cập nhật giá cao nhất.");
-  }
-
-  @Override
   public void updateHighestBid(Connection conn, int sessionId, long highestBid) {
     String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -154,13 +140,6 @@ public class MySqlAuctionDAO implements AuctionDAO {
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi cập nhật giá cao nhất.", e);
     }
-  }
-
-  @Override
-  public void extendEndTime(int sessionId, int extraSeconds) {
-    runWithConnection(
-        conn -> extendEndTime(conn, sessionId, extraSeconds),
-        "Lỗi kết nối khi gia hạn phiên đấu giá.");
   }
 
   @Override
@@ -179,6 +158,12 @@ public class MySqlAuctionDAO implements AuctionDAO {
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi gia hạn thời gian phiên đấu giá.", e);
     }
+  }
+
+  @Override
+  public void updateWinner(Connection conn, int auctionId, int winnerId) {
+    executeUpdate(
+        conn, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
   }
 
   // ── Write methods ─────────────────────────────────────────────
@@ -254,14 +239,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
   @Override
   public void updateWinner(int auctionId, int winnerId) {
     runWithConnection(
-        conn -> updateWinner(conn, winnerId, auctionId),
+        conn -> updateWinner(conn, auctionId, winnerId),
         "Lỗi kết nối khi cập nhật người thắng phiên.");
-  }
-
-  @Override
-  public void updateWinner(Connection conn, int auctionId, int winnerId) {
-    executeUpdate(
-        conn, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
   }
 
   @Override
@@ -316,22 +295,5 @@ public class MySqlAuctionDAO implements AuctionDAO {
         throw new DatabaseException("Lỗi khi thiết lập tham số cho PreparedStatement.", e);
       }
     }
-  }
-
-  private <T> T withConnection(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-      return action.apply(conn);
-    } catch (SQLException e) {
-      throw new DatabaseException(errorMessage, e);
-    }
-  }
-
-  private void runWithConnection(Consumer<Connection> action, String errorMessage) {
-    withConnection(
-        conn -> {
-          action.accept(conn);
-          return null;
-        },
-        errorMessage);
   }
 }
