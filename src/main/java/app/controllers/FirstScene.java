@@ -231,11 +231,15 @@ public class FirstScene {
     Label titleLabel = new Label(item.getName());
     titleLabel.setWrapText(true);
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: white;");
-
+    long highestBid = 0;
+    long displayPrice = 0;
     // ✅ Lấy giá cao nhất từ database thay vì in-memory
-    double highestBid = bidService.getHighestBid(session.getId()).orElseThrow().getAmount();
-    double displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
-    Label priceLabel = new Label(String.format("Giá hiện tại: %,.0f đ", displayPrice));
+    if (bidService.getHighestBid(session.getId()).isPresent())
+    {
+      highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
+    }
+    displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
+    Label priceLabel = new Label("Giá hiện tại: " + displayPrice + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     Label timeLabel = new Label("Kết thúc: " + session.getEndTime());
@@ -289,7 +293,7 @@ public class FirstScene {
   }
 
   private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {
-    if (Client.getInstance().isConnected()) {
+    if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
       return;
     }

@@ -23,7 +23,6 @@ public class Auction implements AuctionSubject {
   private int extendedCount;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
-  private final ReentrantLock lock = new ReentrantLock();
 
   public Auction(int itemId, int sellerId, LocalDateTime endTime
       // , long depositAmount
@@ -192,10 +191,6 @@ public class Auction implements AuctionSubject {
 
   public void setExtendedCount(int extendedCount) {
     this.extendedCount = extendedCount;
-  }
-
-  public ReentrantLock getLock() {
-    return lock;
   }
 
   public LocalDateTime getCreatedAt() {

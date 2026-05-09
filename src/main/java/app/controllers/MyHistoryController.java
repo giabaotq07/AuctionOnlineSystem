@@ -91,7 +91,7 @@ public class MyHistoryController {
     long highestBid =
         Objects.requireNonNull(bidService.getHighestBid(session.getId()).orElse(null)).getAmount();
     long displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
-    Label priceLabel = new Label(String.format("Giá: %,.0f đ", displayPrice));
+    Label priceLabel = new Label("Giá: " + displayPrice +"đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
     Button btnDetail = new Button("Chi tiết");
