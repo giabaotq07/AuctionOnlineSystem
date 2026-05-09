@@ -1,10 +1,7 @@
 package app.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
-import app.config.DatabaseConnection;
 import app.dao.BaseDAOTest;
 import app.dao.UserDAO;
 import app.dao.impl.MySqlUserDAO;
@@ -15,8 +12,6 @@ import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
 import app.utils.PasswordUtils;
-import java.sql.Connection;
-import java.sql.Statement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -31,58 +26,45 @@ public class UserServiceTest extends BaseDAOTest {
   private UserDAO userDAO;
 
   @BeforeEach
-  public void setupDatabase() throws Exception {
-    logger.info("Initializing UserService test database and mock data...");
+  void setup() {
+    logger.info("Setting up UserService test...");
+
     userDAO = new MySqlUserDAO();
     userService = new UserService(userDAO);
 
-    try (Connection conn = DatabaseConnection.getConnection();
-        Statement stmt = conn.createStatement()) {
-      stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
-      stmt.execute("TRUNCATE TABLE bids");
-      stmt.execute("TRUNCATE TABLE auto_bids");
-      stmt.execute("TRUNCATE TABLE auction_sessions");
-      stmt.execute("TRUNCATE TABLE items");
-      stmt.execute("TRUNCATE TABLE users");
-      stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
-      logger.info("Database truncated successfully.");
-    } catch (Exception e) {
-      logger.error("Error truncating test database tables", e);
-      throw e;
-    }
+    // ❌ KHÔNG truncate SQL thủ công nữa
+    userDAO.deleteAll(); // 👉 bạn cần implement method này
 
-    tester =
-        UserFactory.createUser(
-            "Test User",
-            new Account("test_account", PasswordUtils.hashPassword("test_password")),
-            new Wallet(),
-            UserRole.BIDDER);
+    tester = UserFactory.createUser(
+        "Test User",
+        new Account("test_account", PasswordUtils.hashPassword("test_password")),
+        new Wallet(),
+        UserRole.BIDDER
+    );
+
     tester = userDAO.save(tester);
-    logger.info("Mock user created and saved.");
+
+    logger.info("Test user created: {}", tester.getId());
   }
 
   @Test
-  public void testLogin_success() {
-    logger.info("Running test: testLogin_success");
+  void testLogin_success() {
     User loggedIn = userService.login("test_account", "test_password");
 
     assertNotNull(loggedIn);
     assertEquals(tester.getId(), loggedIn.getId());
     assertEquals("test_account", loggedIn.getAccount().getUsername());
-    logger.info("Test passed: Successful login verified");
   }
 
   @Test
-  public void testLogin_wrongPassword_shouldThrow() {
-    logger.warn("Running test: testLogin_wrongPassword_shouldThrow - expecting exception");
-    assertThrows(ServiceException.class, () -> userService.login("test_account", "wrong"));
-    logger.info("Test passed: Exception thrown for wrong password");
+  void testLogin_wrongPassword_shouldThrow() {
+    assertThrows(ServiceException.class,
+        () -> userService.login("test_account", "wrong"));
   }
 
   @Test
-  public void testLogin_unknownUser_shouldThrow() {
-    logger.warn("Running test: testLogin_unknownUser_shouldThrow - expecting exception");
-    assertThrows(ServiceException.class, () -> userService.login("unknown", "test_password"));
-    logger.info("Test passed: Exception thrown for unknown user");
+  void testLogin_unknownUser_shouldThrow() {
+    assertThrows(ServiceException.class,
+        () -> userService.login("unknown", "test_password"));
   }
 }

@@ -9,6 +9,7 @@ module app {
   requires atlantafx.base;
   requires com.zaxxer.hikari;
 
+  opens app.dao;
   opens app to
       javafx.fxml;
   opens app.controllers to

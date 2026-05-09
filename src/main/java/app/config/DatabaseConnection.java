@@ -2,19 +2,26 @@ package app.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public final class DatabaseConnection {
 
-  private static final HikariDataSource dataSource;
+  private static HikariDataSource dataSource;
 
   static {
+    init();
+  }
+
+  private static void init() {
     HikariConfig config = new HikariConfig();
 
-    config.setJdbcUrl(DatabaseConfig.load().getUrl());
-    config.setUsername(DatabaseConfig.load().getUser());
-    config.setPassword(DatabaseConfig.load().getPassword());
+    DatabaseConfig cfg = DatabaseConfig.load();
+
+    config.setJdbcUrl(cfg.getUrl());
+    config.setUsername(cfg.getUser());
+    config.setPassword(cfg.getPassword());
 
     config.setMaximumPoolSize(10);
     config.setMinimumIdle(2);
@@ -29,5 +36,12 @@ public final class DatabaseConnection {
 
   public static Connection getConnection() throws SQLException {
     return dataSource.getConnection();
+  }
+
+  public static synchronized void reload() {
+    if (dataSource != null && !dataSource.isClosed()) {
+      dataSource.close();
+    }
+    init(); // 🔥 quan trọng: rebuild pool
   }
 }
