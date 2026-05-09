@@ -88,8 +88,10 @@ public class MyHistoryController {
     titleLabel.setWrapText(true);
 
     // ✅ Lấy giá cao nhất từ database thay vì in-memory
-    long highestBid =
-        Objects.requireNonNull(bidService.getHighestBid(session.getId()).orElse(null)).getAmount();
+    long highestBid = 0;
+    if (bidService.getHighestBid(session.getId()).isPresent()) {
+      highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
+    }
     long displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
     Label priceLabel = new Label("Giá: " + displayPrice + "đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
