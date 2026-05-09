@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class Auction implements AuctionSubject {
 
@@ -23,7 +22,6 @@ public class Auction implements AuctionSubject {
   private int extendedCount;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
-  private final ReentrantLock lock = new ReentrantLock();
 
   public Auction(int itemId, int sellerId, LocalDateTime endTime
       // , long depositAmount
@@ -192,10 +190,6 @@ public class Auction implements AuctionSubject {
 
   public void setExtendedCount(int extendedCount) {
     this.extendedCount = extendedCount;
-  }
-
-  public ReentrantLock getLock() {
-    return lock;
   }
 
   public LocalDateTime getCreatedAt() {

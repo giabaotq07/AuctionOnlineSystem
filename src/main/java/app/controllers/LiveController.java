@@ -72,8 +72,14 @@ public class LiveController implements AuctionObserver {
       if (stepPriceLabel != null) stepPriceLabel.setText("" + item.getStepPrice());
 
       if (currentPriceLabel != null) {
-        long highestBid = bidService.getHighestBid(session.getId()).orElseThrow().getAmount();
-        long displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
+        long highestBid = 0;
+        long displayPrice = 0;
+        // ✅ Lấy giá cao nhất từ database thay vì in-memory
+        if (bidService.getHighestBid(session.getId()).isPresent()) {
+          highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
+        }
+        displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
+        displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
         currentPriceLabel.setText("" + displayPrice);
       }
 
@@ -107,7 +113,8 @@ public class LiveController implements AuctionObserver {
               "Phiên đấu giá đã kết thúc. Người thắng: "
                   + winnerName
                   + " với giá: "
-                  + String.format("%,.0f đ", finalPrice));
+                  + finalPrice
+                  + " đ");
           timeLabel.setText("Phiên đấu giá đã kết thúc!");
           timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
           if (scheduler != null && !scheduler.isShutdown()) {
@@ -118,39 +125,60 @@ public class LiveController implements AuctionObserver {
 
   @FXML
   public void handlePlaceBid(ActionEvent event) {
-    if (Client.getInstance().isConnected()) {
+    if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
+      return;
+    }
+
+    if (!session.isRunning()) {
+      AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
 
     if (DataStore.currentUser == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
-      long bidAmount = Long.parseLong(bidAmountField.getText());
+      return;
+    }
 
-      // KIỂM TRA SƠ BỘ: Nếu giá nhập thấp hơn giá đang hiển thị thì chặn luôn ở Client cho nhanh
-      long highestBid = bidService.getHighestBid(session.getId()).orElseThrow().getAmount();
-
-      // Gọi BidService để lưu vào MySQL
-      try {
-        bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
-
-        // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
-        BidTransaction highestBidTransaction =
-            bidService.getHighestBid(session.getId()).orElseThrow();
-        currentPriceLabel.setText("" + highestBidTransaction.getAmount());
-
-        bidAmountField.clear();
-        AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
-
-        // Gửi yêu cầu lên Server để đồng bộ với các Client khác
-        Client.getInstance()
-            .sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJsonElement(session)));
-
-      } catch (ServiceException e) {
-        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
-      } catch (Exception e) {
-        AlertUtils.showError("Lỗi đặt giá", e.getMessage());
+    long bidAmount = 0;
+    long currentPrice;
+    try {
+      bidAmount = Long.parseLong(bidAmountField.getText());
+      currentPrice = Long.parseLong(currentPriceLabel.getText());
+      if (bidAmount <= 0) {
+        throw new NumberFormatException();
       }
+      if (bidAmount <= currentPrice) {
+        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
+        return;
+      }
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "Giá nhập phải là số nguyên dương");
+      return;
+    }
+
+    // KIỂM TRA SƠ BỘ: Nếu giá nhập thấp hơn giá đang hiển thị thì chặn luôn ở Client cho nhanh
+
+    // Gọi BidService để lưu vào MySQL
+    try {
+      bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
+
+      // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
+      BidTransaction highestBidTransaction =
+          bidService.getHighestBid(session.getId()).orElseThrow();
+      currentPriceLabel.setText("" + highestBidTransaction.getAmount());
+
+      bidAmountField.clear();
+      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
+
+      // Gửi yêu cầu lên Server để đồng bộ với các Client khác
+      Client.getInstance()
+          .sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJsonElement(session)));
+
+    } catch (ServiceException e) {
+      AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
+    } catch (Exception e) {
+      AlertUtils.showError("Lỗi đặt giá", e.getMessage());
     }
   }
 
@@ -170,21 +198,21 @@ public class LiveController implements AuctionObserver {
                   scheduler.shutdown();
 
                   // Sử dụng AuctionService để cập nhật trạng thái COMPLETED vào MySQL
-                  auctionService.handleCompletion(session.getId());
-
+                  if (session.isRunning()) {
+                    auctionService.handleCompletion(session.getId());
+                  }
                   // Đồng bộ trạng thái đối tượng trên RAM
                   session.setStatus(AuctionStatus.FINISHED);
 
                   // Lấy thông tin người thắng cuộc từ BidService
-                  BidTransaction winBid = bidService.getHighestBid(session.getId()).orElseThrow();
-                  String winner = winBid.getBidderName();
-                  long price = winBid.getAmount();
-
-                  // Gửi thông báo đồng bộ tới các Client khác thông qua Server
-                  Client.getInstance()
-                      .sendRequest(
-                          new app.models.Packet(
-                              PacketType.PLACE_BID, JsonUtil.toJsonElement(session)));
+                  BidTransaction winBid;
+                  String winner = "chưa có người thắng";
+                  long price = 0;
+                  if (bidService.getHighestBid(session.getId()).isPresent()) {
+                    winBid = bidService.getHighestBid(session.getId()).get();
+                    winner = winBid.getBidderName();
+                    price = winBid.getAmount();
+                  }
 
                   onAuctionClosed(item.getName(), winner, price);
                 } else {

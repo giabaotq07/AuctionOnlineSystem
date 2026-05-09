@@ -46,8 +46,12 @@ public class MySqlAuctionDAO implements AuctionDAO {
         rs.getInt("seller_id"),
         (Integer) rs.getObject("winner_id"),
         AuctionStatus.valueOf(rs.getString("status")),
-        rs.getTimestamp("start_time").toLocalDateTime(),
-        rs.getTimestamp("end_time").toLocalDateTime(),
+        Optional.ofNullable(rs.getTimestamp("start_time"))
+            .map(Timestamp::toLocalDateTime)
+            .orElse(null),
+        Optional.ofNullable(rs.getTimestamp("end_time"))
+            .map(Timestamp::toLocalDateTime)
+            .orElse(null),
         rs.getLong("highest_bid"),
         rs.getInt("extended_count"),
         rs.getTimestamp("created_at").toLocalDateTime(),
@@ -93,7 +97,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
     runWithConnection(conn -> lockSession(conn, sessionId), "Lỗi kết nối khi khóa phiên đấu giá.");
   }
 
-  private void lockSession(Connection conn, int sessionId) {
+  @Override
+  public void lockSession(Connection conn, int sessionId) {
     String sql =
         """
             SELECT id FROM auction_sessions
@@ -119,7 +124,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
         conn -> getHighestBid(conn, sessionId), "Lỗi kết nối khi lấy giá thầu cao nhất.");
   }
 
-  private long getHighestBid(Connection conn, int sessionId) {
+  @Override
+  public long getHighestBid(Connection conn, int sessionId) {
     String sql = "SELECT highest_bid FROM auction_sessions WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);
@@ -138,7 +144,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
         "Lỗi kết nối khi cập nhật giá cao nhất.");
   }
 
-  private void updateHighestBid(Connection conn, int sessionId, long highestBid) {
+  @Override
+  public void updateHighestBid(Connection conn, int sessionId, long highestBid) {
     String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setLong(1, highestBid);
@@ -156,7 +163,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
         "Lỗi kết nối khi gia hạn phiên đấu giá.");
   }
 
-  private void extendEndTime(Connection conn, int sessionId, int extraSeconds) {
+  @Override
+  public void extendEndTime(Connection conn, int sessionId, int extraSeconds) {
     String sql =
         """
             UPDATE auction_sessions
@@ -180,7 +188,8 @@ public class MySqlAuctionDAO implements AuctionDAO {
     return withConnection(conn -> save(conn, auction), "Lỗi kết nối khi tạo auction.");
   }
 
-  private Auction save(Connection conn, Auction auction) {
+  @Override
+  public Auction save(Connection conn, Auction auction) {
     String sql =
         """
             INSERT INTO auction_sessions
@@ -208,13 +217,14 @@ public class MySqlAuctionDAO implements AuctionDAO {
   @Override
   public boolean updateStatus(int auctionId, AuctionStatus status) {
     return withConnection(
-        conn ->
-            executeUpdate(
-                conn,
-                "UPDATE auction_sessions SET status = ? WHERE id = ?",
-                status.name(),
-                auctionId),
+        conn -> updateStatus(conn, auctionId, status),
         "Lỗi kết nối khi cập nhật trạng thái phiên đấu giá.");
+  }
+
+  @Override
+  public boolean updateStatus(Connection conn, int auctionId, AuctionStatus status) {
+    return executeUpdate(
+        conn, "UPDATE auction_sessions SET status = ? WHERE id = ?", status.name(), auctionId);
   }
 
   @Override
@@ -244,13 +254,14 @@ public class MySqlAuctionDAO implements AuctionDAO {
   @Override
   public void updateWinner(int auctionId, int winnerId) {
     runWithConnection(
-        conn ->
-            executeUpdate(
-                conn,
-                "UPDATE auction_sessions SET winner_id = ? WHERE id = ?",
-                winnerId,
-                auctionId),
+        conn -> updateWinner(conn, winnerId, auctionId),
         "Lỗi kết nối khi cập nhật người thắng phiên.");
+  }
+
+  @Override
+  public void updateWinner(Connection conn, int auctionId, int winnerId) {
+    executeUpdate(
+        conn, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
   }
 
   @Override

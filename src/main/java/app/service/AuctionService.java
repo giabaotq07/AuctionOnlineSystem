@@ -1,5 +1,6 @@
 package app.service;
 
+import app.config.TransactionManager;
 import app.dao.AuctionDAO;
 import app.dao.BidDAO;
 import app.enums.AuctionStatus;
@@ -7,14 +8,19 @@ import app.exception.ServiceException;
 import app.models.Auction;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuctionService {
   private final AuctionDAO auctionDAO;
-  private final BidDAO bidDAO; // inject thẳng, bỏ BidService param
+  private final BidDAO bidDAO;
+  private final TransactionManager txManager;
+  private final Logger logger = LoggerFactory.getLogger(AuctionService.class);
 
   public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO) {
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
+    txManager = TransactionManager.getInstance();
   }
 
   // Trả Auction thẳng — đã throw nếu không tìm thấy
@@ -33,36 +39,36 @@ public class AuctionService {
     return auctionDAO.findAll();
   }
 
-  public boolean closeIfExpired(int auctionId) {
-    Auction auction = getAuctionById(auctionId, "Không tìm thấy phiên ID: " + auctionId);
-    auction.getLock().lock();
-    try {
-      if (!auction.isExpired()) return false;
-
-      AuctionStatus s = auction.getStatus();
-      if (s != AuctionStatus.OPEN && s != AuctionStatus.RUNNING) return false;
-
-      auction.finish();
-      auctionDAO.updateStatus(auctionId, AuctionStatus.FINISHED);
-      return true;
-
-    } finally {
-      auction.getLock().unlock();
-    }
-  }
-
   public void handleCompletion(int auctionId) {
-    if (!closeIfExpired(auctionId)) return;
-    bidDAO
-        .findHighestBid(auctionId)
-        .ifPresentOrElse(
-            bid -> {
-              auctionDAO.updateWinner(auctionId, bid.getBidderId());
-              System.out.printf(
-                  "Phiên %d kết thúc. Winner: %s, Giá: %,d%n",
-                  auctionId, bid.getBidderName(), bid.getAmount());
-            },
-            () -> System.out.println("Phiên " + auctionId + " kết thúc. Không có bid."));
+    txManager.runInTransaction(
+        conn -> {
+          auctionDAO.lockSession(conn, auctionId);
+
+          Auction auction =
+              auctionDAO
+                  .findById(auctionId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
+
+          if (!auction.isExpired()) return;
+
+          AuctionStatus s = auction.getStatus();
+          if (s != AuctionStatus.OPEN && s != AuctionStatus.RUNNING) return;
+
+          auctionDAO.updateStatus(conn, auctionId, AuctionStatus.FINISHED);
+
+          bidDAO
+              .findHighestBid(auctionId)
+              .ifPresentOrElse(
+                  bid -> {
+                    auctionDAO.updateWinner(conn, auctionId, bid.getBidderId());
+                    logger.info(
+                        "Phiên {} kết thúc. Winner: {}, Giá: {}",
+                        auctionId,
+                        bid.getBidderName(),
+                        bid.getAmount());
+                  },
+                  () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
+        });
   }
 
   public void updateStatus(int auctionId, AuctionStatus status) {

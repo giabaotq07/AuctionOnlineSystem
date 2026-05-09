@@ -70,7 +70,6 @@
                     style="-fx-background-color: #673ab7; -fx-text-fill: white; -fx-font-weight: bold;" />
 
             <Button text="TÀI SẢN ĐẤU GIÁ"
-                    onAction="#SwitchToLive"
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
 

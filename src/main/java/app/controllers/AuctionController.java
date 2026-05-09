@@ -48,7 +48,7 @@ public class AuctionController {
   @FXML
   public void handleAdd(ActionEvent event) {
 
-    if (Client.getInstance().isConnected()) {
+    if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
@@ -86,7 +86,7 @@ public class AuctionController {
               item.getId(),
               DataStore.currentUser.getId(),
               LocalDateTime.now().plusMinutes(durationMins));
-
+      session.start();
       AuctionService auctionService = new AuctionService(new MySqlAuctionDAO(), new MySqlBidDAO());
       session = auctionService.createAuction(session);
 
@@ -96,7 +96,6 @@ public class AuctionController {
 
       // ================== 4. NETWORK ==================
       Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJsonElement(session));
-
       Client.getInstance().sendRequest(packet);
 
       AlertUtils.showInfo("OK", "Tạo phiên thành công");
