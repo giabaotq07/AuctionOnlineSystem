@@ -23,7 +23,6 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
-
         env:
           MYSQL_ROOT_PASSWORD: 123456
           MYSQL_DATABASE: auction_db
@@ -49,15 +48,19 @@ jobs:
           cache: maven
 
       - name: Wait for MySQL
+        env:
+          MYSQL_PWD: 123456
         run: |
-          until mysqladmin ping -h "127.0.0.1" -u root -p123456 --silent; do
+          until mysqladmin ping -h "127.0.0.1" -u root --silent; do
             echo "Waiting for MySQL..."
             sleep 2
           done
 
       - name: Create test database
+        env:
+          MYSQL_PWD: 123456
         run: |
-          mysql -h 127.0.0.1 -u root -p123456 \
+          mysql -h 127.0.0.1 -u root \
           -e "CREATE DATABASE IF NOT EXISTS auction_db_test;"
 
       - name: Build & Test
