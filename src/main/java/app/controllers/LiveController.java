@@ -171,8 +171,7 @@ public class LiveController implements AuctionObserver {
       AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
 
       // Gửi yêu cầu lên Server để đồng bộ với các Client khác
-      Client.getInstance()
-          .sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJson(session)));
+      Client.getInstance().sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJson(session)));
 
     } catch (ServiceException e) {
       AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");

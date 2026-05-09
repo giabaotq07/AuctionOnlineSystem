@@ -45,7 +45,8 @@ public class NavigationManager {
 
       Scene scene = new Scene(root);
 
-      String css = Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
+      String css =
+          Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
       scene.getStylesheets().add(css);
 
       primaryStage.setScene(scene);

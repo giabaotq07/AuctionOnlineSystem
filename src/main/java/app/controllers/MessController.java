@@ -39,10 +39,7 @@ public class MessController {
   public void initialize() {
     client = Client.getInstance();
 
-    chatBox
-        .heightProperty()
-        .addListener(
-            (obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
+    chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
 
     client.setOnMessageReceived(
         packet -> {

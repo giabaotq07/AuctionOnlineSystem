@@ -1,7 +1,6 @@
 package app.models;
 
 import app.enums.PacketType;
-import com.google.gson.JsonElement;
 import java.io.Serializable;
 
 public class Packet implements Serializable {

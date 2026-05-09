@@ -16,6 +16,7 @@ public class TransactionManager {
     return INSTANCE;
   }
 
+  // Dùng khi cần trả về kết quả (SELECT, INSERT lấy ID, ...)
   public <T> T runInTransaction(Function<Connection, T> work) {
     try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
       conn.setAutoCommit(false);
@@ -34,6 +35,7 @@ public class TransactionManager {
     }
   }
 
+  // Dùng khi không cần trả về (INSERT, UPDATE, DELETE thuần)
   public void runInTransaction(Consumer<Connection> work) {
     runInTransaction(
         conn -> {
