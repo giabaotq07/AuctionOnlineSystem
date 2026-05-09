@@ -7,13 +7,12 @@ module app {
   requires ch.qos.logback.classic;
   requires com.google.gson;
   requires atlantafx.base;
-  requires gson.extras;
 
   opens app to
       javafx.fxml;
   opens app.controllers to
       javafx.fxml;
-  opens app.dto to
+  opens app.data to
       com.google.gson;
   opens app.models to
       com.google.gson;

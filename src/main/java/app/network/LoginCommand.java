@@ -2,8 +2,9 @@ package app.network;
 
 import app.dao.UserDAO;
 import app.dao.impl.MySqlUserDAO;
-import app.dto.LoginRequest;
-import app.dto.LoginResponse;
+import app.data.LoginRequest;
+import app.data.LoginResponse;
+import app.data.UserData;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.Packet;
@@ -18,9 +19,9 @@ public class LoginCommand implements Command {
 
   @Override
   public void execute(ClientHandler clientHandler, Packet packet) {
-    LoginRequest loginPacket = JsonUtil.fromJson(packet.getData(), LoginRequest.class);
-    String username = loginPacket.username();
-    String password = loginPacket.password();
+    LoginRequest loginRequest = JsonUtil.fromJson(packet.getData(), LoginRequest.class);
+    String username = loginRequest.username();
+    String password = loginRequest.password();
     UserDAO userDAO = new MySqlUserDAO();
     UserService userService = new UserService(userDAO);
     User user;
@@ -36,7 +37,8 @@ public class LoginCommand implements Command {
     clientHandler.setUser(user);
     Server.registerClient(user.getId(), clientHandler);
     logger.info("[SERVER] {} đã đăng nhập.", username);
-    LoginResponse loginResponse = new LoginResponse(true, "Đăng nhập thành công!", user);
+    LoginResponse loginResponse =
+        new LoginResponse(true, "Đăng nhập thành công!", new UserData(user));
     Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJsonElement(loginResponse));
     clientHandler.sendMessage(responsePacket);
   }

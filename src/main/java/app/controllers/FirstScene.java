@@ -292,7 +292,7 @@ public class FirstScene {
   }
 
   private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {
-    if (!Client.getInstance().isConnected()) {
+    if (!Client.getInstance().connected()) {
       AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
       return;
     }

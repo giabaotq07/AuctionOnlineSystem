@@ -1,4 +1,4 @@
-package app.dto;
+package app.data;
 
 import app.models.BidTransaction;
 import java.io.Serializable;
