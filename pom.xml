@@ -2,6 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>app</groupId>
@@ -10,92 +11,196 @@
     <name>demo</name>
 
     <properties>
+        <!-- Build -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>25</maven.compiler.release>
 
+        <!-- Main class -->
+        <app.module>app</app.module>
         <app.mainClass>app.App</app.mainClass>
 
+        <!-- Java -->
+        <java.version>25</java.version>
         <javafx.version>25.0.1</javafx.version>
-        <junit.version>5.12.0</junit.version>
-        <atlantafx.version>2.1.0</atlantafx.version>
+
+        <!-- Dependencies -->
+
+        <junit.version>5.13.0</junit.version>
+
         <gson.version>2.14.0</gson.version>
+
         <mysql.version>9.3.0</mysql.version>
 
-        <compiler.plugin.version>3.15.0</compiler.plugin.version>
-        <surefire.plugin.version>3.5.2</surefire.plugin.version>
+        <atlantafx.version>2.1.0</atlantafx.version>
+
+        <slf4j.version>2.0.17</slf4j.version>
+
+        <logback.version>1.5.18</logback.version>
+
+        <!-- Maven Plugins -->
+        <compiler.plugin.version>3.14.1</compiler.plugin.version>
+
+        <surefire.plugin.version>3.5.4</surefire.plugin.version>
+
         <javafx.plugin.version>0.0.8</javafx.plugin.version>
-        <exec.plugin.version>3.6.3</exec.plugin.version>
+
+        <exec.plugin.version>3.5.0</exec.plugin.version>
+
+        <!-- IMPORTANT -->
         <spotless.plugin.version>3.4.0</spotless.plugin.version>
+
         <google.java.format.version>1.35.0</google.java.format.version>
+
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
+
+        <!-- Checkstyle engine -->
+        <checkstyle.version>10.26.0</checkstyle.version>
+
     </properties>
 
     <dependencies>
+
+        <!-- JavaFX -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
+        <!-- UI -->
         <dependency>
             <groupId>io.github.mkpaz</groupId>
             <artifactId>atlantafx-base</artifactId>
             <version>${atlantafx.version}</version>
         </dependency>
+
+        <!-- JSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gson.version}</version>
         </dependency>
+
+        <!-- Database -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>${mysql.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.17</version>
+            <version>${slf4j.version}</version>
         </dependency>
+
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.32</version>
+            <version>${logback.version}</version>
         </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler.plugin.version}</version>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.plugin.version}</version>
+
+                <configuration>
+                    <release>${java.version}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <!-- JavaFX -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>${javafx.plugin.version}</version>
+
+                <configuration>
+                    <mainClass>${app.module}/${app.mainClass}</mainClass>
+
+                    <jlinkZipName>app</jlinkZipName>
+                    <jlinkImageName>app</jlinkImageName>
+
+                    <stripDebug>true</stripDebug>
+                    <compress>2</compress>
+
+                    <noHeaderFiles>true</noHeaderFiles>
+                    <noManPages>true</noManPages>
+                </configuration>
+            </plugin>
+
+            <!-- Unit test -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.plugin.version}</version>
+            </plugin>
+
+            <!-- Checkstyle -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.6.0</version>
+
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
-                    <failOnViolation>true</failOnViolation>
+                    <failsOnError>true</failsOnError>
                 </configuration>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+
                 <executions>
                     <execution>
                         <phase>validate</phase>
@@ -106,69 +211,49 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire.plugin.version}</version>
-            </plugin>
-
-            <plugin>
-                <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-                <version>${javafx.plugin.version}</version>
-                <configuration>
-                    <mainClass>${app.mainClass}</mainClass>
-                    <launcher>app</launcher>
-                    <jlinkZipName>app</jlinkZipName>
-                    <jlinkImageName>app</jlinkImageName>
-                    <noManPages>true</noManPages>
-                    <stripDebug>true</stripDebug>
-                    <noHeaderFiles>true</noHeaderFiles>
-                    <options>
-                        <option>--enable-native-access=ALL-UNNAMED</option>
-                    </options>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec.plugin.version}</version>
-                <configuration>
-                    <mainClass>${app.mainClass}</mainClass>
-                </configuration>
-            </plugin>
-
+            <!-- Formatter -->
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>${spotless.plugin.version}</version>
+
                 <configuration>
                     <java>
+
                         <googleJavaFormat>
                             <version>${google.java.format.version}</version>
                             <style>GOOGLE</style>
                         </googleJavaFormat>
+
                         <removeUnusedImports/>
-                        <lineEndings>GIT_ATTRIBUTES</lineEndings>
+
+                        <formatAnnotations/>
+
+                        <trimTrailingWhitespace/>
+
+                        <endWithNewline/>
+
                     </java>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>spotless-check</id>
-                        <phase>verify</phase>
+                        <phase>validate</phase>
+
                         <goals>
-                            <goal>check</goal>
+                            <goal>apply</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 
     <profiles>
+
         <profile>
-            <id>client</id>
+            <id>app</id>
+
             <properties>
                 <app.mainClass>app.App</app.mainClass>
             </properties>
@@ -176,6 +261,7 @@
 
         <profile>
             <id>server</id>
+
             <properties>
                 <app.mainClass>app.ServerApp</app.mainClass>
             </properties>
@@ -183,9 +269,12 @@
 
         <profile>
             <id>demo</id>
+
             <properties>
                 <app.mainClass>app.DemoRunner</app.mainClass>
             </properties>
         </profile>
+
     </profiles>
+
 </project>

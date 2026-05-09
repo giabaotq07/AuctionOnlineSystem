@@ -48,7 +48,7 @@ public class AuctionController {
   @FXML
   public void handleAdd(ActionEvent event) {
 
-    if (!Client.getInstance().isConnected()) {
+    if (Client.getInstance().connected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }

@@ -8,7 +8,9 @@ import app.enums.PacketType;
 import app.enums.View;
 import app.models.Packet;
 import app.network.Client;
+import app.utils.AlertUtils;
 import app.utils.JsonUtil;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -122,7 +124,12 @@ public class MessController {
     if (text != null && !text.trim().isEmpty()) {
       ChatRequest chatRequest =
           new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
-      client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJsonElement(chatRequest)));
+      try {
+        client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJsonElement(chatRequest)));
+      } catch (IOException e) {
+        AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+        return;
+      }
       addBubble(Client.getInstance().getCurrentUser().getName(), chatRequest.content(), true);
       myTextArea.clear();
     }
