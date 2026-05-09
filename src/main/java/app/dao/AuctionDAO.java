@@ -2,7 +2,6 @@ package app.dao;
 
 import app.enums.AuctionStatus;
 import app.models.Auction;
-
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;

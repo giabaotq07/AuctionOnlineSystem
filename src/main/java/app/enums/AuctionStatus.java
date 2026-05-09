@@ -11,10 +11,12 @@ public enum AuctionStatus implements Serializable {
   CANCELLED(5),
   ;
 
-  private  final int state;
+  private final int state;
+
   AuctionStatus(int state) {
     this.state = state;
   }
+
   public int getState() {
     return state;
   }

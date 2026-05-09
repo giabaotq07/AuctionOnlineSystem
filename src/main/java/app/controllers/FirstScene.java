@@ -234,8 +234,7 @@ public class FirstScene {
     long highestBid = 0;
     long displayPrice = 0;
     // ✅ Lấy giá cao nhất từ database thay vì in-memory
-    if (bidService.getHighestBid(session.getId()).isPresent())
-    {
+    if (bidService.getHighestBid(session.getId()).isPresent()) {
       highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
     }
     displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();

@@ -1,7 +1,6 @@
 package app.config;
 
 import app.exception.DatabaseException;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Consumer;
@@ -36,6 +35,10 @@ public class TransactionManager {
   }
 
   public void runInTransaction(Consumer<Connection> work) {
-    runInTransaction(conn -> { work.accept(conn); return null; });
+    runInTransaction(
+        conn -> {
+          work.accept(conn);
+          return null;
+        });
   }
 }

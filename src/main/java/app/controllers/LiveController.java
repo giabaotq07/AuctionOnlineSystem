@@ -12,7 +12,6 @@ import app.dao.impl.MySqlItemDAO;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
-import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.*;
 import app.network.Client;
@@ -162,25 +161,25 @@ public class LiveController implements AuctionObserver {
 
     // Gọi BidService để lưu vào MySQL
     try {
-        bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
+      bidService.placeBid(session.getId(), DataStore.currentUser.getId(), bidAmount);
 
-        // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
-        BidTransaction highestBidTransaction =
-            bidService.getHighestBid(session.getId()).orElseThrow();
-        currentPriceLabel.setText("" + highestBidTransaction.getAmount());
+      // ✅ CẬP NHẬT UI NGAY LẬP TỨC từ dữ liệu trong database
+      BidTransaction highestBidTransaction =
+          bidService.getHighestBid(session.getId()).orElseThrow();
+      currentPriceLabel.setText("" + highestBidTransaction.getAmount());
 
-        bidAmountField.clear();
-        AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
+      bidAmountField.clear();
+      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
 
-        // Gửi yêu cầu lên Server để đồng bộ với các Client khác
-        Client.getInstance()
-            .sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJsonElement(session)));
+      // Gửi yêu cầu lên Server để đồng bộ với các Client khác
+      Client.getInstance()
+          .sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJsonElement(session)));
 
-      } catch (ServiceException e) {
-        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
-      } catch (Exception e) {
-        AlertUtils.showError("Lỗi đặt giá", e.getMessage());
-      }
+    } catch (ServiceException e) {
+      AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
+    } catch (Exception e) {
+      AlertUtils.showError("Lỗi đặt giá", e.getMessage());
+    }
   }
 
   private void startCountdownTimer() {
