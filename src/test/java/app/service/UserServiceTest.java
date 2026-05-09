@@ -21,10 +21,13 @@ public class UserServiceTest extends BaseDAOTest {
 
   private static final Logger logger = LoggerFactory.getLogger(UserServiceTest.class);
 
-  private User tester;
   private UserService userService;
   private UserDAO userDAO;
+  private User tester;
 
+  // =========================
+  // SETUP
+  // =========================
   @BeforeEach
   void setup() {
     logger.info("Setting up UserService test...");
@@ -32,37 +35,68 @@ public class UserServiceTest extends BaseDAOTest {
     userDAO = new MySqlUserDAO();
     userService = new UserService(userDAO);
 
-    // ❌ KHÔNG truncate SQL thủ công nữa
-    userDAO.deleteAll(); // 👉 bạn cần implement method này
+    cleanDatabase();
 
-    tester =
-        UserFactory.createUser(
-            "Test User",
-            new Account("test_account", PasswordUtils.hashPassword("test_password")),
-            new Wallet(),
-            UserRole.BIDDER);
-
+    tester = createTestUser();
     tester = userDAO.save(tester);
 
-    logger.info("Test user created: {}", tester.getId());
+    logger.info("Test user ready: id={}", tester.getId());
+  }
+
+  // =========================
+  // TEST CASES
+  // =========================
+  @Test
+  void login_shouldSucceed_whenCredentialsCorrect() {
+    // act
+    User result = userService.login("test_account", "test_password");
+
+    // assert
+    assertNotNull(result);
+    assertEquals(tester.getId(), result.getId());
+    assertEquals("test_account", result.getAccount().getUsername());
   }
 
   @Test
-  void testLogin_success() {
-    User loggedIn = userService.login("test_account", "test_password");
-
-    assertNotNull(loggedIn);
-    assertEquals(tester.getId(), loggedIn.getId());
-    assertEquals("test_account", loggedIn.getAccount().getUsername());
+  void login_shouldFail_whenPasswordWrong() {
+    assertThrows(ServiceException.class,
+        () -> userService.login("test_account", "wrong_password"));
   }
 
   @Test
-  void testLogin_wrongPassword_shouldThrow() {
-    assertThrows(ServiceException.class, () -> userService.login("test_account", "wrong"));
+  void login_shouldFail_whenUserNotFound() {
+    assertThrows(ServiceException.class,
+        () -> userService.login("unknown_user", "test_password"));
   }
 
-  @Test
-  void testLogin_unknownUser_shouldThrow() {
-    assertThrows(ServiceException.class, () -> userService.login("unknown", "test_password"));
+  // =========================
+  // HELPERS
+  // =========================
+
+  private User createTestUser() {
+    return UserFactory.createUser(
+        "Test User",
+        new Account(
+            "test_account",
+            PasswordUtils.hashPassword("test_password")
+        ),
+        new Wallet(),
+        UserRole.BIDDER
+    );
+  }
+
+  /**
+   * IMPORTANT:
+   * không dùng truncate SQL nữa → dùng DAO abstraction
+   * (clean hơn, test independent DB engine)
+   */
+  private void cleanDatabase() {
+    logger.info("Cleaning test data...");
+
+    try {
+      userDAO.deleteAll();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to clean database", e);
+    }
   }
 }

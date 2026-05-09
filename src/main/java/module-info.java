@@ -10,6 +10,7 @@ module app {
   requires com.zaxxer.hikari;
 
   opens app.dao;
+  opens app.service;
   opens app to
       javafx.fxml;
   opens app.controllers to
