@@ -63,11 +63,6 @@ jobs:
           mysql -h 127.0.0.1 -u root \
           -e "CREATE DATABASE IF NOT EXISTS auction_db_test;"
 
-      - name: Create test database
-        run: |
-          mysql -h 127.0.0.1 -u root -p123456 \
-          -e "CREATE DATABASE IF NOT EXISTS auction_db_test;"
-
       - name: Build & Test
         run: mvn --batch-mode clean verify
 
