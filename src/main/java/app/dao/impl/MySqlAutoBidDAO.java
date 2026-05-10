@@ -24,7 +24,8 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
         "Lỗi kết nối khi lưu cấu hình auto-bid.");
   }
 
-  private void delete(Connection conn, int sessionId, int userId) {
+  @Override
+  public void delete(Connection conn, int sessionId, int userId) {
     String sql = "DELETE FROM auto_bids WHERE session_id = ? AND user_id = ?";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);
@@ -35,7 +36,8 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
     }
   }
 
-  private void upsert(Connection conn, int sessionId, int userId, long maxBid, long increment) {
+  @Override
+  public void upsert(Connection conn, int sessionId, int userId, long maxBid, long increment) {
     String sql =
         """
             INSERT INTO auto_bids (session_id, user_id, max_bid, increment_amount)

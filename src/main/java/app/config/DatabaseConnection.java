@@ -2,8 +2,6 @@ package app.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 public final class DatabaseConnection {
 
@@ -35,29 +33,19 @@ public final class DatabaseConnection {
     dataSource = new HikariDataSource(config);
   }
 
-  private static synchronized void rebuild() {
+  // giữ lại method này cho test
+  public static synchronized void resetDataSource() {
     if (dataSource != null && !dataSource.isClosed()) {
       dataSource.close();
     }
-    init();
+    init(); // tạo pool mới với config hiện tại
   }
 
   // =========================
   // PUBLIC API
   // =========================
-  public static Connection getConnection() throws SQLException {
-    // defensive: nếu pool bị đóng thì tự rebuild
-    if (dataSource == null || dataSource.isClosed()) {
-      rebuild();
-    }
-    return dataSource.getConnection();
-  }
 
   public static HikariDataSource getDataSource() {
     return dataSource;
-  }
-
-  public static synchronized void resetDataSource() {
-    rebuild();
   }
 }

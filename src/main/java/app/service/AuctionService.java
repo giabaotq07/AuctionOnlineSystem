@@ -1,29 +1,32 @@
 package app.service;
 
-import app.config.TransactionManager;
+import app.config.DatabaseConnection;
 import app.dao.AuctionDAO;
 import app.dao.BidDAO;
 import app.enums.AuctionStatus;
+import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.Auction;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuctionService {
-  private List<Auction> cache = new ArrayList<>();
-  private long lastRefresh = 0;
+  private record CacheSnapshot(List<Auction> data, long timestamp) {}
+
+  private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), 0L);
   private AuctionDAO auctionDAO;
   private BidDAO bidDAO;
-  private TransactionManager txManager;
   private Logger logger = LoggerFactory.getLogger(AuctionService.class);
 
   public AuctionService(AuctionDAO auctionDAO, BidDAO bidDAO) {
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
-    txManager = TransactionManager.getInstance();
   }
 
   // Trả Auction thẳng — đã throw nếu không tìm thấy
@@ -39,26 +42,23 @@ public class AuctionService {
   }
 
   public List<Auction> getAllAuctions() {
-
-    // cache 2 giây
-    if (System.currentTimeMillis() - lastRefresh < 2000) {
-      return cache;
+    CacheSnapshot current = snapshot;
+    if (System.currentTimeMillis() - current.timestamp() < 2000) {
+      return current.data();
     }
-
-    cache = auctionDAO.findAll();
-    lastRefresh = System.currentTimeMillis();
-
-    return cache;
+    List<Auction> fresh = auctionDAO.findAll();
+    snapshot = new CacheSnapshot(List.copyOf(fresh), System.currentTimeMillis());
+    return fresh;
   }
 
   public void handleCompletion(int auctionId) {
-    txManager.runInTransaction(
+    runInTransaction(
         conn -> {
           auctionDAO.lockSession(conn, auctionId);
 
           Auction auction =
               auctionDAO
-                  .findById(auctionId)
+                  .findById(conn, auctionId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
 
           if (!auction.isExpired()) return;
@@ -69,7 +69,7 @@ public class AuctionService {
           auctionDAO.updateStatus(conn, auctionId, AuctionStatus.FINISHED);
 
           bidDAO
-              .findHighestBid(auctionId)
+              .findHighestBid(conn, auctionId)
               .ifPresentOrElse(
                   bid -> {
                     auctionDAO.updateWinner(conn, auctionId, bid.getBidderId());
@@ -98,5 +98,32 @@ public class AuctionService {
 
   private Auction getAuctionById(int id, String errorMessage) {
     return auctionDAO.findById(id).orElseThrow(() -> new ServiceException(errorMessage));
+  }
+
+  private <T> T runInTransaction(Function<Connection, T> work) {
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        T result = work.apply(conn);
+        conn.commit();
+        return result;
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi transaction.", e);
+    }
+  }
+
+  // Dùng khi không cần trả về (INSERT, UPDATE, DELETE thuần)
+  private void runInTransaction(Consumer<Connection> work) {
+    runInTransaction(
+        conn -> {
+          work.accept(conn);
+          return null;
+        });
   }
 }

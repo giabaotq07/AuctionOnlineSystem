@@ -17,6 +17,8 @@ public interface AuctionDAO {
   // ── Read operations (create own connection) ──────────────────────
   Optional<Auction> findById(int id);
 
+  Optional<Auction> findById(Connection conn, int id);
+
   List<Auction> findAll();
 
   List<Auction> findByStatus(AuctionStatus status);
@@ -33,6 +35,8 @@ public interface AuctionDAO {
   void updateStartTime(int auctionId, LocalDateTime startTime);
 
   void updateEndTime(int auctionId, LocalDateTime endTime);
+
+  void updateEndTime(Connection conn, int auctionId, LocalDateTime endTime);
 
   void updateWinner(int auctionId, int winnerId);
 

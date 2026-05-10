@@ -4,6 +4,7 @@ import app.dao.ItemDAO;
 import app.enums.ItemStatus;
 import app.models.Item;
 import java.util.List;
+import java.util.Optional;
 
 public class ItemService {
   private ItemDAO itemDAO;
@@ -16,8 +17,8 @@ public class ItemService {
     return itemDAO.save(item);
   }
 
-  public Item getById(int id) {
-    return itemDAO.findById(id).orElse(null);
+  public Optional<Item> getById(int id) {
+    return itemDAO.findById(id);
   }
 
   public void update(Item item) {

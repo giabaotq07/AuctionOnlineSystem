@@ -32,7 +32,7 @@ class UserDAOTest extends BaseDAOTest {
   // CLEAN ONLY DATA (no FK toggle)
   // =========================
   private void cleanDatabase() {
-    try (var conn = DatabaseConnection.getConnection();
+    try (var conn = DatabaseConnection.getDataSource().getConnection();
         var stmt = conn.createStatement()) {
 
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");

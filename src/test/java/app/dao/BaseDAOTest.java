@@ -1,7 +1,6 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
-import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Objects;
@@ -39,7 +38,7 @@ public abstract class BaseDAOTest {
   // =========================
   @BeforeEach
   void cleanData() {
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection();
         Statement stmt = conn.createStatement()) {
 
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
@@ -88,14 +87,8 @@ public abstract class BaseDAOTest {
   // =========================
   private void reloadConnectionPool() {
     logger.info("[POOL] Reloading Hikari pool safely...");
-
-    HikariDataSource ds = DatabaseConnection.getDataSource();
-
-    if (ds != null && !ds.isClosed()) {
-      ds.close();
-    }
-
-    // IMPORTANT: recreate pool correctly
+    // Lúc này System.setProperty đã được set bởi configureTestEnvironment()
+    // nên init() trong resetDataSource sẽ đọc đúng URL test DB
     DatabaseConnection.resetDataSource();
   }
 
@@ -107,7 +100,7 @@ public abstract class BaseDAOTest {
 
     String sql = loadSchemaFile();
 
-    try (Connection conn = DatabaseConnection.getConnection();
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection();
         Statement stmt = conn.createStatement()) {
 
       executeSqlScript(stmt, sql);

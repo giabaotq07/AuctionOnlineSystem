@@ -18,7 +18,6 @@ import app.models.*;
 import app.network.Client;
 import app.observer.AuctionObserver;
 import app.service.AuctionService;
-import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
 import app.utils.AlertUtils;
@@ -59,9 +58,8 @@ public class LiveController implements AuctionObserver {
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     ItemDAO itemDAO = new MySqlItemDAO();
 
-    BidObserverService bidObserverService = new BidObserverService();
     this.auctionService = new AuctionService(auctionDAO, bidDAO);
-    this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
+    this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
     this.itemService = new ItemService(itemDAO);
   }
 
@@ -91,7 +89,7 @@ public class LiveController implements AuctionObserver {
   }
 
   public void setSession(Auction session) {
-    this.item = itemService.getById(session.getItemId());
+    this.item = itemService.getById(session.getItemId()).orElse(null);
     this.session = session;
     if (item != null) {
       if (itemNameLabel != null) itemNameLabel.setText(item.getName());

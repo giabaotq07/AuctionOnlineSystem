@@ -12,7 +12,6 @@ import app.models.Item;
 import app.models.User;
 import app.network.Client;
 import app.service.AuctionService;
-import app.service.BidObserverService;
 import app.service.BidService;
 import java.util.List;
 import javafx.animation.KeyFrame;
@@ -39,12 +38,10 @@ public class MyHistoryController {
   private BidDAO bidDAO = new MySqlBidDAO();
   private AuctionDAO auctionDAO = new MySqlAuctionDAO();
   private AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-  private BidObserverService bidObserverService = new BidObserverService();
   private ItemDAO itemDAO = new MySqlItemDAO();
   private Client client = Client.getInstance();
   private User currentUser = client.getCurrentUser();
-  private final BidService bidService =
-      new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
+  private final BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
   private AuctionService auctionService = new AuctionService(auctionDAO, bidDAO);
 
   @FXML
