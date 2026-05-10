@@ -1,10 +1,9 @@
 package app.models;
 
 import app.enums.HistoryType;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class HistoryRecord implements Serializable {
+public class HistoryRecord {
   private int sessionId;
   private HistoryType type;
   private String message;

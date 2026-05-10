@@ -1,10 +1,9 @@
 package app.models;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public abstract class Entity implements Serializable {
+public abstract class Entity {
   protected int id;
   protected LocalDateTime createdAt;
   protected LocalDateTime updatedAt;
