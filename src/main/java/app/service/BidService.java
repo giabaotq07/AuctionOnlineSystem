@@ -7,6 +7,8 @@ import app.enums.AuctionStatus;
 import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.BidTransaction;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,26 +35,16 @@ public class BidService {
   private final BidDAO bidDAO;
   private final AutoBidDAO autoBidDAO;
   private final AuctionDAO sessionDAO;
-  private final BidObserverService observerService;
 
-  public BidService(
-      BidDAO bidDAO,
-      AutoBidDAO autoBidDAO,
-      AuctionDAO sessionDAO,
-      BidObserverService observerService) {
+  public BidService(BidDAO bidDAO, AutoBidDAO autoBidDAO, AuctionDAO sessionDAO) {
     this.bidDAO = bidDAO;
     this.autoBidDAO = autoBidDAO;
     this.sessionDAO = sessionDAO;
-    this.observerService = observerService;
   }
 
   // ── 1. Đặt giá thủ công ──────────────────────────────────────────────────
   public void placeBid(int sessionId, int userId, long bidAmount) {
     bidDAO.placeBidAtomic(sessionId, userId, bidAmount, DEFAULT_MIN_INCREMENT);
-
-    // Notify ngoài transaction (không ảnh hưởng tính toàn vẹn dữ liệu)
-    // observerService.notifyBidUpdated(sessionId);
-
     // Trigger auto-bid của các đối thủ
     //    triggerAutoBids(sessionId, userId, bidAmount);
   }
@@ -80,12 +72,28 @@ public class BidService {
 
   // ── Private: Anti-Snipe ───────────────────────────────────────────────────
 
+  /**
+   * Nếu bid xảy ra trong ANTI_SNIPE_THRESHOLD_SECONDS giây cuối → gia hạn endTime thêm
+   * ANTI_SNIPE_EXTENSION_SECONDS giây.
+   */
+  private void applyAntiSnipe(Connection conn, Auction session) throws SQLException {
+    long secondsLeft =
+        java.time.Duration.between(java.time.LocalDateTime.now(), session.getEndTime())
+            .getSeconds();
+
+    if (secondsLeft > 0 && secondsLeft <= ANTI_SNIPE_THRESHOLD_SECONDS) {
+      java.time.LocalDateTime newEndTime =
+          session.getEndTime().plusSeconds(ANTI_SNIPE_EXTENSION_SECONDS);
+      sessionDAO.updateEndTime(conn, session.getId(), newEndTime);
+    }
+  }
+
   // ── Private: Validators ───────────────────────────────────────────────────
 
-  private Auction requireRunningSession(int sessionId) {
+  private Auction requireRunningSession(Connection conn, int sessionId) {
     Auction session =
         sessionDAO
-            .findById(sessionId)
+            .findById(conn, sessionId)
             .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
 
     if (session.getStatus() != AuctionStatus.RUNNING) {
@@ -107,7 +115,7 @@ public class BidService {
   }
 
   /** Lấy giá hiện tại của phiên (dùng nội bộ). */
-  private long getCurrentPrice(int sessionId) {
-    return sessionDAO.findById(sessionId).map(Auction::getHighestBid).orElse(0L);
+  private long getCurrentPrice(Connection conn, int sessionId) {
+    return sessionDAO.findById(conn, sessionId).map(Auction::getHighestBid).orElse(0L);
   }
 }

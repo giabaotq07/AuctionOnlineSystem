@@ -3,6 +3,7 @@ package app.dao;
 import app.config.DatabaseConnection;
 import app.exception.DatabaseException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -13,9 +14,28 @@ import java.util.function.Function;
  */
 public abstract class BaseDAO {
 
+  protected boolean executeUpdate(Connection conn, String TABLE, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      return ps.executeUpdate() > 0;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi cập nhật bảng " + TABLE, e);
+    }
+  }
+
+  protected void setParameters(PreparedStatement ps, Object... params) {
+    for (int i = 0; i < params.length; i++) {
+      try {
+        ps.setObject(i + 1, params[i]);
+      } catch (SQLException e) {
+        throw new DatabaseException("Lỗi khi thiết lập tham số cho PreparedStatement.", e);
+      }
+    }
+  }
+
   /** Execute action within a connection, auto-close when done. */
   protected <T> T withConnection(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getConnection()) {
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
       return action.apply(conn);
     } catch (SQLException e) {
       throw new DatabaseException(errorMessage, e);
@@ -37,7 +57,7 @@ public abstract class BaseDAO {
    * original autoCommit state in finally block.
    */
   protected <T> T runInTransaction(Function<Connection, T> action, String errorMessage) {
-    try (Connection conn = DatabaseConnection.getConnection()) {
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
       boolean originalAutoCommit = conn.getAutoCommit();
       conn.setAutoCommit(false);
       try {

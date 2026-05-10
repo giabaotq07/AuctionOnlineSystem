@@ -16,7 +16,6 @@ import app.models.DataStore;
 import app.models.Item;
 import app.network.Client;
 import app.service.AuctionService;
-import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
 import app.utils.AlertUtils;
@@ -52,9 +51,7 @@ public class FirstScene {
   private final BidDAO bidDAO = new MySqlBidDAO();
   private final ItemDAO itemDAO = new MySqlItemDAO();
   private final AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-  private final BidObserverService bidObserverService = new BidObserverService();
-  private final BidService bidService =
-      new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
+  private final BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
   private final ItemService itemService = new ItemService(itemDAO);
   private final AuctionService auctionService = new AuctionService(auctionDAO, bidDAO);
 
@@ -227,7 +224,7 @@ public class FirstScene {
     imgLabel.setStyle("-fx-text-fill: #aaa;");
     imagePane.getChildren().add(imgLabel);
 
-    Item item = itemService.getById(session.getItemId());
+    Item item = itemService.getById(session.getItemId()).orElse(null);
     Label titleLabel = new Label(item.getName());
     titleLabel.setWrapText(true);
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: white;");
@@ -274,7 +271,7 @@ public class FirstScene {
 
     String key = keyword.trim().toLowerCase();
     for (Auction s : allFromDb) {
-      Item item = itemService.getById(s.getItemId());
+      Item item = itemService.getById(s.getItemId()).orElse(null);
       String itemName = item.getName() != null ? item.getName().toLowerCase() : "";
       if (itemName.contains(key)) {
         sessionListView.getItems().add(s);

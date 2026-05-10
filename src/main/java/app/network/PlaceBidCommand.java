@@ -16,7 +16,6 @@ import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Packet;
 import app.service.AuctionService;
-import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
 import app.utils.JsonUtil;
@@ -35,9 +34,8 @@ public class PlaceBidCommand implements Command {
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     ItemDAO itemDAO = new MySqlItemDAO();
 
-    BidObserverService bidObserverService = new BidObserverService();
     this.auctionService = new AuctionService(auctionDAO, bidDAO);
-    this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
+    this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
     this.itemService = new ItemService(itemDAO);
   }
 
@@ -73,7 +71,7 @@ public class PlaceBidCommand implements Command {
     }
     BidTransaction highestBidTransaction;
     bidderId = 0;
-    long amount = itemService.getById(session.getItemId()).getStartingPrice();
+    long amount = itemService.getById(session.getItemId()).orElse(null).getStartingPrice();
     if (bidService.getHighestBid(session.getId()).isPresent()) {
       highestBidTransaction = bidService.getHighestBid(session.getId()).get();
       bidderId = highestBidTransaction.getBidderId();

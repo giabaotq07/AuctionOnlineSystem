@@ -7,7 +7,6 @@ import app.enums.HistoryType;
 import app.enums.View;
 import app.models.*;
 import app.network.Client;
-import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
 import app.service.UserService;
@@ -38,12 +37,7 @@ public class BidController {
     userService = new UserService(new MySqlUserDAO());
     itemService = new ItemService(new MySqlItemDAO());
     // Khởi tạo service/dao cần thiết
-    bidService =
-        new BidService(
-            new MySqlBidDAO(),
-            new MySqlAutoBidDAO(),
-            new MySqlAuctionDAO(),
-            new BidObserverService());
+    bidService = new BidService(new MySqlBidDAO(), new MySqlAutoBidDAO(), new MySqlAuctionDAO());
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
 
@@ -52,9 +46,13 @@ public class BidController {
     sessionListView.setOnMouseClicked(
         e -> {
           Auction s = sessionListView.getSelectionModel().getSelectedItem();
-          Item item = itemService.getById(s.getItemId());
-
-          outputArea.setText("Item: " + item.getName() + "\nGiá: $" + s.getHighestBid());
+          Item item;
+          if (itemService.getById(s.getItemId()).isPresent()) {
+            item = itemService.getById(s.getItemId()).get();
+            outputArea.setText("Item: " + item.getName() + "\nGiá: $" + s.getHighestBid());
+          } else {
+            outputArea.setText("Item: " + "ko có" + "\nGiá: $" + s.getHighestBid());
+          }
         });
   }
 
@@ -70,7 +68,12 @@ public class BidController {
       String userName = bidderField.getText();
       long amount = Long.parseLong(amountField.getText());
       User bidder = Client.getInstance().getCurrentUser();
-      Item item = itemService.getById(bidder.getId());
+      String itemName;
+      if (itemService.getById(session.getItemId()).isPresent()) {
+        itemName = itemService.getById(session.getItemId()).get().getName();
+      } else {
+        itemName = "ko có";
+      }
       try {
         bidService.placeBid(session.getId(), bidder.getId(), amount);
 
@@ -81,7 +84,7 @@ public class BidController {
                 highestBid ->
                     outputArea.setText(
                         "Item: "
-                            + item.getName()
+                            + itemName
                             + "\nGiá hiện tại: "
                             + highestBid.getAmount()
                             + "\nNguời trả giá cao nhất: "
@@ -92,7 +95,7 @@ public class BidController {
             new HistoryRecord(
                 session.getId(),
                 HistoryType.BID,
-                bidder.getName() + " bid $" + amount + " vào " + item.getName());
+                bidder.getName() + " bid $" + amount + " vào " + itemName);
 
         amountField.clear();
         bidderField.clear();
