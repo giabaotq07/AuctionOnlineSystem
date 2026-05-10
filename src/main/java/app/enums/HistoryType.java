@@ -1,8 +1,6 @@
 package app.enums;
 
-import java.io.Serializable;
-
-public enum HistoryType implements Serializable {
+public enum HistoryType {
   ADD_ITEM,
   BID
 }
