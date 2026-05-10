@@ -18,7 +18,7 @@
                 <Label style="-fx-font-size: 14px;                              -fx-text-fill: #bdc3c7;                              -fx-text-alignment: center;" text="Vui lòng kết nối tới server để tiếp tục" wrapText="true" />
 
                 <!-- Nút Connect -->
-                <Button fx:id="connectButton" maxWidth="Infinity" onAction="#ConnectServer" prefHeight="50.0" style="-fx-background-color: linear-gradient(to bottom, #673ab7, #512a7f);                                -fx-text-fill: white;                                -fx-font-size: 18px;                                -fx-font-weight: bold;                                -fx-background-radius: 15;                                -fx-cursor: hand;                                -fx-effect: dropshadow(gaussian, rgba(103, 58, 183, 0.5), 10, 0, 0, 5);" text="KẾT NỐI" />
+                <Button fx:id="connectButton" maxWidth="Infinity" onAction="#connectServer" prefHeight="50.0" style="-fx-background-color: linear-gradient(to bottom, #673ab7, #512a7f);                                -fx-text-fill: white;                                -fx-font-size: 18px;                                -fx-font-weight: bold;                                -fx-background-radius: 15;                                -fx-cursor: hand;                                -fx-effect: dropshadow(gaussian, rgba(103, 58, 183, 0.5), 10, 0, 0, 5);" text="KẾT NỐI" />
 
                 <!-- Status Label -->
                 <Label fx:id="statusLabel" style="-fx-font-size: 14px;                               -fx-text-fill: #999999;                               -fx-text-alignment: center;" text="Đang chờ kết nối..." wrapText="true" />
