@@ -156,7 +156,7 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
 
                     <compilerArgs>
-                        <arg>-Xlint:all</arg>
+                        <arg>-Xlint:-exports</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

@@ -1,6 +1,6 @@
 package app.models;
 
-public class Account implements java.io.Serializable {
+public class Account {
   private String username;
   private transient String password;
 
