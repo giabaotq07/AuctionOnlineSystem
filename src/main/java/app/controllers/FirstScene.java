@@ -72,41 +72,36 @@ public class FirstScene {
     }
 
     Client.getInstance()
-            .setOnMessageReceived(
-                    packet ->
-                            Platform.runLater(
-                                    () -> {
-                                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
 
-                                        AuctionsResponse response =
-                                                JsonUtil.fromJson(
-                                                        packet.getData(),
-                                                        AuctionsResponse.class
-                                                );
+                        AuctionsResponse response =
+                            JsonUtil.fromJson(packet.getData(), AuctionsResponse.class);
 
-                                        if (response.success()
-                                                && response.auctions() != null) {
+                        if (response.success() && response.auctions() != null) {
 
-                                          summaries.clear();
-                                          summaries.addAll(response.auctions());
-                                          activeBox.getChildren().clear();
-                                          completedBox.getChildren().clear();
+                          summaries.clear();
+                          summaries.addAll(response.auctions());
+                          activeBox.getChildren().clear();
+                          completedBox.getChildren().clear();
 
-                                          for (AuctionSummary summary : summaries) {
-                                            Auction session = summary.auction();
+                          for (AuctionSummary summary : summaries) {
+                            Auction session = summary.auction();
 
-                                            if (session.getStatus() == AuctionStatus.RUNNING) {
-                                              activeBox.getChildren().add(createAuctionCard(summary));
-                                            } else if (session.getStatus() == AuctionStatus.FINISHED) {
-                                              completedBox.getChildren().add(createAuctionCard(summary));
-                                            }
-                                          }
+                            if (session.getStatus() == AuctionStatus.RUNNING) {
+                              activeBox.getChildren().add(createAuctionCard(summary));
+                            } else if (session.getStatus() == AuctionStatus.FINISHED) {
+                              completedBox.getChildren().add(createAuctionCard(summary));
+                            }
+                          }
 
-                                          updateListView();
-
-                                        }
-                                      }
-                                    }));
+                          updateListView();
+                        }
+                      }
+                    }));
 
     requestAuctions();
 
@@ -125,7 +120,6 @@ public class FirstScene {
       timeline.setCycleCount(Timeline.INDEFINITE);
       timeline.play();
     }
-
   }
 
   private void requestAuctions() {
@@ -145,18 +139,12 @@ public class FirstScene {
 
     sessionListView.getItems().clear();
 
-    String key = (searchField != null)
-            ? searchField.getText()
-            : "";
+    String key = (searchField != null) ? searchField.getText() : "";
 
     for (AuctionSummary summary : summaries) {
-      String itemName = summary.itemName() != null
-              ? summary.itemName().toLowerCase()
-              : "";
+      String itemName = summary.itemName() != null ? summary.itemName().toLowerCase() : "";
 
-      if (key == null
-              || key.isBlank()
-              || itemName.contains(key.toLowerCase())) {
+      if (key == null || key.isBlank() || itemName.contains(key.toLowerCase())) {
 
         sessionListView.getItems().add(summary.auction());
       }
@@ -289,7 +277,6 @@ public class FirstScene {
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
-
 
   // ================= ĐIỀU HƯỚNG & HỖ TRỢ =================
 
