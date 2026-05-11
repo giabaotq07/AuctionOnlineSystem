@@ -9,7 +9,6 @@ import app.dao.impl.MySqlAutoBidDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.data.AuctionSummary;
-import app.data.AuctionsRequest;
 import app.data.AuctionsResponse;
 import app.enums.PacketType;
 import app.models.Auction;
@@ -31,7 +30,7 @@ public class FetchAuctionsCommand implements Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     logger.info("In FetchAuctionsCommand");
-//    packet.getData(AuctionsRequest.class);
+    //    packet.getData(AuctionsRequest.class);
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();

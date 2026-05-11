@@ -184,17 +184,17 @@ public class LiveController implements AuctionObserver {
     }
     try {
       long bidAmount;
-    long currentPrice;
-    bidAmount = Long.parseLong(bidAmountField.getText());
-    currentPrice = Long.parseLong(currentPriceLabel.getText());
+      long currentPrice;
+      bidAmount = Long.parseLong(bidAmountField.getText());
+      currentPrice = Long.parseLong(currentPriceLabel.getText());
 
-    PlaceBidRequest request =
-        new PlaceBidRequest(
-            session.getId(),
-            Client.getInstance().getCurrentUser().getId(),
-            bidAmount,
-            currentPrice);
-    Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
+      PlaceBidRequest request =
+          new PlaceBidRequest(
+              session.getId(),
+              Client.getInstance().getCurrentUser().getId(),
+              bidAmount,
+              currentPrice);
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
     } catch (NumberFormatException e) {
       AlertUtils.showError("Lỗi", "Lỗi format số");
     }
