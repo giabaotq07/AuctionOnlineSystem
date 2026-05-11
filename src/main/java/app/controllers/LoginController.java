@@ -5,7 +5,6 @@ import app.data.LoginRequest;
 import app.data.LoginResponse;
 import app.enums.PacketType;
 import app.enums.View;
-import app.models.DataStore;
 import app.models.Packet;
 import app.models.User;
 import app.models.UserFactory;
@@ -53,7 +52,6 @@ public class LoginController {
                       if (response.success()) {
                         User user = UserFactory.createUser(response.user());
                         Client.getInstance().setCurrentUser(user);
-                        DataStore.currentUser = user;
                         SwitchToUI();
                       } else {
                         AlertUtils.showError("Đăng nhập thất bại", response.message());

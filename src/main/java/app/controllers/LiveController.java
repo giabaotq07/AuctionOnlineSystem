@@ -12,7 +12,6 @@ import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.DataStore;
 import app.models.Packet;
 import app.network.Client;
 import app.observer.AuctionObserver;
@@ -162,7 +161,7 @@ public class LiveController implements AuctionObserver {
       return;
     }
 
-    if (DataStore.currentUser == null) {
+    if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
@@ -172,7 +171,10 @@ public class LiveController implements AuctionObserver {
     currentPrice = Long.parseLong(currentPriceLabel.getText());
     PlaceBidRequest request =
         new PlaceBidRequest(
-            session.getId(), DataStore.currentUser.getId(), bidAmount, currentPrice);
+            session.getId(),
+            Client.getInstance().getCurrentUser().getId(),
+            bidAmount,
+            currentPrice);
     Packet packet = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(request));
     Client.getInstance().sendRequest(packet);
   }

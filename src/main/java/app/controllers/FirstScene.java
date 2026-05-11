@@ -8,7 +8,6 @@ import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.DataStore;
 import app.models.Packet;
 import app.network.Client;
 import app.utils.AlertUtils;
@@ -67,30 +66,47 @@ public class FirstScene {
 
     if (btnAuth != null) {
       btnAuth.setText(
-          DataStore.currentUser != null
-              ? "Xin chào, " + DataStore.currentUser.getName()
+          Client.getInstance().getCurrentUser() != null
+              ? "Xin chào, " + Client.getInstance().getCurrentUser().getName()
               : "Đăng nhập / Đăng ký");
     }
 
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
-                Platform.runLater(
-                    () -> {
-                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
-                        AuctionsResponse response =
-                            JsonUtil.fromJson(packet.getData(), AuctionsResponse.class);
-                        if (response.success() && response.auctions() != null) {
-                          summaries.clear();
-                          summaries.addAll(response.auctions());
-                          DataStore.sessions.clear();
-                          for (AuctionSummary summary : summaries) {
-                            DataStore.sessions.add(summary.auction());
-                          }
-                          updateListView();
-                        }
-                      }
-                    }));
+            .setOnMessageReceived(
+                    packet ->
+                            Platform.runLater(
+                                    () -> {
+                                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
+
+                                        AuctionsResponse response =
+                                                JsonUtil.fromJson(
+                                                        packet.getData(),
+                                                        AuctionsResponse.class
+                                                );
+
+                                        if (response.success()
+                                                && response.auctions() != null) {
+
+                                          summaries.clear();
+                                          summaries.addAll(response.auctions());
+                                          activeBox.getChildren().clear();
+                                          completedBox.getChildren().clear();
+
+                                          for (AuctionSummary summary : summaries) {
+                                            Auction session = summary.auction();
+
+                                            if (session.getStatus() == AuctionStatus.RUNNING) {
+                                              activeBox.getChildren().add(createAuctionCard(summary));
+                                            } else if (session.getStatus() == AuctionStatus.FINISHED) {
+                                              completedBox.getChildren().add(createAuctionCard(summary));
+                                            }
+                                          }
+
+                                          updateListView();
+
+                                        }
+                                      }
+                                    }));
 
     requestAuctions();
 
@@ -110,9 +126,6 @@ public class FirstScene {
       timeline.play();
     }
 
-    if (searchField != null) {
-      searchField.textProperty().addListener((obs, o, n) -> searchSessions(n));
-    }
   }
 
   private void requestAuctions() {
@@ -129,11 +142,24 @@ public class FirstScene {
     if (sessionListView == null) {
       return;
     }
-    String key = (searchField != null) ? searchField.getText() : "";
-    if (key == null || key.isBlank()) {
-      sessionListView.getItems().setAll(DataStore.sessions);
-    } else {
-      searchSessions(key);
+
+    sessionListView.getItems().clear();
+
+    String key = (searchField != null)
+            ? searchField.getText()
+            : "";
+
+    for (AuctionSummary summary : summaries) {
+      String itemName = summary.itemName() != null
+              ? summary.itemName().toLowerCase()
+              : "";
+
+      if (key == null
+              || key.isBlank()
+              || itemName.contains(key.toLowerCase())) {
+
+        sessionListView.getItems().add(summary.auction());
+      }
     }
   }
 
@@ -264,24 +290,6 @@ public class FirstScene {
     return vbox;
   }
 
-  // ================= TÌM KIẾM =================
-
-  private void searchSessions(String keyword) {
-    sessionListView.getItems().clear();
-
-    if (keyword == null || keyword.isBlank()) {
-      sessionListView.getItems().setAll(DataStore.sessions);
-      return;
-    }
-
-    String key = keyword.trim().toLowerCase();
-    for (AuctionSummary summary : summaries) {
-      String itemName = summary.itemName() != null ? summary.itemName().toLowerCase() : "";
-      if (itemName.contains(key)) {
-        sessionListView.getItems().add(summary.auction());
-      }
-    }
-  }
 
   // ================= ĐIỀU HƯỚNG & HỖ TRỢ =================
 
@@ -295,7 +303,7 @@ public class FirstScene {
       AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
       return;
     }
-    if (DataStore.currentUser == null) {
+    if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tham gia!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;

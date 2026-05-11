@@ -31,7 +31,7 @@ public class AuctionController {
   @FXML
   public void initialize() {
 
-    if (DataStore.currentUser == null) {
+    if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
       return;
@@ -70,7 +70,7 @@ public class AuctionController {
       return;
     }
 
-    if (DataStore.currentUser == null) {
+    if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
@@ -92,7 +92,13 @@ public class AuctionController {
 
       CreateAuctionRequest request =
           new CreateAuctionRequest(
-              name, desc, startPrice, stepPrice, type, durationMins, DataStore.currentUser.getId());
+              name,
+              desc,
+              startPrice,
+              stepPrice,
+              type,
+              durationMins,
+              Client.getInstance().getCurrentUser().getId());
       Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(request));
       Client.getInstance().sendRequest(packet);
 
