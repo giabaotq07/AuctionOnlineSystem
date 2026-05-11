@@ -14,11 +14,11 @@ import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.BidTransaction;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.service.AuctionService;
 import app.service.BidService;
 import app.service.ItemService;
-import app.utils.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +40,8 @@ public class PlaceBidCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
-    PlaceBidRequest placeBidRequest = JsonUtil.fromJson(packet.getData(), PlaceBidRequest.class);
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    PlaceBidRequest placeBidRequest = packet.getData(PlaceBidRequest.class);
     int sessionId = placeBidRequest.sessionId();
     Auction session = auctionService.getAuctionById(sessionId);
     long bidAmount = placeBidRequest.bidAmount();
@@ -81,7 +81,7 @@ public class PlaceBidCommand implements Command {
       bidderName = highestBidTransaction.getBidderName();
     }
     PlaceBidResponse response = new PlaceBidResponse(bidderId, amount, itemName, bidderName);
-    Packet packetResponse = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(response));
+    PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
     clientHandler.sendMessage(packetResponse);
     Server.broadcast(packetResponse, clientHandler.getUser().getId());
   }

@@ -9,12 +9,14 @@ import app.dao.impl.MySqlAutoBidDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.data.AuctionSummary;
+import app.data.AuctionsRequest;
 import app.data.AuctionsResponse;
 import app.enums.PacketType;
 import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Item;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.service.BidService;
 import app.utils.JsonUtil;
 import java.util.ArrayList;
@@ -27,8 +29,9 @@ public class FetchAuctionsCommand implements Command {
   Logger logger = LoggerFactory.getLogger(FetchAuctionsCommand.class);
 
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
     logger.info("In FetchAuctionsCommand");
+    packet.getData(AuctionsRequest.class);
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
@@ -51,6 +54,6 @@ public class FetchAuctionsCommand implements Command {
     }
     logger.info(JsonUtil.toJson(summaries));
     AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
-    clientHandler.sendMessage(new Packet(PacketType.FETCH_AUCTIONS, JsonUtil.toJson(response)));
+    clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTIONS, response));
   }
 }

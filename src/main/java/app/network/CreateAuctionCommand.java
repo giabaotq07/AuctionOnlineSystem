@@ -13,10 +13,10 @@ import app.enums.PacketType;
 import app.models.Auction;
 import app.models.Item;
 import app.models.ItemFactory;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.service.AuctionService;
 import app.service.ItemService;
-import app.utils.JsonUtil;
 import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +25,8 @@ public class CreateAuctionCommand implements Command {
   private static final Logger log = LoggerFactory.getLogger(CreateAuctionCommand.class);
 
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
-    CreateAuctionRequest request = JsonUtil.fromJson(packet.getData(), CreateAuctionRequest.class);
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
     try {
       ItemDAO itemDAO = new MySqlItemDAO();
       ItemService itemService = new ItemService(itemDAO);
@@ -58,13 +58,13 @@ public class CreateAuctionCommand implements Command {
           new AuctionSummary(session, item.getName(), session.getHighestBid());
       CreateAuctionResponse response =
           new CreateAuctionResponse(true, "Tạo phiên thành công", auctionSummary);
-      clientHandler.sendMessage(new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(response)));
+      clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
     } catch (Exception e) {
 
       e.printStackTrace();
       CreateAuctionResponse response =
           new CreateAuctionResponse(false, "Tạo phiên thất bại: " + e.getMessage(), null);
-      clientHandler.sendMessage(new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(response)));
+      clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
     }
   }
 }

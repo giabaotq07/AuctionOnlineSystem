@@ -3,15 +3,16 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.RegisterRequest;
 import app.data.RegisterResponse;
+import app.data.Response;
 import app.enums.PacketType;
 import app.enums.UserRole;
 import app.enums.View;
-import app.models.Packet;
+import app.models.PacketReq;
 import app.network.Client;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -28,6 +29,7 @@ public class RegisterController {
   @FXML private TextField txtName;
   @FXML private TextField txtAccount;
   @FXML private PasswordField txtPassword;
+  private Consumer<Response> registerHandler;
 
   @FXML
   private void initialize() {
@@ -50,20 +52,25 @@ public class RegisterController {
       System.err.println("Không load được background: " + e.getMessage());
     }
 
-    Client.getInstance()
-        .subscribe(
-            PacketType.REGISTER,
-            RegisterResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      if (response.success()) {
-                        AlertUtils.showInfo("Thành công", response.message());
-                        NavigationManager.getInstance().navigateTo(View.LOGIN);
-                      } else {
-                        AlertUtils.showError("Thất bại", response.message());
-                      }
-                    }));
+    registerHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof RegisterResponse)) {
+                    return;
+                  }
+                  RegisterResponse registerResponse = (RegisterResponse) response;
+                  if (registerResponse.success()) {
+                    AlertUtils.showInfo("Thành công", registerResponse.message());
+                    if (registerHandler != null) {
+                      Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
+                    }
+                    NavigationManager.getInstance().navigateTo(View.LOGIN);
+                  } else {
+                    AlertUtils.showError("Thất bại", registerResponse.message());
+                  }
+                });
+    Client.getInstance().subscribe(PacketType.REGISTER, registerHandler);
   }
 
   @FXML
@@ -84,7 +91,7 @@ public class RegisterController {
 
     RegisterRequest request = new RegisterRequest(name, account, password, UserRole.BIDDER);
     try {
-      Client.getInstance().sendRequest(new Packet(PacketType.REGISTER, JsonUtil.toJson(request)));
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.REGISTER, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
@@ -92,6 +99,9 @@ public class RegisterController {
 
   @FXML
   public void backToLoginMouse(MouseEvent event) {
+    if (registerHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
+    }
     NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 }

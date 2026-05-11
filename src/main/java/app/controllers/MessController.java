@@ -3,15 +3,16 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.ChatRequest;
 import app.data.ChatResponse;
+import app.data.Response;
 import app.data.UserData;
 import app.enums.PacketType;
 import app.enums.View;
-import app.models.Packet;
+import app.models.PacketReq;
 import app.network.Client;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -34,6 +35,7 @@ public class MessController {
   @FXML private ScrollPane scrollPane;
 
   private Client client;
+  private Consumer<Response> chatHandler;
 
   @FXML
   public void initialize() {
@@ -41,13 +43,16 @@ public class MessController {
 
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
 
-    client.subscribe(
-        PacketType.CHAT,
-        ChatResponse.class,
+    chatHandler =
         response -> {
-          String sender = response.sender();
-          Platform.runLater(() -> addBubble(sender, response.content(), false));
-        });
+          if (!(response instanceof ChatResponse)) {
+            return;
+          }
+          ChatResponse chatResponse = (ChatResponse) response;
+          String sender = chatResponse.sender();
+          Platform.runLater(() -> addBubble(sender, chatResponse.content(), false));
+        };
+    client.subscribe(PacketType.CHAT, chatHandler);
   }
 
   // =========================
@@ -119,7 +124,7 @@ public class MessController {
       ChatRequest chatRequest =
           new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
       try {
-        client.sendRequest(new Packet(PacketType.CHAT, JsonUtil.toJson(chatRequest)));
+        client.sendRequest(PacketReq.of(PacketType.CHAT, chatRequest));
       } catch (IOException e) {
         AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
         return;
@@ -131,6 +136,9 @@ public class MessController {
 
   @FXML
   public void SwitchToUI(ActionEvent event) {
+    if (chatHandler != null) {
+      client.unsubscribe(PacketType.CHAT, chatHandler);
+    }
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

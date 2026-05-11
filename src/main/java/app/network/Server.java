@@ -1,6 +1,6 @@
 package app.network;
 
-import app.models.Packet;
+import app.models.PacketRes;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -72,7 +72,7 @@ public class Server {
     authenticatedClients.remove(userId);
   }
 
-  public static void broadcast(Packet packet, int excludeUser) {
+  public static void broadcast(PacketRes packet, int excludeUser) {
     authenticatedClients.values().stream()
         .filter(h -> h.getUser().getId() != excludeUser) // Lọc bỏ người gửi
         .forEach(h -> h.sendMessage(packet));

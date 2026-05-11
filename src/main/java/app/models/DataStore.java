@@ -6,7 +6,6 @@ import app.data.AuctionsResponse;
 import app.enums.PacketType;
 import app.network.Client;
 import app.observer.UpdateObserver;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,11 +33,8 @@ public class DataStore {
         if (instance == null) {
           instance = new DataStore();
           instance.loadSessions();
-          logger.info("DataStore send");
           Client.getInstance()
-              .sendRequest(
-                  new Packet(PacketType.FETCH_AUCTIONS, JsonUtil.toJson(new AuctionsRequest())));
-          logger.info("DataStore sended");
+              .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
           return instance;
         }
       }
@@ -50,12 +46,15 @@ public class DataStore {
     Client.getInstance()
         .subscribe(
             PacketType.FETCH_AUCTIONS,
-            AuctionsResponse.class,
             response ->
                 Platform.runLater(
                     () -> {
-                      if (response.success() && response.auctions() != null) {
-                        sessions = response.auctions();
+                      if (!(response instanceof AuctionsResponse)) {
+                        return;
+                      }
+                      AuctionsResponse auctionsResponse = (AuctionsResponse) response;
+                      if (auctionsResponse.success() && auctionsResponse.auctions() != null) {
+                        sessions = auctionsResponse.auctions();
                       }
                     }));
   }

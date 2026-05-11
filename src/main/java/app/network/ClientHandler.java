@@ -2,14 +2,13 @@ package app.network;
 
 import app.enums.PacketType;
 import app.exception.AppException;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.models.User;
 import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,20 +19,6 @@ public class ClientHandler implements Runnable {
   private BufferedReader reader;
   private User user;
   private String username;
-
-  private static final Map<PacketType, Command> COMMANDS = new HashMap<>();
-
-  static {
-    COMMANDS.put(PacketType.LOGIN, new LoginCommand());
-    COMMANDS.put(PacketType.CHAT, new ChatCommand());
-    COMMANDS.put(PacketType.PLACE_BID, new PlaceBidCommand());
-    COMMANDS.put(PacketType.REGISTER, new RegisterCommand());
-    COMMANDS.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand());
-    COMMANDS.put(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand());
-    COMMANDS.put(PacketType.FETCH_HISTORY, new FetchHistoryCommand());
-    COMMANDS.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand());
-    COMMANDS.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand());
-  }
 
   public ClientHandler(Socket socket) {
     this.socket = socket;
@@ -57,7 +42,7 @@ public class ClientHandler implements Runnable {
       String line;
       while ((line = reader.readLine()) != null) {
         try {
-          Packet packet = JsonUtil.fromJson(line, Packet.class);
+          PacketReq packet = JsonUtil.fromJson(line, PacketReq.class);
           handlePacket(packet);
         } catch (AppException e) {
           // Lỗi JSON: Log lại và tiếp tục nghe gói tiếp theo
@@ -74,17 +59,50 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void handlePacket(Packet packet) {
-    Command command = COMMANDS.get(packet.getType());
-    if (command != null) {
-      logger.info("[Server] Processing command: {}", packet.getType());
-      command.execute(this, packet);
-    } else {
-      logger.warn("[SERVER] Unrecognized command type: {}", packet.getType());
+  private void handlePacket(PacketReq packet) {
+    PacketType type = packet.getType();
+    if (type == null) {
+      logger.warn("[SERVER] Unrecognized command type: null");
+      return;
     }
+    logger.info("[Server] Processing command: {}", type);
+    Command command;
+    switch (type) {
+      case LOGIN:
+        command = new LoginCommand();
+        break;
+      case CHAT:
+        command = new ChatCommand();
+        break;
+      case PLACE_BID:
+        command = new PlaceBidCommand();
+        break;
+      case REGISTER:
+        command = new RegisterCommand();
+        break;
+      case CREATE_AUCTION:
+        command = new CreateAuctionCommand();
+        break;
+      case FETCH_AUCTIONS:
+        command = new FetchAuctionsCommand();
+        break;
+      case FETCH_HISTORY:
+        command = new FetchHistoryCommand();
+        break;
+      case FETCH_AUCTION_DETAIL:
+        command = new FetchAuctionDetailCommand();
+        break;
+      case FETCH_AUCTION_RESULT:
+        command = new FetchAuctionResultCommand();
+        break;
+      default:
+        logger.warn("[SERVER] Unrecognized command type: {}", type);
+        return;
+    }
+    command.execute(this, packet);
   }
 
-  public void sendMessage(Packet packet) {
+  public void sendMessage(PacketRes packet) {
     if (writer != null) {
       try {
         writer.write(JsonUtil.toJson(packet));

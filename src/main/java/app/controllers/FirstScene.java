@@ -74,6 +74,12 @@ public class FirstScene {
     }
 
     logger.debug("trước req");
+    try {
+      DataStore.getInstance();
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi", "Mất kết nối");
+      return;
+    }
     requestAuctions();
 
     // Hiển thị lên giao diện thông qua ScrollBox
@@ -84,13 +90,6 @@ public class FirstScene {
     if (completedAuctionsPane != null) {
       completedAuctionsPane.getChildren().setAll(createScrollBox(completedBox));
     }
-
-    // Timeline cập nhật tự động mỗi 5 giây
-    if (sessionListView != null) {
-      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> requestAuctions()));
-      timeline.setCycleCount(Timeline.INDEFINITE);
-      timeline.play();
-    }
   }
 
   void setOnUpdate() {
@@ -99,11 +98,9 @@ public class FirstScene {
 
   private void requestAuctions() {
     try {
-      logger.debug("requestAuctions");
       summaries.clear();
       List<AuctionSummary> auctionSummary = DataStore.getInstance().sessions;
       summaries.addAll(auctionSummary);
-      logger.debug("requestAuctions1111111111");
       activeBox.getChildren().clear();
       completedBox.getChildren().clear();
 

@@ -15,15 +15,15 @@ import app.enums.PacketType;
 import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Item;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.service.BidService;
-import app.utils.JsonUtil;
 import java.util.Optional;
 
 public class FetchAuctionDetailCommand implements Command {
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
-    AuctionDetailRequest request = JsonUtil.fromJson(packet.getData(), AuctionDetailRequest.class);
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    AuctionDetailRequest request = packet.getData(AuctionDetailRequest.class);
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
@@ -34,8 +34,7 @@ public class FetchAuctionDetailCommand implements Command {
     if (auctionOpt.isEmpty()) {
       AuctionDetailResponse response =
           new AuctionDetailResponse(false, "Không tìm thấy phiên", null);
-      clientHandler.sendMessage(
-          new Packet(PacketType.FETCH_AUCTION_DETAIL, JsonUtil.toJson(response)));
+      clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
       return;
     }
 
@@ -44,8 +43,7 @@ public class FetchAuctionDetailCommand implements Command {
     if (itemOpt.isEmpty()) {
       AuctionDetailResponse response =
           new AuctionDetailResponse(false, "Không tìm thấy vật phẩm", null);
-      clientHandler.sendMessage(
-          new Packet(PacketType.FETCH_AUCTION_DETAIL, JsonUtil.toJson(response)));
+      clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
       return;
     }
 
@@ -67,7 +65,6 @@ public class FetchAuctionDetailCommand implements Command {
             auction.getEndTime());
 
     AuctionDetailResponse response = new AuctionDetailResponse(true, "OK", detail);
-    clientHandler.sendMessage(
-        new Packet(PacketType.FETCH_AUCTION_DETAIL, JsonUtil.toJson(response)));
+    clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
   }
 }

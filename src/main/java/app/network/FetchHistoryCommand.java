@@ -15,17 +15,17 @@ import app.enums.PacketType;
 import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Item;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.service.BidService;
-import app.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class FetchHistoryCommand implements Command {
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
-    HistoryRequest request = JsonUtil.fromJson(packet.getData(), HistoryRequest.class);
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    HistoryRequest request = packet.getData(HistoryRequest.class);
     int userId = request.userId();
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
@@ -54,6 +54,6 @@ public class FetchHistoryCommand implements Command {
     }
 
     HistoryResponse response = new HistoryResponse(true, "OK", summaries);
-    clientHandler.sendMessage(new Packet(PacketType.FETCH_HISTORY, JsonUtil.toJson(response)));
+    clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_HISTORY, response));
   }
 }

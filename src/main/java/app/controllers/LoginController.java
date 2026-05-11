@@ -3,17 +3,18 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.LoginRequest;
 import app.data.LoginResponse;
+import app.data.Response;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;
-import app.models.Packet;
+import app.models.PacketReq;
 import app.models.User;
 import app.models.UserFactory;
 import app.network.Client;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -26,6 +27,7 @@ public class LoginController {
   @FXML private Button loginButton;
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
+  private Consumer<Response> loginHandler;
 
   @FXML
   private void initialize() {
@@ -40,37 +42,39 @@ public class LoginController {
             + "-fx-background-size: cover;"
             + "-fx-background-position: center center;"
             + "-fx-background-repeat: no-repeat;");
-    Client.getInstance()
-        .subscribe(
-            PacketType.LOGIN,
-            LoginResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      loginButton.setDisable(false);
-                      if (response.success()) {
-                        User user = UserFactory.createUser(response.user());
-                        Client.getInstance().setCurrentUser(user);
-                        Thread thread =
-                            new Thread(
-                                () -> {
-                                  try {
-                                    DataStore.getInstance();
-                                    Thread.sleep(2000);
-                                  } catch (IOException e) {
-                                    AlertUtils.showError("Đăng nhập thất bại", response.message());
-                                  } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                  }
-                                });
-                        thread.setDaemon(true);
-                        thread.start();
+    loginHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof LoginResponse)) {
+                    return;
+                  }
+                  LoginResponse loginResponse = (LoginResponse) response;
+                  loginButton.setDisable(false);
+                  if (loginResponse.success()) {
+                    User user = UserFactory.createUser(loginResponse.user());
+                    Client.getInstance().setCurrentUser(user);
+                    Thread thread =
+                        new Thread(
+                            () -> {
+                              try {
+                                DataStore.getInstance();
+                                Thread.sleep(2000);
+                              } catch (IOException e) {
+                                AlertUtils.showError("Đăng nhập thất bại", loginResponse.message());
+                              } catch (InterruptedException e) {
+                                e.printStackTrace();
+                              }
+                            });
+                    thread.setDaemon(true);
+                    thread.start();
 
-                        SwitchToUI();
-                      } else {
-                        AlertUtils.showError("Đăng nhập thất bại", response.message());
-                      }
-                    }));
+                    SwitchToUI();
+                  } else {
+                    AlertUtils.showError("Đăng nhập thất bại", loginResponse.message());
+                  }
+                });
+    Client.getInstance().subscribe(PacketType.LOGIN, loginHandler);
   }
 
   @FXML
@@ -85,7 +89,7 @@ public class LoginController {
     }
     LoginRequest loginRequest = new LoginRequest(userInput, passInput);
     try {
-      Client.getInstance().sendRequest(new Packet(PacketType.LOGIN, JsonUtil.toJson(loginRequest)));
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.LOGIN, loginRequest));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
       loginButton.setDisable(false);
@@ -94,6 +98,9 @@ public class LoginController {
 
   @FXML
   public void SwitchToUI() {
+    if (loginHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.LOGIN, loginHandler);
+    }
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 

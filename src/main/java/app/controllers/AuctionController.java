@@ -3,15 +3,16 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
+import app.data.Response;
 import app.enums.ItemType;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;
-import app.models.Packet;
+import app.models.PacketReq;
 import app.network.Client;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -25,6 +26,7 @@ public class AuctionController {
   @FXML private TextField stepPriceField;
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
+  private Consumer<Response> createAuctionHandler;
 
   @FXML
   public void initialize() {
@@ -40,27 +42,33 @@ public class AuctionController {
       typeComboBox.getSelectionModel().selectFirst();
     }
 
-    Client.getInstance()
-        .subscribe(
-            PacketType.CREATE_AUCTION,
-            CreateAuctionResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      if (response.success()) {
-                        if (response.auction() != null) {
-                          try {
-                            DataStore.getInstance().sessions.add(response.auction());
-                          } catch (IOException e) {
-                            AlertUtils.showError("Lỗi", response.message());
-                          }
-                        }
-                        AlertUtils.showInfo("OK", response.message());
-                        NavigationManager.getInstance().navigateTo(View.UI);
-                      } else {
-                        AlertUtils.showError("Lỗi", response.message());
+    createAuctionHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof CreateAuctionResponse)) {
+                    return;
+                  }
+                  CreateAuctionResponse createAuctionResponse = (CreateAuctionResponse) response;
+                  if (createAuctionResponse.success()) {
+                    if (createAuctionResponse.auction() != null) {
+                      try {
+                        DataStore.getInstance().sessions.add(createAuctionResponse.auction());
+                      } catch (IOException e) {
+                        AlertUtils.showError("Lỗi", createAuctionResponse.message());
                       }
-                    }));
+                    }
+                    AlertUtils.showInfo("OK", createAuctionResponse.message());
+                    if (createAuctionHandler != null) {
+                      Client.getInstance()
+                          .unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
+                    }
+                    NavigationManager.getInstance().navigateTo(View.UI);
+                  } else {
+                    AlertUtils.showError("Lỗi", createAuctionResponse.message());
+                  }
+                });
+    Client.getInstance().subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
   }
 
   @FXML
@@ -100,8 +108,7 @@ public class AuctionController {
               type,
               durationMins,
               Client.getInstance().getCurrentUser().getId());
-      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(request));
-      Client.getInstance().sendRequest(packet);
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.CREATE_AUCTION, request));
 
     } catch (NumberFormatException e) {
       AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");
@@ -115,6 +122,9 @@ public class AuctionController {
 
   @FXML
   public void handleBack(ActionEvent event) {
+    if (createAuctionHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
+    }
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

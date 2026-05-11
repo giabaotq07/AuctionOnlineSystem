@@ -7,10 +7,10 @@ import app.data.LoginResponse;
 import app.data.UserData;
 import app.enums.PacketType;
 import app.exception.ServiceException;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.models.User;
 import app.service.UserService;
-import app.utils.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +18,8 @@ public class LoginCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(LoginCommand.class);
 
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
-    LoginRequest loginRequest = JsonUtil.fromJson(packet.getData(), LoginRequest.class);
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    LoginRequest loginRequest = packet.getData(LoginRequest.class);
     String username = loginRequest.username();
     String password = loginRequest.password();
     UserDAO userDAO = new MySqlUserDAO();
@@ -30,7 +30,7 @@ public class LoginCommand implements Command {
     } catch (ServiceException e) {
       LoginResponse loginResponse =
           new LoginResponse(false, "Đăng nhập thất bại! Sai tên tài khoản hoặc mật khẩu.", null);
-      Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJson(loginResponse));
+      PacketRes responsePacket = PacketRes.of(PacketType.LOGIN, loginResponse);
       clientHandler.sendMessage(responsePacket);
       return;
     }
@@ -39,7 +39,7 @@ public class LoginCommand implements Command {
     logger.info("[SERVER] {} đã đăng nhập.", username);
     LoginResponse loginResponse =
         new LoginResponse(true, "Đăng nhập thành công!", new UserData(user));
-    Packet responsePacket = new Packet(PacketType.LOGIN, JsonUtil.toJson(loginResponse));
+    PacketRes responsePacket = PacketRes.of(PacketType.LOGIN, loginResponse);
     clientHandler.sendMessage(responsePacket);
   }
 }

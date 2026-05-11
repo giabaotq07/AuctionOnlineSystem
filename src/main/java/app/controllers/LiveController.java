@@ -8,21 +8,22 @@ import app.data.AuctionResultRequest;
 import app.data.AuctionResultResponse;
 import app.data.PlaceBidRequest;
 import app.data.PlaceBidResponse;
+import app.data.Response;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.Packet;
+import app.models.PacketReq;
 import app.network.Client;
 import app.observer.AuctionObserver;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,6 +36,9 @@ public class LiveController implements AuctionObserver {
   private AuctionDetail auctionDetail;
   private PlaceBidResponse placeBidResponse;
   private AuctionResultResponse auctionResultResponse;
+  private Consumer<Response> placeBidHandler;
+  private Consumer<Response> auctionDetailHandler;
+  private Consumer<Response> auctionResultHandler;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
@@ -47,53 +51,56 @@ public class LiveController implements AuctionObserver {
 
   @FXML
   public void initialize() {
-    Client.getInstance()
-        .subscribe(
-            PacketType.PLACE_BID,
-            PlaceBidResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      placeBidResponse = response;
-                      notifyUpdateBid();
-                    }));
+    placeBidHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof PlaceBidResponse)) {
+                    return;
+                  }
+                  placeBidResponse = (PlaceBidResponse) response;
+                  notifyUpdateBid();
+                });
+    Client.getInstance().subscribe(PacketType.PLACE_BID, placeBidHandler);
 
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_DETAIL,
-            AuctionDetailResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      if (response.success() && response.detail() != null) {
-                        auctionDetail = response.detail();
-                        applyDetail(auctionDetail);
-                      }
-                    }));
+    auctionDetailHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof AuctionDetailResponse)) {
+                    return;
+                  }
+                  AuctionDetailResponse detailResponse = (AuctionDetailResponse) response;
+                  if (detailResponse.success() && detailResponse.detail() != null) {
+                    auctionDetail = detailResponse.detail();
+                    applyDetail(auctionDetail);
+                  }
+                });
+    Client.getInstance().subscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
 
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_RESULT,
-            AuctionResultResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      auctionResultResponse = response;
-                      if (auctionResultResponse.success()) {
-                        onAuctionClosed(
-                            auctionDetail != null ? auctionDetail.itemName() : "",
-                            auctionResultResponse.winnerName(),
-                            auctionResultResponse.finalPrice());
-                      }
-                    }));
+    auctionResultHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof AuctionResultResponse)) {
+                    return;
+                  }
+                  auctionResultResponse = (AuctionResultResponse) response;
+                  if (auctionResultResponse.success()) {
+                    onAuctionClosed(
+                        auctionDetail != null ? auctionDetail.itemName() : "",
+                        auctionResultResponse.winnerName(),
+                        auctionResultResponse.finalPrice());
+                  }
+                });
+    Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
   }
 
   public void setSession(Auction session) {
     this.session = session;
     try {
       AuctionDetailRequest request = new AuctionDetailRequest(session.getId());
-      Packet packet = new Packet(PacketType.FETCH_AUCTION_DETAIL, JsonUtil.toJson(request));
-      Client.getInstance().sendRequest(packet);
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_DETAIL, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
@@ -185,8 +192,7 @@ public class LiveController implements AuctionObserver {
             Client.getInstance().getCurrentUser().getId(),
             bidAmount,
             currentPrice);
-    Packet packet = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(request));
-    Client.getInstance().sendRequest(packet);
+    Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
   }
 
   private void startCountdownTimer(LocalDateTime endTime) {
@@ -222,8 +228,7 @@ public class LiveController implements AuctionObserver {
     }
     try {
       AuctionResultRequest request = new AuctionResultRequest(session.getId());
-      Packet packet = new Packet(PacketType.FETCH_AUCTION_RESULT, JsonUtil.toJson(request));
-      Client.getInstance().sendRequest(packet);
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_RESULT, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
@@ -245,6 +250,15 @@ public class LiveController implements AuctionObserver {
   public void SwitchToUI(ActionEvent event) {
     if (scheduler != null && !scheduler.isShutdown()) scheduler.shutdown();
     if (session != null) session.removeObserver(this);
+    if (placeBidHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.PLACE_BID, placeBidHandler);
+    }
+    if (auctionDetailHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
+    }
+    if (auctionResultHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
+    }
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

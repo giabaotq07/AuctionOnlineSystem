@@ -4,7 +4,8 @@ import app.data.Response;
 import app.enums.PacketType;
 import app.exception.AppException;
 import app.exception.ConnectException;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.models.User;
 import app.utils.JsonUtil;
 import java.io.*;
@@ -56,8 +57,8 @@ public class Client {
       String line;
       while ((line = reader.readLine()) != null) {
         try {
-          Packet packet = JsonUtil.fromJson(line, Packet.class);
-          Response response = JsonUtil.decodeResponse(packet);
+          PacketRes packet = JsonUtil.fromJson(line, PacketRes.class);
+          Response response = packet.getData();
           if (response != null) {
             notify(packet.getType(), response);
           } else {
@@ -79,7 +80,7 @@ public class Client {
     return connected;
   }
 
-  public void sendRequest(Packet packet) throws IOException {
+  public void sendRequest(PacketReq packet) throws IOException {
     if (writer != null) {
       String json = JsonUtil.toJson(packet);
       writer.write(json);
@@ -98,30 +99,8 @@ public class Client {
     }
   }
 
-  //  public void setOnMessageReceived(Consumer<Packet> observer) {
-  //    for (PacketType packetType : PacketType.values()) {
-  //      subscribe(packetType, observer);
-  //    }
-  //  }
-
   public void subscribe(PacketType packetType, Consumer<Response> observer) {
     observersMap.computeIfAbsent(packetType, k -> new ArrayList<>()).add(observer);
-  }
-
-  public <T extends Response> void subscribe(
-      PacketType packetType, Class<T> responseType, Consumer<T> observer) {
-    subscribe(
-        packetType,
-        response -> {
-          if (responseType.isInstance(response)) {
-            observer.accept(responseType.cast(response));
-          } else {
-            logger.warn(
-                "[CLIENT] Unexpected response type for {}: {}",
-                packetType,
-                response == null ? "null" : response.getClass().getName());
-          }
-        });
   }
 
   public void unsubscribe(PacketType packetType, Consumer<Response> observer) {

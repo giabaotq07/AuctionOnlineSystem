@@ -4,17 +4,18 @@ import app.config.NavigationManager;
 import app.data.AuctionSummary;
 import app.data.HistoryRequest;
 import app.data.HistoryResponse;
+import app.data.Response;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.Packet;
+import app.models.PacketReq;
 import app.models.User;
 import app.network.Client;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -38,23 +39,26 @@ public class MyHistoryController {
   private final Client client = Client.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
   private User currentUser = client.getCurrentUser();
+  private Consumer<Response> historyHandler;
 
   @FXML
   public void initialize() {
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_HISTORY,
-            HistoryResponse.class,
-            response ->
-                Platform.runLater(
-                    () -> {
-                      if (response.success() && response.auctions() != null) {
-                        summaries.clear();
-                        summaries.addAll(response.auctions());
-                        refreshHistoryContainer();
-                        startAutoScroll();
-                      }
-                    }));
+    historyHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (!(response instanceof HistoryResponse)) {
+                    return;
+                  }
+                  HistoryResponse historyResponse = (HistoryResponse) response;
+                  if (historyResponse.success() && historyResponse.auctions() != null) {
+                    summaries.clear();
+                    summaries.addAll(historyResponse.auctions());
+                    refreshHistoryContainer();
+                    startAutoScroll();
+                  }
+                });
+    Client.getInstance().subscribe(PacketType.FETCH_HISTORY, historyHandler);
 
     requestHistory();
   }
@@ -65,8 +69,7 @@ public class MyHistoryController {
     }
     try {
       HistoryRequest request = new HistoryRequest(currentUser.getId());
-      Client.getInstance()
-          .sendRequest(new Packet(PacketType.FETCH_HISTORY, JsonUtil.toJson(request)));
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_HISTORY, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
@@ -157,6 +160,9 @@ public class MyHistoryController {
 
   @FXML
   public void SwitchToUI() {
+    if (historyHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.FETCH_HISTORY, historyHandler);
+    }
     try {
       NavigationManager.getInstance().navigateTo(View.UI);
     } catch (Exception e) {

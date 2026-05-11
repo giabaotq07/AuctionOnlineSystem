@@ -10,17 +10,17 @@ import app.enums.UserRole;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.Account;
-import app.models.Packet;
+import app.models.PacketReq;
+import app.models.PacketRes;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
 import app.service.UserService;
-import app.utils.JsonUtil;
 
 public class RegisterCommand implements Command {
   @Override
-  public void execute(ClientHandler clientHandler, Packet packet) {
-    RegisterRequest request = JsonUtil.fromJson(packet.getData(), RegisterRequest.class);
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    RegisterRequest request = packet.getData(RegisterRequest.class);
     UserRole role = request.role() != null ? request.role() : UserRole.BIDDER;
     User newUser =
         UserFactory.createUser(
@@ -31,11 +31,11 @@ public class RegisterCommand implements Command {
       User created = userService.register(newUser);
       RegisterResponse response =
           new RegisterResponse(true, "Đăng ký thành công!", new UserData(created));
-      clientHandler.sendMessage(new Packet(PacketType.REGISTER, JsonUtil.toJson(response)));
+      clientHandler.sendMessage(PacketRes.of(PacketType.REGISTER, response));
     } catch (DatabaseException | ServiceException e) {
       RegisterResponse response =
           new RegisterResponse(false, "Tài khoản đã tồn tại hoặc có lỗi xảy ra.", null);
-      clientHandler.sendMessage(new Packet(PacketType.REGISTER, JsonUtil.toJson(response)));
+      clientHandler.sendMessage(PacketRes.of(PacketType.REGISTER, response));
     }
   }
 }
