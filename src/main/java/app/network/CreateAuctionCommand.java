@@ -6,6 +6,7 @@ import app.dao.ItemDAO;
 import app.dao.impl.MySqlAuctionDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
+import app.data.AuctionSummary;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
 import app.enums.PacketType;
@@ -17,8 +18,12 @@ import app.service.AuctionService;
 import app.service.ItemService;
 import app.utils.JsonUtil;
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CreateAuctionCommand implements Command {
+  private static final Logger log = LoggerFactory.getLogger(CreateAuctionCommand.class);
+
   @Override
   public void execute(ClientHandler clientHandler, Packet packet) {
     CreateAuctionRequest request = JsonUtil.fromJson(packet.getData(), CreateAuctionRequest.class);
@@ -42,14 +47,21 @@ public class CreateAuctionCommand implements Command {
           new Auction(
               item.getId(),
               request.sellerId(),
-              LocalDateTime.now().plusMinutes(request.durationMinutes()));
-      session.start();
-      session = auctionService.createAuction(session);
+              LocalDateTime.now().plusMinutes(request.durationMinutes()),
+              item.getStartingPrice());
+      //      session.start();
 
+      session = auctionService.createAuction(session);
+      session.start();
+      auctionService.updateStatus(session.getId(), session.getStatus());
+      AuctionSummary auctionSummary =
+          new AuctionSummary(session, item.getName(), session.getHighestBid());
       CreateAuctionResponse response =
-          new CreateAuctionResponse(true, "Tạo phiên thành công", session);
+          new CreateAuctionResponse(true, "Tạo phiên thành công", auctionSummary);
       clientHandler.sendMessage(new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(response)));
     } catch (Exception e) {
+
+      e.printStackTrace();
       CreateAuctionResponse response =
           new CreateAuctionResponse(false, "Tạo phiên thất bại: " + e.getMessage(), null);
       clientHandler.sendMessage(new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(response)));

@@ -115,6 +115,7 @@ public class ConnectServerController {
               try {
                 result[0] = Client.getInstance();
                 result[0].connect();
+
               } catch (Exception e) {
                 exception[0] = e;
               }

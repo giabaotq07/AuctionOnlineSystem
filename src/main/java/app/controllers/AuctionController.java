@@ -51,7 +51,11 @@ public class AuctionController {
                         response = JsonUtil.fromJson(packet.getData(), CreateAuctionResponse.class);
                         if (response.success()) {
                           if (response.auction() != null) {
-                            DataStore.sessions.add(response.auction());
+                            try {
+                              DataStore.getInstance().sessions.add(response.auction());
+                            } catch (IOException e) {
+                              AlertUtils.showError("Lỗi", response.message());
+                            }
                           }
                           AlertUtils.showInfo("OK", response.message());
                           NavigationManager.getInstance().navigateTo(View.UI);

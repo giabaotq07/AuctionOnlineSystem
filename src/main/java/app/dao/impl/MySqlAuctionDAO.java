@@ -212,7 +212,11 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   @Override
   public boolean updateStatus(Connection conn, int auctionId, AuctionStatus status) {
     return executeUpdate(
-        conn, "UPDATE auction_sessions SET status = ? WHERE id = ?", status.name(), auctionId);
+        conn,
+        TABLE,
+        "UPDATE auction_sessions SET status = ? WHERE id = ?",
+        status.name(),
+        auctionId);
   }
 
   @Override

@@ -27,7 +27,7 @@
 
     <!-- 3. Tùy chỉnh Log Level theo Package -->
     <!-- Hiển thị log chi tiết (DEBUG) cho source code của riêng bạn -->
-    <logger name="app" level="DEBUG"/>
+    <logger name="app" level="INFO"/>
     <logger name="network" level="DEBUG"/> <!-- Nếu bạn có package xử lý socket riêng -->
 
     <!-- 4. Root Logger -->

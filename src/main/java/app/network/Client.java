@@ -60,10 +60,9 @@ public class Client {
             case FETCH_HISTORY:
             case FETCH_AUCTION_DETAIL:
             case FETCH_AUCTION_RESULT:
-              if (onMessageReceived != null) {
-                onMessageReceived.accept(packet);
-              }
-              break;
+          }
+          if (onMessageReceived != null) {
+            onMessageReceived.accept(packet);
           }
         } catch (AppException e) {
           logger.info(e.getMessage());

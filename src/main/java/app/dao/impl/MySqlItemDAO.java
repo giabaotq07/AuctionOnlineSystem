@@ -127,6 +127,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         """;
     executeUpdate(
         conn,
+        TABLE,
         sql,
         item.getName(),
         item.getDescription(),

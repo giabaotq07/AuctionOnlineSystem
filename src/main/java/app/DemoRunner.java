@@ -90,7 +90,11 @@ public class DemoRunner {
     // 3. Tao phien dau gia
     System.out.println("\n3. Mo phien dau gia (Ket thuc sau 5 giay)...");
     Auction session =
-        new Auction(phone.getId(), seller.getId(), LocalDateTime.now().plusSeconds(5));
+        new Auction(
+            phone.getId(),
+            seller.getId(),
+            LocalDateTime.now().plusSeconds(5),
+            phone.getStartingPrice());
     session = sessionService.createAuction(session);
     System.out.println("Phien dau gia tao voi ID: " + session.getId());
     // bắt đầu phiên

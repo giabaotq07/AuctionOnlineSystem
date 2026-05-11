@@ -2,22 +2,17 @@ package app.controllers;
 
 import app.config.NavigationManager;
 import app.data.AuctionSummary;
-import app.data.AuctionsRequest;
-import app.data.AuctionsResponse;
 import app.enums.AuctionStatus;
-import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.Packet;
+import app.models.DataStore;
 import app.network.Client;
 import app.utils.AlertUtils;
-import app.utils.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -33,11 +28,14 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FirstScene {
 
   @FXML private Stage stage;
   private Scene scene;
+  Logger logger = LoggerFactory.getLogger(FirstScene.class);
 
   @FXML private TextField searchField;
   @FXML private ListView<Auction> sessionListView;
@@ -71,38 +69,7 @@ public class FirstScene {
               : "Đăng nhập / Đăng ký");
     }
 
-    Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
-                Platform.runLater(
-                    () -> {
-                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
-
-                        AuctionsResponse response =
-                            JsonUtil.fromJson(packet.getData(), AuctionsResponse.class);
-
-                        if (response.success() && response.auctions() != null) {
-
-                          summaries.clear();
-                          summaries.addAll(response.auctions());
-                          activeBox.getChildren().clear();
-                          completedBox.getChildren().clear();
-
-                          for (AuctionSummary summary : summaries) {
-                            Auction session = summary.auction();
-
-                            if (session.getStatus() == AuctionStatus.RUNNING) {
-                              activeBox.getChildren().add(createAuctionCard(summary));
-                            } else if (session.getStatus() == AuctionStatus.FINISHED) {
-                              completedBox.getChildren().add(createAuctionCard(summary));
-                            }
-                          }
-
-                          updateListView();
-                        }
-                      }
-                    }));
-
+    logger.debug("trước req");
     requestAuctions();
 
     // Hiển thị lên giao diện thông qua ScrollBox
@@ -124,11 +91,26 @@ public class FirstScene {
 
   private void requestAuctions() {
     try {
-      Client.getInstance()
-          .sendRequest(
-              new Packet(PacketType.FETCH_AUCTIONS, JsonUtil.toJson(new AuctionsRequest())));
+      logger.debug("requestAuctions");
+      summaries.clear();
+      List<AuctionSummary> auctionSummary = DataStore.getInstance().sessions;
+      summaries.addAll(auctionSummary);
+      logger.debug("requestAuctions1111111111");
+      activeBox.getChildren().clear();
+      completedBox.getChildren().clear();
+
+      for (AuctionSummary summary : summaries) {
+        Auction session = summary.auction();
+
+        if (session.getStatus() == AuctionStatus.RUNNING) {
+          activeBox.getChildren().add(createAuctionCard(summary));
+        } else if (session.getStatus() == AuctionStatus.FINISHED) {
+          completedBox.getChildren().add(createAuctionCard(summary));
+        }
+        updateListView();
+      }
     } catch (IOException e) {
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+      AlertUtils.showError("Lỗi", "Mất kết nối");
     }
   }
 

@@ -23,7 +23,7 @@ public class Auction implements AuctionSubject {
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  public Auction(int itemId, int sellerId, LocalDateTime endTime
+  public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice
       // , long depositAmount
       ) {
     this.itemId = itemId;
@@ -31,7 +31,7 @@ public class Auction implements AuctionSubject {
     this.endTime = endTime;
     //    this.depositAmount = depositAmount;
     this.status = AuctionStatus.OPEN;
-    this.highestBid = 0;
+    this.highestBid = currentPrice;
     this.extendedCount = 0;
     this.createdAt = LocalDateTime.now();
   }

@@ -20,10 +20,15 @@ import app.utils.JsonUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FetchAuctionsCommand implements Command {
+  Logger logger = LoggerFactory.getLogger(FetchAuctionsCommand.class);
+
   @Override
   public void execute(ClientHandler clientHandler, Packet packet) {
+    logger.info("In FetchAuctionsCommand");
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
@@ -44,7 +49,7 @@ public class FetchAuctionsCommand implements Command {
       }
       summaries.add(new AuctionSummary(auction, item.getName(), currentPrice));
     }
-
+    logger.info(JsonUtil.toJson(summaries));
     AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
     clientHandler.sendMessage(new Packet(PacketType.FETCH_AUCTIONS, JsonUtil.toJson(response)));
   }
