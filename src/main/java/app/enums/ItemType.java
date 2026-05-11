@@ -1,8 +1,6 @@
 package app.enums;
 
-import java.io.Serializable;
-
-public enum ItemType implements Serializable {
+public enum ItemType {
   ELECTRONICS,
   ART,
   VEHICLE,

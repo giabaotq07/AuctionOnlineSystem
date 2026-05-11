@@ -43,7 +43,7 @@ public class ConnectServerController {
   }
 
   @FXML
-  public void ConnectServer(ActionEvent event) {
+  public void connectServer(ActionEvent event) {
     // Disable button and show loading state
     if (connectButton != null) {
       connectButton.setDisable(true);

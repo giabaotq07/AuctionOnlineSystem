@@ -101,6 +101,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
@@ -150,7 +156,7 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
 
                     <compilerArgs>
-                        <arg>-Xlint:all</arg>
+                        <arg>-Xlint:-exports</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -180,6 +186,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
             </plugin>
 
             <!-- Checkstyle -->
@@ -190,6 +199,7 @@
 
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                 </configuration>
 

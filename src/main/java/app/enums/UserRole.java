@@ -1,8 +1,6 @@
 package app.enums;
 
-import java.io.Serializable;
-
-public enum UserRole implements Serializable {
+public enum UserRole {
   ADMIN,
   BIDDER,
   SELLER,

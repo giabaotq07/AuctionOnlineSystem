@@ -1,8 +1,6 @@
 package app.enums;
 
-import java.io.Serializable;
-
-public enum AuctionStatus implements Serializable {
+public enum AuctionStatus {
   OPEN(0),
   RUNNING(1),
   ENDING_SOON(2),

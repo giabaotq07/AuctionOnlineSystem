@@ -1,8 +1,6 @@
 package app.enums;
 
-import java.io.Serializable;
-
-public enum ItemStatus implements Serializable {
+public enum ItemStatus {
   AVAILABLE,
   UNDER_AUCTION,
   SOLD,

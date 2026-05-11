@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 public class DatabaseInitializer {
   public static void initialize() {
-    try (Connection conn = DatabaseConnection.getInstance().getConnection();
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection();
         InputStream stream = DatabaseConnection.class.getResourceAsStream("/schema.sql")) {
       if (stream == null) {
         throw new IOException("schema.sql not found on classpath");

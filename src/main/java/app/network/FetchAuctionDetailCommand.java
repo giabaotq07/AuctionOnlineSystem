@@ -16,7 +16,6 @@ import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Item;
 import app.models.Packet;
-import app.service.BidObserverService;
 import app.service.BidService;
 import app.utils.JsonUtil;
 import java.util.Optional;
@@ -29,8 +28,7 @@ public class FetchAuctionDetailCommand implements Command {
     BidDAO bidDAO = new MySqlBidDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     ItemDAO itemDAO = new MySqlItemDAO();
-    BidService bidService =
-        new BidService(bidDAO, autoBidDAO, auctionDAO, new BidObserverService());
+    BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
 
     Optional<Auction> auctionOpt = auctionDAO.findById(request.auctionId());
     if (auctionOpt.isEmpty()) {
