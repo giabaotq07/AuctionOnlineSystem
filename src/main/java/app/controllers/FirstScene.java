@@ -90,6 +90,12 @@ public class FirstScene {
     if (completedAuctionsPane != null) {
       completedAuctionsPane.getChildren().setAll(createScrollBox(completedBox));
     }
+
+    if (sessionListView != null) {
+      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(0.5), e -> requestAuctions()));
+      timeline.setCycleCount(Timeline.INDEFINITE);
+      timeline.play();
+    }
   }
 
   void setOnUpdate() {
