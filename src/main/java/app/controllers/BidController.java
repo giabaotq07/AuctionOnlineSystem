@@ -1,27 +1,26 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dao.UserDAO;
-import app.dao.impl.*;
-import app.enums.HistoryType;
+import app.data.PlaceBidRequest;
+import app.data.PlaceBidResponse;
+import app.enums.PacketType;
 import app.enums.View;
-import app.models.*;
+import app.models.Auction;
+import app.models.DataStore;
+import app.models.Packet;
+import app.models.User;
 import app.network.Client;
-import app.service.BidObserverService;
-import app.service.BidService;
-import app.service.ItemService;
-import app.service.UserService;
+import app.utils.JsonUtil;
+import java.io.IOException;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 
 public class BidController {
 
-  UserDAO userDao;
-  UserService userService;
-  // DAO / Service để xử lý bid và lịch sử
-  private BidService bidService;
-  private ItemService itemService;
   // ===== INPUT =====
   @FXML private ListView<Auction> sessionListView;
 
@@ -31,31 +30,50 @@ public class BidController {
   @FXML private TextArea outputArea;
 
   private Auction session;
+  private PlaceBidResponse placeBidResponse;
 
   // ===== LOAD LIST =====
   @FXML
   public void initialize() {
-    userService = new UserService(new MySqlUserDAO());
-    itemService = new ItemService(new MySqlItemDAO());
-    // Khởi tạo service/dao cần thiết
-    bidService =
-        new BidService(
-            new MySqlBidDAO(),
-            new MySqlAutoBidDAO(),
-            new MySqlAuctionDAO(),
-            new BidObserverService());
     sessionListView.getItems().clear();
     sessionListView.getItems().addAll(DataStore.sessions);
 
-    System.out.println("Loaded sessions: " + DataStore.sessions.size());
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.PLACE_BID) {
+                        placeBidResponse =
+                            JsonUtil.fromJson(packet.getData(), PlaceBidResponse.class);
+                        notifyUpdateBid();
+                      }
+                    }));
 
     sessionListView.setOnMouseClicked(
         e -> {
           Auction s = sessionListView.getSelectionModel().getSelectedItem();
-          Item item = itemService.getById(s.getItemId());
-
-          outputArea.setText("Item: " + item.getName() + "\nGiá: $" + s.getHighestBid());
+          if (s == null) {
+            return;
+          }
+          session = s;
+          outputArea.setText("Session: " + s.getId() + "\nGiá hiện tại: " + s.getHighestBid());
         });
+  }
+
+  private void notifyUpdateBid() {
+    if (placeBidResponse == null) {
+      return;
+    }
+    outputArea.setText(
+        "Item: "
+            + placeBidResponse.itemName()
+            + "\nGiá hiện tại: "
+            + placeBidResponse.highestBidAmount()
+            + "\nNguời trả giá cao nhất: "
+            + placeBidResponse.bidderName());
+    amountField.clear();
+    bidderField.clear();
   }
 
   // ===== BID =====
@@ -67,41 +85,21 @@ public class BidController {
         return;
       }
 
-      String userName = bidderField.getText();
       long amount = Long.parseLong(amountField.getText());
       User bidder = Client.getInstance().getCurrentUser();
-      Item item = itemService.getById(bidder.getId());
-      try {
-        bidService.placeBid(session.getId(), bidder.getId(), amount);
-
-        // ✅ CẬP NHẬT OUTPUT NGAY LẬP TỨC từ dữ liệu trong database
-        bidService
-            .getHighestBid(session.getId())
-            .ifPresent(
-                highestBid ->
-                    outputArea.setText(
-                        "Item: "
-                            + item.getName()
-                            + "\nGiá hiện tại: "
-                            + highestBid.getAmount()
-                            + "\nNguời trả giá cao nhất: "
-                            + highestBid.getBidderName()));
-
-        // Lưu lịch sử vào database
-        HistoryRecord record =
-            new HistoryRecord(
-                session.getId(),
-                HistoryType.BID,
-                bidder.getName() + " bid $" + amount + " vào " + item.getName());
-
-        amountField.clear();
-        bidderField.clear();
-      } catch (Exception e) {
-        outputArea.setText("Lỗi đặt giá: " + e.getMessage());
+      if (bidder == null) {
+        outputArea.setText("Bạn phải đăng nhập trước!");
+        return;
       }
+
+      PlaceBidRequest request =
+          new PlaceBidRequest(session.getId(), bidder.getId(), amount, session.getHighestBid());
+      Client.getInstance().sendRequest(new Packet(PacketType.PLACE_BID, JsonUtil.toJson(request)));
 
     } catch (NumberFormatException e) {
       outputArea.setText("Lỗi dữ liệu! Vui lòng nhập số hợp lệ.");
+    } catch (IOException e) {
+      outputArea.setText("Lỗi kết nối: Server không phản hồi.");
     } catch (Exception e) {
       outputArea.setText("Lỗi: " + e.getMessage());
     }

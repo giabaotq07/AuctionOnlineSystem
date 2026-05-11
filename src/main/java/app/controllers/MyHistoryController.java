@@ -1,18 +1,19 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dao.*;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlAutoBidDAO;
-import app.dao.impl.MySqlBidDAO;
-import app.dao.impl.MySqlItemDAO;
+import app.data.AuctionSummary;
+import app.data.HistoryRequest;
+import app.data.HistoryResponse;
+import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
-import app.models.Item;
+import app.models.Packet;
 import app.models.User;
 import app.network.Client;
-import app.service.BidObserverService;
-import app.service.BidService;
+import app.utils.AlertUtils;
+import app.utils.JsonUtil;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -34,38 +35,55 @@ public class MyHistoryController {
   private static final double CARD_WIDTH = 280;
   private static final double SPACING = 20; // Khớp với spacing="20" trong FXML
 
-  // ✅ Thêm BidService để lấy highest bid từ database
-  private BidDAO bidDAO = new MySqlBidDAO();
-  private AuctionDAO auctionDAO = new MySqlAuctionDAO();
-  private AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-  private BidObserverService bidObserverService = new BidObserverService();
-  private ItemDAO itemDAO = new MySqlItemDAO();
-  private Client client = Client.getInstance();
+  private final Client client = Client.getInstance();
+  private final List<AuctionSummary> summaries = new ArrayList<>();
   private User currentUser = client.getCurrentUser();
-  private final BidService bidService =
-      new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
 
   @FXML
   public void initialize() {
-    // Đợi UI render xong rồi mới tính toán scroll
-    Platform.runLater(
-        () -> {
-          refreshHistoryContainer();
-          startAutoScroll();
-        });
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.FETCH_HISTORY) {
+                        HistoryResponse response =
+                            JsonUtil.fromJson(packet.getData(), HistoryResponse.class);
+                        if (response.success() && response.auctions() != null) {
+                          summaries.clear();
+                          summaries.addAll(response.auctions());
+                          refreshHistoryContainer();
+                          startAutoScroll();
+                        }
+                      }
+                    }));
+
+    requestHistory();
+  }
+
+  private void requestHistory() {
+    if (currentUser == null) {
+      return;
+    }
+    try {
+      HistoryRequest request = new HistoryRequest(currentUser.getId());
+      Client.getInstance()
+          .sendRequest(new Packet(PacketType.FETCH_HISTORY, JsonUtil.toJson(request)));
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
   }
 
   private void refreshHistoryContainer() {
     if (historyContainerPane == null) return;
     historyContainerPane.getChildren().clear();
-    List<Auction> allAuctions = auctionDAO.findAll();
-    for (Auction auction : allAuctions) {
-      int auctionId = auction.getId();
-      historyContainerPane.getChildren().add(createAuctionCard(auction));
+    for (AuctionSummary summary : summaries) {
+      historyContainerPane.getChildren().add(createAuctionCard(summary));
     }
   }
 
-  private VBox createAuctionCard(Auction session) {
+  private VBox createAuctionCard(AuctionSummary summary) {
+    Auction session = summary.auction();
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -75,24 +93,16 @@ public class MyHistoryController {
 
     Label badge =
         new Label(currentUser.getId() == session.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
-    ;
     badge.setStyle(
         currentUser.getId() == session.getSellerId()
             ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
             : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
 
-    Item item = itemDAO.findById(session.getItemId()).orElse(null);
-    assert item != null;
-    Label titleLabel = new Label(item.getName());
+    Label titleLabel = new Label(summary.itemName());
     titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
     titleLabel.setWrapText(true);
 
-    // ✅ Lấy giá cao nhất từ database thay vì in-memory
-    long highestBid = 0;
-    if (bidService.getHighestBid(session.getId()).isPresent()) {
-      highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
-    }
-    long displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
+    long displayPrice = summary.currentPrice();
     Label priceLabel = new Label("Giá: " + displayPrice + "đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 

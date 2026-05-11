@@ -1,0 +1,7 @@
+package app.data;
+
+import java.io.Serializable;
+import java.util.List;
+
+public record HistoryResponse(boolean success, String message, List<AuctionSummary> auctions)
+    implements Serializable {}

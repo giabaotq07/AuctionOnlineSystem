@@ -1,19 +1,17 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlBidDAO;
-import app.dao.impl.MySqlItemDAO;
+import app.data.CreateAuctionRequest;
+import app.data.CreateAuctionResponse;
 import app.enums.ItemType;
 import app.enums.PacketType;
 import app.enums.View;
-import app.models.*;
+import app.models.DataStore;
+import app.models.Packet;
 import app.network.Client;
-import app.service.AuctionService;
-import app.service.ItemService;
 import app.utils.AlertUtils;
 import app.utils.JsonUtil;
-import java.time.LocalDateTime;
+import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -28,7 +26,7 @@ public class AuctionController {
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
 
-  Client client = Client.getInstance();
+  private CreateAuctionResponse response;
 
   @FXML
   public void initialize() {
@@ -43,6 +41,25 @@ public class AuctionController {
       typeComboBox.getItems().setAll(ItemType.values());
       typeComboBox.getSelectionModel().selectFirst();
     }
+
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.CREATE_AUCTION) {
+                        response = JsonUtil.fromJson(packet.getData(), CreateAuctionResponse.class);
+                        if (response.success()) {
+                          if (response.auction() != null) {
+                            DataStore.sessions.add(response.auction());
+                          }
+                          AlertUtils.showInfo("OK", response.message());
+                          NavigationManager.getInstance().navigateTo(View.UI);
+                        } else {
+                          AlertUtils.showError("Lỗi", response.message());
+                        }
+                      }
+                    }));
   }
 
   @FXML
@@ -73,35 +90,16 @@ public class AuctionController {
         return;
       }
 
-      // ================== 1. SAVE ITEM ==================
-      ItemService itemService = new ItemService(new MySqlItemDAO());
-      Item item =
-          ItemFactory.createItem(
-              name, client.getCurrentUser().getId(), desc, startPrice, stepPrice, type);
-      item = itemService.add(item);
-
-      // ================== 2. SAVE AUCTION ==================
-      Auction session =
-          new Auction(
-              item.getId(),
-              DataStore.currentUser.getId(),
-              LocalDateTime.now().plusMinutes(durationMins));
-      session.start();
-      AuctionService auctionService = new AuctionService(new MySqlAuctionDAO(), new MySqlBidDAO());
-      session = auctionService.createAuction(session);
-
-      // ================== 3. UI CACHE (optional) ==================
-      DataStore.sessions.add(session);
-
-      // ================== 4. NETWORK ==================
-      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(session));
+      CreateAuctionRequest request =
+          new CreateAuctionRequest(
+              name, desc, startPrice, stepPrice, type, durationMins, DataStore.currentUser.getId());
+      Packet packet = new Packet(PacketType.CREATE_AUCTION, JsonUtil.toJson(request));
       Client.getInstance().sendRequest(packet);
-
-      AlertUtils.showInfo("OK", "Tạo phiên thành công");
-      handleBack(event);
 
     } catch (NumberFormatException e) {
       AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi", "Server không phản hồi");
     } catch (Exception e) {
       AlertUtils.showError("Lỗi", e.getMessage());
       e.printStackTrace();

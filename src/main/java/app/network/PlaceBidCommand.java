@@ -75,12 +75,15 @@ public class PlaceBidCommand implements Command {
     BidTransaction highestBidTransaction;
     bidderId = 0;
     long amount = itemService.getById(session.getItemId()).getStartingPrice();
+    String itemName = itemService.getById(session.getItemId()).getName();
+    String bidderName = "";
     if (bidService.getHighestBid(session.getId()).isPresent()) {
       highestBidTransaction = bidService.getHighestBid(session.getId()).get();
       bidderId = highestBidTransaction.getBidderId();
       amount = highestBidTransaction.getAmount();
+      bidderName = highestBidTransaction.getBidderName();
     }
-    PlaceBidResponse response = new PlaceBidResponse(bidderId, amount);
+    PlaceBidResponse response = new PlaceBidResponse(bidderId, amount, itemName, bidderName);
     Packet packetResponse = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(response));
     clientHandler.sendMessage(packetResponse);
     Server.broadcast(packetResponse, session.getId());

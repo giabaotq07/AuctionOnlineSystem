@@ -52,16 +52,14 @@ public class Client {
           packet = JsonUtil.fromJson(line, Packet.class);
           switch (packet.getType()) {
             case LOGIN:
-              if (onMessageReceived != null) {
-                onMessageReceived.accept(packet);
-              }
-              break;
+            case REGISTER:
             case CREATE_AUCTION:
             case PLACE_BID:
-              if (onMessageReceived != null) {
-                onMessageReceived.accept(packet);
-              }
             case CHAT:
+            case FETCH_AUCTIONS:
+            case FETCH_HISTORY:
+            case FETCH_AUCTION_DETAIL:
+            case FETCH_AUCTION_RESULT:
               if (onMessageReceived != null) {
                 onMessageReceived.accept(packet);
               }

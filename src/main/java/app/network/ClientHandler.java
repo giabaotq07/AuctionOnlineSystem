@@ -27,6 +27,12 @@ public class ClientHandler implements Runnable {
     COMMANDS.put(PacketType.LOGIN, new LoginCommand());
     COMMANDS.put(PacketType.CHAT, new ChatCommand());
     COMMANDS.put(PacketType.PLACE_BID, new PlaceBidCommand());
+    COMMANDS.put(PacketType.REGISTER, new RegisterCommand());
+    COMMANDS.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand());
+    COMMANDS.put(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand());
+    COMMANDS.put(PacketType.FETCH_HISTORY, new FetchHistoryCommand());
+    COMMANDS.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand());
+    COMMANDS.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand());
   }
 
   public ClientHandler(Socket socket) {
