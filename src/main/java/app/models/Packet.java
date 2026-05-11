@@ -1,9 +1,8 @@
 package app.models;
 
 import app.enums.PacketType;
-import java.io.Serializable;
 
-public class Packet implements Serializable {
+public class Packet {
   private PacketType type;
   private String data;
 

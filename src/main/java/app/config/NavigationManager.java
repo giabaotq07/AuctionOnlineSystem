@@ -10,18 +10,12 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class NavigationManager {
-  // 1. Biến instance duy nhất (Singleton)
-  private static NavigationManager instance;
+  private static final NavigationManager instance = new NavigationManager();
   private Stage primaryStage;
 
-  // 2. Private constructor ngăn không cho tạo object bên ngoài
   private NavigationManager() {}
 
-  // 3. Cung cấp global access point
   public static NavigationManager getInstance() {
-    if (instance == null) {
-      instance = new NavigationManager();
-    }
     return instance;
   }
 

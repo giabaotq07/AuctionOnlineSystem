@@ -1,6 +1,5 @@
 package app.data;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public record AuctionDetail(
@@ -10,5 +9,4 @@ public record AuctionDetail(
     long startingPrice,
     long stepPrice,
     long currentPrice,
-    LocalDateTime endTime)
-    implements Serializable {}
+    LocalDateTime endTime) {}

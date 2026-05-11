@@ -16,10 +16,8 @@ import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Packet;
 import app.service.AuctionService;
-import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
-import app.utils.AlertUtils;
 import app.utils.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +34,8 @@ public class PlaceBidCommand implements Command {
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     ItemDAO itemDAO = new MySqlItemDAO();
 
-    BidObserverService bidObserverService = new BidObserverService();
     this.auctionService = new AuctionService(auctionDAO, bidDAO);
-    this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, bidObserverService);
+    this.bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
     this.itemService = new ItemService(itemDAO);
   }
 
@@ -55,11 +52,11 @@ public class PlaceBidCommand implements Command {
         throw new NumberFormatException();
       }
       if (bidAmount <= currentPrice) {
-        AlertUtils.showError("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
+        logger.error("Lỗi trả giá", "Giá đặt phải cao hơn giá hiện tại!");
         return;
       }
     } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi", "Giá nhập phải là số nguyên dương");
+      logger.error("Lỗi", "Giá nhập phải là số nguyên dương");
       return;
     }
 
@@ -74,8 +71,8 @@ public class PlaceBidCommand implements Command {
     }
     BidTransaction highestBidTransaction;
     bidderId = 0;
-    long amount = itemService.getById(session.getItemId()).getStartingPrice();
-    String itemName = itemService.getById(session.getItemId()).getName();
+    long amount = itemService.getById(session.getItemId()).orElse(null).getStartingPrice();
+    String itemName = itemService.getById(session.getItemId()).orElse(null).getName();
     String bidderName = "";
     if (bidService.getHighestBid(session.getId()).isPresent()) {
       highestBidTransaction = bidService.getHighestBid(session.getId()).get();
@@ -86,6 +83,6 @@ public class PlaceBidCommand implements Command {
     PlaceBidResponse response = new PlaceBidResponse(bidderId, amount, itemName, bidderName);
     Packet packetResponse = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(response));
     clientHandler.sendMessage(packetResponse);
-    Server.broadcast(packetResponse, session.getId());
+    Server.broadcast(packetResponse, clientHandler.getUser().getId());
   }
 }

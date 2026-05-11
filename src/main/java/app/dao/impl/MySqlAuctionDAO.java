@@ -60,9 +60,12 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
 
   @Override
   public Optional<Auction> findById(int id) {
-    return withConnection(
-        conn -> findOne(conn, BASE_SELECT + " WHERE s.id = ?", id),
-        "Lỗi kết nối khi tải phiên đấu giá.");
+    return withConnection(conn -> findById(conn, id), "Lỗi kết nối khi tải phiên đấu giá.");
+  }
+
+  @Override
+  public Optional<Auction> findById(Connection conn, int id) {
+    return findOne(conn, BASE_SELECT + " WHERE s.id = ?", id);
   }
 
   @Override
@@ -163,7 +166,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   @Override
   public void updateWinner(Connection conn, int auctionId, int winnerId) {
     executeUpdate(
-        conn, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
+        conn, TABLE, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
   }
 
   // ── Write methods ─────────────────────────────────────────────
@@ -218,6 +221,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
         conn ->
             executeUpdate(
                 conn,
+                TABLE,
                 "UPDATE auction_sessions SET start_time = ? WHERE id = ?",
                 Timestamp.valueOf(startTime),
                 auctionId),
@@ -227,13 +231,18 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   @Override
   public void updateEndTime(int auctionId, LocalDateTime endTime) {
     runWithConnection(
-        conn ->
-            executeUpdate(
-                conn,
-                "UPDATE auction_sessions SET end_time = ? WHERE id = ?",
-                Timestamp.valueOf(endTime),
-                auctionId),
+        conn -> updateEndTime(conn, auctionId, endTime),
         "Lỗi kết nối khi cập nhật thời gian kết thúc phiên.");
+  }
+
+  @Override
+  public void updateEndTime(Connection conn, int auctionId, LocalDateTime endTime) {
+    executeUpdate(
+        conn,
+        TABLE,
+        "UPDATE auction_sessions SET end_time = ? WHERE id = ?",
+        Timestamp.valueOf(endTime),
+        auctionId);
   }
 
   @Override
@@ -246,7 +255,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   @Override
   public boolean delete(int id) {
     return withConnection(
-        conn -> executeUpdate(conn, "DELETE FROM auction_sessions WHERE id = ?", id),
+        conn -> executeUpdate(conn, TABLE, "DELETE FROM auction_sessions WHERE id = ?", id),
         "Lỗi kết nối khi xóa phiên đấu giá.");
   }
 
@@ -275,25 +284,6 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
       return auctions;
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi truy vấn danh sách auctions.", e);
-    }
-  }
-
-  private boolean executeUpdate(Connection conn, String sql, Object... params) {
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      return ps.executeUpdate() > 0;
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi cập nhật bảng " + TABLE, e);
-    }
-  }
-
-  private void setParameters(PreparedStatement ps, Object... params) {
-    for (int i = 0; i < params.length; i++) {
-      try {
-        ps.setObject(i + 1, params[i]);
-      } catch (SQLException e) {
-        throw new DatabaseException("Lỗi khi thiết lập tham số cho PreparedStatement.", e);
-      }
     }
   }
 }

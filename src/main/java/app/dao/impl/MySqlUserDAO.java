@@ -103,9 +103,10 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
     }
     runWithConnection(
         conn -> {
-          int rows =
+          boolean ok =
               executeUpdate(
                   conn,
+                  TABLE,
                   "UPDATE users SET username = ?, password = ?, full_name = ?, assets = ?, role = ? WHERE id = ?",
                   user.getAccount().getUsername(),
                   // Expect password to be already hashed by service layer
@@ -114,11 +115,24 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
                   user.getWallet().getAssets(),
                   user.getRole().name(),
                   user.getId());
-          if (rows == 0) {
+          if (ok) {
             throw new DatabaseException("Không tìm thấy user để cập nhật.");
           }
         },
         "Lỗi kết nối khi cập nhật user.");
+  }
+
+  @Override
+  public void deleteAll() {
+    runWithConnection(
+        conn -> {
+          try {
+            conn.createStatement().execute("DELETE FROM users");
+          } catch (SQLException e) {
+            throw new DatabaseException("Lỗi kết nối", e);
+          }
+        },
+        "Failed to clean users");
   }
 
   @Override
@@ -166,21 +180,6 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
       }
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
-    }
-  }
-
-  private int executeUpdate(Connection conn, String sql, Object... params) {
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, params);
-      return ps.executeUpdate();
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
-    }
-  }
-
-  private void setParameters(PreparedStatement ps, Object... params) throws SQLException {
-    for (int i = 0; i < params.length; i++) {
-      ps.setObject(i + 1, params[i]);
     }
   }
 }

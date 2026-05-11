@@ -72,7 +72,8 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
         conn -> findHighestBid(conn, sessionId), "Lỗi kết nối khi truy vấn bid cao nhất.");
   }
 
-  private Optional<BidTransaction> findHighestBid(Connection conn, int sessionId) {
+  @Override
+  public Optional<BidTransaction> findHighestBid(Connection conn, int sessionId) {
     String sql = BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC LIMIT 1";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);

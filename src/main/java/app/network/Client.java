@@ -102,7 +102,7 @@ public class Client {
     this.currentUser = currentUser;
   }
 
-  private void closeResources() {
+  public void closeResources() {
     try {
       logger.info("[CLIENT] Closing resources");
       connected = false;

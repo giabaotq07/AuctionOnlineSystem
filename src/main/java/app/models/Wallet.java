@@ -1,6 +1,6 @@
 package app.models;
 
-public class Wallet implements java.io.Serializable {
+public class Wallet {
   private long assets;
 
   public Wallet() {

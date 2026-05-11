@@ -21,7 +21,8 @@ public class Main extends Application {
         Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
     scene.getStylesheets().add(css);
     Image icon =
-        new Image(Objects.requireNonNull(getClass().getResourceAsStream("/app/views/icon.png")));
+        new Image(
+            Objects.requireNonNull(getClass().getResourceAsStream("/app/views/images/icon.png")));
     stage.getIcons().add(icon);
     stage.setTitle("LoPPy");
     stage.setScene(scene);

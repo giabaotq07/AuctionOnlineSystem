@@ -1,6 +1,6 @@
 package app.models;
 
-public class Profile implements java.io.Serializable {
+public class Profile {
   private String name;
 
   public Profile(String name) {

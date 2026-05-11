@@ -3,7 +3,7 @@ package app.models;
 import app.data.UserData;
 import app.enums.UserRole;
 
-public class UserFactory implements java.io.Serializable {
+public class UserFactory {
   public static User createUser(String name, Account account, Wallet wallet, UserRole role) {
     return switch (role) {
       case ADMIN -> new Admin(name, account, wallet);
