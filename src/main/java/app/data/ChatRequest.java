@@ -2,4 +2,5 @@ package app.data;
 
 import java.time.LocalDateTime;
 
-public record ChatRequest(UserData sender, String content, LocalDateTime timestamp) {}
+public record ChatRequest(UserData sender, String content, LocalDateTime timestamp)
+    implements Request {}

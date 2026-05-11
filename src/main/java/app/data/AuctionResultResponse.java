@@ -1,4 +1,4 @@
 package app.data;
 
 public record AuctionResultResponse(
-    boolean success, String message, String winnerName, long finalPrice) {}
+    boolean success, String message, String winnerName, long finalPrice) implements Response {}

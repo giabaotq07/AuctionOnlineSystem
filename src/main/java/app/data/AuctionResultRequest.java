@@ -1,3 +1,3 @@
 package app.data;
 
-public record AuctionResultRequest(int auctionId) {}
+public record AuctionResultRequest(int auctionId) implements Request {}

@@ -9,4 +9,5 @@ public record CreateAuctionRequest(
     long stepPrice,
     ItemType type,
     int durationMinutes,
-    int sellerId) {}
+    int sellerId)
+    implements Request {}

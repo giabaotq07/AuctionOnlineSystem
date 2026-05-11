@@ -1,7 +1,5 @@
 package app.observer;
 
-public interface Observer {
-  void onNewBid(long newPrice, int auctionId, int bidderId);
-
-  void onAuctionClosed(long finalPrice, int auctionId, int bidderId);
+public interface Observer<T> {
+  void update(T observer);
 }

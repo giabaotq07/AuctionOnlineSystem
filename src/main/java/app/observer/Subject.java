@@ -1,9 +1,7 @@
 package app.observer;
 
-public interface Subject {
-  void registerObserver(Observer observer);
+public interface Subject<T> {
+  void registerObserver(T observer);
 
-  void removeObserver(Observer observer);
-
-  void notifyObserversNewBid(long price, String bidderName);
+  void removeObserver(T observer);
 }

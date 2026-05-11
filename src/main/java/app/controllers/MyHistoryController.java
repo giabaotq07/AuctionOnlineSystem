@@ -42,19 +42,17 @@ public class MyHistoryController {
   @FXML
   public void initialize() {
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
+        .subscribe(
+            PacketType.FETCH_HISTORY,
+            HistoryResponse.class,
+            response ->
                 Platform.runLater(
                     () -> {
-                      if (packet.getType() == PacketType.FETCH_HISTORY) {
-                        HistoryResponse response =
-                            JsonUtil.fromJson(packet.getData(), HistoryResponse.class);
-                        if (response.success() && response.auctions() != null) {
-                          summaries.clear();
-                          summaries.addAll(response.auctions());
-                          refreshHistoryContainer();
-                          startAutoScroll();
-                        }
+                      if (response.success() && response.auctions() != null) {
+                        summaries.clear();
+                        summaries.addAll(response.auctions());
+                        refreshHistoryContainer();
+                        startAutoScroll();
                       }
                     }));
 

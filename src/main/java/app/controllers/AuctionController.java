@@ -26,8 +26,6 @@ public class AuctionController {
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
 
-  private CreateAuctionResponse response;
-
   @FXML
   public void initialize() {
 
@@ -43,25 +41,24 @@ public class AuctionController {
     }
 
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
+        .subscribe(
+            PacketType.CREATE_AUCTION,
+            CreateAuctionResponse.class,
+            response ->
                 Platform.runLater(
                     () -> {
-                      if (packet.getType() == PacketType.CREATE_AUCTION) {
-                        response = JsonUtil.fromJson(packet.getData(), CreateAuctionResponse.class);
-                        if (response.success()) {
-                          if (response.auction() != null) {
-                            try {
-                              DataStore.getInstance().sessions.add(response.auction());
-                            } catch (IOException e) {
-                              AlertUtils.showError("Lỗi", response.message());
-                            }
+                      if (response.success()) {
+                        if (response.auction() != null) {
+                          try {
+                            DataStore.getInstance().sessions.add(response.auction());
+                          } catch (IOException e) {
+                            AlertUtils.showError("Lỗi", response.message());
                           }
-                          AlertUtils.showInfo("OK", response.message());
-                          NavigationManager.getInstance().navigateTo(View.UI);
-                        } else {
-                          AlertUtils.showError("Lỗi", response.message());
                         }
+                        AlertUtils.showInfo("OK", response.message());
+                        NavigationManager.getInstance().navigateTo(View.UI);
+                      } else {
+                        AlertUtils.showError("Lỗi", response.message());
                       }
                     }));
   }

@@ -48,32 +48,42 @@ public class LiveController implements AuctionObserver {
   @FXML
   public void initialize() {
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
+        .subscribe(
+            PacketType.PLACE_BID,
+            PlaceBidResponse.class,
+            response ->
                 Platform.runLater(
                     () -> {
-                      if (packet.getType() == PacketType.PLACE_BID) {
-                        placeBidResponse =
-                            JsonUtil.fromJson(packet.getData(), PlaceBidResponse.class);
-                        notifyUpdateBid();
+                      placeBidResponse = response;
+                      notifyUpdateBid();
+                    }));
+
+    Client.getInstance()
+        .subscribe(
+            PacketType.FETCH_AUCTION_DETAIL,
+            AuctionDetailResponse.class,
+            response ->
+                Platform.runLater(
+                    () -> {
+                      if (response.success() && response.detail() != null) {
+                        auctionDetail = response.detail();
+                        applyDetail(auctionDetail);
                       }
-                      if (packet.getType() == PacketType.FETCH_AUCTION_DETAIL) {
-                        AuctionDetailResponse response =
-                            JsonUtil.fromJson(packet.getData(), AuctionDetailResponse.class);
-                        if (response.success() && response.detail() != null) {
-                          auctionDetail = response.detail();
-                          applyDetail(auctionDetail);
-                        }
-                      }
-                      if (packet.getType() == PacketType.FETCH_AUCTION_RESULT) {
-                        auctionResultResponse =
-                            JsonUtil.fromJson(packet.getData(), AuctionResultResponse.class);
-                        if (auctionResultResponse.success()) {
-                          onAuctionClosed(
-                              auctionDetail != null ? auctionDetail.itemName() : "",
-                              auctionResultResponse.winnerName(),
-                              auctionResultResponse.finalPrice());
-                        }
+                    }));
+
+    Client.getInstance()
+        .subscribe(
+            PacketType.FETCH_AUCTION_RESULT,
+            AuctionResultResponse.class,
+            response ->
+                Platform.runLater(
+                    () -> {
+                      auctionResultResponse = response;
+                      if (auctionResultResponse.success()) {
+                        onAuctionClosed(
+                            auctionDetail != null ? auctionDetail.itemName() : "",
+                            auctionResultResponse.winnerName(),
+                            auctionResultResponse.finalPrice());
                       }
                     }));
   }

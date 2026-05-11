@@ -1,5 +1,7 @@
 package app.network;
 
+import app.data.Response;
+import app.enums.PacketType;
 import app.exception.AppException;
 import app.exception.ConnectException;
 import app.models.Packet;
@@ -7,6 +9,10 @@ import app.models.User;
 import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +23,11 @@ public class Client {
   private User currentUser;
   private BufferedWriter writer;
   private BufferedReader reader;
-  private Consumer<Packet> onMessageReceived;
+  Map<PacketType, List<Consumer<Response>>> observersMap = new HashMap<>();
   private boolean connected = false;
   Logger logger = LoggerFactory.getLogger(Client.class);
+
+  private Client() {}
 
   public static Client getInstance() {
     if (instance == null) {
@@ -46,23 +54,14 @@ public class Client {
   private void listen() {
     try {
       String line;
-      Packet packet;
       while ((line = reader.readLine()) != null) {
         try {
-          packet = JsonUtil.fromJson(line, Packet.class);
-          switch (packet.getType()) {
-            case LOGIN:
-            case REGISTER:
-            case CREATE_AUCTION:
-            case PLACE_BID:
-            case CHAT:
-            case FETCH_AUCTIONS:
-            case FETCH_HISTORY:
-            case FETCH_AUCTION_DETAIL:
-            case FETCH_AUCTION_RESULT:
-          }
-          if (onMessageReceived != null) {
-            onMessageReceived.accept(packet);
+          Packet packet = JsonUtil.fromJson(line, Packet.class);
+          Response response = JsonUtil.decodeResponse(packet);
+          if (response != null) {
+            notify(packet.getType(), response);
+          } else {
+            logger.warn("[CLIENT] No response mapping for type: {}", packet.getType());
           }
         } catch (AppException e) {
           logger.info(e.getMessage());
@@ -89,8 +88,47 @@ public class Client {
     }
   }
 
-  public void setOnMessageReceived(Consumer<Packet> handler) {
-    this.onMessageReceived = handler;
+  public void notify(PacketType packetType, Response response) {
+    List<Consumer<Response>> users = observersMap.get(packetType);
+    if (users != null) {
+      for (Consumer<Response> listener : users) {
+
+        listener.accept(response);
+      }
+    }
+  }
+
+  //  public void setOnMessageReceived(Consumer<Packet> observer) {
+  //    for (PacketType packetType : PacketType.values()) {
+  //      subscribe(packetType, observer);
+  //    }
+  //  }
+
+  public void subscribe(PacketType packetType, Consumer<Response> observer) {
+    observersMap.computeIfAbsent(packetType, k -> new ArrayList<>()).add(observer);
+  }
+
+  public <T extends Response> void subscribe(
+      PacketType packetType, Class<T> responseType, Consumer<T> observer) {
+    subscribe(
+        packetType,
+        response -> {
+          if (responseType.isInstance(response)) {
+            observer.accept(responseType.cast(response));
+          } else {
+            logger.warn(
+                "[CLIENT] Unexpected response type for {}: {}",
+                packetType,
+                response == null ? "null" : response.getClass().getName());
+          }
+        });
+  }
+
+  public void unsubscribe(PacketType packetType, Consumer<Response> observer) {
+    List<Consumer<Response>> users = observersMap.get(packetType);
+    if (users != null) {
+      users.remove(observer);
+    }
   }
 
   public User getCurrentUser() {

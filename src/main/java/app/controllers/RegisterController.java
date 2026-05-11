@@ -29,8 +29,6 @@ public class RegisterController {
   @FXML private TextField txtAccount;
   @FXML private PasswordField txtPassword;
 
-  private RegisterResponse response;
-
   @FXML
   private void initialize() {
     // Load background image giống login
@@ -53,18 +51,17 @@ public class RegisterController {
     }
 
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
+        .subscribe(
+            PacketType.REGISTER,
+            RegisterResponse.class,
+            response ->
                 Platform.runLater(
                     () -> {
-                      if (packet.getType() == PacketType.REGISTER) {
-                        response = JsonUtil.fromJson(packet.getData(), RegisterResponse.class);
-                        if (response.success()) {
-                          AlertUtils.showInfo("Thành công", response.message());
-                          NavigationManager.getInstance().navigateTo(View.LOGIN);
-                        } else {
-                          AlertUtils.showError("Thất bại", response.message());
-                        }
+                      if (response.success()) {
+                        AlertUtils.showInfo("Thành công", response.message());
+                        NavigationManager.getInstance().navigateTo(View.LOGIN);
+                      } else {
+                        AlertUtils.showError("Thất bại", response.message());
                       }
                     }));
   }

@@ -6,11 +6,13 @@ import app.enums.AuctionStatus;
 import app.enums.View;
 import app.models.Auction;
 import app.models.DataStore;
+import app.models.Packet;
 import app.network.Client;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
@@ -36,6 +38,8 @@ public class FirstScene {
   @FXML private Stage stage;
   private Scene scene;
   Logger logger = LoggerFactory.getLogger(FirstScene.class);
+
+  private Consumer<Packet> onUpdate;
 
   @FXML private TextField searchField;
   @FXML private ListView<Auction> sessionListView;
@@ -83,10 +87,14 @@ public class FirstScene {
 
     // Timeline cập nhật tự động mỗi 5 giây
     if (sessionListView != null) {
-      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(5), e -> requestAuctions()));
+      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> requestAuctions()));
       timeline.setCycleCount(Timeline.INDEFINITE);
       timeline.play();
     }
+  }
+
+  void setOnUpdate() {
+    requestAuctions();
   }
 
   private void requestAuctions() {

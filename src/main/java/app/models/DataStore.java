@@ -5,16 +5,19 @@ import app.data.AuctionsRequest;
 import app.data.AuctionsResponse;
 import app.enums.PacketType;
 import app.network.Client;
+import app.observer.UpdateObserver;
 import app.utils.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DataStore {
   static Logger logger = LoggerFactory.getLogger(DataStore.class);
+  public List<Consumer<UpdateObserver>> observers = new ArrayList<>();
   public List<AuctionSummary> sessions;
   public User currentUser; // Track the logged-in user
   public Auction currentAuction;
@@ -45,17 +48,14 @@ public class DataStore {
 
   void loadSessions() {
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
+        .subscribe(
+            PacketType.FETCH_AUCTIONS,
+            AuctionsResponse.class,
+            response ->
                 Platform.runLater(
                     () -> {
-                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
-                        AuctionsResponse response =
-                            JsonUtil.fromJson(packet.getData(), AuctionsResponse.class);
-                        logger.info("AuctionsResponse received11111111");
-                        if (response.success() && response.auctions() != null) {
-                          sessions = response.auctions();
-                        }
+                      if (response.success() && response.auctions() != null) {
+                        sessions = response.auctions();
                       }
                     }));
   }

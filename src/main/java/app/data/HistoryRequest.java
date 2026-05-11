@@ -1,3 +1,3 @@
 package app.data;
 
-public record HistoryRequest(int userId) {}
+public record HistoryRequest(int userId) implements Request {}

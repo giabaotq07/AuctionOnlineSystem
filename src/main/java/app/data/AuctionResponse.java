@@ -1,3 +1,3 @@
 package app.data;
 
-public record AuctionResponse() {}
+public record AuctionResponse() implements Response {}

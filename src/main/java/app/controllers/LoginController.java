@@ -26,7 +26,6 @@ public class LoginController {
   @FXML private Button loginButton;
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
-  private LoginResponse response;
 
   @FXML
   private void initialize() {
@@ -42,14 +41,13 @@ public class LoginController {
             + "-fx-background-position: center center;"
             + "-fx-background-repeat: no-repeat;");
     Client.getInstance()
-        .setOnMessageReceived(
-            packet ->
+        .subscribe(
+            PacketType.LOGIN,
+            LoginResponse.class,
+            response ->
                 Platform.runLater(
                     () -> {
                       loginButton.setDisable(false);
-                      if (packet.getType() == PacketType.LOGIN) {
-                        response = JsonUtil.fromJson(packet.getData(), LoginResponse.class);
-                      }
                       if (response.success()) {
                         User user = UserFactory.createUser(response.user());
                         Client.getInstance().setCurrentUser(user);

@@ -1,6 +1,8 @@
 package app.dao;
 
 import app.config.DatabaseConnection;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Objects;
@@ -60,7 +62,13 @@ public abstract class BaseDAOTest {
   private void createDatabaseIfNotExists() {
     logger.info("[DB] Ensuring test database exists...");
 
-    try (Connection conn = java.sql.DriverManager.getConnection(DB_HOST, USER, PASS);
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(DB_HOST);
+    config.setUsername(USER);
+    config.setPassword(PASS);
+
+    try (HikariDataSource dataSource = new HikariDataSource(config);
+        Connection conn = dataSource.getConnection();
         Statement stmt = conn.createStatement()) {
 
       stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + TEST_DB);

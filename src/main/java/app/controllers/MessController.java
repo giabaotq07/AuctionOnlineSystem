@@ -41,13 +41,12 @@ public class MessController {
 
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
 
-    client.setOnMessageReceived(
-        packet -> {
-          if (packet.getType() == PacketType.CHAT) {
-            ChatResponse chatResponse = JsonUtil.fromJson(packet.getData(), ChatResponse.class);
-            String sender = chatResponse.sender();
-            Platform.runLater(() -> addBubble(sender, chatResponse.content(), false));
-          }
+    client.subscribe(
+        PacketType.CHAT,
+        ChatResponse.class,
+        response -> {
+          String sender = response.sender();
+          Platform.runLater(() -> addBubble(sender, response.content(), false));
         });
   }
 

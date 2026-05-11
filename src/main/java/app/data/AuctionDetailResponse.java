@@ -1,3 +1,4 @@
 package app.data;
 
-public record AuctionDetailResponse(boolean success, String message, AuctionDetail detail) {}
+public record AuctionDetailResponse(boolean success, String message, AuctionDetail detail)
+    implements Response {}
