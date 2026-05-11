@@ -16,14 +16,16 @@ import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Packet;
 import app.service.AuctionService;
+import app.service.BidObserverService;
 import app.service.BidService;
 import app.service.ItemService;
+import app.utils.AlertUtils;
 import app.utils.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PlaceBidCommand implements Command {
-  private final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
+  private Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final AuctionService auctionService;
   private final BidService bidService;
   private final ItemService itemService;
@@ -72,12 +74,15 @@ public class PlaceBidCommand implements Command {
     BidTransaction highestBidTransaction;
     bidderId = 0;
     long amount = itemService.getById(session.getItemId()).orElse(null).getStartingPrice();
+    String itemName = itemService.getById(session.getItemId()).orElse(null).getName();
+    String bidderName = "";
     if (bidService.getHighestBid(session.getId()).isPresent()) {
       highestBidTransaction = bidService.getHighestBid(session.getId()).get();
       bidderId = highestBidTransaction.getBidderId();
       amount = highestBidTransaction.getAmount();
+      bidderName = highestBidTransaction.getBidderName();
     }
-    PlaceBidResponse response = new PlaceBidResponse(bidderId, amount);
+    PlaceBidResponse response = new PlaceBidResponse(bidderId, amount, itemName, bidderName);
     Packet packetResponse = new Packet(PacketType.PLACE_BID, JsonUtil.toJson(response));
     clientHandler.sendMessage(packetResponse);
     Server.broadcast(packetResponse, clientHandler.getUser().getId());

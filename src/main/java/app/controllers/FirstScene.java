@@ -1,34 +1,37 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dao.AuctionDAO;
-import app.dao.AutoBidDAO;
-import app.dao.BidDAO;
-import app.dao.ItemDAO;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlAutoBidDAO;
-import app.dao.impl.MySqlBidDAO;
-import app.dao.impl.MySqlItemDAO;
+import app.data.AuctionSummary;
+import app.data.AuctionsRequest;
+import app.data.AuctionsResponse;
 import app.enums.AuctionStatus;
+import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
 import app.models.DataStore;
-import app.models.Item;
+import app.models.Packet;
 import app.network.Client;
-import app.service.AuctionService;
-import app.service.BidService;
-import app.service.ItemService;
 import app.utils.AlertUtils;
+import app.utils.JsonUtil;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -46,14 +49,8 @@ public class FirstScene {
 
   private Timeline autoScroll;
 
-  // ✅ Thêm BidService để lấy highest bid từ database
-  private final AuctionDAO auctionDAO = new MySqlAuctionDAO();
-  private final BidDAO bidDAO = new MySqlBidDAO();
-  private final ItemDAO itemDAO = new MySqlItemDAO();
-  private final AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-  private final BidService bidService = new BidService(bidDAO, autoBidDAO, auctionDAO);
-  private final ItemService itemService = new ItemService(itemDAO);
-  private final AuctionService auctionService = new AuctionService(auctionDAO, bidDAO);
+  private final Client client = Client.getInstance();
+  private final List<AuctionSummary> summaries = new ArrayList<>();
 
   // Hằng số kích thước Card
   private static final double CARD_WIDTH = 280;
@@ -75,8 +72,27 @@ public class FirstScene {
               : "Đăng nhập / Đăng ký");
     }
 
-    // Nạp dữ liệu lần đầu từ DAO vào các HBox
-    refreshAllContainers();
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.FETCH_AUCTIONS) {
+                        AuctionsResponse response =
+                            JsonUtil.fromJson(packet.getData(), AuctionsResponse.class);
+                        if (response.success() && response.auctions() != null) {
+                          summaries.clear();
+                          summaries.addAll(response.auctions());
+                          DataStore.sessions.clear();
+                          for (AuctionSummary summary : summaries) {
+                            DataStore.sessions.add(summary.auction());
+                          }
+                          updateListView();
+                        }
+                      }
+                    }));
+
+    requestAuctions();
 
     // Hiển thị lên giao diện thông qua ScrollBox
     if (activeAuctionsPane != null) {
@@ -89,25 +105,7 @@ public class FirstScene {
 
     // Timeline cập nhật tự động mỗi 5 giây
     if (sessionListView != null) {
-      Timeline timeline =
-          new Timeline(
-              new KeyFrame(
-                  Duration.seconds(5),
-                  e -> {
-                    // 1. Lấy dữ liệu mới nhất từ Database
-                    List<Auction> latestSessions = auctionDAO.findAll();
-
-                    // 2. Cập nhật ListView
-                    String key = (searchField != null) ? searchField.getText() : "";
-                    if (key == null || key.isBlank()) {
-                      sessionListView.getItems().setAll(latestSessions);
-                    } else {
-                      searchSessions(key);
-                    }
-
-                    // 3. Cập nhật nội dung các HBox (Giữ nguyên instance HBox để không lỗi Scroll)
-                    refreshAllContainers();
-                  }));
+      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(5), e -> requestAuctions()));
       timeline.setCycleCount(Timeline.INDEFINITE);
       timeline.play();
     }
@@ -117,13 +115,26 @@ public class FirstScene {
     }
   }
 
-  // Hàm bổ trợ để làm mới nội dung bên trong HBox mà không thay đổi Instance
-  private void refreshAllContainers() {
-    HBox activeTemp = createContainer();
-    activeBox.getChildren().setAll(activeTemp.getChildren());
+  private void requestAuctions() {
+    try {
+      Client.getInstance()
+          .sendRequest(
+              new Packet(PacketType.FETCH_AUCTIONS, JsonUtil.toJson(new AuctionsRequest())));
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
 
-    HBox completedTemp = populateCompletedAuctions();
-    completedBox.getChildren().setAll(completedTemp.getChildren());
+  private void updateListView() {
+    if (sessionListView == null) {
+      return;
+    }
+    String key = (searchField != null) ? searchField.getText() : "";
+    if (key == null || key.isBlank()) {
+      sessionListView.getItems().setAll(DataStore.sessions);
+    } else {
+      searchSessions(key);
+    }
   }
 
   private void setupHBox(HBox hbox) {
@@ -136,11 +147,11 @@ public class FirstScene {
   private HBox createContainer() {
     HBox container = new HBox();
     setupHBox(container);
-    List<Auction> sessions = auctionService.getAllAuctions();
 
-    for (Auction session : sessions) {
+    for (AuctionSummary summary : summaries) {
+      Auction session = summary.auction();
       if (session.getStatus() == AuctionStatus.RUNNING) {
-        container.getChildren().add(createAuctionCard(session));
+        container.getChildren().add(createAuctionCard(summary));
       }
     }
     return container;
@@ -151,11 +162,11 @@ public class FirstScene {
   private HBox populateCompletedAuctions() {
     HBox container = new HBox();
     setupHBox(container);
-    List<Auction> sessions = auctionService.getAllAuctions();
 
-    for (Auction session : sessions) {
+    for (AuctionSummary summary : summaries) {
+      Auction session = summary.auction();
       if (session.getStatus() == AuctionStatus.FINISHED) {
-        container.getChildren().add(createAuctionCard(session));
+        container.getChildren().add(createAuctionCard(summary));
       }
     }
     return container;
@@ -205,7 +216,8 @@ public class FirstScene {
 
   // ================= TẠO CARD (GIỮ NGUYÊN LOGIC) =================
 
-  private VBox createAuctionCard(Auction session) {
+  private VBox createAuctionCard(AuctionSummary summary) {
+    Auction session = summary.auction();
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -224,17 +236,11 @@ public class FirstScene {
     imgLabel.setStyle("-fx-text-fill: #aaa;");
     imagePane.getChildren().add(imgLabel);
 
-    Item item = itemService.getById(session.getItemId()).orElse(null);
-    Label titleLabel = new Label(item.getName());
+    Label titleLabel = new Label(summary.itemName());
     titleLabel.setWrapText(true);
     titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: white;");
-    long highestBid = 0;
-    long displayPrice;
-    // ✅ Lấy giá cao nhất từ database thay vì in-memory
-    if (bidService.getHighestBid(session.getId()).isPresent()) {
-      highestBid = bidService.getHighestBid(session.getId()).get().getAmount();
-    }
-    displayPrice = (highestBid > 0) ? highestBid : item.getStartingPrice();
+
+    long displayPrice = summary.currentPrice();
     Label priceLabel = new Label("Giá hiện tại: " + displayPrice + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
 
@@ -262,19 +268,17 @@ public class FirstScene {
 
   private void searchSessions(String keyword) {
     sessionListView.getItems().clear();
-    List<Auction> allFromDb = auctionService.getAllAuctions();
 
     if (keyword == null || keyword.isBlank()) {
-      sessionListView.getItems().setAll(allFromDb);
+      sessionListView.getItems().setAll(DataStore.sessions);
       return;
     }
 
     String key = keyword.trim().toLowerCase();
-    for (Auction s : allFromDb) {
-      Item item = itemService.getById(s.getItemId()).orElse(null);
-      String itemName = item.getName() != null ? item.getName().toLowerCase() : "";
+    for (AuctionSummary summary : summaries) {
+      String itemName = summary.itemName() != null ? summary.itemName().toLowerCase() : "";
       if (itemName.contains(key)) {
-        sessionListView.getItems().add(s);
+        sessionListView.getItems().add(summary.auction());
       }
     }
   }
@@ -283,9 +287,7 @@ public class FirstScene {
 
   @FXML
   public void handleReload(ActionEvent event) {
-    refreshAllContainers();
-    String key = (searchField != null) ? searchField.getText() : "";
-    searchSessions(key);
+    requestAuctions();
   }
 
   private void openLiveWithSession(Auction session, javafx.event.Event event) throws IOException {

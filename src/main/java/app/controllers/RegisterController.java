@@ -1,16 +1,18 @@
 package app.controllers;
 
 import app.config.NavigationManager;
-import app.dao.UserDAO;
-import app.dao.impl.MySqlUserDAO;
+import app.data.RegisterRequest;
+import app.data.RegisterResponse;
+import app.enums.PacketType;
 import app.enums.UserRole;
 import app.enums.View;
-import app.exception.DatabaseException;
-import app.exception.ServiceException;
-import app.models.*;
-import app.service.UserService;
+import app.models.Packet;
+import app.network.Client;
 import app.utils.AlertUtils;
+import app.utils.JsonUtil;
+import java.io.IOException;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -27,8 +29,7 @@ public class RegisterController {
   @FXML private TextField txtAccount;
   @FXML private PasswordField txtPassword;
 
-  private final UserDAO userDAO = new MySqlUserDAO();
-  private final UserService userService = new UserService(userDAO);
+  private RegisterResponse response;
 
   @FXML
   private void initialize() {
@@ -50,6 +51,22 @@ public class RegisterController {
     } catch (Exception e) {
       System.err.println("Không load được background: " + e.getMessage());
     }
+
+    Client.getInstance()
+        .setOnMessageReceived(
+            packet ->
+                Platform.runLater(
+                    () -> {
+                      if (packet.getType() == PacketType.REGISTER) {
+                        response = JsonUtil.fromJson(packet.getData(), RegisterResponse.class);
+                        if (response.success()) {
+                          AlertUtils.showInfo("Thành công", response.message());
+                          NavigationManager.getInstance().navigateTo(View.LOGIN);
+                        } else {
+                          AlertUtils.showError("Thất bại", response.message());
+                        }
+                      }
+                    }));
   }
 
   @FXML
@@ -68,14 +85,11 @@ public class RegisterController {
       return;
     }
 
-    User newUser =
-        UserFactory.createUser(name, new Account(account, password), new Wallet(), UserRole.BIDDER);
+    RegisterRequest request = new RegisterRequest(name, account, password, UserRole.BIDDER);
     try {
-      newUser = userService.register(newUser);
-      AlertUtils.showInfo("Thành công", "Đăng ký thành công! ID tài khoản: " + newUser.getId());
-    } catch (DatabaseException | ServiceException e) {
-      AlertUtils.showError(
-          "Thất bại", "Tài khoản đã tồn tại hoặc có lỗi xảy ra (kiểm tra Console).");
+      Client.getInstance().sendRequest(new Packet(PacketType.REGISTER, JsonUtil.toJson(request)));
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
   }
 

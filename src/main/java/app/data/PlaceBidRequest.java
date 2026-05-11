@@ -1,3 +1,6 @@
 package app.data;
 
-public record PlaceBidRequest(int sessionId, int bidderId, long bidAmount, long currentPrice) {}
+import java.io.Serializable;
+
+public record PlaceBidRequest(int sessionId, int bidderId, long bidAmount, long currentPrice)
+    implements Serializable {}
