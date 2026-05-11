@@ -31,7 +31,7 @@ public class FetchAuctionsCommand implements Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     logger.info("In FetchAuctionsCommand");
-    packet.getData(AuctionsRequest.class);
+//    packet.getData(AuctionsRequest.class);
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();

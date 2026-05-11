@@ -84,5 +84,6 @@ public class PlaceBidCommand implements Command {
     PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
     clientHandler.sendMessage(packetResponse);
     Server.broadcast(packetResponse, clientHandler.getUser().getId());
+    new FetchAuctionsCommand().execute(clientHandler, null);
   }
 }

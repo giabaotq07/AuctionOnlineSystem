@@ -1,9 +1,11 @@
 package app.network;
 
+import app.data.AuctionsRequest;
 import app.data.Response;
 import app.enums.PacketType;
 import app.exception.AppException;
 import app.exception.ConnectException;
+import app.models.DataStore;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
@@ -59,6 +61,14 @@ public class Client {
         try {
           PacketRes packet = JsonUtil.fromJson(line, PacketRes.class);
           Response response = packet.getData();
+          switch (packet.getType()) {
+            case PLACE_BID:
+              Client.getInstance()
+                  .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
+            case CREATE_AUCTION:
+              Client.getInstance()
+                  .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
+          }
           if (response != null) {
             notify(packet.getType(), response);
           } else {

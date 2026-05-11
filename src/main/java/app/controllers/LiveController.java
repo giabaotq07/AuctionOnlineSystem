@@ -182,10 +182,12 @@ public class LiveController implements AuctionObserver {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
-    long bidAmount;
+    try {
+      long bidAmount;
     long currentPrice;
     bidAmount = Long.parseLong(bidAmountField.getText());
     currentPrice = Long.parseLong(currentPriceLabel.getText());
+
     PlaceBidRequest request =
         new PlaceBidRequest(
             session.getId(),
@@ -193,6 +195,9 @@ public class LiveController implements AuctionObserver {
             bidAmount,
             currentPrice);
     Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "Lỗi format số");
+    }
   }
 
   private void startCountdownTimer(LocalDateTime endTime) {

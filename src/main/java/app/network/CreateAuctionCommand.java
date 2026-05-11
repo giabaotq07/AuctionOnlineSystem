@@ -58,7 +58,9 @@ public class CreateAuctionCommand implements Command {
           new AuctionSummary(session, item.getName(), session.getHighestBid());
       CreateAuctionResponse response =
           new CreateAuctionResponse(true, "Tạo phiên thành công", auctionSummary);
-      clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
+      PacketRes packetRes = PacketRes.of(PacketType.CREATE_AUCTION, response);
+      clientHandler.sendMessage(packetRes);
+      Server.broadcast(packetRes, clientHandler.getUser().getId());
     } catch (Exception e) {
 
       e.printStackTrace();
@@ -66,5 +68,6 @@ public class CreateAuctionCommand implements Command {
           new CreateAuctionResponse(false, "Tạo phiên thất bại: " + e.getMessage(), null);
       clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
     }
+    new FetchAuctionsCommand().execute(clientHandler, null);
   }
 }
