@@ -8,7 +8,6 @@ public enum AuctionStatus {
   PAID(4),
   CANCELLED(5),
   ;
-
   private final int state;
 
   AuctionStatus(int state) {

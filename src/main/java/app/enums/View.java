@@ -11,7 +11,6 @@ public enum View {
   MESSAGE("/app/views/mess_chat.fxml"),
   USER_PROFILE("/app/views/user_profile.fxml"),
   ;
-
   private final String fxmlPath;
 
   View(String fxmlPath) {

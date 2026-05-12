@@ -4,17 +4,17 @@ import app.config.DatabaseConnection;
 import app.dao.AuctionDAO;
 import app.dao.BidDAO;
 import app.dao.ItemDAO;
-import app.data.AuctionDetail;
-import app.data.AuctionResultResponse;
-import app.data.AuctionSummary;
+import app.data.*;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.Auction;
+import app.models.BidTransaction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -107,13 +107,11 @@ public class AuctionService {
         itemDAO
             .findById(auction.getItemId())
             .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm"));
-
     long currentPrice = item.getStartingPrice();
     java.util.Optional<app.models.BidTransaction> highest = bidDAO.findHighestBid(auction.getId());
     if (highest.isPresent()) {
       currentPrice = highest.get().getAmount();
     }
-
     return new AuctionDetail(
         auction.getId(),
         item.getName(),
@@ -126,33 +124,31 @@ public class AuctionService {
 
   public AuctionResultResponse getAuctionResult(int auctionId) {
     handleCompletion(auctionId);
-    java.util.Optional<app.models.BidTransaction> highest = bidDAO.findHighestBid(auctionId);
-    String winner = "chưa có người thắng";
+    Optional<BidTransaction> highest = bidDAO.findHighestBid(auctionId);
     long price = 0;
+    String winnerName = "chưa có người thắng";
+    int winnerId = 0;
     if (highest.isPresent()) {
-      winner = highest.get().getBidderName();
+      winnerName = highest.get().getBidderName();
+      winnerId = highest.get().getBidderId();
       price = highest.get().getAmount();
     }
-    return new AuctionResultResponse(true, "OK", winner, price);
+    ProfileData winner = new ProfileData(winnerId, winnerName);
+    return new AuctionResultResponse(true, auctionId, winner, price);
   }
 
   public void handleCompletion(int auctionId) {
     runInTransaction(
         conn -> {
           auctionDAO.lockRow(conn, auctionId);
-
           Auction auction =
               auctionDAO
                   .findById(conn, auctionId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
-
           if (!auction.isExpired()) return;
-
           AuctionStatus s = auction.getStatus();
           if (s != AuctionStatus.OPEN && s != AuctionStatus.RUNNING) return;
-
           auction.setStatus(AuctionStatus.FINISHED);
-
           bidDAO
               .findHighestBid(conn, auctionId)
               .ifPresentOrElse(
@@ -165,7 +161,6 @@ public class AuctionService {
                         bid.getAmount());
                   },
                   () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
-
           auctionDAO.update(conn, auction);
         });
   }

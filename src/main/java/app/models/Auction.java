@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Auction implements AuctionSubject {
-
   private int id;
   private final int itemId;
   private final int sellerId;
@@ -119,7 +118,6 @@ public class Auction implements AuctionSubject {
   }
 
   // setter and getter
-
   public int getId() {
     return id;
   }
@@ -175,7 +173,6 @@ public class Auction implements AuctionSubject {
   //  public void setDepositAmount(long depositAmount) {
   //    this.depositAmount = depositAmount;
   //  }
-
   public long getHighestBid() {
     return highestBid;
   }

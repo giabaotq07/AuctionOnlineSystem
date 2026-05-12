@@ -22,7 +22,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
 public class RegisterController {
-
   @FXML private AnchorPane rootPane;
   @FXML private Label lblLogin;
   @FXML private TextField txtName;
@@ -50,25 +49,21 @@ public class RegisterController {
     } catch (Exception e) {
       System.err.println("Không load được background: " + e.getMessage());
     }
-
     registerHandler =
         (RegisterResponse response) -> {
           Platform.runLater(
               () -> {
                 if (response.success()) {
                   AlertUtils.showInfo("Thành công", response.message());
-
                   if (registerHandler != null) {
                     Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
                   }
-
                   NavigationManager.getInstance().navigateTo(View.LOGIN);
                 } else {
                   AlertUtils.showError("Thất bại", response.message());
                 }
               });
         };
-
     Client.getInstance().subscribe(PacketType.REGISTER, registerHandler);
   }
 
@@ -77,7 +72,6 @@ public class RegisterController {
     String name = txtName.getText();
     String account = txtAccount.getText();
     String password = txtPassword.getText();
-
     if (name == null
         || name.trim().isEmpty()
         || account == null
@@ -87,7 +81,6 @@ public class RegisterController {
       AlertUtils.showError("Lỗi đăng ký", "Vui lòng nhập đầy đủ Name, Account và Password!");
       return;
     }
-
     RegisterRequest request = new RegisterRequest(name, account, password, UserRole.BIDDER);
     try {
       Client.getInstance().sendRequest(PacketReq.of(PacketType.REGISTER, request));

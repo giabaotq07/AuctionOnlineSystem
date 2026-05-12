@@ -27,14 +27,11 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 public class MyHistoryController {
-
   // Khớp fx:id từ file FXML của ông
   @FXML private ScrollPane historyScrollPane;
   @FXML private HBox historyContainerPane;
-
   private static final double CARD_WIDTH = 280;
   private static final double SPACING = 20; // Khớp với spacing="20" trong FXML
-
   private final Client client = Client.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
   private User currentUser = client.getCurrentUser();
@@ -54,7 +51,6 @@ public class MyHistoryController {
                   }
                 });
     Client.getInstance().subscribe(PacketType.FETCH_HISTORY, historyHandler);
-
     requestHistory();
   }
 
@@ -86,34 +82,28 @@ public class MyHistoryController {
     vbox.setMaxWidth(CARD_WIDTH);
     vbox.setStyle(
         "-fx-background-color: #1a1f35; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
-
     Label badge =
         new Label(currentUser.getId() == session.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
     badge.setStyle(
         currentUser.getId() == session.getSellerId()
             ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
             : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
-
     Label titleLabel = new Label(summary.itemName());
     titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
     titleLabel.setWrapText(true);
-
     long displayPrice = summary.currentPrice();
     Label priceLabel = new Label("Giá: " + displayPrice + "đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63; -fx-font-weight: bold;");
-
     Button btnDetail = new Button("Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white; -fx-cursor: hand;");
     btnDetail.setOnAction(e -> handleGoToLive(session));
-
     vbox.getChildren().addAll(badge, titleLabel, priceLabel, btnDetail);
     return vbox;
   }
 
   private void startAutoScroll() {
     if (historyScrollPane == null || historyContainerPane == null) return;
-
     Timeline scrollTimeline =
         new Timeline(
             new KeyFrame(
@@ -122,12 +112,9 @@ public class MyHistoryController {
                   double contentWidth = historyContainerPane.getWidth();
                   double viewWidth = historyScrollPane.getViewportBounds().getWidth();
                   double maxScroll = contentWidth - viewWidth;
-
                   if (maxScroll <= 0) return;
-
                   double step = CARD_WIDTH + SPACING;
                   double nextPixel = (historyScrollPane.getHvalue() * maxScroll) + step;
-
                   if (nextPixel >= maxScroll + 10) { // Thêm tí đệm để reset mượt
                     nextPixel = 0;
                   }
@@ -135,7 +122,6 @@ public class MyHistoryController {
                 }));
     scrollTimeline.setCycleCount(Timeline.INDEFINITE);
     scrollTimeline.play();
-
     historyScrollPane.setOnMouseEntered(ev -> scrollTimeline.pause());
     historyScrollPane.setOnMouseExited(ev -> scrollTimeline.play());
   }

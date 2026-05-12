@@ -29,12 +29,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class LiveController implements AuctionObserver {
+public class LiveController implements AuctionObserver, Cleanable {
+  private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
   private Auction session;
+  private long currentPrice;
   private AuctionDetail auctionDetail;
-  private PlaceBidResponse placeBidResponse;
-  private AuctionResultResponse auctionResultResponse;
   private PacketListener<PlaceBidResponse> placeBidHandler;
   private PacketListener<AuctionDetailResponse> auctionDetailHandler;
   private PacketListener<AuctionResultResponse> auctionResultHandler;
@@ -47,54 +49,23 @@ public class LiveController implements AuctionObserver {
   @FXML private TextField bidAmountField;
   @FXML private TextArea description;
   private ScheduledExecutorService scheduler;
+  private boolean resultRequested = false;
+  private boolean auctionClosedShown = false;
+  private boolean cleanedUp = false;
 
   @FXML
   public void initialize() {
-
-    placeBidHandler =
-        (PlaceBidResponse response) ->
-            Platform.runLater(
-                () -> {
-                  placeBidResponse = response;
-                  notifyUpdateBid();
-                });
-
+    placeBidHandler = response -> Platform.runLater(() -> handleBidResponse(response));
     Client.getInstance().subscribe(PacketType.PLACE_BID, placeBidHandler);
-
-    auctionDetailHandler =
-        (AuctionDetailResponse response) ->
-            Platform.runLater(
-                () -> {
-                  if (response.success() && response.detail() != null) {
-
-                    auctionDetail = response.detail();
-
-                    applyDetail(auctionDetail);
-                  }
-                });
-
+    auctionDetailHandler = response -> Platform.runLater(() -> handleDetailResponse(response));
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
-
-    auctionResultHandler =
-        (AuctionResultResponse response) ->
-            Platform.runLater(
-                () -> {
-                  auctionResultResponse = response;
-
-                  if (response.success()) {
-
-                    onAuctionClosed(
-                        auctionDetail != null ? auctionDetail.itemName() : "",
-                        response.winnerName(),
-                        response.finalPrice());
-                  }
-                });
-
+    auctionResultHandler = response -> Platform.runLater(() -> handleAuctionResult(response));
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
   }
 
   public void setSession(Auction session) {
     this.session = session;
+    session.registerObserver(this);
     try {
       AuctionDetailRequest request = new AuctionDetailRequest(session.getId());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_DETAIL, request));
@@ -103,22 +74,53 @@ public class LiveController implements AuctionObserver {
     }
   }
 
+  private void handleDetailResponse(AuctionDetailResponse response) {
+    if (session == null) {
+      return;
+    }
+    if (!response.success()
+        || response.detail() == null
+        || response.detail().auctionId() != session.getId()) {
+      return;
+    }
+    auctionDetail = response.detail();
+    applyDetail(auctionDetail);
+  }
+
+  private void handleBidResponse(PlaceBidResponse response) {
+    if (session == null || response.auctionId() != session.getId()) {
+      return;
+    }
+    currentPrice = Math.max(currentPrice, response.highestBidAmount());
+    currentPriceLabel.setText(formatCurrency(currentPrice));
+    bidAmountField.clear();
+    if (Client.getInstance().getCurrentUser() != null
+        && response.bidderId() == Client.getInstance().getCurrentUser().getId()) {
+      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
+    }
+  }
+
+  private void handleAuctionResult(AuctionResultResponse response) {
+    if (session == null) {
+      return;
+    }
+    if (!response.success() || response.auctionId() != session.getId()) {
+      return;
+    }
+    onAuctionClosed(
+        auctionDetail != null ? auctionDetail.itemName() : "",
+        response.winner().name(),
+        response.finalPrice());
+  }
+
   private void applyDetail(AuctionDetail detail) {
-    if (itemNameLabel != null) itemNameLabel.setText(detail.itemName());
-    if (startPriceLabel != null) startPriceLabel.setText("" + detail.startingPrice());
-    if (stepPriceLabel != null) stepPriceLabel.setText("" + detail.stepPrice());
-
-    if (currentPriceLabel != null) {
-      currentPriceLabel.setText("" + detail.currentPrice());
-    }
-
-    if (depositLabel != null)
-      depositLabel.setText(String.format("%,.0f đ", detail.startingPrice() * 0.2));
-
-    if (description != null) {
-      description.setText(detail.description());
-    }
-
+    itemNameLabel.setText(detail.itemName());
+    startPriceLabel.setText(formatCurrency(detail.startingPrice()));
+    stepPriceLabel.setText(formatCurrency(detail.stepPrice()));
+    currentPrice = Math.max(currentPrice, detail.currentPrice());
+    currentPriceLabel.setText(formatCurrency(currentPrice));
+    depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
+    description.setText(detail.description());
     startCountdownTimer(detail.endTime());
   }
 
@@ -126,9 +128,8 @@ public class LiveController implements AuctionObserver {
   public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
     Platform.runLater(
         () -> {
-          if (currentPriceLabel != null) {
-            currentPriceLabel.setText(newPrice + " đ");
-          }
+          currentPrice = Math.max(currentPrice, newPrice);
+          currentPriceLabel.setText(formatCurrency(currentPrice));
         });
   }
 
@@ -136,53 +137,50 @@ public class LiveController implements AuctionObserver {
   public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
     Platform.runLater(
         () -> {
+          if (auctionClosedShown) {
+            return;
+          }
+          auctionClosedShown = true;
           AlertUtils.showInfo(
               "Kết thúc",
               "Phiên đấu giá đã kết thúc. Người thắng: "
                   + winnerName
                   + " với giá: "
-                  + finalPrice
-                  + " đ");
+                  + formatCurrency(finalPrice));
           timeLabel.setText("Phiên đấu giá đã kết thúc!");
-          timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
+          timeLabel.setStyle(
+              "-fx-text-fill: red;" + "-fx-font-weight: bold;" + "-fx-font-size: 14px;");
           if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
+            scheduler.shutdownNow();
           }
         });
   }
 
-  public void notifyUpdateBid() {
-    if (placeBidResponse == null) {
-      return;
-    }
-    int bidderId = placeBidResponse.bidderId();
-    long highestBid = placeBidResponse.highestBidAmount();
-    if (bidderId == Client.getInstance().getCurrentUser().getId()) {
-      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
-    }
-    currentPriceLabel.setText("" + highestBid);
-    bidAmountField.clear();
-  }
-
   @FXML
   public void handlePlaceBid(ActionEvent event) throws IOException {
-    if (!Client.getInstance().connected()) {
+    if (!Client.getInstance().isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
-    if (session == null || !session.isRunning()) {
+    if (session == null) {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
-
     if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
     long bidAmount;
-    long currentPrice;
-    bidAmount = Long.parseLong(bidAmountField.getText());
-    currentPrice = Long.parseLong(currentPriceLabel.getText());
+    try {
+      bidAmount = Long.parseLong(bidAmountField.getText().trim());
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "Giá đấu không hợp lệ");
+      return;
+    }
+    if (bidAmount <= currentPrice) {
+      AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
+      return;
+    }
     PlaceBidRequest request =
         new PlaceBidRequest(
             session.getId(),
@@ -202,13 +200,15 @@ public class LiveController implements AuctionObserver {
           Platform.runLater(
               () -> {
                 LocalDateTime now = LocalDateTime.now();
-
                 if (now.isAfter(endTime)) {
-                  scheduler.shutdown();
+                  if (!resultRequested) {
+                    resultRequested = true;
+                    requestAuctionResult();
+                  }
+                  scheduler.shutdownNow();
                   if (session != null && session.isRunning()) {
                     session.setStatus(AuctionStatus.FINISHED);
                   }
-                  requestAuctionResult();
                 } else {
                   updateCountdownLabel(now, endTime);
                 }
@@ -232,21 +232,31 @@ public class LiveController implements AuctionObserver {
   }
 
   private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime) {
-    long days = ChronoUnit.DAYS.between(now, endTime);
-    LocalDateTime temp = now.plusDays(days);
-    long hours = ChronoUnit.HOURS.between(temp, endTime);
-    temp = temp.plusHours(hours);
-    long minutes = ChronoUnit.MINUTES.between(temp, endTime);
-    temp = temp.plusMinutes(minutes);
-    long seconds = ChronoUnit.SECONDS.between(temp, endTime);
-
+    long totalSeconds = ChronoUnit.SECONDS.between(now, endTime);
+    long days = totalSeconds / 86400;
+    long hours = (totalSeconds % 86400) / 3600;
+    long minutes = (totalSeconds % 3600) / 60;
+    long seconds = totalSeconds % 60;
     timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
   }
 
-  @FXML
-  public void SwitchToUI(ActionEvent event) {
-    if (scheduler != null && !scheduler.isShutdown()) scheduler.shutdown();
-    if (session != null) session.removeObserver(this);
+  private String formatCurrency(long amount) {
+    return String.format("%,d đ", amount);
+  }
+
+  @Override
+  public void cleanup() {
+    if (cleanedUp) {
+      return;
+    }
+    cleanedUp = true;
+    logger.info("Cleaning up LiveController");
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdownNow();
+    }
+    if (session != null) {
+      session.removeObserver(this);
+    }
     if (placeBidHandler != null) {
       Client.getInstance().unsubscribe(PacketType.PLACE_BID, placeBidHandler);
     }
@@ -256,6 +266,15 @@ public class LiveController implements AuctionObserver {
     if (auctionResultHandler != null) {
       Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
     }
+    resultRequested = false;
+    auctionClosedShown = false;
+    auctionDetail = null;
+    session = null;
+  }
+
+  @FXML
+  public void SwitchToUI(ActionEvent event) {
+    cleanup();
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

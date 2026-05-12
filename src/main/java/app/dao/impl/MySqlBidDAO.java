@@ -120,7 +120,6 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   // ── Private helpers ───────────────────────────────────────────
-
   private List<BidTransaction> queryBids(Connection conn, String sql, int sessionId) {
     List<BidTransaction> bids = new ArrayList<>();
     try (PreparedStatement ps = conn.prepareStatement(sql)) {

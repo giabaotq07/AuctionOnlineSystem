@@ -3,10 +3,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
-
-.venv
-
-### IntelliJ IDEA ###
+  .venv
+  ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
@@ -14,11 +12,9 @@ target/
 *.iws
 *.iml
 *.ipr
-
-### Windows ###
+  ### Windows ###
 Thumbs.db
-
-### Logs ###
+  ### Logs ###
 *.log
 ### Eclipse ###
 .apt_generated
@@ -28,8 +24,7 @@ Thumbs.db
 .settings
 .springBeans
 .sts4-cache
-
-### NetBeans ###
+  ### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -38,11 +33,9 @@ Thumbs.db
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-### VS Code ###
+  ### VS Code ###
 .vscode/
-
-### Mac OS ###
+  ### Mac OS ###
 .DS_Store
 CLAUDE.md
 2026-Bài tập lớn.md

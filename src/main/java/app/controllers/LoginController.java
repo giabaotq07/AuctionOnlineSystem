@@ -33,7 +33,6 @@ public class LoginController {
     String url =
         Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
             .toExternalForm();
-
     rootPane.setStyle(
         "-fx-background-image: url('"
             + url

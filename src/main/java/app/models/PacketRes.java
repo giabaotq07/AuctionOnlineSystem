@@ -6,44 +6,98 @@ import com.google.gson.GsonBuilder;
 
 public class PacketRes {
   private static final Gson GSON = new GsonBuilder().create();
+  private final boolean success;
+  private final PacketType type;
+  private final String message;
+  private final String data;
 
-  private PacketType type;
-  private String data;
-
-  public PacketRes(PacketType type, String data) {
+  public PacketRes(boolean success, PacketType type, String message, String data) {
+    this.success = success;
     this.type = type;
+    this.message = message;
     this.data = data;
   }
 
-  // Return the packet type.
-  public PacketType getType() {
-    return type;
+  // =========================
+  // FACTORY METHODS
+  // =========================
+  public static PacketRes of(PacketType type, Object payload) {
+    return new PacketRes(true, type, "OK", toJson(payload));
   }
 
-  // Return the raw JSON payload.
-  public String getRawData() {
-    return data;
+  public static PacketRes of(boolean success, PacketType type, Object payload) {
+    return new PacketRes(success, type, success ? "OK" : "FAILED", toJson(payload));
   }
 
-  // Deserialize payload based on the mapped response class.
-  @SuppressWarnings("unchecked")
-  public <T> T getData() {
-    if (type == null || type.resClass == null || type.resClass == Void.class || data == null) {
+  public static PacketRes of(boolean success, PacketType type, String message, Object payload) {
+    return new PacketRes(success, type, message, toJson(payload));
+  }
+
+  public static PacketRes success(PacketType type, String message) {
+    return new PacketRes(true, type, message, null);
+  }
+
+  public static PacketRes error(String message) {
+    return new PacketRes(false, PacketType.ERROR, message, null);
+  }
+
+  public static PacketRes error(PacketType type, String message) {
+    return new PacketRes(false, type, message, null);
+  }
+
+  // =========================
+  // JSON
+  // =========================
+  private static String toJson(Object payload) {
+    if (payload == null) {
       return null;
     }
-    return (T) GSON.fromJson(data, type.resClass);
+    return GSON.toJson(payload);
   }
 
-  // Deserialize payload using the provided class.
   public <T> T getData(Class<T> clazz) {
-    if (clazz == null || data == null) {
+    if (clazz == null || data == null || data.isBlank()) {
       return null;
     }
     return GSON.fromJson(data, clazz);
   }
 
-  // Create a response packet from a payload object.
-  public static PacketRes of(PacketType type, Object payload) {
-    return new PacketRes(type, GSON.toJson(payload));
+  @SuppressWarnings("unchecked")
+  public <T> T getData() {
+    if (type == null
+        || type.resClass == null
+        || type.resClass == Void.class
+        || data == null
+        || data.isBlank()) {
+      return null;
+    }
+    return (T) GSON.fromJson(data, type.resClass);
+  }
+
+  // =========================
+  // GETTERS
+  // =========================
+  public boolean isSuccess() {
+    return success;
+  }
+
+  public PacketType getType() {
+    return type;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public String getRawData() {
+    return data;
+  }
+
+  // =========================
+  // UTILS
+  // =========================
+  @Override
+  public String toString() {
+    return GSON.toJson(this);
   }
 }

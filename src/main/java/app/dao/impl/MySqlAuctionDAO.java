@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
-
   private static final String TABLE = "auction_sessions";
-
   private static final String BASE_SELECT =
       """
               SELECT
@@ -56,7 +54,6 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   // ── Read methods ──────────────────────────────────────────────
-
   @Override
   public Optional<Auction> findById(int id) {
     return withConnection(conn -> findById(conn, id), "Lỗi kết nối khi tải phiên đấu giá.");
@@ -106,7 +103,6 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   // ── Write methods ─────────────────────────────────────────────
-
   @Override
   public Auction save(Auction auction) {
     return withConnection(conn -> save(conn, auction), "Lỗi kết nối khi tạo auction.");
@@ -178,7 +174,6 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   // ── Private helpers ───────────────────────────────────────────
-
   private Optional<Auction> findOne(Connection conn, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);

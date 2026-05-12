@@ -4,7 +4,6 @@ import app.exception.AppException;
 import com.google.gson.*;
 
 public class JsonUtil {
-
   private static final Gson GSON = new GsonBuilder().create();
 
   public static String toJson(Object obj) {

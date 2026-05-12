@@ -13,7 +13,6 @@ import java.util.function.Function;
  * management, error handling, and transaction patterns.
  */
 public abstract class BaseDAO {
-
   protected boolean executeUpdate(Connection conn, String TABLE, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);

@@ -49,12 +49,10 @@ public class ConnectServerController {
       connectButton.setDisable(true);
       connectButton.setText("Đang kết nối...");
     }
-
     if (statusLabel != null) {
       statusLabel.setText("Đang kết nối tới Server...");
       statusLabel.setStyle("-fx-text-fill: #FFA500;"); // Orange for connecting
     }
-
     // Connect asynchronously to prevent UI freezing
     Thread connectionThread =
         new Thread(
@@ -62,7 +60,6 @@ public class ConnectServerController {
               try {
                 // Try to establish connection with timeout
                 Client connectedClient = connectWithTimeout();
-
                 if (connectedClient != null) {
                   // Connection successful
                   Platform.runLater(
@@ -100,7 +97,6 @@ public class ConnectServerController {
                     });
               }
             });
-
     connectionThread.setDaemon(true);
     connectionThread.start();
   }
@@ -108,29 +104,23 @@ public class ConnectServerController {
   private Client connectWithTimeout() throws IOException, InterruptedException {
     final Client[] result = {null};
     final Exception[] exception = {null};
-
     Thread connectionAttempt =
         new Thread(
             () -> {
               try {
                 result[0] = Client.getInstance();
                 result[0].connect();
-
               } catch (Exception e) {
                 exception[0] = e;
               }
             });
-
     connectionAttempt.setDaemon(true);
     connectionAttempt.start();
-
     // Wait for connection with timeout
     connectionAttempt.join(CONNECTION_TIMEOUT);
-
     if (exception[0] != null) {
       throw new IOException(exception[0]);
     }
-
     return result[0];
   }
 
@@ -139,7 +129,6 @@ public class ConnectServerController {
     if (message == null || message.isEmpty()) {
       message = e.getClass().getSimpleName();
     }
-
     if (message.contains("Connection refused")) {
       return "Server không phản hồi. Vui lòng kiểm tra:\n- Server đã khởi động chưa?\n- Địa chỉ IP và cổng có đúng không?";
     } else if (message.contains("Timeout")) {
@@ -149,7 +138,6 @@ public class ConnectServerController {
     } else if (message.contains("Network is unreachable")) {
       return "Không thể truy cập mạng. Kiểm tra kết nối Internet.";
     }
-
     return "Lỗi kết nối: " + message;
   }
 

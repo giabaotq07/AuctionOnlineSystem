@@ -6,7 +6,6 @@ import com.google.gson.GsonBuilder;
 
 public class PacketReq {
   private static final Gson GSON = new GsonBuilder().create();
-
   private PacketType type;
   private String data;
 

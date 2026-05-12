@@ -13,8 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CreateAuctionCommand implements Command {
-  private static final Logger log = LoggerFactory.getLogger(CreateAuctionCommand.class);
-
+  private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
   private final ItemService itemService;
 
@@ -25,38 +24,59 @@ public class CreateAuctionCommand implements Command {
 
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
-    CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
     try {
+      if (!clientHandler.isAuthenticated()) {
+        clientHandler.sendPacket(PacketRes.error("Authentication required"));
+        return;
+      }
+      CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
+      if (request == null) {
+        clientHandler.sendPacket(
+            PacketRes.of(
+                true,
+                PacketType.CREATE_AUCTION,
+                new CreateAuctionResponse(false, "Invalid request", null)));
+        return;
+      }
+      User user = clientHandler.getUser();
+      // KHÔNG trust sellerId từ client
       Item item =
           ItemFactory.createItem(
               request.name(),
-              request.sellerId(),
+              user.getId(),
               request.description(),
               request.startingPrice(),
               request.stepPrice(),
               request.type());
       item = itemService.add(item);
-
-      Auction session =
+      Auction auction =
           auctionService.createAndStartAuction(
-              item.getId(), request.sellerId(), item.getStartingPrice(), request.durationMinutes());
-      AuctionSummary auctionSummary =
-          new AuctionSummary(session, item.getName(), session.getHighestBid());
+              item.getId(), user.getId(), item.getStartingPrice(), request.durationMinutes());
+      AuctionSummary summary = new AuctionSummary(auction, item.getName(), auction.getHighestBid());
       CreateAuctionResponse response =
-          new CreateAuctionResponse(true, "Tạo phiên thành công", auctionSummary);
-      PacketRes packetRes = PacketRes.of(PacketType.CREATE_AUCTION, response);
-      clientHandler.sendMessage(packetRes);
-      Server.broadcast(packetRes, clientHandler.getUser().getId());
+          new CreateAuctionResponse(true, "Tạo phiên thành công", summary);
+      PacketRes packetRes = PacketRes.of(true, PacketType.CREATE_AUCTION, response);
+      // response cho creator
+      clientHandler.sendPacket(packetRes);
+      // broadcast auction mới
+      Server.broadcast(packetRes, user.getId());
+      // broadcast refresh list
+      broadcastAuctionList();
+      logger.info("Auction created successfully by user {}", user.getId());
     } catch (Exception e) {
-
-      e.printStackTrace();
-      CreateAuctionResponse response =
-          new CreateAuctionResponse(false, "Tạo phiên thất bại: " + e.getMessage(), null);
-      clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
+      logger.error("Create auction failed", e);
+      clientHandler.sendPacket(
+          PacketRes.of(false, PacketType.CREATE_AUCTION, "Tạo phiên thất bại"));
     }
-    // tạm
-    List<AuctionSummary> summaries = clientHandler.getAuctionService().getAuctionSummaries();
-    AuctionsResponse auctionsResponse = new AuctionsResponse(true, "OK", summaries);
-    Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, auctionsResponse), -1);
+  }
+
+  private void broadcastAuctionList() {
+    try {
+      List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
+      AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
+      Server.broadcast(PacketRes.of(true, PacketType.FETCH_AUCTIONS, response), -1);
+    } catch (Exception e) {
+      logger.error("Failed to broadcast auction list", e);
+    }
   }
 }
