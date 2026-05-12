@@ -9,6 +9,7 @@ public enum View {
   REGISTER("/app/views/register_account.fxml"),
   UI("/app/views/firstscene.fxml"),
   MESSAGE("/app/views/mess_chat.fxml"),
+  USER_PROFILE("/app/views/user_profile.fxml"),
   ;
 
   private final String fxmlPath;

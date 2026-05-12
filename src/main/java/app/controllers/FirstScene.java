@@ -110,7 +110,7 @@ public class FirstScene implements Cleanable {
     if (btnAuth == null) return;
 
     if (client.getCurrentUser() != null) {
-      btnAuth.setText("Xin chào, " + client.getCurrentUser().getName());
+      btnAuth.setText("Thông tin User: " + client.getCurrentUser().getName());
     } else {
       btnAuth.setText("Đăng nhập / Đăng ký");
     }
@@ -431,7 +431,7 @@ public class FirstScene implements Cleanable {
 
   @FXML
   public void handleAuth(ActionEvent e) {
-    NavigationManager.getInstance().navigateTo(View.LOGIN);
+    NavigationManager.getInstance().navigateTo(View.USER_PROFILE);
   }
 
   @FXML
