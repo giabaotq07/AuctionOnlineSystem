@@ -9,6 +9,7 @@ import app.enums.UserRole;
 import app.enums.View;
 import app.models.PacketReq;
 import app.network.Client;
+import app.network.PacketListener;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.Objects;
@@ -29,7 +30,7 @@ public class RegisterController {
   @FXML private TextField txtName;
   @FXML private TextField txtAccount;
   @FXML private PasswordField txtPassword;
-  private Consumer<Response> registerHandler;
+  private PacketListener<RegisterResponse> registerHandler;
 
   @FXML
   private void initialize() {
@@ -52,24 +53,22 @@ public class RegisterController {
       System.err.println("Không load được background: " + e.getMessage());
     }
 
-    registerHandler =
-        response ->
-            Platform.runLater(
-                () -> {
-                  if (!(response instanceof RegisterResponse)) {
-                    return;
-                  }
-                  RegisterResponse registerResponse = (RegisterResponse) response;
-                  if (registerResponse.success()) {
-                    AlertUtils.showInfo("Thành công", registerResponse.message());
-                    if (registerHandler != null) {
-                      Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
-                    }
-                    NavigationManager.getInstance().navigateTo(View.LOGIN);
-                  } else {
-                    AlertUtils.showError("Thất bại", registerResponse.message());
-                  }
-                });
+    registerHandler = (RegisterResponse response) -> {
+      Platform.runLater(() -> {
+        if (response.success()) {
+          AlertUtils.showInfo("Thành công", response.message());
+
+          if (registerHandler != null) {
+            Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
+          }
+
+          NavigationManager.getInstance().navigateTo(View.LOGIN);
+        } else {
+          AlertUtils.showError("Thất bại", response.message());
+        }
+      });
+    };
+
     Client.getInstance().subscribe(PacketType.REGISTER, registerHandler);
   }
 

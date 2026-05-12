@@ -3,16 +3,15 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.ChatRequest;
 import app.data.ChatResponse;
-import app.data.Response;
 import app.data.UserData;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.PacketReq;
 import app.network.Client;
+import app.network.PacketListener;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,7 +34,7 @@ public class MessController {
   @FXML private ScrollPane scrollPane;
 
   private Client client;
-  private Consumer<Response> chatHandler;
+  private PacketListener<ChatResponse> chatHandler;
 
   @FXML
   public void initialize() {
@@ -44,14 +43,10 @@ public class MessController {
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
 
     chatHandler =
-        response -> {
-          if (!(response instanceof ChatResponse)) {
-            return;
-          }
-          ChatResponse chatResponse = (ChatResponse) response;
-          String sender = chatResponse.sender();
-          Platform.runLater(() -> addBubble(sender, chatResponse.content(), false));
-        };
+            (ChatResponse response) -> {
+              String sender =  response.sender();
+              Platform.runLater(() -> addBubble(sender,  response.content(), false));
+            };
     client.subscribe(PacketType.CHAT, chatHandler);
   }
 
@@ -71,7 +66,7 @@ public class MessController {
     // NAME
     Label nameLabel = new Label(isMe ? "Bạn" : sender);
     nameLabel.setStyle(
-        "-fx-text-fill: #94a3b8;" + "-fx-font-size: 11px;" + "-fx-font-weight: bold;");
+            "-fx-text-fill: #94a3b8;" + "-fx-font-size: 11px;" + "-fx-font-weight: bold;");
 
     // BUBBLE
     TextFlow bubble = getTextFlow(isMe);
@@ -104,15 +99,15 @@ public class MessController {
 
     if (isMe) {
       bubble.setStyle(
-          "-fx-background-color: #4f46e5;"
-              + "-fx-background-radius: 14 14 4 14;"
-              + "-fx-effect: dropshadow(gaussian, rgba(79,70,229,0.25), 10, 0, 0, 3);");
+              "-fx-background-color: #4f46e5;"
+                      + "-fx-background-radius: 14 14 4 14;"
+                      + "-fx-effect: dropshadow(gaussian, rgba(79,70,229,0.25), 10, 0, 0, 3);");
     } else {
       bubble.setStyle(
-          "-fx-background-color: #161b26;"
-              + "-fx-background-radius: 14 14 14 4;"
-              + "-fx-border-color: #2d3748;"
-              + "-fx-border-radius: 14 14 14 4;");
+              "-fx-background-color: #161b26;"
+                      + "-fx-background-radius: 14 14 14 4;"
+                      + "-fx-border-color: #2d3748;"
+                      + "-fx-border-radius: 14 14 14 4;");
     }
     return bubble;
   }
@@ -122,7 +117,7 @@ public class MessController {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
       ChatRequest chatRequest =
-          new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
+              new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
       try {
         client.sendRequest(PacketReq.of(PacketType.CHAT, chatRequest));
       } catch (IOException e) {
