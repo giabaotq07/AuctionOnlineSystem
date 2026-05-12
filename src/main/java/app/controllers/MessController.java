@@ -9,6 +9,7 @@ import app.enums.PacketType;
 import app.enums.View;
 import app.models.PacketReq;
 import app.network.Client;
+import app.network.PacketListener;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -35,7 +36,7 @@ public class MessController {
   @FXML private ScrollPane scrollPane;
 
   private Client client;
-  private Consumer<Response> chatHandler;
+  private PacketListener<Response> chatHandler;
 
   @FXML
   public void initialize() {
@@ -50,7 +51,7 @@ public class MessController {
           }
           ChatResponse chatResponse = (ChatResponse) response;
           String sender = chatResponse.sender();
-          Platform.runLater(() -> addBubble(sender, chatResponse.content(), false));
+          Platform.runLater(() -> addBubble(sender, chatResponse.content(), isMe(chatResponse.senderId())));
         };
     client.subscribe(PacketType.CHAT, chatHandler);
   }
