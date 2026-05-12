@@ -1,7 +1,7 @@
 package app.service;
 
-import app.database.DatabaseConnection;
 import app.dao.UserDAO;
+import app.database.DatabaseConnection;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.User;
