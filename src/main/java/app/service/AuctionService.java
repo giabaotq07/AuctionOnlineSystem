@@ -52,7 +52,8 @@ public class AuctionService {
     return runInTransaction(
         conn -> {
           Auction auction =
-              new Auction(itemId, sellerId, LocalDateTime.now().plusMinutes(minutes), startingPrice);
+              new Auction(
+                  itemId, sellerId, LocalDateTime.now().plusMinutes(minutes), startingPrice);
           Auction saved = auctionDAO.save(conn, auction);
           saved.start();
           auctionDAO.update(conn, saved);
@@ -108,8 +109,7 @@ public class AuctionService {
             .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm"));
 
     long currentPrice = item.getStartingPrice();
-    java.util.Optional<app.models.BidTransaction> highest =
-        bidDAO.findHighestBid(auction.getId());
+    java.util.Optional<app.models.BidTransaction> highest = bidDAO.findHighestBid(auction.getId());
     if (highest.isPresent()) {
       currentPrice = highest.get().getAmount();
     }

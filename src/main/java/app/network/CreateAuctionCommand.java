@@ -1,11 +1,5 @@
 package app.network;
 
-import app.dao.AuctionDAO;
-import app.dao.BidDAO;
-import app.dao.ItemDAO;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlBidDAO;
-import app.dao.impl.MySqlItemDAO;
 import app.data.AuctionSummary;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
@@ -19,12 +13,18 @@ import org.slf4j.LoggerFactory;
 public class CreateAuctionCommand implements Command {
   private static final Logger log = LoggerFactory.getLogger(CreateAuctionCommand.class);
 
+  private final AuctionService auctionService;
+  private final ItemService itemService;
+
+  public CreateAuctionCommand(AuctionService auctionService, ItemService itemService) {
+    this.auctionService = auctionService;
+    this.itemService = itemService;
+  }
+
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
     try {
-      ItemDAO itemDAO = new MySqlItemDAO();
-      ItemService itemService = new ItemService(itemDAO);
       Item item =
           ItemFactory.createItem(
               request.name(),
@@ -35,9 +35,6 @@ public class CreateAuctionCommand implements Command {
               request.type());
       item = itemService.add(item);
 
-      AuctionDAO auctionDAO = new MySqlAuctionDAO();
-      BidDAO bidDAO = new MySqlBidDAO();
-      AuctionService auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
       Auction session =
           auctionService.createAndStartAuction(
               item.getId(), request.sellerId(), item.getStartingPrice(), request.durationMinutes());
@@ -55,6 +52,6 @@ public class CreateAuctionCommand implements Command {
           new CreateAuctionResponse(false, "Tạo phiên thất bại: " + e.getMessage(), null);
       clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
     }
-    new FetchAuctionsCommand().execute(clientHandler, null);
+    new FetchAuctionsCommand(auctionService).execute(clientHandler, null);
   }
 }

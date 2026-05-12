@@ -16,14 +16,16 @@ import org.slf4j.LoggerFactory;
 
 public class LoginCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(LoginCommand.class);
+  private final UserService userService;
+  public LoginCommand(UserService userService) {
+    this.userService = userService;
+  }
 
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     LoginRequest loginRequest = packet.getData(LoginRequest.class);
     String username = loginRequest.username();
     String password = loginRequest.password();
-    UserDAO userDAO = new MySqlUserDAO();
-    UserService userService = new UserService(userDAO);
     User user;
     try {
       user = userService.login(username, password);
