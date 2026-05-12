@@ -4,15 +4,22 @@ import app.controllers.manager.NavigationManager;
 import app.data.AuctionSummary;
 import app.data.AuctionsResponse;
 import app.data.CreateAuctionResponse;
+import app.data.WalletUpdateResponse;
 import app.enums.AuctionStatus;
+import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
 import app.models.DataStore;
 import app.models.PacketReq;
+import app.models.User;
+import app.models.UserFactory;
+import app.models.Wallet;
 import app.network.Client;
 import app.network.PacketListener;
 import app.utils.AlertUtils;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
@@ -38,6 +45,7 @@ public class FirstScene implements Cleanable {
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
+  @FXML private Label balanceLabel;
   private final Client client = Client.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
   private final HBox activeBox = new HBox();
@@ -45,6 +53,8 @@ public class FirstScene implements Cleanable {
   private final List<Timeline> timelines = new ArrayList<>();
   private PacketListener<CreateAuctionResponse> createAuctionHandler;
   private PacketListener<AuctionsResponse> fetchAuctionsHandler;
+  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
+  private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
   @FXML
   public void initialize() {
@@ -55,6 +65,8 @@ public class FirstScene implements Cleanable {
     setupSearch();
     setupScrollPanes();
     setupListeners();
+    setupWalletSection();
+    setupWalletListener();
     loadInitialData();
     logger.debug("FirstScene initialized");
   }
@@ -297,6 +309,57 @@ public class FirstScene implements Cleanable {
     }
   }
 
+  // ================= WALLET =================
+  private void setupWalletSection() {
+    updateBalanceLabel();
+  }
+
+  private void setupWalletListener() {
+    walletUpdateHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (response == null) {
+                    return;
+                  }
+                  if (response.status() != OperationStatus.SUCCESS) {
+                    AlertUtils.showError("Ví", response.message());
+                    return;
+                  }
+                  if (response.user() != null) {
+                    DataStore.getInstance().updateCurrentUser(response.user());
+                    updateBalanceLabel(UserFactory.createUser(response.user()));
+                  } else {
+                    updateBalanceLabel();
+                  }
+                });
+    client.subscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+  }
+
+  private void updateBalanceLabel() {
+    updateBalanceLabel(Client.getInstance().getCurrentUser());
+  }
+
+  private void updateBalanceLabel(User user) {
+    if (balanceLabel == null) {
+      return;
+    }
+    if (user == null) {
+      balanceLabel.setText("Số dư: 0 đ");
+      return;
+    }
+    Wallet wallet = user.getWallet();
+    BigDecimal total = wallet.getTotalBalance();
+    balanceLabel.setText("Số dư: " + formatCurrency(total) + " đ");
+  }
+
+  private String formatCurrency(BigDecimal amount) {
+    if (amount == null) {
+      return "0";
+    }
+    return currencyFormat.format(amount);
+  }
+
   // ================= ACTIONS =================
   @FXML
   public void handleReload(ActionEvent event) {
@@ -334,6 +397,11 @@ public class FirstScene implements Cleanable {
     NavigationManager.getInstance().navigateTo(View.ORGANIZE);
   }
 
+  @FXML
+  public void SwitchToDeposit(ActionEvent e) {
+    NavigationManager.getInstance().navigateTo(View.DEPOSIT);
+  }
+
   // ================= CLEANUP =================
   @Override
   public void cleanup() {
@@ -343,6 +411,9 @@ public class FirstScene implements Cleanable {
     timelines.clear();
     client.unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
     client.unsubscribe(PacketType.FETCH_AUCTIONS, fetchAuctionsHandler);
+    if (walletUpdateHandler != null) {
+      client.unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+    }
     logger.debug("FirstScene cleaned up");
   }
 }

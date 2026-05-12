@@ -3,9 +3,13 @@ package app.models;
 import app.data.AuctionSummary;
 import app.data.AuctionsRequest;
 import app.data.AuctionsResponse;
+import app.data.UserData;
+import app.data.WalletUpdateResponse;
+import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ConnectException;
 import app.network.Client;
+import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +27,8 @@ public class DataStore {
   private DataStore() {
     sessions = new ArrayList<>();
     logger.info("DataStore instance created");
+    loadSessions();
+    loadWalletUpdates();
   }
 
   public static DataStore getInstance() {
@@ -30,7 +36,6 @@ public class DataStore {
       synchronized (DataStore.class) {
         if (instance == null) {
           instance = new DataStore();
-          instance.loadSessions();
           try {
             Client.getInstance()
                 .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
@@ -44,6 +49,15 @@ public class DataStore {
     return instance;
   }
 
+  public void updateCurrentUser(UserData data) {
+    if (data == null) {
+      return;
+    }
+    User user = UserFactory.createUser(data);
+    currentUser = user;
+    Client.getInstance().setCurrentUser(user);
+  }
+
   void loadSessions() {
     Client.getInstance()
         .subscribe(
@@ -53,6 +67,26 @@ public class DataStore {
                     () -> {
                       if (response.success() && response.auctions() != null) {
                         sessions = response.auctions();
+                      }
+                    }));
+  }
+
+  void loadWalletUpdates() {
+    Client.getInstance()
+        .subscribe(
+            PacketType.WALLET_UPDATE,
+            (WalletUpdateResponse response) ->
+                Platform.runLater(
+                    () -> {
+                      if (response == null) {
+                        return;
+                      }
+                      if (response.status() != OperationStatus.SUCCESS) {
+                        AlertUtils.showError("Ví", response.message());
+                        return;
+                      }
+                      if (response.user() != null) {
+                        updateCurrentUser(response.user());
                       }
                     }));
   }

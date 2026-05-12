@@ -99,4 +99,12 @@
             </content>
         </ScrollPane>
     </center>
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color:#161b26; -fx-border-color: #2d3748; -fx-border-width: 1 0 0 0;">
+            <padding>
+                <Insets left="40.0" right="40.0" top="10.0" bottom="10.0" />
+            </padding>
+            <Label fx:id="availableBalanceLabel" text="Số dư khả dụng: 0 đ" textFill="#cbd5e1" />
+        </HBox>
+    </bottom>
 </BorderPane>

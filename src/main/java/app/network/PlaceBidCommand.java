@@ -4,12 +4,17 @@ import app.data.AuctionSummary;
 import app.data.AuctionsResponse;
 import app.data.PlaceBidRequest;
 import app.data.PlaceBidResponse;
+import app.data.UserData;
+import app.data.WalletUpdateResponse;
+import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
 import app.service.BidService;
+import app.service.UserService;
+import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +22,18 @@ import org.slf4j.LoggerFactory;
 public class PlaceBidCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
+  private final UserService userService;
 
-  public PlaceBidCommand(BidService bidService) {
+  public PlaceBidCommand(BidService bidService, UserService userService) {
     this.bidService = bidService;
+    this.userService = userService;
   }
 
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
+    BigDecimal previousFrozen = null;
+    int sessionId = 0;
+    int bidderId = 0;
     try {
       if (!clientHandler.isAuthenticated()) {
         sendError(clientHandler, "Authentication required");
@@ -34,7 +44,7 @@ public class PlaceBidCommand implements Command {
         sendError(clientHandler, "Dữ liệu đặt giá không hợp lệ.");
         return;
       }
-      int sessionId = request.sessionId();
+      sessionId = request.sessionId();
       long bidAmount = request.bidAmount();
       if (sessionId <= 0) {
         sendError(clientHandler, "Phiên đấu giá không hợp lệ.");
@@ -46,23 +56,45 @@ public class PlaceBidCommand implements Command {
       }
       User user = clientHandler.getUser();
       // KHÔNG trust bidderId từ client
-      int bidderId = user.getId();
+      bidderId = user.getId();
+      previousFrozen =
+          userService.reserveBidAmount(bidderId, sessionId, BigDecimal.valueOf(bidAmount));
       PlaceBidResponse response = bidService.placeBid(sessionId, bidderId, bidAmount);
       PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
       // sender
       clientHandler.sendPacket(packetResponse);
       // others
       Server.broadcast(packetResponse, bidderId);
+      sendWalletUpdate(clientHandler, userService.getById(bidderId));
       // refresh auction list
       broadcastAuctionList(clientHandler);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, sessionId);
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
+      rollbackFrozen(bidderId, sessionId, previousFrozen);
       sendError(clientHandler, e.getMessage());
     } catch (Exception e) {
       logger.error("Unexpected place bid error", e);
+      rollbackFrozen(bidderId, sessionId, previousFrozen);
       sendError(clientHandler, "Không thể đặt giá.");
     }
+  }
+
+  private void rollbackFrozen(int bidderId, int sessionId, BigDecimal previousFrozen) {
+    if (bidderId <= 0 || sessionId <= 0 || previousFrozen == null) {
+      return;
+    }
+    try {
+      userService.restoreFrozenAmount(bidderId, sessionId, previousFrozen);
+    } catch (Exception e) {
+      logger.warn("Failed to rollback frozen funds for user {}", bidderId, e);
+    }
+  }
+
+  private void sendWalletUpdate(ClientHandler clientHandler, User user) {
+    WalletUpdateResponse response =
+        new WalletUpdateResponse(OperationStatus.SUCCESS, "OK", new UserData(user));
+    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
   }
 
   private void broadcastAuctionList(ClientHandler clientHandler) {
@@ -76,6 +108,8 @@ public class PlaceBidCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
+    WalletUpdateResponse response = new WalletUpdateResponse(OperationStatus.FAIL, message, null);
+    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
     clientHandler.sendPacket(PacketRes.error(PacketType.PLACE_BID, message));
   }
 }

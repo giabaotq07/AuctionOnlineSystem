@@ -8,16 +8,25 @@ import app.data.AuctionResultRequest;
 import app.data.AuctionResultResponse;
 import app.data.PlaceBidRequest;
 import app.data.PlaceBidResponse;
+import app.data.SettleWalletRequest;
+import app.data.WalletUpdateResponse;
 import app.enums.AuctionStatus;
+import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
+import app.models.DataStore;
 import app.models.PacketReq;
+import app.models.User;
+import app.models.UserFactory;
+import app.models.Wallet;
 import app.network.Client;
 import app.network.PacketListener;
 import app.observer.AuctionObserver;
 import app.utils.AlertUtils;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
@@ -48,10 +57,14 @@ public class LiveController implements AuctionObserver, Cleanable {
   @FXML private Label timeLabel;
   @FXML private TextField bidAmountField;
   @FXML private TextArea description;
+  @FXML private Label availableBalanceLabel;
   private ScheduledExecutorService scheduler;
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
+  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
+  private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
+  private boolean settlementSent = false;
 
   @FXML
   public void initialize() {
@@ -61,6 +74,9 @@ public class LiveController implements AuctionObserver, Cleanable {
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
     auctionResultHandler = response -> Platform.runLater(() -> handleAuctionResult(response));
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
+    walletUpdateHandler = response -> Platform.runLater(() -> handleWalletUpdate(response));
+    Client.getInstance().subscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+    updateAvailableBalance();
   }
 
   public void setSession(Auction auction) {
@@ -100,6 +116,50 @@ public class LiveController implements AuctionObserver, Cleanable {
     }
   }
 
+  private void handleWalletUpdate(WalletUpdateResponse response) {
+    if (response == null) {
+      return;
+    }
+    if (response.status() != OperationStatus.SUCCESS) {
+      AlertUtils.showError("Ví", response.message());
+      return;
+    }
+    if (response.user() != null) {
+      DataStore.getInstance().updateCurrentUser(response.user());
+      updateAvailableBalance(UserFactory.createUser(response.user()));
+    } else {
+      updateAvailableBalance();
+    }
+  }
+
+  private void updateAvailableBalance() {
+    updateAvailableBalance(Client.getInstance().getCurrentUser());
+  }
+
+  private void updateAvailableBalance(User user) {
+    if (availableBalanceLabel == null) {
+      return;
+    }
+    if (user == null) {
+      availableBalanceLabel.setText("Số dư: 0 đ");
+      return;
+    }
+    Wallet wallet = user.getWallet();
+    BigDecimal available = wallet.getAvailableBalance();
+    availableBalanceLabel.setText("Số dư khả dụng: " + formatCurrency(available) + " đ");
+  }
+
+  private String formatCurrency(BigDecimal amount) {
+    if (amount == null) {
+      return "0";
+    }
+    return currencyFormat.format(amount);
+  }
+
+  private String formatCurrency(long amount) {
+    return String.format("%,d đ", amount);
+  }
+
   private void handleAuctionResult(AuctionResultResponse response) {
     if (auction == null) {
       return;
@@ -111,6 +171,23 @@ public class LiveController implements AuctionObserver, Cleanable {
         auctionDetail != null ? auctionDetail.itemName() : "",
         response.winner().name(),
         response.finalPrice());
+    requestWalletSettlement();
+  }
+
+  private void requestWalletSettlement() {
+    if (settlementSent || session == null) {
+      return;
+    }
+    if (Client.getInstance().getCurrentUser() == null) {
+      return;
+    }
+    try {
+      settlementSent = true;
+      SettleWalletRequest request = new SettleWalletRequest(session.getId());
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.SETTLE_WALLET, request));
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
   }
 
   private void applyDetail(AuctionDetail detail) {
@@ -181,6 +258,11 @@ public class LiveController implements AuctionObserver, Cleanable {
       AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
       return;
     }
+    BigDecimal available = Client.getInstance().getCurrentUser().getWallet().getAvailableBalance();
+    if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
+      AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
+      return;
+    }
     PlaceBidRequest request =
         new PlaceBidRequest(
             auction.getId(),
@@ -240,10 +322,6 @@ public class LiveController implements AuctionObserver, Cleanable {
     timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
   }
 
-  private String formatCurrency(long amount) {
-    return String.format("%,d đ", amount);
-  }
-
   @Override
   public void cleanup() {
     if (cleanedUp) {
@@ -266,8 +344,12 @@ public class LiveController implements AuctionObserver, Cleanable {
     if (auctionResultHandler != null) {
       Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
     }
+    if (walletUpdateHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+    }
     resultRequested = false;
     auctionClosedShown = false;
+    settlementSent = false;
     auctionDetail = null;
     auction = null;
   }

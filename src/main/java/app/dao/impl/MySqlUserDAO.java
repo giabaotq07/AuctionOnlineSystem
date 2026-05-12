@@ -8,6 +8,7 @@ import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +19,16 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
 
   private static final String TABLE = "users";
   private static final String BASE_SELECT =
-      "SELECT id, username, password, full_name, assets, role FROM users ";
+      "SELECT id, username, password, full_name, available_balance, frozen_funds, role FROM users ";
 
   private User mapUser(ResultSet rs) throws SQLException {
+    BigDecimal available = rs.getBigDecimal("available_balance");
+    String frozenJson = rs.getString("frozen_funds");
     return UserFactory.createUser(
         rs.getInt("id"),
         rs.getString("full_name"),
         new Account(rs.getString("username"), rs.getString("password")),
-        new Wallet(rs.getLong("assets")),
+        new Wallet(available, Wallet.parseFrozenFunds(frozenJson)),
         UserRole.valueOf(rs.getString("role")));
   }
 
@@ -84,17 +87,17 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   private User saveInternal(Connection conn, User user) {
     String sql =
         """
-        INSERT INTO users (username, password, full_name, assets, role)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO users (username, password, full_name, available_balance, frozen_funds, role)
+        VALUES (?, ?, ?, ?, ?, ?)
         """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      setParameters(
-          ps,
-          user.getAccount().getUsername(),
-          user.getAccount().getPassword(),
-          user.getName(),
-          user.getWallet().getAssets(),
-          user.getRole().name());
+      ps.setString(1, user.getAccount().getUsername());
+      // Expect password to be already hashed by service layer
+      ps.setString(2, user.getAccount().getPassword());
+      ps.setString(3, user.getName());
+      ps.setBigDecimal(4, user.getWallet().getAvailableBalance());
+      ps.setString(5, user.getWallet().serializeFrozenFunds());
+      ps.setString(6, user.getRole().name());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm user.");
       }
@@ -123,12 +126,13 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
         executeUpdate(
             conn,
             TABLE,
-            "UPDATE users SET username = ?, password = ?, full_name = ?, assets = ?, role = ? WHERE id = ?",
+            "UPDATE users SET username = ?, password = ?, full_name = ?, available_balance = ?, frozen_funds = ?, role = ? WHERE id = ?",
             user.getAccount().getUsername(),
             // Expect password to be already hashed by service layer
             user.getAccount().getPassword(),
             user.getName(),
-            user.getWallet().getAssets(),
+            user.getWallet().getAvailableBalance(),
+            user.getWallet().serializeFrozenFunds(),
             user.getRole().name(),
             user.getId());
     if (!ok) {

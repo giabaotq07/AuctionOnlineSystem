@@ -68,6 +68,14 @@
                     onAction="#SwitchToOrganize"
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
+            <Button text="NẠP TIỀN"
+                    onAction="#SwitchToDeposit"
+                    maxWidth="Infinity" prefHeight="40"
+                    style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
+            <Region VBox.vgrow="ALWAYS" />
+            <Label fx:id="balanceLabel"
+                   text="Số dư: 0 đ"
+                   style="-fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
         </VBox>
     </left>
     <center>

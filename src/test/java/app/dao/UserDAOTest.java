@@ -10,6 +10,7 @@ import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ class UserDAOTest extends BaseDAOTest {
         0,
         "Nguyen Van A",
         new Account(username, "rawPassword"),
-        new Wallet(1_000_000L),
+        new Wallet(new BigDecimal("1000000")),
         UserRole.BIDDER);
   }
 
@@ -62,7 +63,7 @@ class UserDAOTest extends BaseDAOTest {
     assertEquals("alice", found.getAccount().getUsername());
     assertEquals("Nguyen Van A", found.getName());
     assertEquals(UserRole.BIDDER, found.getRole());
-    assertEquals(1_000_000L, found.getWallet().getAssets());
+    assertEquals(0, found.getWallet().getAvailableBalance().compareTo(new BigDecimal("1000000")));
   }
 
   @Test

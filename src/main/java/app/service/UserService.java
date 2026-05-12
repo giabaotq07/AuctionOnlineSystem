@@ -6,8 +6,8 @@ import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.User;
 import app.utils.PasswordUtils;
+import java.math.BigDecimal;
 import java.sql.Connection;
-import java.util.List;
 import java.util.function.Function;
 
 public class UserService {
@@ -66,9 +66,15 @@ public class UserService {
         });
   }
 
-  public void deposit(int userId, long amount) {
-    if (amount <= 0) throw new ServiceException("Số tiền nạp phải > 0");
-    runInTransaction(
+  public User getById(int userId) {
+    return userDAO
+        .findById(userId)
+        .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+  }
+
+  public User deposit(int userId, BigDecimal amount) {
+    if (amount == null || amount.signum() <= 0) throw new ServiceException("Số tiền nạp phải > 0");
+    return runInTransaction(
         conn -> {
           userDAO.lockRow(conn, userId);
           User user =
@@ -81,12 +87,13 @@ public class UserService {
             throw new ServiceException(e.getMessage());
           }
           userDAO.update(conn, user);
+          return user;
         });
   }
 
-  public void withdraw(String username, String password, long amount) {
+  public void withdraw(String username, String password, BigDecimal amount) {
     User user = login(username, password);
-    if (amount <= 0) throw new ServiceException("Số tiền rút phải > 0");
+    if (amount == null || amount.signum() <= 0) throw new ServiceException("Số tiền rút phải > 0");
     runInTransaction(
         conn -> {
           userDAO.lockRow(conn, user.getId());
@@ -104,8 +111,62 @@ public class UserService {
         });
   }
 
-  public List<User> getAllUsers() {
-    return userDAO.findAll();
+  public BigDecimal reserveBidAmount(int userId, int sessionId, BigDecimal bidAmount) {
+    if (bidAmount == null || bidAmount.signum() <= 0) {
+      throw new ServiceException("Giá đặt không hợp lệ.");
+    }
+    return runInTransaction(
+        conn -> {
+          userDAO.lockRow(conn, userId);
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          try {
+            BigDecimal previous =
+                user.getWallet().setFrozenAmount(String.valueOf(sessionId), bidAmount);
+            userDAO.update(conn, user);
+            return previous;
+          } catch (IllegalArgumentException e) {
+            throw new ServiceException(e.getMessage());
+          }
+        });
+  }
+
+  public User restoreFrozenAmount(int userId, int sessionId, BigDecimal previousAmount) {
+    return runInTransaction(
+        conn -> {
+          userDAO.lockRow(conn, userId);
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          try {
+            user.getWallet().setFrozenAmount(String.valueOf(sessionId), previousAmount);
+          } catch (IllegalArgumentException e) {
+            throw new ServiceException(e.getMessage());
+          }
+          userDAO.update(conn, user);
+          return user;
+        });
+  }
+
+  public User settleFrozenAmount(int userId, int sessionId, boolean winner) {
+    return runInTransaction(
+        conn -> {
+          userDAO.lockRow(conn, userId);
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          if (winner) {
+            user.getWallet().commitFrozen(String.valueOf(sessionId));
+          } else {
+            user.getWallet().releaseFrozen(String.valueOf(sessionId));
+          }
+          userDAO.update(conn, user);
+          return user;
+        });
   }
 
   private void validateNotBlank(String value, String fieldName) {
