@@ -25,7 +25,7 @@ public class Client {
   private User currentUser;
   private BufferedWriter writer;
   private BufferedReader reader;
-  Map<PacketType, List<Consumer<Response>>> observersMap = new HashMap<>();
+  Map<PacketType, List<PacketListener<?>>> observersMap = new HashMap<>();
   private boolean connected = false;
   Logger logger = LoggerFactory.getLogger(Client.class);
 
@@ -60,16 +60,6 @@ public class Client {
         try {
           PacketRes packet = JsonUtil.fromJson(line, PacketRes.class);
           Response response = packet.getData();
-          switch (packet.getType()) {
-            case PLACE_BID:
-              Client.getInstance()
-                  .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
-              break;
-            case CREATE_AUCTION:
-              Client.getInstance()
-                  .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
-              break;
-          }
           if (response != null) {
             notify(packet.getType(), response);
           } else {
@@ -99,23 +89,23 @@ public class Client {
       writer.flush();
     }
   }
-
-  public void notify(PacketType packetType, Response response) {
-    List<Consumer<Response>> users = observersMap.get(packetType);
-    if (users != null) {
-      for (Consumer<Response> listener : users) {
-
-        listener.accept(response);
+  @SuppressWarnings("unchecked")
+  public <T extends Response> void notify(PacketType packetType, T response) {
+    List<PacketListener<?>> users = observersMap.get(packetType);
+    if (users != null){
+      for (PacketListener<?> listener : users){
+        PacketListener<T> typedListener = (PacketListener<T>) listener;
+        typedListener.handle(response);
       }
     }
   }
 
-  public void subscribe(PacketType packetType, Consumer<Response> observer) {
+  public <T extends Response> void subscribe(PacketType packetType, PacketListener<T> observer) {
     observersMap.computeIfAbsent(packetType, k -> new ArrayList<>()).add(observer);
   }
 
-  public void unsubscribe(PacketType packetType, Consumer<Response> observer) {
-    List<Consumer<Response>> users = observersMap.get(packetType);
+  public <T extends Response> void unsubscribe(PacketType packetType, PacketListener<T> observer) {
+    List<PacketListener<?>> users = observersMap.get(packetType);
     if (users != null) {
       users.remove(observer);
     }

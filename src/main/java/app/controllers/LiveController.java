@@ -8,13 +8,13 @@ import app.data.AuctionResultRequest;
 import app.data.AuctionResultResponse;
 import app.data.PlaceBidRequest;
 import app.data.PlaceBidResponse;
-import app.data.Response;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
 import app.models.PacketReq;
 import app.network.Client;
+import app.network.PacketListener;
 import app.observer.AuctionObserver;
 import app.utils.AlertUtils;
 import java.io.IOException;
@@ -23,7 +23,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -36,9 +35,9 @@ public class LiveController implements AuctionObserver {
   private AuctionDetail auctionDetail;
   private PlaceBidResponse placeBidResponse;
   private AuctionResultResponse auctionResultResponse;
-  private Consumer<Response> placeBidHandler;
-  private Consumer<Response> auctionDetailHandler;
-  private Consumer<Response> auctionResultHandler;
+  private PacketListener<PlaceBidResponse> placeBidHandler;
+  private PacketListener<AuctionDetailResponse> auctionDetailHandler;
+  private PacketListener<AuctionResultResponse> auctionResultHandler;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
@@ -51,49 +50,59 @@ public class LiveController implements AuctionObserver {
 
   @FXML
   public void initialize() {
+
     placeBidHandler =
-        response ->
-            Platform.runLater(
-                () -> {
-                  if (!(response instanceof PlaceBidResponse)) {
-                    return;
-                  }
-                  placeBidResponse = (PlaceBidResponse) response;
-                  notifyUpdateBid();
-                });
-    Client.getInstance().subscribe(PacketType.PLACE_BID, placeBidHandler);
+            (PlaceBidResponse response) ->
+                    Platform.runLater(
+                            () -> {
+                              placeBidResponse = response;
+                              notifyUpdateBid();
+                            });
+
+    Client.getInstance()
+            .subscribe(PacketType.PLACE_BID, placeBidHandler);
 
     auctionDetailHandler =
-        response ->
-            Platform.runLater(
-                () -> {
-                  if (!(response instanceof AuctionDetailResponse)) {
-                    return;
-                  }
-                  AuctionDetailResponse detailResponse = (AuctionDetailResponse) response;
-                  if (detailResponse.success() && detailResponse.detail() != null) {
-                    auctionDetail = detailResponse.detail();
-                    applyDetail(auctionDetail);
-                  }
-                });
-    Client.getInstance().subscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
+            (AuctionDetailResponse response) ->
+                    Platform.runLater(
+                            () -> {
+
+                              if (response.success()
+                                      && response.detail() != null) {
+
+                                auctionDetail = response.detail();
+
+                                applyDetail(auctionDetail);
+                              }
+                            });
+
+    Client.getInstance()
+            .subscribe(
+                    PacketType.FETCH_AUCTION_DETAIL,
+                    auctionDetailHandler);
 
     auctionResultHandler =
-        response ->
-            Platform.runLater(
-                () -> {
-                  if (!(response instanceof AuctionResultResponse)) {
-                    return;
-                  }
-                  auctionResultResponse = (AuctionResultResponse) response;
-                  if (auctionResultResponse.success()) {
-                    onAuctionClosed(
-                        auctionDetail != null ? auctionDetail.itemName() : "",
-                        auctionResultResponse.winnerName(),
-                        auctionResultResponse.finalPrice());
-                  }
-                });
-    Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
+            (AuctionResultResponse response) ->
+                    Platform.runLater(
+                            () -> {
+
+                              auctionResultResponse = response;
+
+                              if (response.success()) {
+
+                                onAuctionClosed(
+                                        auctionDetail != null
+                                                ? auctionDetail.itemName()
+                                                : "",
+                                        response.winnerName(),
+                                        response.finalPrice());
+                              }
+                            });
+
+    Client.getInstance()
+            .subscribe(
+                    PacketType.FETCH_AUCTION_RESULT,
+                    auctionResultHandler);
   }
 
   public void setSession(Auction session) {
@@ -128,30 +137,30 @@ public class LiveController implements AuctionObserver {
   @Override
   public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
     Platform.runLater(
-        () -> {
-          if (currentPriceLabel != null) {
-            currentPriceLabel.setText(newPrice + " đ");
-          }
-        });
+            () -> {
+              if (currentPriceLabel != null) {
+                currentPriceLabel.setText(newPrice + " đ");
+              }
+            });
   }
 
   @Override
   public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
     Platform.runLater(
-        () -> {
-          AlertUtils.showInfo(
-              "Kết thúc",
-              "Phiên đấu giá đã kết thúc. Người thắng: "
-                  + winnerName
-                  + " với giá: "
-                  + finalPrice
-                  + " đ");
-          timeLabel.setText("Phiên đấu giá đã kết thúc!");
-          timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
-          if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
-          }
-        });
+            () -> {
+              AlertUtils.showInfo(
+                      "Kết thúc",
+                      "Phiên đấu giá đã kết thúc. Người thắng: "
+                              + winnerName
+                              + " với giá: "
+                              + finalPrice
+                              + " đ");
+              timeLabel.setText("Phiên đấu giá đã kết thúc!");
+              timeLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
+              if (scheduler != null && !scheduler.isShutdown()) {
+                scheduler.shutdown();
+              }
+            });
   }
 
   public void notifyUpdateBid() {
@@ -182,22 +191,17 @@ public class LiveController implements AuctionObserver {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
-    try {
-      long bidAmount;
-      long currentPrice;
-      bidAmount = Long.parseLong(bidAmountField.getText());
-      currentPrice = Long.parseLong(currentPriceLabel.getText());
-
-      PlaceBidRequest request =
-          new PlaceBidRequest(
-              session.getId(),
-              Client.getInstance().getCurrentUser().getId(),
-              bidAmount,
-              currentPrice);
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
-    } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi", "Lỗi format số");
-    }
+    long bidAmount;
+    long currentPrice;
+    bidAmount = Long.parseLong(bidAmountField.getText());
+    currentPrice = Long.parseLong(currentPriceLabel.getText());
+    PlaceBidRequest request =
+            new PlaceBidRequest(
+                    session.getId(),
+                    Client.getInstance().getCurrentUser().getId(),
+                    bidAmount,
+                    currentPrice);
+    Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
   }
 
   private void startCountdownTimer(LocalDateTime endTime) {
@@ -206,25 +210,25 @@ public class LiveController implements AuctionObserver {
     }
     scheduler = Executors.newSingleThreadScheduledExecutor();
     scheduler.scheduleAtFixedRate(
-        () -> {
-          Platform.runLater(
-              () -> {
-                LocalDateTime now = LocalDateTime.now();
+            () -> {
+              Platform.runLater(
+                      () -> {
+                        LocalDateTime now = LocalDateTime.now();
 
-                if (now.isAfter(endTime)) {
-                  scheduler.shutdown();
-                  if (session != null && session.isRunning()) {
-                    session.setStatus(AuctionStatus.FINISHED);
-                  }
-                  requestAuctionResult();
-                } else {
-                  updateCountdownLabel(now, endTime);
-                }
-              });
-        },
-        0,
-        1,
-        TimeUnit.SECONDS);
+                        if (now.isAfter(endTime)) {
+                          scheduler.shutdown();
+                          if (session != null && session.isRunning()) {
+                            session.setStatus(AuctionStatus.FINISHED);
+                          }
+                          requestAuctionResult();
+                        } else {
+                          updateCountdownLabel(now, endTime);
+                        }
+                      });
+            },
+            0,
+            1,
+            TimeUnit.SECONDS);
   }
 
   private void requestAuctionResult() {

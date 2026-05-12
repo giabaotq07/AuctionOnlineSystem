@@ -3,7 +3,6 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.LoginRequest;
 import app.data.LoginResponse;
-import app.data.Response;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;
@@ -11,10 +10,10 @@ import app.models.PacketReq;
 import app.models.User;
 import app.models.UserFactory;
 import app.network.Client;
+import app.network.PacketListener;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -27,53 +26,53 @@ public class LoginController {
   @FXML private Button loginButton;
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
-  private Consumer<Response> loginHandler;
+  private PacketListener<LoginResponse> loginHandler;
 
   @FXML
   private void initialize() {
     String url =
-        Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
-            .toExternalForm();
+            Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
+                    .toExternalForm();
 
     rootPane.setStyle(
-        "-fx-background-image: url('"
-            + url
-            + "');"
-            + "-fx-background-size: cover;"
-            + "-fx-background-position: center center;"
-            + "-fx-background-repeat: no-repeat;");
+            "-fx-background-image: url('"
+                    + url
+                    + "');"
+                    + "-fx-background-size: cover;"
+                    + "-fx-background-position: center center;"
+                    + "-fx-background-repeat: no-repeat;");
     loginHandler =
-        response ->
-            Platform.runLater(
-                () -> {
-                  if (!(response instanceof LoginResponse)) {
-                    return;
-                  }
-                  LoginResponse loginResponse = (LoginResponse) response;
-                  loginButton.setDisable(false);
-                  if (loginResponse.success()) {
-                    User user = UserFactory.createUser(loginResponse.user());
-                    Client.getInstance().setCurrentUser(user);
-                    Thread thread =
-                        new Thread(
+            (LoginResponse response) ->
+                    Platform.runLater(
                             () -> {
-                              try {
-                                DataStore.getInstance();
-                                Thread.sleep(2000);
-                              } catch (IOException e) {
-                                AlertUtils.showError("Đăng nhập thất bại", loginResponse.message());
-                              } catch (InterruptedException e) {
-                                e.printStackTrace();
+                              loginButton.setDisable(false);
+                              if (response.success()) {
+                                User user = UserFactory.createUser(response.user());
+                                Client.getInstance().setCurrentUser(user);
+                                Thread thread =
+                                        new Thread(
+                                                () -> {
+                                                  try {
+                                                    DataStore.getInstance();
+                                                    Thread.sleep(2000);
+                                                  }catch (IOException e) {
+                                                    Platform.runLater(
+                                                            () ->
+                                                                    AlertUtils.showError(
+                                                                            "Đăng nhập thất bại",
+                                                                            response.message()));
+                                                  } catch (InterruptedException e) {
+                                                    e.printStackTrace();
+                                                  }
+                                                });
+                                thread.setDaemon(true);
+                                thread.start();
+
+                                SwitchToUI();
+                              } else {
+                                AlertUtils.showError("Đăng nhập thất bại", response.message());
                               }
                             });
-                    thread.setDaemon(true);
-                    thread.start();
-
-                    SwitchToUI();
-                  } else {
-                    AlertUtils.showError("Đăng nhập thất bại", loginResponse.message());
-                  }
-                });
     Client.getInstance().subscribe(PacketType.LOGIN, loginHandler);
   }
 
