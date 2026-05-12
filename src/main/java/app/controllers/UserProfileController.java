@@ -5,6 +5,8 @@ import app.enums.View;
 import app.models.User;
 import app.network.Client;
 import app.utils.AlertUtils;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -22,6 +24,8 @@ public class UserProfileController {
   @FXML private Label walletLabel;
   @FXML private Label roleLabel;
   @FXML private Label idLabel;
+
+  private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
   @FXML
   public void initialize() {
@@ -70,11 +74,11 @@ public class UserProfileController {
     }
 
     if (walletLabel != null) {
-      long balance = 1000;
-      walletLabel.setText(String.format("💰 %,d đ", balance));
+      BigDecimal balance = currentUser.getWallet().getTotalBalance();
+      walletLabel.setText(String.format("💰 %s đ", currencyFormat.format(balance)));
 
       // Đổi màu dựa trên số dư
-      if (balance < 1000000) {
+      if (balance.compareTo(new BigDecimal("1000000")) < 0) {
         walletLabel.setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;"); // Đỏ
       } else {
         walletLabel.setStyle("-fx-text-fill: #4caf50; -fx-font-weight: bold;"); // Xanh

@@ -48,6 +48,7 @@ public class LoginController {
                   if (response.success()) {
                     User user = UserFactory.createUser(response.user());
                     Client.getInstance().setCurrentUser(user);
+                    DataStore.getInstance().updateCurrentUser(response.user());
                     SwitchToUI();
                   } else {
                     AlertUtils.showError("Đăng nhập thất bại", response.message());

@@ -14,7 +14,8 @@ FOREIGN_KEY_CHECKS = 1;
     password   VARCHAR(255)       NOT NULL,
     full_name  VARCHAR(100)       NOT NULL,
     email      VARCHAR(100) UNIQUE,
-    assets     BIGINT    DEFAULT 0,
+    available_balance DECIMAL(18, 2) DEFAULT 0,
+    frozen_funds TEXT,
     role       ENUM('ADMIN','SELLER','BIDDER') DEFAULT 'BIDDER',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

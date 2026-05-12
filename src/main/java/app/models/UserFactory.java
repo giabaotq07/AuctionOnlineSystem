@@ -23,25 +23,16 @@ public class UserFactory {
 
   public static User createUser(UserData userData) {
     UserRole role = userData.role();
+    Wallet wallet = new Wallet(userData.availableBalance(), userData.frozenFunds());
     return switch (role) {
       case ADMIN ->
-          new Admin(
-              userData.id(),
-              userData.name(),
-              new Account(userData.username(), null),
-              new Wallet(userData.assets()));
+          new Admin(userData.id(), userData.name(), new Account(userData.username(), null), wallet);
       case SELLER ->
           new Seller(
-              userData.id(),
-              userData.name(),
-              new Account(userData.username(), null),
-              new Wallet(userData.assets()));
+              userData.id(), userData.name(), new Account(userData.username(), null), wallet);
       case BIDDER ->
           new Bidder(
-              userData.id(),
-              userData.name(),
-              new Account(userData.username(), null),
-              new Wallet(userData.assets()));
+              userData.id(), userData.name(), new Account(userData.username(), null), wallet);
     };
   }
 }

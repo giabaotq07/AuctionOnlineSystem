@@ -71,7 +71,7 @@ public class Server {
           }
           socket.setTcpNoDelay(true);
           socket.setKeepAlive(true);
-          socket.setSoTimeout(30000);
+          socket.setSoTimeout(0);
           logger.info("[SERVER] Client connected: {}", socket.getRemoteSocketAddress());
           ClientHandler clientHandler =
               new ClientHandler(socket, auctionService, bidService, userService, itemService);

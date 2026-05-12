@@ -10,6 +10,7 @@ import app.data.ChatRequest;
 import app.data.ChatResponse;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
+import app.data.DepositRequest;
 import app.data.HistoryRequest;
 import app.data.HistoryResponse;
 import app.data.LoginRequest;
@@ -18,6 +19,8 @@ import app.data.PlaceBidRequest;
 import app.data.PlaceBidResponse;
 import app.data.RegisterRequest;
 import app.data.RegisterResponse;
+import app.data.SettleWalletRequest;
+import app.data.WalletUpdateResponse;
 
 public enum PacketType {
   LOGIN(LoginRequest.class, LoginResponse.class),
@@ -30,6 +33,9 @@ public enum PacketType {
   FETCH_HISTORY(HistoryRequest.class, HistoryResponse.class),
   FETCH_AUCTION_DETAIL(AuctionDetailRequest.class, AuctionDetailResponse.class),
   FETCH_AUCTION_RESULT(AuctionResultRequest.class, AuctionResultResponse.class),
+  DEPOSIT(DepositRequest.class, WalletUpdateResponse.class),
+  SETTLE_WALLET(SettleWalletRequest.class, WalletUpdateResponse.class),
+  WALLET_UPDATE(Void.class, WalletUpdateResponse.class),
   ERROR(Void.class, Void.class);
   public final Class<?> reqClass;
   public final Class<?> resClass;

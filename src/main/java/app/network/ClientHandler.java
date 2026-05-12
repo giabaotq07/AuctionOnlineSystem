@@ -59,13 +59,16 @@ public class ClientHandler implements Runnable {
         PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
     commands.putIfAbsent(
         PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
-    commands.putIfAbsent(PacketType.PLACE_BID, new PlaceBidCommand(bidService));
+    commands.putIfAbsent(PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService));
+    commands.putIfAbsent(PacketType.DEPOSIT, new DepositCommand(userService));
+    commands.putIfAbsent(
+        PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
   }
 
   @Override
   public void run() {
     try {
-      socket.setSoTimeout(30000);
+      socket.setSoTimeout(0);
       writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
       reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       listen();
@@ -125,7 +128,7 @@ public class ClientHandler implements Runnable {
 
   private boolean requiresAuthentication(PacketType type) {
     return switch (type) {
-      case PLACE_BID, CREATE_AUCTION, FETCH_HISTORY -> true;
+      case PLACE_BID, CREATE_AUCTION, FETCH_HISTORY, DEPOSIT, SETTLE_WALLET -> true;
       default -> false;
     };
   }
