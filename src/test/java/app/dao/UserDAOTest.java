@@ -2,7 +2,7 @@ package app.dao;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import app.config.DatabaseConnection;
+import app.database.DatabaseConnection;
 import app.dao.impl.MySqlUserDAO;
 import app.enums.UserRole;
 import app.exception.DatabaseException;

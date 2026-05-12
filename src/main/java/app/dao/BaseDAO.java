@@ -1,6 +1,6 @@
 package app.dao;
 
-import app.config.DatabaseConnection;
+import app.database.DatabaseConnection;
 import app.exception.DatabaseException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

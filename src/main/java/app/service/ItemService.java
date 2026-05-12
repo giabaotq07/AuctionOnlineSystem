@@ -1,6 +1,6 @@
 package app.service;
 
-import app.config.DatabaseConnection;
+import app.database.DatabaseConnection;
 import app.dao.ItemDAO;
 import app.enums.ItemStatus;
 import app.exception.DatabaseException;

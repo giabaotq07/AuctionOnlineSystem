@@ -1,6 +1,6 @@
 package app.controllers;
 
-import app.config.NavigationManager;
+import app.controllers.manager.NavigationManager;
 import app.data.RegisterRequest;
 import app.data.RegisterResponse;
 import app.enums.PacketType;

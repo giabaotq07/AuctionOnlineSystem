@@ -1,6 +1,6 @@
 package app.controllers;
 
-import app.config.NavigationManager;
+import app.controllers.manager.NavigationManager;
 import app.data.ChatRequest;
 import app.data.ChatResponse;
 import app.data.UserData;

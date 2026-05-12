@@ -1,6 +1,6 @@
 package app.controllers;
 
-import app.config.NavigationManager;
+import app.controllers.manager.NavigationManager;
 import app.enums.View;
 import app.network.Client;
 import java.io.IOException;

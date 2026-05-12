@@ -1,4 +1,4 @@
-package app.config;
+package app.database;
 
 public final class DatabaseConfig {
   private final String url;

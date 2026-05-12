@@ -1,6 +1,6 @@
 package app.service;
 
-import app.config.DatabaseConnection;
+import app.database.DatabaseConnection;
 import app.dao.AuctionDAO;
 import app.dao.AutoBidDAO;
 import app.dao.BidDAO;

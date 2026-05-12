@@ -1,6 +1,6 @@
 package app.dao;
 
-import app.config.DatabaseConnection;
+import app.database.DatabaseConnection;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;

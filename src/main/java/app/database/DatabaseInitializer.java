@@ -1,4 +1,4 @@
-package app.config;
+package app.database;
 
 import java.io.IOException;
 import java.io.InputStream;

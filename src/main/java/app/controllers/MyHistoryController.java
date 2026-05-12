@@ -1,6 +1,6 @@
 package app.controllers;
 
-import app.config.NavigationManager;
+import app.controllers.manager.NavigationManager;
 import app.data.AuctionSummary;
 import app.data.HistoryRequest;
 import app.data.HistoryResponse;

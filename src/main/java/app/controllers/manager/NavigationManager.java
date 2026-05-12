@@ -1,4 +1,4 @@
-package app.config;
+package app.controllers.manager;
 
 import app.controllers.Cleanable;
 import app.enums.View;
