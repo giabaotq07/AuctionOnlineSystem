@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 public class FetchAuctionsCommand implements Command {
   Logger logger = LoggerFactory.getLogger(FetchAuctionsCommand.class);
   private final AuctionService auctionService;
+
   public FetchAuctionsCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
   }

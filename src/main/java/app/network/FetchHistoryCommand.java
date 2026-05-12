@@ -11,9 +11,11 @@ import java.util.List;
 
 public class FetchHistoryCommand implements Command {
   private final AuctionService auctionService;
+
   public FetchHistoryCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
   }
+
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     HistoryRequest request = packet.getData(HistoryRequest.class);

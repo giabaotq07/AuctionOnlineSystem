@@ -1,6 +1,9 @@
 package app.network;
 
+import app.dao.*;
+import app.dao.impl.*;
 import app.models.PacketRes;
+import app.service.*;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,6 +22,11 @@ public class Server {
   private final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
 
+  private final AuctionService auctionService;
+  private final BidService bidService;
+  private final UserService userService;
+  private final ItemService itemService;
+
   private Server() {
     try {
       serverSocket = new ServerSocket();
@@ -26,6 +34,19 @@ public class Server {
       serverSocket.setReuseAddress(true);
       serverSocket.bind(new java.net.InetSocketAddress(PORT));
       logger.info("[SERVER] Đang chạy tại cổng {}", PORT);
+
+      // Instantiate DAOs
+      UserDAO userDAO = new MySqlUserDAO();
+      ItemDAO itemDAO = new MySqlItemDAO();
+      AuctionDAO auctionDAO = new MySqlAuctionDAO();
+      AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
+      BidDAO bidDAO = new MySqlBidDAO();
+
+      // Instantiate Services
+      userService = new UserService(userDAO);
+      itemService = new ItemService(itemDAO);
+      auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
+      bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, itemDAO);
     } catch (IOException e) {
       logger.error("[SERVER] Lỗi khởi tạo ServerSocket tại port {}: {}", PORT, e.getMessage());
       throw new RuntimeException("Failed to start server on port " + PORT, e);
@@ -38,16 +59,19 @@ public class Server {
   }
 
   public void start() {
-    while (true) {
-      try {
+    try {
+      while (true) {
         Socket socket = serverSocket.accept();
-        logger.info("[SERVER] Client mới kết nối: {}", socket.getRemoteSocketAddress());
-        clientPool.execute(new ClientHandler(socket));
-      } catch (IOException e) {
-        if (!serverSocket.isClosed()) {
-          logger.error("[SERVER] Lỗi khi nhận connection: {}", e.getMessage());
-        }
+        logger.info("[SERVER] Client connected: {}", socket.getRemoteSocketAddress());
+
+        // Pass services to ClientHandler
+        ClientHandler clientHandler =
+            new ClientHandler(socket, auctionService, bidService, userService, itemService);
+
+        clientPool.execute(clientHandler);
       }
+    } catch (IOException e) {
+      logger.error("[SERVER] Error accepting client connection: {}", e.getMessage());
     }
   }
 

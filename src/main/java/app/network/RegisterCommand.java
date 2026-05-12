@@ -16,28 +16,28 @@ import app.service.UserService;
 
 public class RegisterCommand implements Command {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    public RegisterCommand(UserService userService) {
-        this.userService = userService;
-    }
+  public RegisterCommand(UserService userService) {
+    this.userService = userService;
+  }
 
-    @Override
-    public void execute(ClientHandler clientHandler, PacketReq packet) {
-        RegisterRequest request = packet.getData(RegisterRequest.class);
-        UserRole role = request.role() != null ? request.role() : UserRole.BIDDER;
-        User newUser =
-            UserFactory.createUser(
-                request.name(), new Account(request.account(), request.password()), new Wallet(), role);
-        try {
-            User created = userService.register(newUser);
-            RegisterResponse response =
-                new RegisterResponse(true, "Đăng ký thành công!", new UserData(created));
-            clientHandler.sendMessage(PacketRes.of(PacketType.REGISTER, response));
-        } catch (ServiceException e) {
-            RegisterResponse response =
-                new RegisterResponse(false, "Tài khoản đã tồn tại hoặc có lỗi xảy ra.", null);
-            clientHandler.sendMessage(PacketRes.of(PacketType.REGISTER, response));
-        }
+  @Override
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    RegisterRequest request = packet.getData(RegisterRequest.class);
+    UserRole role = request.role() != null ? request.role() : UserRole.BIDDER;
+    User newUser =
+        UserFactory.createUser(
+            request.name(), new Account(request.account(), request.password()), new Wallet(), role);
+    try {
+      User created = userService.register(newUser);
+      RegisterResponse response =
+          new RegisterResponse(true, "Đăng ký thành công!", new UserData(created));
+      clientHandler.sendMessage(PacketRes.of(PacketType.REGISTER, response));
+    } catch (ServiceException e) {
+      RegisterResponse response =
+          new RegisterResponse(false, "Tài khoản đã tồn tại hoặc có lỗi xảy ra.", null);
+      clientHandler.sendMessage(PacketRes.of(PacketType.REGISTER, response));
     }
+  }
 }

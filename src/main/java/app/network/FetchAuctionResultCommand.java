@@ -9,16 +9,16 @@ import app.service.AuctionService;
 
 public class FetchAuctionResultCommand implements Command {
 
-    private final AuctionService auctionService;
+  private final AuctionService auctionService;
 
-    public FetchAuctionResultCommand(AuctionService auctionService) {
-        this.auctionService = auctionService;
-    }
+  public FetchAuctionResultCommand(AuctionService auctionService) {
+    this.auctionService = auctionService;
+  }
 
-    @Override
-    public void execute(ClientHandler clientHandler, PacketReq packet) {
-        AuctionResultRequest request = packet.getData(AuctionResultRequest.class);
-        AuctionResultResponse response = auctionService.getAuctionResult(request.auctionId());
-        clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTION_RESULT, response));
-    }
+  @Override
+  public void execute(ClientHandler clientHandler, PacketReq packet) {
+    AuctionResultRequest request = packet.getData(AuctionResultRequest.class);
+    AuctionResultResponse response = auctionService.getAuctionResult(request.auctionId());
+    clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTION_RESULT, response));
+  }
 }

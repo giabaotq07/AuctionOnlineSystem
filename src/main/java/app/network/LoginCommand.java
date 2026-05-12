@@ -1,7 +1,5 @@
 package app.network;
 
-import app.dao.UserDAO;
-import app.dao.impl.MySqlUserDAO;
 import app.data.LoginRequest;
 import app.data.LoginResponse;
 import app.data.UserData;
@@ -17,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public class LoginCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(LoginCommand.class);
   private final UserService userService;
+
   public LoginCommand(UserService userService) {
     this.userService = userService;
   }
