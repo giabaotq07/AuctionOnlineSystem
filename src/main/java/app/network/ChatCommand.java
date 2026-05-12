@@ -11,9 +11,10 @@ public class ChatCommand implements Command {
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     ChatRequest chatRequest = packet.getData(ChatRequest.class);
     ChatResponse chatResponse =
-        new ChatResponse(
+        new ChatResponse(clientHandler.getUser().getId(),
             chatRequest.sender().name(), chatRequest.content(), chatRequest.timestamp());
     PacketRes chatPacket = PacketRes.of(PacketType.CHAT, chatResponse);
+    clientHandler.sendMessage(chatPacket);
     Server.broadcast(chatPacket, chatRequest.sender().id());
   }
 }

@@ -64,9 +64,11 @@ public class Client {
             case PLACE_BID:
               Client.getInstance()
                   .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
+              break;
             case CREATE_AUCTION:
               Client.getInstance()
                   .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
+              break;
           }
           if (response != null) {
             notify(packet.getType(), response);

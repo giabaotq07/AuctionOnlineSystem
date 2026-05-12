@@ -50,9 +50,15 @@ public class MessController {
           }
           ChatResponse chatResponse = (ChatResponse) response;
           String sender = chatResponse.sender();
-          Platform.runLater(() -> addBubble(sender, chatResponse.content(), false));
+          Platform.runLater(
+              () -> addBubble(sender, chatResponse.content(), isMe(chatResponse.senderId())));
         };
     client.subscribe(PacketType.CHAT, chatHandler);
+  }
+
+  boolean isMe(int id) {
+    Client client = Client.getInstance();
+    return client.getCurrentUser().getId() == id;
   }
 
   // =========================
@@ -129,7 +135,6 @@ public class MessController {
         AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
         return;
       }
-      addBubble(Client.getInstance().getCurrentUser().getName(), chatRequest.content(), true);
       myTextArea.clear();
     }
   }

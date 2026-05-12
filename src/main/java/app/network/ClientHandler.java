@@ -78,6 +78,9 @@ public class ClientHandler implements Runnable {
     logger.info("Processing command: {}", type);
     Command command;
     switch (type) {
+      case CHAT:
+        command = new ChatCommand();
+        break;
       case LOGIN:
         command = new LoginCommand(userService);
         break;
