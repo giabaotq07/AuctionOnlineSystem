@@ -3,7 +3,6 @@ package app.dao;
 import app.enums.AuctionStatus;
 import app.models.Auction;
 import java.sql.Connection;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,37 +24,19 @@ public interface AuctionDAO {
 
   List<Auction> findBySeller(int sellerId);
 
-  long getHighestBid(int sessionId);
-
   // ── Write operations for single objects ──────────────────────────
   Auction save(Auction auction);
 
-  boolean updateStatus(int auctionId, AuctionStatus status);
-
-  void updateStartTime(int auctionId, LocalDateTime startTime);
-
-  void updateEndTime(int auctionId, LocalDateTime endTime);
-
-  void updateEndTime(Connection conn, int auctionId, LocalDateTime endTime);
-
-  void updateWinner(int auctionId, int winnerId);
+  boolean update(Auction auction);
 
   boolean delete(int id);
 
   // ── Transaction-aware operations (use provided Connection) ────────
   // These are used within transactions to ensure ACID properties
 
-  void lockSession(Connection conn, int sessionId);
-
-  long getHighestBid(Connection conn, int sessionId);
-
-  void updateHighestBid(Connection conn, int sessionId, long highestBid);
-
-  void extendEndTime(Connection conn, int sessionId, int extraSeconds);
+  void lockRow(Connection conn, int sessionId);
 
   Auction save(Connection conn, Auction auction);
 
-  boolean updateStatus(Connection conn, int auctionId, AuctionStatus status);
-
-  void updateWinner(Connection conn, int auctionId, int winnerId);
+  boolean update(Connection conn, Auction auction);
 }

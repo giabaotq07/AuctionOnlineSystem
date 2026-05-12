@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface BidDAO {
   void insertBid(int sessionId, int userId, long bidAmount, boolean isAutoBid);
 
-  void placeBidAtomic(int sessionId, int userId, long bidAmount, long minIncrement);
+  void insertBid(Connection conn, int sessionId, int userId, long bidAmount, boolean isAutoBid);
 
   Optional<BidTransaction> findHighestBid(int sessionId);
 

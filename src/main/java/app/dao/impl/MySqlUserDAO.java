@@ -39,10 +39,20 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   }
 
   @Override
+  public Optional<User> findById(Connection conn, int id) {
+    return findOne(conn, BASE_SELECT + "WHERE id = ?", id);
+  }
+
+  @Override
   public Optional<User> findByUsername(String username) {
     return withConnection(
         conn -> findOne(conn, BASE_SELECT + "WHERE username = ?", username),
         "Lỗi kết nối khi tải user theo username.");
+  }
+
+  @Override
+  public Optional<User> findByUsername(Connection conn, String username) {
+    return findOne(conn, BASE_SELECT + "WHERE username = ?", username);
   }
 
   @Override
@@ -66,10 +76,15 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
 
   @Override
   public User save(User user) {
-    return withConnection(conn -> save(conn, user), "Lỗi kết nối khi thêm user.");
+    return withConnection(conn -> saveInternal(conn, user), "Lỗi kết nối khi thêm user.");
   }
 
-  private User save(Connection conn, User user) {
+  @Override
+  public User save(Connection conn, User user) {
+    return saveInternal(conn, user);
+  }
+
+  private User saveInternal(Connection conn, User user) {
     String sql =
         """
         INSERT INTO users (username, password, full_name, assets, role)
@@ -101,25 +116,41 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
     if (user.getId() <= 0) {
       throw new DatabaseException("Id user không hợp lệ để cập nhật.");
     }
-    runWithConnection(
-        conn -> {
-          boolean ok =
-              executeUpdate(
-                  conn,
-                  TABLE,
-                  "UPDATE users SET username = ?, password = ?, full_name = ?, assets = ?, role = ? WHERE id = ?",
-                  user.getAccount().getUsername(),
-                  // Expect password to be already hashed by service layer
-                  user.getAccount().getPassword(),
-                  user.getName(),
-                  user.getWallet().getAssets(),
-                  user.getRole().name(),
-                  user.getId());
-          if (ok) {
-            throw new DatabaseException("Không tìm thấy user để cập nhật.");
-          }
-        },
-        "Lỗi kết nối khi cập nhật user.");
+    runWithConnection(conn -> update(conn, user), "Lỗi kết nối khi cập nhật user.");
+  }
+
+  @Override
+  public void update(Connection conn, User user) {
+    boolean ok =
+        executeUpdate(
+            conn,
+            TABLE,
+            "UPDATE users SET username = ?, password = ?, full_name = ?, assets = ?, role = ? WHERE id = ?",
+            user.getAccount().getUsername(),
+            // Expect password to be already hashed by service layer
+            user.getAccount().getPassword(),
+            user.getName(),
+            user.getWallet().getAssets(),
+            user.getRole().name(),
+            user.getId());
+    if (!ok) {
+      throw new DatabaseException("Không tìm thấy user để cập nhật.");
+    }
+  }
+
+  @Override
+  public void lockRow(Connection conn, int id) {
+    String sql = "SELECT id FROM users WHERE id = ? FOR UPDATE";
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      ps.setInt(1, id);
+      try (ResultSet rs = ps.executeQuery()) {
+        if (!rs.next()) {
+          throw new ServiceException("Người dùng không tồn tại: " + id);
+        }
+      }
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi khóa hàng người dùng.", e);
+    }
   }
 
   @Override
@@ -133,43 +164,6 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
           }
         },
         "Failed to clean users");
-  }
-
-  @Override
-  public void adjustWallet(int id, long delta) {
-    runInTransaction(
-        conn -> {
-          // Lock the row for update to prevent race conditions
-          String lockSql = "SELECT assets FROM users WHERE id = ? FOR UPDATE";
-          long currentAssets;
-          try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-              if (!rs.next()) {
-                throw new ServiceException("Người dùng không tồn tại: " + id);
-              }
-              currentAssets = rs.getLong("assets");
-            }
-          } catch (SQLException e) {
-            throw new DatabaseException("Lỗi khi khóa hàng người dùng.", e);
-          }
-
-          // Validate sufficient balance for withdrawals
-          if (delta < 0 && currentAssets < -delta) {
-            throw new ServiceException("Số dư không đủ để thực hiện giao dịch.");
-          }
-
-          // Update with new balance
-          String updateSql = "UPDATE users SET assets = assets + ? WHERE id = ?";
-          try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-            ps.setLong(1, delta);
-            ps.setInt(2, id);
-            ps.executeUpdate();
-          } catch (SQLException e) {
-            throw new DatabaseException("Lỗi khi cập nhật ví.", e);
-          }
-        },
-        "Lỗi kết nối khi cập nhật ví.");
   }
 
   private Optional<User> findOne(Connection conn, String sql, Object... params) {

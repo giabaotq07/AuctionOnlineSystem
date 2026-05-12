@@ -6,7 +6,6 @@ import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.models.*;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -91,22 +90,14 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
         "Lỗi kết nối khi tải danh sách phiên của người bán.");
   }
 
-  // ── Transaction methods — nhận Connection từ Service ──────────
-
   @Override
-  public void lockSession(Connection conn, int sessionId) {
-    String sql =
-        """
-            SELECT id FROM auction_sessions
-            WHERE id = ? AND status = 'RUNNING'
-            FOR UPDATE
-            """;
+  public void lockRow(Connection conn, int sessionId) {
+    String sql = "SELECT id FROM auction_sessions WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setInt(1, sessionId);
       try (ResultSet rs = ps.executeQuery()) {
         if (!rs.next()) {
-          throw new DatabaseException(
-              "Phiên đấu giá không tồn tại hoặc không ở trạng thái RUNNING.");
+          throw new DatabaseException("Phiên đấu giá không tồn tại.");
         }
       }
     } catch (SQLException e) {
@@ -114,66 +105,16 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
     }
   }
 
-  @Override
-  public long getHighestBid(int sessionId) {
-    return withConnection(
-        conn -> getHighestBid(conn, sessionId), "Lỗi kết nối khi lấy giá thầu cao nhất.");
-  }
-
-  @Override
-  public long getHighestBid(Connection conn, int sessionId) {
-    String sql = "SELECT highest_bid FROM auction_sessions WHERE id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? rs.getLong("highest_bid") : 0L;
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi lấy giá thầu cao nhất của phiên đấu giá.", e);
-    }
-  }
-
-  @Override
-  public void updateHighestBid(Connection conn, int sessionId, long highestBid) {
-    String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setLong(1, highestBid);
-      ps.setInt(2, sessionId);
-      ps.executeUpdate();
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi cập nhật giá cao nhất.", e);
-    }
-  }
-
-  @Override
-  public void extendEndTime(Connection conn, int sessionId, int extraSeconds) {
-    String sql =
-        """
-            UPDATE auction_sessions
-            SET end_time = DATE_ADD(end_time, INTERVAL ? SECOND),
-                extended_count = extended_count + 1
-            WHERE id = ?
-            """;
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, extraSeconds);
-      ps.setInt(2, sessionId);
-      ps.executeUpdate();
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi gia hạn thời gian phiên đấu giá.", e);
-    }
-  }
-
-  @Override
-  public void updateWinner(Connection conn, int auctionId, int winnerId) {
-    executeUpdate(
-        conn, TABLE, "UPDATE auction_sessions SET winner_id = ? WHERE id = ?", winnerId, auctionId);
-  }
-
   // ── Write methods ─────────────────────────────────────────────
 
   @Override
   public Auction save(Auction auction) {
     return withConnection(conn -> save(conn, auction), "Lỗi kết nối khi tạo auction.");
+  }
+
+  @Override
+  public boolean update(Auction auction) {
+    return withConnection(conn -> update(conn, auction), "Lỗi kết nối khi cập nhật phiên đấu giá.");
   }
 
   @Override
@@ -203,57 +144,30 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   @Override
-  public boolean updateStatus(int auctionId, AuctionStatus status) {
-    return withConnection(
-        conn -> updateStatus(conn, auctionId, status),
-        "Lỗi kết nối khi cập nhật trạng thái phiên đấu giá.");
-  }
-
-  @Override
-  public boolean updateStatus(Connection conn, int auctionId, AuctionStatus status) {
-    return executeUpdate(
-        conn,
-        TABLE,
-        "UPDATE auction_sessions SET status = ? WHERE id = ?",
-        status.name(),
-        auctionId);
-  }
-
-  @Override
-  public void updateStartTime(int auctionId, LocalDateTime startTime) {
-    runWithConnection(
-        conn ->
-            executeUpdate(
-                conn,
-                TABLE,
-                "UPDATE auction_sessions SET start_time = ? WHERE id = ?",
-                Timestamp.valueOf(startTime),
-                auctionId),
-        "Lỗi kết nối khi cập nhật thời gian bắt đầu phiên.");
-  }
-
-  @Override
-  public void updateEndTime(int auctionId, LocalDateTime endTime) {
-    runWithConnection(
-        conn -> updateEndTime(conn, auctionId, endTime),
-        "Lỗi kết nối khi cập nhật thời gian kết thúc phiên.");
-  }
-
-  @Override
-  public void updateEndTime(Connection conn, int auctionId, LocalDateTime endTime) {
-    executeUpdate(
-        conn,
-        TABLE,
-        "UPDATE auction_sessions SET end_time = ? WHERE id = ?",
-        Timestamp.valueOf(endTime),
-        auctionId);
-  }
-
-  @Override
-  public void updateWinner(int auctionId, int winnerId) {
-    runWithConnection(
-        conn -> updateWinner(conn, auctionId, winnerId),
-        "Lỗi kết nối khi cập nhật người thắng phiên.");
+  public boolean update(Connection conn, Auction auction) {
+    String sql =
+        "UPDATE auction_sessions SET status = ?, start_time = ?, end_time = ?, highest_bid = ?, "
+            + "extended_count = ?, winner_id = ? WHERE id = ?";
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      ps.setString(1, auction.getStatus().name());
+      if (auction.getStartTime() == null) {
+        ps.setNull(2, Types.TIMESTAMP);
+      } else {
+        ps.setTimestamp(2, Timestamp.valueOf(auction.getStartTime()));
+      }
+      if (auction.getEndTime() == null) {
+        ps.setNull(3, Types.TIMESTAMP);
+      } else {
+        ps.setTimestamp(3, Timestamp.valueOf(auction.getEndTime()));
+      }
+      ps.setLong(4, auction.getHighestBid());
+      ps.setInt(5, auction.getExtendedCount());
+      ps.setObject(6, auction.getWinnerId());
+      ps.setInt(7, auction.getId());
+      return ps.executeUpdate() > 0;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi khi cập nhật phiên đấu giá.", e);
+    }
   }
 
   @Override

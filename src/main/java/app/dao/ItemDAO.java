@@ -1,6 +1,5 @@
 package app.dao;
 
-import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.models.Item;
 import java.sql.Connection;
@@ -9,6 +8,8 @@ import java.util.Optional;
 
 public interface ItemDAO {
   Optional<Item> findById(int id);
+
+  Optional<Item> findById(Connection conn, int id);
 
   List<Item> findAll();
 
@@ -24,5 +25,5 @@ public interface ItemDAO {
 
   void update(Item item);
 
-  void updateStatus(int id, ItemStatus status);
+  void update(Connection conn, Item item);
 }

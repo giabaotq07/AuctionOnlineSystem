@@ -1,14 +1,17 @@
 package app.service;
 
+import app.config.DatabaseConnection;
 import app.dao.AuctionDAO;
 import app.dao.AutoBidDAO;
 import app.dao.BidDAO;
+import app.dao.ItemDAO;
+import app.data.PlaceBidResponse;
 import app.enums.AuctionStatus;
+import app.exception.DatabaseException;
 import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.BidTransaction;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,18 +38,59 @@ public class BidService {
   private final BidDAO bidDAO;
   private final AutoBidDAO autoBidDAO;
   private final AuctionDAO sessionDAO;
+  private final ItemDAO itemDAO;
 
-  public BidService(BidDAO bidDAO, AutoBidDAO autoBidDAO, AuctionDAO sessionDAO) {
+  public BidService(BidDAO bidDAO, AutoBidDAO autoBidDAO, AuctionDAO sessionDAO, ItemDAO itemDAO) {
     this.bidDAO = bidDAO;
     this.autoBidDAO = autoBidDAO;
     this.sessionDAO = sessionDAO;
+    this.itemDAO = itemDAO;
   }
 
   // ── 1. Đặt giá thủ công ──────────────────────────────────────────────────
   public void placeBid(int sessionId, int userId, long bidAmount) {
-    bidDAO.placeBidAtomic(sessionId, userId, bidAmount, DEFAULT_MIN_INCREMENT);
-    // Trigger auto-bid của các đối thủ
-    //    triggerAutoBids(sessionId, userId, bidAmount);
+    runInTransaction(
+        conn -> {
+          sessionDAO.lockRow(conn, sessionId);
+          Auction session = requireRunningSession(conn, sessionId);
+          validateBidAmount(bidAmount, session.getHighestBid());
+
+          session.updateHighestBid(bidAmount, userId);
+          applyAntiSnipe(session);
+
+          bidDAO.insertBid(conn, sessionId, userId, bidAmount, false);
+          sessionDAO.update(conn, session);
+
+          return null;
+        });
+  }
+
+  public PlaceBidResponse placeBidAndBuildResponse(int sessionId, int userId, long bidAmount) {
+    placeBid(sessionId, userId, bidAmount);
+
+    Auction session =
+        sessionDAO
+            .findById(sessionId)
+            .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
+    String itemName =
+        itemDAO
+            .findById(session.getItemId())
+            .orElseThrow(() -> new ServiceException("Không tìm thấy item."))
+            .getName();
+
+    long amount = session.getHighestBid();
+    int bidderId = 0;
+    String bidderName = "";
+
+    Optional<BidTransaction> highest = bidDAO.findHighestBid(session.getId());
+    if (highest.isPresent()) {
+      BidTransaction tx = highest.get();
+      bidderId = tx.getBidderId();
+      amount = tx.getAmount();
+      bidderName = tx.getBidderName();
+    }
+
+    return new PlaceBidResponse(bidderId, amount, itemName, bidderName);
   }
 
   // ── 2. Đăng ký / huỷ Auto-Bid ────────────────────────────────────────────
@@ -76,15 +120,16 @@ public class BidService {
    * Nếu bid xảy ra trong ANTI_SNIPE_THRESHOLD_SECONDS giây cuối → gia hạn endTime thêm
    * ANTI_SNIPE_EXTENSION_SECONDS giây.
    */
-  private void applyAntiSnipe(Connection conn, Auction session) throws SQLException {
+  private void applyAntiSnipe(Auction session) {
+    if (session.getEndTime() == null) {
+      return;
+    }
     long secondsLeft =
         java.time.Duration.between(java.time.LocalDateTime.now(), session.getEndTime())
             .getSeconds();
 
     if (secondsLeft > 0 && secondsLeft <= ANTI_SNIPE_THRESHOLD_SECONDS) {
-      java.time.LocalDateTime newEndTime =
-          session.getEndTime().plusSeconds(ANTI_SNIPE_EXTENSION_SECONDS);
-      sessionDAO.updateEndTime(conn, session.getId(), newEndTime);
+      session.extend(ANTI_SNIPE_EXTENSION_SECONDS);
     }
   }
 
@@ -117,5 +162,23 @@ public class BidService {
   /** Lấy giá hiện tại của phiên (dùng nội bộ). */
   private long getCurrentPrice(Connection conn, int sessionId) {
     return sessionDAO.findById(conn, sessionId).map(Auction::getHighestBid).orElse(0L);
+  }
+
+  private <T> T runInTransaction(java.util.function.Function<Connection, T> work) {
+    try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
+      conn.setAutoCommit(false);
+      try {
+        T result = work.apply(conn);
+        conn.commit();
+        return result;
+      } catch (Exception e) {
+        conn.rollback();
+        throw e;
+      } finally {
+        conn.setAutoCommit(true);
+      }
+    } catch (java.sql.SQLException e) {
+      throw new DatabaseException("Lỗi transaction.", e);
+    }
   }
 }

@@ -10,14 +10,9 @@ import app.data.AuctionSummary;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
 import app.enums.PacketType;
-import app.models.Auction;
-import app.models.Item;
-import app.models.ItemFactory;
-import app.models.PacketReq;
-import app.models.PacketRes;
+import app.models.*;
 import app.service.AuctionService;
 import app.service.ItemService;
-import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,18 +37,10 @@ public class CreateAuctionCommand implements Command {
 
       AuctionDAO auctionDAO = new MySqlAuctionDAO();
       BidDAO bidDAO = new MySqlBidDAO();
-      AuctionService auctionService = new AuctionService(auctionDAO, bidDAO);
+      AuctionService auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
       Auction session =
-          new Auction(
-              item.getId(),
-              request.sellerId(),
-              LocalDateTime.now().plusMinutes(request.durationMinutes()),
-              item.getStartingPrice());
-      //      session.start();
-
-      session = auctionService.createAuction(session);
-      session.start();
-      auctionService.updateStatus(session.getId(), session.getStatus());
+          auctionService.createAndStartAuction(
+              item.getId(), request.sellerId(), item.getStartingPrice(), request.durationMinutes());
       AuctionSummary auctionSummary =
           new AuctionSummary(session, item.getName(), session.getHighestBid());
       CreateAuctionResponse response =

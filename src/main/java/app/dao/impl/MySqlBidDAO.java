@@ -2,9 +2,7 @@ package app.dao.impl;
 
 import app.dao.BaseDAO;
 import app.dao.BidDAO;
-import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
-import app.exception.ServiceException;
 import app.models.*;
 import java.sql.*;
 import java.util.ArrayList;
@@ -46,7 +44,8 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
         "Lỗi kết nối khi thêm bid.");
   }
 
-  private void insertBid(
+  @Override
+  public void insertBid(
       Connection conn, int sessionId, int userId, long bidAmount, boolean isAutoBid) {
     String sql =
         """
@@ -120,30 +119,6 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
     }
   }
 
-  @Override
-  public void placeBidAtomic(int sessionId, int userId, long bidAmount, long minIncrement) {
-    runInTransaction(
-        conn -> {
-          AuctionSnapshot snapshot = lockAuctionSnapshot(conn, sessionId);
-          if (snapshot.status != AuctionStatus.RUNNING) {
-            throw new ServiceException(
-                "Phiên đấu giá đã " + snapshot.status.name().toLowerCase() + ".");
-          }
-          if (bidAmount < snapshot.highestBid + minIncrement) {
-            throw new ServiceException(
-                "Giá đặt phải cao hơn giá hiện tại ít nhất "
-                    + minIncrement
-                    + " VNĐ. "
-                    + "Giá tối thiểu: "
-                    + (snapshot.highestBid + minIncrement));
-          }
-
-          insertBid(conn, sessionId, userId, bidAmount, false);
-          updateHighestBid(conn, sessionId, bidAmount);
-        },
-        "Lỗi kết nối khi đặt giá.");
-  }
-
   // ── Private helpers ───────────────────────────────────────────
 
   private List<BidTransaction> queryBids(Connection conn, String sql, int sessionId) {
@@ -157,47 +132,5 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
       throw new DatabaseException("Lỗi khi truy vấn bids.", e);
     }
     return bids;
-  }
-
-  private void updateHighestBid(Connection conn, int sessionId, long highestBid) {
-    String sql = "UPDATE auction_sessions SET highest_bid = ? WHERE id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setLong(1, highestBid);
-      ps.setInt(2, sessionId);
-      ps.executeUpdate();
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi cập nhật giá cao nhất.", e);
-    }
-  }
-
-  private AuctionSnapshot lockAuctionSnapshot(Connection conn, int sessionId) {
-    String sql = "SELECT status, highest_bid FROM auction_sessions WHERE id = ? FOR UPDATE";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
-      try (ResultSet rs = ps.executeQuery()) {
-        if (!rs.next()) {
-          throw new ServiceException("Phiên đấu giá không tồn tại.");
-        }
-        AuctionStatus status = AuctionStatus.valueOf(rs.getString("status"));
-        long highestBid = rs.getLong("highest_bid");
-        return new AuctionSnapshot(status, highestBid);
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi khóa phiên đấu giá.", e);
-    }
-  }
-
-  /**
-   * Immutable snapshot of auction state captured under row lock (FOR UPDATE). Prevents re-querying
-   * within same transaction.
-   */
-  private static class AuctionSnapshot {
-    private final AuctionStatus status;
-    private final long highestBid;
-
-    private AuctionSnapshot(AuctionStatus status, long highestBid) {
-      this.status = status;
-      this.highestBid = highestBid;
-    }
   }
 }
