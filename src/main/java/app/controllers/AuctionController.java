@@ -42,27 +42,27 @@ public class AuctionController {
     }
 
     createAuctionHandler =
-            (CreateAuctionResponse response) ->
-                    Platform.runLater(
-                            () -> {
-                              if (response.success()) {
-                                if (response.auction() != null) {
-                                  try {
-                                    DataStore.getInstance().sessions.add(response.auction());
-                                  } catch (IOException e) {
-                                    AlertUtils.showError("Lỗi", response.message());
-                                  }
-                                }
-                                AlertUtils.showInfo("OK", response.message());
-                                if (createAuctionHandler != null) {
-                                  Client.getInstance()
-                                          .unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-                                }
-                                NavigationManager.getInstance().navigateTo(View.UI);
-                              } else {
-                                AlertUtils.showError("Lỗi", response.message());
-                              }
-                            });
+        (CreateAuctionResponse response) ->
+            Platform.runLater(
+                () -> {
+                  if (response.success()) {
+                    if (response.auction() != null) {
+                      try {
+                        DataStore.getInstance().sessions.add(response.auction());
+                      } catch (IOException e) {
+                        AlertUtils.showError("Lỗi", response.message());
+                      }
+                    }
+                    AlertUtils.showInfo("OK", response.message());
+                    if (createAuctionHandler != null) {
+                      Client.getInstance()
+                          .unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
+                    }
+                    NavigationManager.getInstance().navigateTo(View.UI);
+                  } else {
+                    AlertUtils.showError("Lỗi", response.message());
+                  }
+                });
     Client.getInstance().subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
   }
 
@@ -95,14 +95,14 @@ public class AuctionController {
       }
 
       CreateAuctionRequest request =
-              new CreateAuctionRequest(
-                      name,
-                      desc,
-                      startPrice,
-                      stepPrice,
-                      type,
-                      durationMins,
-                      Client.getInstance().getCurrentUser().getId());
+          new CreateAuctionRequest(
+              name,
+              desc,
+              startPrice,
+              stepPrice,
+              type,
+              durationMins,
+              Client.getInstance().getCurrentUser().getId());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.CREATE_AUCTION, request));
 
     } catch (NumberFormatException e) {

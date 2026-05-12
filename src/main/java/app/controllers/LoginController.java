@@ -31,48 +31,47 @@ public class LoginController {
   @FXML
   private void initialize() {
     String url =
-            Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
-                    .toExternalForm();
+        Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
+            .toExternalForm();
 
     rootPane.setStyle(
-            "-fx-background-image: url('"
-                    + url
-                    + "');"
-                    + "-fx-background-size: cover;"
-                    + "-fx-background-position: center center;"
-                    + "-fx-background-repeat: no-repeat;");
+        "-fx-background-image: url('"
+            + url
+            + "');"
+            + "-fx-background-size: cover;"
+            + "-fx-background-position: center center;"
+            + "-fx-background-repeat: no-repeat;");
     loginHandler =
-            (LoginResponse response) ->
-                    Platform.runLater(
+        (LoginResponse response) ->
+            Platform.runLater(
+                () -> {
+                  loginButton.setDisable(false);
+                  if (response.success()) {
+                    User user = UserFactory.createUser(response.user());
+                    Client.getInstance().setCurrentUser(user);
+                    Thread thread =
+                        new Thread(
                             () -> {
-                              loginButton.setDisable(false);
-                              if (response.success()) {
-                                User user = UserFactory.createUser(response.user());
-                                Client.getInstance().setCurrentUser(user);
-                                Thread thread =
-                                        new Thread(
-                                                () -> {
-                                                  try {
-                                                    DataStore.getInstance();
-                                                    Thread.sleep(2000);
-                                                  }catch (IOException e) {
-                                                    Platform.runLater(
-                                                            () ->
-                                                                    AlertUtils.showError(
-                                                                            "Đăng nhập thất bại",
-                                                                            response.message()));
-                                                  } catch (InterruptedException e) {
-                                                    e.printStackTrace();
-                                                  }
-                                                });
-                                thread.setDaemon(true);
-                                thread.start();
-
-                                SwitchToUI();
-                              } else {
-                                AlertUtils.showError("Đăng nhập thất bại", response.message());
+                              try {
+                                DataStore.getInstance();
+                                Thread.sleep(2000);
+                              } catch (IOException e) {
+                                Platform.runLater(
+                                    () ->
+                                        AlertUtils.showError(
+                                            "Đăng nhập thất bại", response.message()));
+                              } catch (InterruptedException e) {
+                                e.printStackTrace();
                               }
                             });
+                    thread.setDaemon(true);
+                    thread.start();
+
+                    SwitchToUI();
+                  } else {
+                    AlertUtils.showError("Đăng nhập thất bại", response.message());
+                  }
+                });
     Client.getInstance().subscribe(PacketType.LOGIN, loginHandler);
   }
 

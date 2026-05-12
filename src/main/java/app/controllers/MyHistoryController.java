@@ -4,7 +4,6 @@ import app.config.NavigationManager;
 import app.data.AuctionSummary;
 import app.data.HistoryRequest;
 import app.data.HistoryResponse;
-import app.data.Response;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
@@ -16,7 +15,6 @@ import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -45,16 +43,16 @@ public class MyHistoryController {
   @FXML
   public void initialize() {
     historyHandler =
-            (HistoryResponse response) ->
-                    Platform.runLater(
-                            () -> {
-                              if (response.success() && response.auctions() != null) {
-                                summaries.clear();
-                                summaries.addAll(response.auctions());
-                                refreshHistoryContainer();
-                                startAutoScroll();
-                              }
-                            });
+        (HistoryResponse response) ->
+            Platform.runLater(
+                () -> {
+                  if (response.success() && response.auctions() != null) {
+                    summaries.clear();
+                    summaries.addAll(response.auctions());
+                    refreshHistoryContainer();
+                    startAutoScroll();
+                  }
+                });
     Client.getInstance().subscribe(PacketType.FETCH_HISTORY, historyHandler);
 
     requestHistory();
@@ -87,14 +85,14 @@ public class MyHistoryController {
     vbox.setMinWidth(CARD_WIDTH);
     vbox.setMaxWidth(CARD_WIDTH);
     vbox.setStyle(
-            "-fx-background-color: #1a1f35; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
+        "-fx-background-color: #1a1f35; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
 
     Label badge =
-            new Label(currentUser.getId() == session.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
+        new Label(currentUser.getId() == session.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
     badge.setStyle(
-            currentUser.getId() == session.getSellerId()
-                    ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
-                    : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
+        currentUser.getId() == session.getSellerId()
+            ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
+            : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
 
     Label titleLabel = new Label(summary.itemName());
     titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 14px;");
@@ -117,24 +115,24 @@ public class MyHistoryController {
     if (historyScrollPane == null || historyContainerPane == null) return;
 
     Timeline scrollTimeline =
-            new Timeline(
-                    new KeyFrame(
-                            Duration.seconds(3),
-                            e -> {
-                              double contentWidth = historyContainerPane.getWidth();
-                              double viewWidth = historyScrollPane.getViewportBounds().getWidth();
-                              double maxScroll = contentWidth - viewWidth;
+        new Timeline(
+            new KeyFrame(
+                Duration.seconds(3),
+                e -> {
+                  double contentWidth = historyContainerPane.getWidth();
+                  double viewWidth = historyScrollPane.getViewportBounds().getWidth();
+                  double maxScroll = contentWidth - viewWidth;
 
-                              if (maxScroll <= 0) return;
+                  if (maxScroll <= 0) return;
 
-                              double step = CARD_WIDTH + SPACING;
-                              double nextPixel = (historyScrollPane.getHvalue() * maxScroll) + step;
+                  double step = CARD_WIDTH + SPACING;
+                  double nextPixel = (historyScrollPane.getHvalue() * maxScroll) + step;
 
-                              if (nextPixel >= maxScroll + 10) { // Thêm tí đệm để reset mượt
-                                nextPixel = 0;
-                              }
-                              historyScrollPane.setHvalue(nextPixel / maxScroll);
-                            }));
+                  if (nextPixel >= maxScroll + 10) { // Thêm tí đệm để reset mượt
+                    nextPixel = 0;
+                  }
+                  historyScrollPane.setHvalue(nextPixel / maxScroll);
+                }));
     scrollTimeline.setCycleCount(Timeline.INDEFINITE);
     scrollTimeline.play();
 
@@ -145,11 +143,11 @@ public class MyHistoryController {
   private void handleGoToLive(Auction session) {
     try {
       NavigationManager.getInstance()
-              .navigateTo(
-                      View.LIVE,
-                      c -> {
-                        if (c instanceof LiveController) ((LiveController) c).setSession(session);
-                      });
+          .navigateTo(
+              View.LIVE,
+              c -> {
+                if (c instanceof LiveController) ((LiveController) c).setSession(session);
+              });
     } catch (Exception e) {
       e.printStackTrace();
     }

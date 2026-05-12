@@ -1,6 +1,5 @@
 package app.network;
 
-import app.data.AuctionsRequest;
 import app.data.Response;
 import app.enums.PacketType;
 import app.exception.AppException;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,11 +87,12 @@ public class Client {
       writer.flush();
     }
   }
+
   @SuppressWarnings("unchecked")
   public <T extends Response> void notify(PacketType packetType, T response) {
     List<PacketListener<?>> users = observersMap.get(packetType);
-    if (users != null){
-      for (PacketListener<?> listener : users){
+    if (users != null) {
+      for (PacketListener<?> listener : users) {
         PacketListener<T> typedListener = (PacketListener<T>) listener;
         typedListener.handle(response);
       }

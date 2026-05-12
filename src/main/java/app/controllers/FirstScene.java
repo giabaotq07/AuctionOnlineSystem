@@ -11,11 +11,9 @@ import app.models.DataStore;
 import app.network.Client;
 import app.network.PacketListener;
 import app.utils.AlertUtils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -33,7 +31,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,9 +69,9 @@ public class FirstScene {
     // ================= AUTH UI =================
     if (btnAuth != null) {
       btnAuth.setText(
-              client.getCurrentUser() != null
-                      ? "Xin chào, " + client.getCurrentUser().getName()
-                      : "Đăng nhập / Đăng ký");
+          client.getCurrentUser() != null
+              ? "Xin chào, " + client.getCurrentUser().getName()
+              : "Đăng nhập / Đăng ký");
     }
 
     // ================= INIT DATA =================
@@ -99,30 +96,32 @@ public class FirstScene {
     }
 
     // ================= REALTIME HANDLER =================
-    createAuctionHandler = response -> Platform.runLater(() -> {
+    createAuctionHandler =
+        response ->
+            Platform.runLater(
+                () -> {
+                  if (response == null || response.auction() == null) return;
 
-      if (response == null || response.auction() == null) return;
+                  AuctionSummary summary = response.auction();
+                  Auction session = summary.auction();
 
-      AuctionSummary summary = response.auction();
-      Auction session = summary.auction();
+                  // ✔ DEDUPLICATE
+                  boolean exists =
+                      summaries.stream().anyMatch(s -> s.auction().getId() == session.getId());
 
-      // ✔ DEDUPLICATE
-      boolean exists = summaries.stream()
-              .anyMatch(s -> s.auction().getId() == session.getId());
+                  if (exists) return;
 
-      if (exists) return;
+                  summaries.add(summary);
 
-      summaries.add(summary);
+                  // ✔ UPDATE UI INCREMENTALLY (KHÔNG REBUILD FULL)
+                  if (session.getStatus() == AuctionStatus.RUNNING) {
+                    activeBox.getChildren().add(createAuctionCard(summary));
+                  } else {
+                    completedBox.getChildren().add(createAuctionCard(summary));
+                  }
 
-      // ✔ UPDATE UI INCREMENTALLY (KHÔNG REBUILD FULL)
-      if (session.getStatus() == AuctionStatus.RUNNING) {
-        activeBox.getChildren().add(createAuctionCard(summary));
-      } else {
-        completedBox.getChildren().add(createAuctionCard(summary));
-      }
-
-      updateListView();
-    });
+                  updateListView();
+                });
 
     client.subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
 
@@ -156,9 +155,7 @@ public class FirstScene {
     String key = searchField != null ? searchField.getText() : "";
 
     for (AuctionSummary summary : summaries) {
-      String itemName = summary.itemName() != null
-              ? summary.itemName().toLowerCase()
-              : "";
+      String itemName = summary.itemName() != null ? summary.itemName().toLowerCase() : "";
 
       if (key == null || key.isBlank() || itemName.contains(key.toLowerCase())) {
         sessionListView.getItems().add(summary.auction());
@@ -189,25 +186,25 @@ public class FirstScene {
     viewport.setPrefHeight(350);
 
     Timeline scrollTimeline =
-            new Timeline(
-                    new KeyFrame(
-                            Duration.seconds(3),
-                            e -> {
-                              double contentWidth = container.getWidth();
-                              double viewWidth = viewport.getViewportBounds().getWidth();
-                              double maxScroll = contentWidth - viewWidth;
+        new Timeline(
+            new KeyFrame(
+                Duration.seconds(3),
+                e -> {
+                  double contentWidth = container.getWidth();
+                  double viewWidth = viewport.getViewportBounds().getWidth();
+                  double maxScroll = contentWidth - viewWidth;
 
-                              if (maxScroll <= 0) return;
+                  if (maxScroll <= 0) return;
 
-                              double step = CARD_WIDTH + SPACING;
-                              double nextPixel = (viewport.getHvalue() * maxScroll) + step;
+                  double step = CARD_WIDTH + SPACING;
+                  double nextPixel = (viewport.getHvalue() * maxScroll) + step;
 
-                              if (nextPixel >= maxScroll) {
-                                nextPixel = 0;
-                              }
+                  if (nextPixel >= maxScroll) {
+                    nextPixel = 0;
+                  }
 
-                              viewport.setHvalue(nextPixel / maxScroll);
-                            }));
+                  viewport.setHvalue(nextPixel / maxScroll);
+                }));
 
     scrollTimeline.setCycleCount(Timeline.INDEFINITE);
     scrollTimeline.play();
@@ -230,11 +227,11 @@ public class FirstScene {
     vbox.setMaxWidth(CARD_WIDTH);
 
     vbox.setStyle(
-            "-fx-background-color: #1a1f35;"
-                    + "-fx-background-radius: 8;"
-                    + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-                    + "-fx-padding: 15;"
-                    + "-fx-spacing: 10;");
+        "-fx-background-color: #1a1f35;"
+            + "-fx-background-radius: 8;"
+            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
+            + "-fx-padding: 15;"
+            + "-fx-spacing: 10;");
 
     StackPane imagePane = new StackPane();
     imagePane.setPrefHeight(150);
@@ -255,7 +252,7 @@ public class FirstScene {
     timeLabel.setStyle("-fx-text-fill: #9aa0b4; -fx-font-size: 12px;");
 
     Button btnDetail =
-            new Button(session.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+        new Button(session.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
 
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white;");
@@ -284,7 +281,9 @@ public class FirstScene {
       }
 
       NavigationManager.getInstance()
-              .navigateTo(View.LIVE, c -> {
+          .navigateTo(
+              View.LIVE,
+              c -> {
                 if (c instanceof LiveController lc) {
                   lc.setSession(session);
                 }

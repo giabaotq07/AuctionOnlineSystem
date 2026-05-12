@@ -3,7 +3,6 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.RegisterRequest;
 import app.data.RegisterResponse;
-import app.data.Response;
 import app.enums.PacketType;
 import app.enums.UserRole;
 import app.enums.View;
@@ -13,7 +12,6 @@ import app.network.PacketListener;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -53,21 +51,23 @@ public class RegisterController {
       System.err.println("Không load được background: " + e.getMessage());
     }
 
-    registerHandler = (RegisterResponse response) -> {
-      Platform.runLater(() -> {
-        if (response.success()) {
-          AlertUtils.showInfo("Thành công", response.message());
+    registerHandler =
+        (RegisterResponse response) -> {
+          Platform.runLater(
+              () -> {
+                if (response.success()) {
+                  AlertUtils.showInfo("Thành công", response.message());
 
-          if (registerHandler != null) {
-            Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
-          }
+                  if (registerHandler != null) {
+                    Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
+                  }
 
-          NavigationManager.getInstance().navigateTo(View.LOGIN);
-        } else {
-          AlertUtils.showError("Thất bại", response.message());
-        }
-      });
-    };
+                  NavigationManager.getInstance().navigateTo(View.LOGIN);
+                } else {
+                  AlertUtils.showError("Thất bại", response.message());
+                }
+              });
+        };
 
     Client.getInstance().subscribe(PacketType.REGISTER, registerHandler);
   }
