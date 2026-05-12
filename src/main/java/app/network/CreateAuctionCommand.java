@@ -1,12 +1,14 @@
 package app.network;
 
 import app.data.AuctionSummary;
+import app.data.AuctionsResponse;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
 import app.enums.PacketType;
 import app.models.*;
 import app.service.AuctionService;
 import app.service.ItemService;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +54,9 @@ public class CreateAuctionCommand implements Command {
           new CreateAuctionResponse(false, "Tạo phiên thất bại: " + e.getMessage(), null);
       clientHandler.sendMessage(PacketRes.of(PacketType.CREATE_AUCTION, response));
     }
-    new FetchAuctionsCommand(auctionService).execute(clientHandler, null);
+    // tạm
+    List<AuctionSummary> summaries = clientHandler.getAuctionService().getAuctionSummaries();
+    AuctionsResponse auctionsResponse = new AuctionsResponse(true, "OK", summaries);
+    Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, auctionsResponse), -1);
   }
 }

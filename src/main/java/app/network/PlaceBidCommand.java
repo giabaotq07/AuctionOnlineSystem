@@ -1,5 +1,7 @@
 package app.network;
 
+import app.data.AuctionSummary;
+import app.data.AuctionsResponse;
 import app.data.PlaceBidRequest;
 import app.data.PlaceBidResponse;
 import app.enums.PacketType;
@@ -7,6 +9,7 @@ import app.exception.ServiceException;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.service.BidService;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +38,10 @@ public class PlaceBidCommand implements Command {
     } catch (Exception e) {
       logger.error("Lỗi đặt giá", e.getMessage());
     }
-    new FetchAuctionsCommand(clientHandler.getAuctionService()).execute(clientHandler, null);
+
+    // tạm
+    List<AuctionSummary> summaries = clientHandler.getAuctionService().getAuctionSummaries();
+    AuctionsResponse auctionsResponse = new AuctionsResponse(true, "OK", summaries);
+    Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, auctionsResponse), -1);
   }
 }
