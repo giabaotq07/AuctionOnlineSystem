@@ -91,7 +91,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   public void lockRow(Connection conn, int sessionId) {
     String sql = "SELECT id FROM auction_sessions WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
+      setParameters(ps, sessionId);
       try (ResultSet rs = ps.executeQuery()) {
         if (!rs.next()) {
           throw new DatabaseException("Phiên đấu giá không tồn tại.");
@@ -122,16 +122,20 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
             VALUES (?, ?, ?, ?, ?)
             """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      ps.setInt(1, auction.getItemId());
-      ps.setInt(2, auction.getSellerId());
-      ps.setString(3, auction.getStatus().name());
-      ps.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
-      ps.setLong(5, auction.getHighestBid());
+      setParameters(
+          ps,
+          auction.getItemId(),
+          auction.getSellerId(),
+          auction.getStatus().name(),
+          Timestamp.valueOf(auction.getEndTime()),
+          auction.getHighestBid());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể tạo auction.");
       }
       try (ResultSet rs = ps.getGeneratedKeys()) {
-        if (rs.next()) auction.setId(rs.getInt(1));
+        if (rs.next()) {
+          auction.setId(rs.getInt(1));
+        }
       }
       return auction;
     } catch (SQLException e) {

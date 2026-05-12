@@ -15,8 +15,6 @@ module app {
       javafx.fxml;
   opens app.controllers to
       javafx.fxml;
-  opens app.data to
-      com.google.gson;
   opens app.models to
       com.google.gson;
   opens app.enums to
@@ -31,4 +29,6 @@ module app {
   exports app.observer;
   exports app.data;
   exports app.dao;
+
+  opens app.data;
 }

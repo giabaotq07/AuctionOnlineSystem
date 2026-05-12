@@ -3,56 +3,191 @@ package app.dao.impl;
 import app.dao.AutoBidDAO;
 import app.dao.BaseDAO;
 import app.exception.DatabaseException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import app.models.AutoBid;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
-  public MySqlAutoBidDAO() {}
+  private static final String TABLE = "auto_bids";
+  private static final String BASE_SELECT =
+      """
+      SELECT
+          id,
+          session_id,
+          user_id,
+          max_amount,
+          increment_amount,
+          enabled,
+          created_at,
+          updated_at
+      FROM auto_bids
+      """;
 
+  private AutoBid mapAutoBid(ResultSet rs) throws SQLException {
+    return new AutoBid(
+        rs.getInt("id"),
+        rs.getInt("session_id"),
+        rs.getInt("user_id"),
+        rs.getLong("max_amount"),
+        rs.getLong("increment_amount"),
+        rs.getBoolean("enabled"),
+        rs.getTimestamp("created_at").toLocalDateTime(),
+        rs.getTimestamp("updated_at").toLocalDateTime());
+  }
+
+  // ── Read operations ─────────────────────────────────────
   @Override
-  public void delete(int sessionId, int userId) {
-    runWithConnection(
-        conn -> delete(conn, sessionId, userId), "Lỗi kết nối khi xóa cấu hình auto-bid.");
+  public Optional<AutoBid> findById(int id) {
+    return withConnection(
+        conn -> findOne(conn, BASE_SELECT + " WHERE id = ?", id), "Lỗi kết nối khi tải auto bid.");
   }
 
   @Override
-  public void upsert(int sessionId, int userId, long maxBid, long increment) {
-    runWithConnection(
-        conn -> upsert(conn, sessionId, userId, maxBid, increment),
-        "Lỗi kết nối khi lưu cấu hình auto-bid.");
+  public Optional<AutoBid> findBySessionAndUser(int sessionId, int userId) {
+    return withConnection(
+        conn -> findBySessionAndUser(conn, sessionId, userId), "Lỗi kết nối khi tải auto bid.");
   }
 
   @Override
-  public void delete(Connection conn, int sessionId, int userId) {
-    String sql = "DELETE FROM auto_bids WHERE session_id = ? AND user_id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
-      ps.setInt(2, userId);
-      ps.executeUpdate();
+  public List<AutoBid> findBySession(int sessionId) {
+    return withConnection(
+        conn ->
+            findMany(
+                conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", sessionId),
+        "Lỗi kết nối khi tải danh sách auto bid.");
+  }
+
+  @Override
+  public List<AutoBid> findEnabledBySession(int sessionId) {
+    return withConnection(
+        conn -> findEnabledBySession(conn, sessionId),
+        "Lỗi kết nối khi tải auto bid đang hoạt động.");
+  }
+
+  // ── Transaction-aware read operations ───────────────────
+  @Override
+  public Optional<AutoBid> findBySessionAndUser(Connection conn, int sessionId, int userId) {
+    return findOne(conn, BASE_SELECT + " WHERE session_id = ? AND user_id = ?", sessionId, userId);
+  }
+
+  @Override
+  public List<AutoBid> findEnabledBySession(Connection conn, int sessionId) {
+    return findMany(
+        conn,
+        BASE_SELECT
+            + """
+              WHERE session_id = ?
+              AND enabled = TRUE
+              ORDER BY max_amount DESC
+              """,
+        sessionId);
+  }
+
+  // ── Write operations ────────────────────────────────────
+  @Override
+  public AutoBid save(AutoBid autoBid) {
+    return withConnection(conn -> save(conn, autoBid), "Lỗi kết nối khi tạo auto bid.");
+  }
+
+  @Override
+  public boolean update(AutoBid autoBid) {
+    return withConnection(conn -> update(conn, autoBid), "Lỗi kết nối khi cập nhật auto bid.");
+  }
+
+  @Override
+  public boolean delete(int id) {
+    return withConnection(
+        conn -> executeUpdate(conn, TABLE, "DELETE FROM auto_bids WHERE id = ?", id),
+        "Lỗi kết nối khi xóa auto bid.");
+  }
+
+  @Override
+  public boolean setEnabled(int id, boolean enabled) {
+    return withConnection(
+        conn ->
+            executeUpdate(
+                conn, TABLE, "UPDATE auto_bids SET enabled = ? WHERE id = ?", enabled, id),
+        "Lỗi kết nối khi cập nhật trạng thái auto bid.");
+  }
+
+  // ── Transaction-aware write operations ──────────────────
+  @Override
+  public AutoBid save(Connection conn, AutoBid autoBid) {
+    String sql =
+        """
+        INSERT INTO auto_bids
+            (session_id, user_id, max_amount, increment_amount, enabled)
+        VALUES (?, ?, ?, ?, ?)
+        """;
+    try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+      setParameters(
+          ps,
+          autoBid.getSessionId(),
+          autoBid.getUserId(),
+          autoBid.getMaxAmount(),
+          autoBid.getIncrementAmount(),
+          autoBid.isEnabled());
+      if (ps.executeUpdate() == 0) {
+        throw new DatabaseException("Không thể tạo auto bid.");
+      }
+      try (ResultSet rs = ps.getGeneratedKeys()) {
+        if (rs.next()) {
+          autoBid.setId(rs.getInt(1));
+        }
+      }
+      return autoBid;
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi xóa cấu hình auto-bid.", e);
+      throw new DatabaseException("Lỗi khi tạo auto bid.", e);
     }
   }
 
   @Override
-  public void upsert(Connection conn, int sessionId, int userId, long maxBid, long increment) {
+  public boolean update(Connection conn, AutoBid autoBid) {
     String sql =
         """
-            INSERT INTO auto_bids (session_id, user_id, max_bid, increment_amount)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-              max_bid = VALUES(max_bid),
-              increment_amount = VALUES(increment_amount)
-            """;
+        UPDATE auto_bids
+        SET
+            max_amount = ?,
+            increment_amount = ?,
+            enabled = ?
+        WHERE id = ?
+        """;
+    return executeUpdate(
+        conn,
+        TABLE,
+        sql,
+        autoBid.getMaxAmount(),
+        autoBid.getIncrementAmount(),
+        autoBid.isEnabled(),
+        autoBid.getId());
+  }
+
+  // ── Helpers ─────────────────────────────────────────────
+  private Optional<AutoBid> findOne(Connection conn, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, sessionId);
-      ps.setInt(2, userId);
-      ps.setLong(3, maxBid);
-      ps.setLong(4, increment);
-      ps.executeUpdate();
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(mapAutoBid(rs)) : Optional.empty();
+      }
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi lưu cấu hình auto-bid.", e);
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private List<AutoBid> findMany(Connection conn, String sql, Object... params) {
+    List<AutoBid> autoBids = new ArrayList<>();
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          autoBids.add(mapAutoBid(rs));
+        }
+      }
+      return autoBids;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn danh sách auto bid.", e);
     }
   }
 }

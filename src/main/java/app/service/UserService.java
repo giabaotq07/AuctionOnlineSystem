@@ -8,6 +8,7 @@ import app.models.User;
 import app.utils.PasswordUtils;
 import java.sql.Connection;
 import java.util.List;
+import java.util.function.Function;
 
 public class UserService {
   private final UserDAO userDAO;
@@ -130,7 +131,7 @@ public class UserService {
     }
   }
 
-  private <T> T runInTransaction(java.util.function.Function<Connection, T> work) {
+  private <T> T runInTransaction(Function<Connection, T> work) {
     try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
       conn.setAutoCommit(false);
       try {

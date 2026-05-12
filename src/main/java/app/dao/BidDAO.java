@@ -16,7 +16,7 @@ public interface BidDAO {
 
   List<BidTransaction> findBySession(int sessionId);
 
-  List<BidTransaction> findBySessionForChart(int sessionId);
+  List<BidTransaction> findBySessionOrderByTime(int sessionId);
 
   boolean existsBySessionAndUser(int sessionId, int userId);
 }

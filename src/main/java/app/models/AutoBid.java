@@ -6,21 +6,34 @@ public class AutoBid {
   private int id;
   private int sessionId;
   private int userId;
-  private long maxBid;
-  private long increment;
+  private long maxAmount;
+  private long incrementAmount;
+  private boolean enabled;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  public AutoBid(int id, int sessionId, int userId, long maxBid, long increment) {
+  public AutoBid() {}
+
+  public AutoBid(
+      int id,
+      int sessionId,
+      int userId,
+      long maxAmount,
+      long incrementAmount,
+      boolean enabled,
+      LocalDateTime createdAt,
+      LocalDateTime updatedAt) {
     this.id = id;
     this.sessionId = sessionId;
     this.userId = userId;
-    this.maxBid = maxBid;
-    this.increment = increment;
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
+    this.maxAmount = maxAmount;
+    this.incrementAmount = incrementAmount;
+    this.enabled = enabled;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
   }
 
+  // getters/setters
   public int getId() {
     return id;
   }
@@ -45,20 +58,28 @@ public class AutoBid {
     this.userId = userId;
   }
 
-  public long getMaxBid() {
-    return maxBid;
+  public long getMaxAmount() {
+    return maxAmount;
   }
 
-  public void setMaxBid(long maxBid) {
-    this.maxBid = maxBid;
+  public void setMaxAmount(long maxAmount) {
+    this.maxAmount = maxAmount;
   }
 
-  public long getIncrement() {
-    return increment;
+  public long getIncrementAmount() {
+    return incrementAmount;
   }
 
-  public void setIncrement(long increment) {
-    this.increment = increment;
+  public void setIncrementAmount(long incrementAmount) {
+    this.incrementAmount = incrementAmount;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
   }
 
   public LocalDateTime getCreatedAt() {

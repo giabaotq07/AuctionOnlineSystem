@@ -13,22 +13,18 @@ import java.util.function.Function;
  * management, error handling, and transaction patterns.
  */
 public abstract class BaseDAO {
-  protected boolean executeUpdate(Connection conn, String TABLE, String sql, Object... params) {
+  protected boolean executeUpdate(Connection conn, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       return ps.executeUpdate() > 0;
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi cập nhật bảng " + TABLE, e);
+      throw new DatabaseException("Lỗi cập nhật bảng", e);
     }
   }
 
-  protected void setParameters(PreparedStatement ps, Object... params) {
+  protected void setParameters(PreparedStatement ps, Object... params) throws SQLException {
     for (int i = 0; i < params.length; i++) {
-      try {
-        ps.setObject(i + 1, params[i]);
-      } catch (SQLException e) {
-        throw new DatabaseException("Lỗi khi thiết lập tham số cho PreparedStatement.", e);
-      }
+      ps.setObject(i + 1, params[i]);
     }
   }
 

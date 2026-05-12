@@ -1,23 +1,23 @@
 package app.service;
 
 import app.dao.ItemDAO;
-import app.database.DatabaseConnection;
+import app.database.TransactionManager;
 import app.enums.ItemStatus;
-import app.exception.DatabaseException;
 import app.models.Item;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
 public class ItemService {
   private ItemDAO itemDAO;
+  private final TransactionManager transactionManager;
 
   public ItemService(ItemDAO itemDAO) {
     this.itemDAO = itemDAO;
+    this.transactionManager = new  TransactionManager();
   }
 
   public Item add(Item item) {
-    return runInTransaction(conn -> itemDAO.save(conn, item));
+    return transactionManager.runInTransaction(conn -> itemDAO.save(conn, item));
   }
 
   public Optional<Item> getById(int id) {
@@ -25,7 +25,7 @@ public class ItemService {
   }
 
   public void update(Item item) {
-    runInTransaction(
+    transactionManager.runInTransaction(
         conn -> {
           itemDAO.update(conn, item);
           return null;
@@ -33,17 +33,18 @@ public class ItemService {
   }
 
   public void updateStatus(int id, ItemStatus status) {
-    runInTransaction(
-        conn ->
-            itemDAO
-                .findById(conn, id)
-                .map(
-                    item -> {
-                      item.setStatus(status);
-                      itemDAO.update(conn, item);
-                      return null;
-                    })
-                .orElse(null));
+    transactionManager.runInTransaction(
+        conn -> {
+          itemDAO
+              .findById(conn, id)
+              .map(
+                  item -> {
+                    item.setStatus(status);
+                    itemDAO.update(conn, item);
+                    return null;
+                  });
+          return null;
+        });
   }
 
   public void delete(int id) {
@@ -52,23 +53,5 @@ public class ItemService {
 
   public List<Item> getAll() {
     return itemDAO.findAll();
-  }
-
-  private <T> T runInTransaction(java.util.function.Function<Connection, T> work) {
-    try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
-      conn.setAutoCommit(false);
-      try {
-        T result = work.apply(conn);
-        conn.commit();
-        return result;
-      } catch (Exception e) {
-        conn.rollback();
-        throw e;
-      } finally {
-        conn.setAutoCommit(true);
-      }
-    } catch (java.sql.SQLException e) {
-      throw new DatabaseException("Lỗi transaction.", e);
-    }
   }
 }

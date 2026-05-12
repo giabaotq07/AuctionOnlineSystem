@@ -75,7 +75,7 @@ public class MyHistoryController {
   }
 
   private VBox createAuctionCard(AuctionSummary summary) {
-    Auction session = summary.auction();
+    Auction auction = summary.auction();
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -83,9 +83,9 @@ public class MyHistoryController {
     vbox.setStyle(
         "-fx-background-color: #1a1f35; -fx-background-radius: 8; -fx-padding: 15; -fx-spacing: 10;");
     Label badge =
-        new Label(currentUser.getId() == session.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
+        new Label(currentUser.getId() == auction.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
     badge.setStyle(
-        currentUser.getId() == session.getSellerId()
+        currentUser.getId() == auction.getSellerId()
             ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
             : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
     Label titleLabel = new Label(summary.itemName());
@@ -97,7 +97,7 @@ public class MyHistoryController {
     Button btnDetail = new Button("Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7; -fx-text-fill: white; -fx-cursor: hand;");
-    btnDetail.setOnAction(e -> handleGoToLive(session));
+    btnDetail.setOnAction(e -> handleGoToLive(auction));
     vbox.getChildren().addAll(badge, titleLabel, priceLabel, btnDetail);
     return vbox;
   }
@@ -126,13 +126,13 @@ public class MyHistoryController {
     historyScrollPane.setOnMouseExited(ev -> scrollTimeline.play());
   }
 
-  private void handleGoToLive(Auction session) {
+  private void handleGoToLive(Auction auction) {
     try {
       NavigationManager.getInstance()
           .navigateTo(
               View.LIVE,
               c -> {
-                if (c instanceof LiveController) ((LiveController) c).setSession(session);
+                if (c instanceof LiveController) ((LiveController) c).setSession(auction);
               });
     } catch (Exception e) {
       e.printStackTrace();

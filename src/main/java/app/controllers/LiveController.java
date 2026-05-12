@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 public class LiveController implements AuctionObserver, Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
-  private Auction session;
+  private Auction auction;
   private long currentPrice;
   private AuctionDetail auctionDetail;
   private PacketListener<PlaceBidResponse> placeBidHandler;
@@ -63,11 +63,11 @@ public class LiveController implements AuctionObserver, Cleanable {
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
   }
 
-  public void setSession(Auction session) {
-    this.session = session;
-    session.registerObserver(this);
+  public void setSession(Auction auction) {
+    this.auction = auction;
+    auction.registerObserver(this);
     try {
-      AuctionDetailRequest request = new AuctionDetailRequest(session.getId());
+      AuctionDetailRequest request = new AuctionDetailRequest(auction.getId());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_DETAIL, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
@@ -75,12 +75,12 @@ public class LiveController implements AuctionObserver, Cleanable {
   }
 
   private void handleDetailResponse(AuctionDetailResponse response) {
-    if (session == null) {
+    if (auction == null) {
       return;
     }
     if (!response.success()
         || response.detail() == null
-        || response.detail().auctionId() != session.getId()) {
+        || response.detail().auctionId() != auction.getId()) {
       return;
     }
     auctionDetail = response.detail();
@@ -88,7 +88,7 @@ public class LiveController implements AuctionObserver, Cleanable {
   }
 
   private void handleBidResponse(PlaceBidResponse response) {
-    if (session == null || response.auctionId() != session.getId()) {
+    if (auction == null || response.auctionId() != auction.getId()) {
       return;
     }
     currentPrice = Math.max(currentPrice, response.highestBidAmount());
@@ -101,10 +101,10 @@ public class LiveController implements AuctionObserver, Cleanable {
   }
 
   private void handleAuctionResult(AuctionResultResponse response) {
-    if (session == null) {
+    if (auction == null) {
       return;
     }
-    if (!response.success() || response.auctionId() != session.getId()) {
+    if (!response.success() || response.auctionId() != auction.getId()) {
       return;
     }
     onAuctionClosed(
@@ -162,7 +162,7 @@ public class LiveController implements AuctionObserver, Cleanable {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
-    if (session == null) {
+    if (auction == null) {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
@@ -183,7 +183,7 @@ public class LiveController implements AuctionObserver, Cleanable {
     }
     PlaceBidRequest request =
         new PlaceBidRequest(
-            session.getId(),
+            auction.getId(),
             Client.getInstance().getCurrentUser().getId(),
             bidAmount,
             currentPrice);
@@ -206,8 +206,8 @@ public class LiveController implements AuctionObserver, Cleanable {
                     requestAuctionResult();
                   }
                   scheduler.shutdownNow();
-                  if (session != null && session.isRunning()) {
-                    session.setStatus(AuctionStatus.FINISHED);
+                  if (auction != null && auction.isRunning()) {
+                    auction.setStatus(AuctionStatus.FINISHED);
                   }
                 } else {
                   updateCountdownLabel(now, endTime);
@@ -220,11 +220,11 @@ public class LiveController implements AuctionObserver, Cleanable {
   }
 
   private void requestAuctionResult() {
-    if (session == null) {
+    if (auction == null) {
       return;
     }
     try {
-      AuctionResultRequest request = new AuctionResultRequest(session.getId());
+      AuctionResultRequest request = new AuctionResultRequest(auction.getId());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_RESULT, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
@@ -254,8 +254,8 @@ public class LiveController implements AuctionObserver, Cleanable {
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
-    if (session != null) {
-      session.removeObserver(this);
+    if (auction != null) {
+      auction.removeObserver(this);
     }
     if (placeBidHandler != null) {
       Client.getInstance().unsubscribe(PacketType.PLACE_BID, placeBidHandler);
@@ -269,7 +269,7 @@ public class LiveController implements AuctionObserver, Cleanable {
     resultRequested = false;
     auctionClosedShown = false;
     auctionDetail = null;
-    session = null;
+    auction = null;
   }
 
   @FXML

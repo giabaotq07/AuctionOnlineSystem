@@ -13,7 +13,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 public class UserProfileController {
-
   @FXML private AnchorPane rootPane;
   @FXML private Circle avatarCircle;
   @FXML private Label avatarLabel;
@@ -30,7 +29,6 @@ public class UserProfileController {
 
   private void loadUserProfile() {
     User currentUser = Client.getInstance().getCurrentUser();
-
     if (currentUser == null) {
       AlertUtils.showError("Lỗi", "Không tìm thấy thông tin user!");
       try {
@@ -40,39 +38,31 @@ public class UserProfileController {
       }
       return;
     }
-
     // ===== HIỂN THỊ AVATAR =====
     if (avatarCircle != null) {
       avatarCircle.setFill(Color.web("#673ab7")); // Màu tím chính
       avatarCircle.setRadius(80);
     }
-
     if (avatarLabel != null) {
       String firstLetter = currentUser.getName().substring(0, 1).toUpperCase();
       avatarLabel.setText(firstLetter);
     }
-
     // ===== HIỂN THỊ THÔNG TIN =====
     if (userNameLabel != null) {
       userNameLabel.setText(currentUser.getName());
     }
-
     if (emailLabel != null) {
       emailLabel.setText("📧 " + currentUser.getAccount().getUsername());
     }
-
     if (idLabel != null) {
       idLabel.setText("ID: #" + currentUser.getId());
     }
-
     if (roleLabel != null) {
       roleLabel.setText("🎯 " + currentUser.getRole());
     }
-
     if (walletLabel != null) {
       long balance = 1000;
       walletLabel.setText(String.format("💰 %,d đ", balance));
-
       // Đổi màu dựa trên số dư
       if (balance < 1000000) {
         walletLabel.setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;"); // Đỏ
@@ -87,9 +77,7 @@ public class UserProfileController {
     try {
       // Xóa user từ Client
       Client.getInstance().setCurrentUser(null);
-
       AlertUtils.showInfo("Thành công", "Đã đăng xuất!");
-
       // Quay lại login
       NavigationManager.getInstance().navigateTo(View.LOGIN);
     } catch (Exception e) {

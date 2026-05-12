@@ -4,7 +4,6 @@ import app.dao.BaseDAO;
 import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
-import app.exception.ServiceException;
 import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
@@ -89,12 +88,13 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
         VALUES (?, ?, ?, ?, ?)
         """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      ps.setString(1, user.getAccount().getUsername());
-      // Expect password to be already hashed by service layer
-      ps.setString(2, user.getAccount().getPassword());
-      ps.setString(3, user.getName());
-      ps.setLong(4, user.getWallet().getAssets());
-      ps.setString(5, user.getRole().name());
+      setParameters(
+          ps,
+          user.getAccount().getUsername(),
+          user.getAccount().getPassword(),
+          user.getName(),
+          user.getWallet().getAssets(),
+          user.getRole().name());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm user.");
       }
@@ -140,28 +140,21 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   public void lockRow(Connection conn, int id) {
     String sql = "SELECT id FROM users WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, id);
+      setParameters(ps, id);
       try (ResultSet rs = ps.executeQuery()) {
         if (!rs.next()) {
-          throw new ServiceException("Người dùng không tồn tại: " + id);
+          throw new DatabaseException("Người dùng không tồn tại: " + id);
         }
       }
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi khóa hàng người dùng.", e);
+      throw new DatabaseException("Không tìm thấy user để khóa.");
     }
   }
 
   @Override
   public void deleteAll() {
     runWithConnection(
-        conn -> {
-          try {
-            conn.createStatement().execute("DELETE FROM users");
-          } catch (SQLException e) {
-            throw new DatabaseException("Lỗi kết nối", e);
-          }
-        },
-        "Failed to clean users");
+        conn -> executeUpdate(conn, TABLE, "DELETE FROM users"), "Failed to clean users");
   }
 
   private Optional<User> findOne(Connection conn, String sql, Object... params) {

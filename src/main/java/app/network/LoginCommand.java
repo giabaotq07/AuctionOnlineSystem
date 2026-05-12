@@ -40,7 +40,7 @@ public class LoginCommand implements Command {
         sendError(clientHandler, "Sai tên tài khoản hoặc mật khẩu.");
         return;
       }
-      // authenticate session
+      // authenticate auction
       clientHandler.getSession().authenticate(user);
       // register online client
       Server.registerClient(user.getId(), clientHandler);

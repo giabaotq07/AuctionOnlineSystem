@@ -2,6 +2,7 @@ package app.network;
 
 import app.dao.*;
 import app.dao.impl.*;
+import app.database.TransactionManager;
 import app.models.PacketRes;
 import app.service.*;
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class Server {
       userService = new UserService(userDAO);
       itemService = new ItemService(itemDAO);
       auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
-      bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, itemDAO);
+      bidService = new BidService(bidDAO, auctionDAO);
     } catch (IOException e) {
       logger.error("[SERVER] Failed to start on port {}", PORT, e);
       throw new RuntimeException("Cannot start server", e);
@@ -130,7 +131,7 @@ public class Server {
   public static void registerClient(int userId, ClientHandler handler) {
     ClientHandler old = authenticatedClients.put(userId, handler);
     if (old != null && old != handler) {
-      logger.info("[SERVER] Replacing old session for user {}", userId);
+      logger.info("[SERVER] Replacing old auction for user {}", userId);
       authenticatedClients.remove(userId, old);
       old.close();
     }
