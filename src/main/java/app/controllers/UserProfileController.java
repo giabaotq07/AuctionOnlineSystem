@@ -5,12 +5,12 @@ import app.enums.View;
 import app.models.User;
 import app.network.Client;
 import app.utils.AlertUtils;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.event.ActionEvent;
 
 public class UserProfileController {
 
@@ -107,7 +107,3 @@ public class UserProfileController {
     }
   }
 }
-
-
-
-

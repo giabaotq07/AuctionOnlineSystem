@@ -1,11 +1,11 @@
 package app.service;
 
-import app.database.DatabaseConnection;
 import app.dao.AuctionDAO;
 import app.dao.AutoBidDAO;
 import app.dao.BidDAO;
 import app.dao.ItemDAO;
 import app.data.PlaceBidResponse;
+import app.database.DatabaseConnection;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.exception.ServiceException;
