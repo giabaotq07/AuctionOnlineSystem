@@ -298,7 +298,18 @@ public class FirstScene {
 
   @FXML
   public void handleReload(ActionEvent event) {
-    rebuildUI();
+    try {
+      // ✅ Request dữ liệu mới từ server
+      summaries.clear();
+      summaries.addAll(DataStore.getInstance().sessions);
+
+      // ✅ Rebuild UI với dữ liệu mới
+      rebuildUI();
+
+      logger.info("Thành công", "Đã cập nhật danh sách từ server");
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi", "Không thể kết nối server");
+    }
   }
 
   @FXML
