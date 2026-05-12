@@ -32,8 +32,8 @@ public class DataStore {
           instance = new DataStore();
           instance.loadSessions();
           try {
-          Client.getInstance()
-              .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
+            Client.getInstance()
+                .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
           } catch (IOException e) {
             throw new ConnectException(e.getMessage());
           }

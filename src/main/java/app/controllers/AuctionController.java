@@ -47,7 +47,7 @@ public class AuctionController {
                 () -> {
                   if (response.success()) {
                     if (response.auction() != null) {
-                        DataStore.getInstance().sessions.add(response.auction());
+                      DataStore.getInstance().sessions.add(response.auction());
                     }
                     AlertUtils.showInfo("OK", response.message());
                     if (createAuctionHandler != null) {

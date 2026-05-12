@@ -3,7 +3,6 @@ package app.controllers;
 import app.config.NavigationManager;
 import app.data.ChatRequest;
 import app.data.ChatResponse;
-import app.data.Response;
 import app.data.UserData;
 import app.enums.PacketType;
 import app.enums.View;
@@ -44,8 +43,7 @@ public class MessController {
     chatHandler =
         response -> {
           String sender = response.sender();
-          Platform.runLater(
-              () -> addBubble(sender, response.content(), isMe(response.senderId())));
+          Platform.runLater(() -> addBubble(sender, response.content(), isMe(response.senderId())));
         };
     client.subscribe(PacketType.CHAT, chatHandler);
   }
