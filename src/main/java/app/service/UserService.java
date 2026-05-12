@@ -15,6 +15,7 @@ public class UserService {
     this.userDAO = userDAO;
     this.transactionManager = transactionManager;
   }
+
   public User login(String username, String rawPassword) {
     User user = userDAO.findByUsername(username).orElse(null);
     if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
@@ -172,5 +173,4 @@ public class UserService {
       throw new ServiceException(fieldName + " không được để trống.");
     }
   }
-  
 }

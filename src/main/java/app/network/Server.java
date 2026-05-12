@@ -59,14 +59,15 @@ public class Server {
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     //
-    TransactionManager transactionManager =  new TransactionManager();
-    BidValidator bidValidator =  new BidValidator();
-    AntiSnipeService antiSnipeService =  new AntiSnipeService();
+    TransactionManager transactionManager = new TransactionManager();
+    BidValidator bidValidator = new BidValidator();
+    AntiSnipeService antiSnipeService = new AntiSnipeService();
     // Service
-     userService = new UserService(userDAO, transactionManager);
-     itemService = new ItemService(itemDAO, transactionManager);
-     bidService = new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
-     auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
+    userService = new UserService(userDAO, transactionManager);
+    itemService = new ItemService(itemDAO, transactionManager);
+    bidService =
+        new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
+    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
   }
 
   public void start() {

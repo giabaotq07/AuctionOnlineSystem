@@ -8,5 +8,4 @@ public record BidPlacedEvent(
     long amount,
     String bidderName,
     boolean autoBid,
-    LocalDateTime bidTime
-) {}
+    LocalDateTime bidTime) {}

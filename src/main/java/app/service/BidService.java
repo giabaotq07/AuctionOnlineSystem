@@ -2,7 +2,6 @@ package app.service;
 
 import app.dao.AuctionDAO;
 import app.dao.BidDAO;
-import app.data.BidResult;
 import app.data.PlaceBidResponse;
 import app.database.TransactionManager;
 import app.exception.ServiceException;
@@ -30,28 +29,22 @@ public class BidService {
   }
 
   public PlaceBidResponse placeBid(int auctionId, int userId, long bidAmount) {
-    return
-        transactionManager.runInTransaction(
-            conn -> {
-              auctionDAO.lockRow(conn, auctionId);
-              Auction auction =
-                  auctionDAO
-                      .findById(conn, auctionId)
-                      .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
-              bidValidator.validateAuctionState(auction);
-              bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
-              bidValidator.validateSelfBid(userId, auction.getWinnerId());
-              auction.updateHighestBid(bidAmount, userId);
-              antiSnipeService.apply(auction);
-              bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
-              auctionDAO.update(conn, auction);
-              return new PlaceBidResponse(
-                  true,
-                  auction.getId(),
-                  auction.getHighestBid(),
-                  auction.getWinnerId(),
-                  "Success"
-              );
-            });
+    return transactionManager.runInTransaction(
+        conn -> {
+          auctionDAO.lockRow(conn, auctionId);
+          Auction auction =
+              auctionDAO
+                  .findById(conn, auctionId)
+                  .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
+          bidValidator.validateAuctionState(auction);
+          bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
+          bidValidator.validateSelfBid(userId, auction.getWinnerId());
+          auction.updateHighestBid(bidAmount, userId);
+          antiSnipeService.apply(auction);
+          bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
+          auctionDAO.update(conn, auction);
+          return new PlaceBidResponse(
+              true, auction.getId(), auction.getHighestBid(), auction.getWinnerId(), "Success");
+        });
   }
 }

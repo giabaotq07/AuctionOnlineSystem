@@ -30,14 +30,16 @@ public class DemoRunner {
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     //
-    TransactionManager transactionManager =  new TransactionManager();
-    BidValidator bidValidator =  new BidValidator();
-    AntiSnipeService antiSnipeService =  new AntiSnipeService();
+    TransactionManager transactionManager = new TransactionManager();
+    BidValidator bidValidator = new BidValidator();
+    AntiSnipeService antiSnipeService = new AntiSnipeService();
     //
     UserService userService = new UserService(userDAO, transactionManager);
     ItemService itemService = new ItemService(itemDAO, transactionManager);
-    BidService bidService = new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
-    AuctionService auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
+    BidService bidService =
+        new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
+    AuctionService auctionService =
+        new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
     User seller;
     User buyer1;
     User buyer2;
