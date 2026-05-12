@@ -1,12 +1,14 @@
 name: Vạn Bảo Các CI/CD
-  on:
+on:
   push:
-    branches: [ "main", "dao" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "dao" ]
-  permissions:
+    branches: [ "main" ]
+
+permissions:
   contents: read
-  jobs:
+
+jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
