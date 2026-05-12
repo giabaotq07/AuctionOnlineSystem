@@ -27,21 +27,21 @@ public class AuctionService {
   private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), 0L);
   private final AuctionDAO auctionDAO;
   private final BidDAO bidDAO;
-  private final ItemDAO itemDAO;
   private final TransactionManager transactionManager;
   private final AuctionMapper auctionMapper;
   private final Logger logger = LoggerFactory.getLogger(AuctionService.class);
   private final Clock clock;
 
+  // Updated constructor to receive AuctionMapper via injection
   public AuctionService(
       AuctionDAO auctionDAO,
       BidDAO bidDAO,
-      ItemDAO itemDAO) {
+      ItemDAO itemDAO,
+      TransactionManager transactionManager) {
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
-    this.itemDAO = itemDAO;
-    this.auctionMapper = new AuctionMapper(itemDAO,  bidDAO);
-    this.transactionManager = new TransactionManager();
+    this.auctionMapper = new AuctionMapper(itemDAO, bidDAO);
+    this.transactionManager = transactionManager;
     this.clock = Clock.systemDefaultZone();
   }
 

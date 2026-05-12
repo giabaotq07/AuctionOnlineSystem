@@ -47,8 +47,7 @@ public class PlaceBidCommand implements Command {
       User user = clientHandler.getUser();
       // KHÔNG trust bidderId từ client
       int bidderId = user.getId();
-      PlaceBidResponse response =
-          bidService.placeBidAndBuildResponse(sessionId, bidderId, bidAmount);
+      PlaceBidResponse response = bidService.placeBid(sessionId, bidderId, bidAmount);
       PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
       // sender
       clientHandler.sendPacket(packetResponse);

@@ -2,7 +2,6 @@ package app.network;
 
 import app.dao.*;
 import app.dao.impl.*;
-import app.database.TransactionManager;
 import app.models.PacketRes;
 import app.service.*;
 import java.io.IOException;
@@ -25,10 +24,10 @@ public class Server {
   private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
   private static final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final ExecutorService broadcastPool = Executors.newCachedThreadPool();
-  private final AuctionService auctionService;
-  private final BidService bidService;
-  private final UserService userService;
-  private final ItemService itemService;
+  private AuctionService auctionService;
+  private BidService bidService;
+  private UserService userService;
+  private ItemService itemService;
 
   private Server() {
     try {
@@ -36,17 +35,7 @@ public class Server {
       serverSocket.setReuseAddress(true);
       serverSocket.bind(new InetSocketAddress(PORT));
       logger.info("[SERVER] Running on port {}", PORT);
-      // DAO
-      UserDAO userDAO = new MySqlUserDAO();
-      ItemDAO itemDAO = new MySqlItemDAO();
-      AuctionDAO auctionDAO = new MySqlAuctionDAO();
-      AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-      BidDAO bidDAO = new MySqlBidDAO();
-      // SERVICE
-      userService = new UserService(userDAO);
-      itemService = new ItemService(itemDAO);
-      auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
-      bidService = new BidService(bidDAO, auctionDAO);
+      initService();
     } catch (IOException e) {
       logger.error("[SERVER] Failed to start on port {}", PORT, e);
       throw new RuntimeException("Cannot start server", e);
@@ -58,6 +47,24 @@ public class Server {
       instance = new Server();
     }
     return instance;
+  }
+
+  private void initService() {
+    logger.info("[SERVER] Initializing database...");
+    // DAO
+    UserDAO userDAO = new MySqlUserDAO();
+    ItemDAO itemDAO = new MySqlItemDAO();
+    AuctionDAO auctionDAO = new MySqlAuctionDAO();
+    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
+    BidDAO bidDAO = new MySqlBidDAO();
+    // SERVICE
+    // cái factory này để code khởi tạo ở đây trông ngắn đi, tác dụng chính là tạo 1 đổi tượng
+    // TransactionManager dùng chung
+    ServiceFactory serviceFactory = new ServiceFactory();
+    userService = new UserService(userDAO);
+    itemService = serviceFactory.createItemService(itemDAO);
+    bidService = serviceFactory.createBidService(bidDAO, auctionDAO);
+    auctionService = serviceFactory.createAuctionService(auctionDAO, bidDAO, itemDAO);
   }
 
   public void start() {

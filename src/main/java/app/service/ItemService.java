@@ -11,9 +11,10 @@ public class ItemService {
   private ItemDAO itemDAO;
   private final TransactionManager transactionManager;
 
-  public ItemService(ItemDAO itemDAO) {
+  // Updated constructor to receive TransactionManager (dependency injection) for easier testing
+  public ItemService(ItemDAO itemDAO, TransactionManager transactionManager) {
     this.itemDAO = itemDAO;
-    this.transactionManager = new  TransactionManager();
+    this.transactionManager = transactionManager;
   }
 
   public Item add(Item item) {

@@ -9,6 +9,7 @@ module app {
   requires atlantafx.base;
   requires com.zaxxer.hikari;
 
+  opens app.data;
   opens app.dao;
   opens app.service;
   opens app to
@@ -29,6 +30,5 @@ module app {
   exports app.observer;
   exports app.data;
   exports app.dao;
-
-  opens app.data;
+  exports app.database;
 }
