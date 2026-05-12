@@ -17,9 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class UserDAOTest extends BaseDAOTest {
-
   private static final Logger logger = LoggerFactory.getLogger(UserDAOTest.class);
-
   private UserDAO userDAO;
 
   @BeforeEach
@@ -34,17 +32,13 @@ class UserDAOTest extends BaseDAOTest {
   private void cleanDatabase() {
     try (var conn = DatabaseConnection.getDataSource().getConnection();
         var stmt = conn.createStatement()) {
-
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
-
       stmt.execute("TRUNCATE TABLE auto_bids");
       stmt.execute("TRUNCATE TABLE bids");
       stmt.execute("TRUNCATE TABLE auction_sessions");
       stmt.execute("TRUNCATE TABLE items");
       stmt.execute("TRUNCATE TABLE users");
-
       stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
-
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -60,13 +54,10 @@ class UserDAOTest extends BaseDAOTest {
   }
 
   // ───── save ─────
-
   @Test
   void save_shouldPersistUserAndReturnId() {
     User saved = userDAO.save(makeUser("alice"));
-
     assertTrue(saved.getId() > 0);
-
     User found = userDAO.findById(saved.getId()).orElseThrow();
     assertEquals("alice", found.getAccount().getUsername());
     assertEquals("Nguyen Van A", found.getName());
@@ -77,18 +68,14 @@ class UserDAOTest extends BaseDAOTest {
   @Test
   void save_duplicateUsername_shouldThrow() {
     userDAO.save(makeUser("bob"));
-
     assertThrows(DatabaseException.class, () -> userDAO.save(makeUser("bob")));
   }
 
   // ───── findById ─────
-
   @Test
   void findById_shouldReturnUser() {
     User saved = userDAO.save(makeUser("charlie"));
-
     Optional<User> found = userDAO.findById(saved.getId());
-
     assertTrue(found.isPresent());
     assertEquals("charlie", found.get().getAccount().getUsername());
   }
@@ -99,13 +86,10 @@ class UserDAOTest extends BaseDAOTest {
   }
 
   // ───── findByUsername ─────
-
   @Test
   void findByUsername_shouldReturnUser() {
     userDAO.save(makeUser("dave"));
-
     Optional<User> found = userDAO.findByUsername("dave");
-
     assertTrue(found.isPresent());
     assertEquals("Nguyen Van A", found.get().getName());
   }

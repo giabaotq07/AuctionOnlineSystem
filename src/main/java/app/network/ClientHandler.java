@@ -3,23 +3,32 @@ package app.network;
 import app.enums.PacketType;
 import app.models.PacketReq;
 import app.models.PacketRes;
+import app.models.Session;
 import app.models.User;
 import app.service.*;
 import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.HashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ClientHandler implements Runnable {
-
   private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
+  private static final Map<PacketType, Command> commands = new HashMap<>();
+
+  static {
+    commands.put(PacketType.CHAT, new ChatCommand());
+  }
+
   private final Socket socket;
   private BufferedWriter writer;
   private BufferedReader reader;
-  private User user;
-  private String username;
-
+  private final Object writeLock = new Object();
+  private final Session session = new Session();
+  private volatile boolean closed = false;
   private final AuctionService auctionService;
   private final BidService bidService;
   private final UserService userService;
@@ -36,102 +45,171 @@ public class ClientHandler implements Runnable {
     this.bidService = bidService;
     this.userService = userService;
     this.itemService = itemService;
+    initCommands();
+  }
+
+  private void initCommands() {
+    commands.putIfAbsent(PacketType.LOGIN, new LoginCommand(userService));
+    commands.putIfAbsent(PacketType.REGISTER, new RegisterCommand(userService));
+    commands.putIfAbsent(
+        PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, itemService));
+    commands.putIfAbsent(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand(auctionService));
+    commands.putIfAbsent(PacketType.FETCH_HISTORY, new FetchHistoryCommand(auctionService));
+    commands.putIfAbsent(
+        PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
+    commands.putIfAbsent(
+        PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
+    commands.putIfAbsent(PacketType.PLACE_BID, new PlaceBidCommand(bidService));
   }
 
   @Override
   public void run() {
     try {
+      socket.setSoTimeout(30000);
       writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-      writer.flush();
       reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       listen();
     } catch (IOException e) {
       logger.error("Error initializing client handler", e);
-      close();
+    } finally {
+      cleanup();
     }
   }
 
   private void listen() {
     try {
       String line;
-      while ((line = reader.readLine()) != null) {
+      while (!closed && (line = reader.readLine()) != null) {
         try {
           PacketReq packet = JsonUtil.fromJson(line, PacketReq.class);
+          if (packet == null || packet.getType() == null) {
+            sendPacket(PacketRes.of(false, PacketType.ERROR, "Packet type is required"));
+            continue;
+          }
+          session.touch();
           handlePacket(packet);
         } catch (Exception e) {
-          logger.error("Invalid packet received: {}", e.getMessage());
+          logger.error("Invalid packet received", e);
+          sendPacket(PacketRes.error(PacketType.ERROR, "Invalid packet received"));
         }
       }
+      logger.info("Client disconnected: {}", socket.getRemoteSocketAddress());
+    } catch (SocketTimeoutException e) {
+      logger.warn("Client timeout: {}", socket.getRemoteSocketAddress());
     } catch (IOException e) {
-      logger.error("Error while listening to client: {}", e.getMessage());
-    } finally {
-      close();
+      if (!closed) {
+        logger.error("Error while listening to client", e);
+      }
     }
   }
 
   private void handlePacket(PacketReq packet) {
     PacketType type = packet.getType();
-    if (type == null) {
-      logger.warn("Unrecognized command type: null");
+    logger.info("Processing command: {}", type);
+    if (requiresAuthentication(type) && !requireLogin()) {
       return;
     }
-    logger.info("Processing command: {}", type);
-    Command command;
-    switch (type) {
-      case CHAT:
-        command = new ChatCommand();
-        break;
-      case LOGIN:
-        command = new LoginCommand(userService);
-        break;
-      case REGISTER:
-        command = new RegisterCommand(userService);
-        break;
-      case CREATE_AUCTION:
-        command = new CreateAuctionCommand(auctionService, itemService);
-        break;
-      case FETCH_AUCTIONS:
-        command = new FetchAuctionsCommand(auctionService);
-        break;
-      case FETCH_HISTORY:
-        command = new FetchHistoryCommand(auctionService);
-        break;
-      case FETCH_AUCTION_DETAIL:
-        command = new FetchAuctionDetailCommand(auctionService);
-        break;
-      case FETCH_AUCTION_RESULT:
-        command = new FetchAuctionResultCommand(auctionService);
-        break;
-      case PLACE_BID:
-        command = new PlaceBidCommand(bidService);
-        break;
-      default:
-        logger.warn("Unrecognized command type: {}", type);
-        return;
+    Command command = commands.get(type);
+    if (command == null) {
+      logger.warn("Unrecognized command type: {}", type);
+      sendPacket(PacketRes.error(PacketType.ERROR, "Unrecognized command type"));
+      return;
     }
-    command.execute(this, packet);
+    try {
+      command.execute(this, packet);
+    } catch (Exception e) {
+      logger.error("Error executing command: {}", type, e);
+      sendPacket(PacketRes.error(PacketType.ERROR, "Error executing command"));
+    }
   }
 
-  public void sendMessage(PacketRes packet) {
-    if (writer != null) {
-      try {
+  private boolean requiresAuthentication(PacketType type) {
+    return switch (type) {
+      case PLACE_BID, CREATE_AUCTION, FETCH_HISTORY -> true;
+      default -> false;
+    };
+  }
+
+  private boolean requireLogin() {
+    if (!session.isAuthenticated()) {
+      sendPacket(PacketRes.error(PacketType.ERROR, "Authentication required"));
+      return false;
+    }
+    return true;
+  }
+
+  public void sendPacket(PacketRes packet) {
+    if (packet == null || writer == null || closed) {
+      return;
+    }
+    try {
+      synchronized (writeLock) {
         writer.write(JsonUtil.toJson(packet));
         writer.newLine();
         writer.flush();
-        logger.debug("Sent message to {}", username);
-      } catch (IOException e) {
-        logger.error("Failed to send message to {}: {}", username, e.getMessage());
       }
+      User user = session.getUser();
+      logger.debug("Sent message to {}", user != null ? user.getName() : "unknown");
+    } catch (IOException e) {
+      logger.error("Failed to send message", e);
+      close();
     }
   }
 
-  public User getUser() {
-    return user;
+  public synchronized void close() {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    try {
+      if (socket != null && !socket.isClosed()) {
+        socket.shutdownInput();
+        socket.shutdownOutput();
+      }
+    } catch (IOException ignored) {
+    }
+    try {
+      if (reader != null) {
+        reader.close();
+      }
+    } catch (IOException e) {
+      logger.error("Error closing reader", e);
+    }
+    try {
+      if (writer != null) {
+        writer.close();
+      }
+    } catch (IOException e) {
+      logger.error("Error closing writer", e);
+    }
+    try {
+      if (socket != null && !socket.isClosed()) {
+        socket.close();
+      }
+    } catch (IOException e) {
+      logger.error("Error closing socket", e);
+    }
   }
 
-  public void setUser(User user) {
-    this.user = user;
-    this.username = user.getName();
+  private void cleanup() {
+    User user = session.getUser();
+    if (user != null) {
+      Server.removeClient(user.getId(), this);
+    }
+    session.logout();
+    close();
+  }
+
+  public boolean isAuthenticated() {
+    return session.isAuthenticated();
+  }
+
+  public Session getSession() {
+    return session;
+  }
+
+  public User getUser() {
+    return session.getUser();
   }
 
   public Socket getSocket() {
@@ -144,10 +222,6 @@ public class ClientHandler implements Runnable {
 
   public BufferedReader getReader() {
     return reader;
-  }
-
-  public String getUsername() {
-    return username;
   }
 
   public AuctionService getAuctionService() {
@@ -164,12 +238,5 @@ public class ClientHandler implements Runnable {
 
   public ItemService getItemService() {
     return itemService;
-  }
-
-  private void close() {
-    try {
-      socket.close();
-    } catch (IOException ignored) {
-    }
   }
 }

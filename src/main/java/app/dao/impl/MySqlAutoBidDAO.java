@@ -8,7 +8,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
-
   public MySqlAutoBidDAO() {}
 
   @Override

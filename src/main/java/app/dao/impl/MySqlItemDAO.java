@@ -16,7 +16,6 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   public MySqlItemDAO() {}
 
   private static final String TABLE = "items";
-
   private static final String BASE_SELECT =
       """
           SELECT id, name, seller_id, description, category,

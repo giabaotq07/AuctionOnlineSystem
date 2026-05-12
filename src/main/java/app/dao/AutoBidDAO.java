@@ -10,6 +10,5 @@ public interface AutoBidDAO {
   void upsert(int sessionId, int userId, long maxBid, long increment);
 
   //  List<AutoBidConfig> findBySession(Connection conn, int sessionId);
-
   void upsert(Connection conn, int sessionId, int userId, long maxBid, long increment);
 }

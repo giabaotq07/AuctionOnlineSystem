@@ -28,11 +28,9 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
 public class MessController {
-
   @FXML private TextArea myTextArea;
   @FXML private VBox chatBox;
   @FXML private ScrollPane scrollPane;
-
   private Client client;
   private PacketListener<ChatResponse> chatHandler;
 
@@ -57,49 +55,38 @@ public class MessController {
   // ADD MESSAGE BUBBLE
   // =========================
   public void addBubble(String sender, String content, boolean isMe) {
-
     HBox row = new HBox();
     row.setPadding(new Insets(10));
     row.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-
     VBox messageGroup = new VBox(4);
     messageGroup.setMaxWidth(520);
     messageGroup.setAlignment(isMe ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
-
     // NAME
     Label nameLabel = new Label(isMe ? "Bạn" : sender);
     nameLabel.setStyle(
         "-fx-text-fill: #94a3b8;" + "-fx-font-size: 11px;" + "-fx-font-weight: bold;");
-
     // BUBBLE
     TextFlow bubble = getTextFlow(isMe);
-
     // TEXT PARSE
     String[] words = content.split(" ");
-
     for (String word : words) {
       Text t = new Text(word + " ");
       t.setFont(Font.font("Segoe UI", 14));
       t.setFill(Color.WHITE);
-
       if (word.startsWith("@")) {
         t.setFill(Color.web("#fbbf24"));
         t.setStyle("-fx-font-weight: bold; -fx-underline: true;");
       }
-
       bubble.getChildren().add(t);
     }
-
     messageGroup.getChildren().addAll(nameLabel, bubble);
     row.getChildren().add(messageGroup);
-
     chatBox.getChildren().add(row);
   }
 
   private static TextFlow getTextFlow(boolean isMe) {
     TextFlow bubble = new TextFlow();
     bubble.setPadding(new Insets(10, 14, 10, 14));
-
     if (isMe) {
       bubble.setStyle(
           "-fx-background-color: #4f46e5;"

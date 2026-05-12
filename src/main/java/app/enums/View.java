@@ -10,7 +10,6 @@ public enum View {
   UI("/app/views/firstscene.fxml"),
   MESSAGE("/app/views/mess_chat.fxml"),
   ;
-
   private final String fxmlPath;
 
   View(String fxmlPath) {

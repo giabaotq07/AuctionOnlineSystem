@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FetchAuctionsCommand implements Command {
-  Logger logger = LoggerFactory.getLogger(FetchAuctionsCommand.class);
+  private static final Logger logger = LoggerFactory.getLogger(FetchAuctionsCommand.class);
   private final AuctionService auctionService;
 
   public FetchAuctionsCommand(AuctionService auctionService) {
@@ -20,8 +20,14 @@ public class FetchAuctionsCommand implements Command {
 
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
-    List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
-    AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
-    clientHandler.sendMessage(PacketRes.of(PacketType.FETCH_AUCTIONS, response));
+    try {
+      List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
+      AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
+      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTIONS, response));
+    } catch (Exception e) {
+      logger.error("Failed to fetch auctions", e);
+      clientHandler.sendPacket(
+          PacketRes.error(PacketType.FETCH_AUCTIONS, "Không thể tải danh sách đấu giá"));
+    }
   }
 }

@@ -1,16 +1,13 @@
 SET
 FOREIGN_KEY_CHECKS = 0;
-
-DROP TABLE IF EXISTS bids;
+  DROP TABLE IF EXISTS bids;
 DROP TABLE IF EXISTS auction_sessions;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS auto_bids;
-
-SET
+  SET
 FOREIGN_KEY_CHECKS = 1;
-
-DROP DATABASE IF EXISTS auction_db_test;
+  DROP DATABASE IF EXISTS auction_db_test;
 CREATE DATABASE IF NOT EXISTS auction_db_test;
 CREATE TABLE users
 (
@@ -24,8 +21,7 @@ CREATE TABLE users
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
-CREATE TABLE items
+  CREATE TABLE items
 (
     id             INT AUTO_INCREMENT PRIMARY KEY,
     seller_id      INT          NOT NULL,
@@ -40,8 +36,7 @@ CREATE TABLE items
     updated_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE CASCADE
 );
-
-CREATE TABLE auction_sessions
+  CREATE TABLE auction_sessions
 (
     id             INT AUTO_INCREMENT PRIMARY KEY,
     item_id        INT      NOT NULL,
@@ -60,8 +55,7 @@ CREATE TABLE auction_sessions
     FOREIGN KEY (seller_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (winner_id) REFERENCES users (id) ON DELETE SET NULL
 );
-
-CREATE TABLE bids
+  CREATE TABLE bids
 (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     session_id  INT    NOT NULL,
@@ -73,8 +67,7 @@ CREATE TABLE bids
     FOREIGN KEY (session_id) REFERENCES auction_sessions (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
-
-CREATE TABLE auto_bids
+  CREATE TABLE auto_bids
 (
     id               INT AUTO_INCREMENT PRIMARY KEY,
     session_id       INT    NOT NULL,
@@ -87,8 +80,7 @@ CREATE TABLE auto_bids
     FOREIGN KEY (session_id) REFERENCES auction_sessions (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_bids_session ON bids (session_id);
+  CREATE INDEX idx_bids_session ON bids (session_id);
 CREATE INDEX idx_bids_user ON bids (user_id);
 CREATE INDEX idx_auction_status ON auction_sessions (status);
 CREATE INDEX idx_session_end_time ON auction_sessions (end_time);

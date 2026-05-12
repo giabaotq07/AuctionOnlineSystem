@@ -13,7 +13,6 @@ public class DatabaseInitializer {
       if (stream == null) {
         throw new IOException("schema.sql not found on classpath");
       }
-
       String schema = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
       String[] statements = schema.split(";");
       for (String stmt : statements) {
@@ -21,17 +20,14 @@ public class DatabaseInitializer {
         if (sql.isEmpty()) {
           continue;
         }
-
         // Connection already points to DB_NAME, skip USE statements from schema files.
         if (sql.toUpperCase().startsWith("USE ")) {
           continue;
         }
-
         try (Statement statement = conn.createStatement()) {
           statement.execute(sql);
         }
       }
-
       System.out.println("Database initialization completed.");
     } catch (Exception e) {
       System.out.println("Database initialization failed: " + e.getMessage());

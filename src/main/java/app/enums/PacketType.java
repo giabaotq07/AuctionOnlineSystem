@@ -30,9 +30,7 @@ public enum PacketType {
   FETCH_HISTORY(HistoryRequest.class, HistoryResponse.class),
   FETCH_AUCTION_DETAIL(AuctionDetailRequest.class, AuctionDetailResponse.class),
   FETCH_AUCTION_RESULT(AuctionResultRequest.class, AuctionResultResponse.class),
-  ERROR(Void.class, Void.class),
-  SUCCESS(Void.class, Void.class);
-
+  ERROR(Void.class, Void.class);
   public final Class<?> reqClass;
   public final Class<?> resClass;
 

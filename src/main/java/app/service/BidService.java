@@ -27,14 +27,11 @@ import java.util.Optional;
  * ai có thể vượt
  */
 public class BidService {
-
   // Bước giá tối thiểu mặc định (có thể đưa vào config/DB sau)
   private static final long DEFAULT_MIN_INCREMENT = 1L;
-
   // Anti-sniping: nếu bid trong X giây cuối → gia hạn thêm Y giây
   private static final int ANTI_SNIPE_THRESHOLD_SECONDS = 30;
   private static final int ANTI_SNIPE_EXTENSION_SECONDS = 60;
-
   private final BidDAO bidDAO;
   private final AutoBidDAO autoBidDAO;
   private final AuctionDAO sessionDAO;
@@ -54,20 +51,16 @@ public class BidService {
           sessionDAO.lockRow(conn, sessionId);
           Auction session = requireRunningSession(conn, sessionId);
           validateBidAmount(bidAmount, session.getHighestBid());
-
           session.updateHighestBid(bidAmount, userId);
           applyAntiSnipe(session);
-
           bidDAO.insertBid(conn, sessionId, userId, bidAmount, false);
           sessionDAO.update(conn, session);
-
           return null;
         });
   }
 
   public PlaceBidResponse placeBidAndBuildResponse(int sessionId, int userId, long bidAmount) {
     placeBid(sessionId, userId, bidAmount);
-
     Auction session =
         sessionDAO
             .findById(sessionId)
@@ -77,26 +70,19 @@ public class BidService {
             .findById(session.getItemId())
             .orElseThrow(() -> new ServiceException("Không tìm thấy item."))
             .getName();
-
     long amount = session.getHighestBid();
     int bidderId = 0;
-    String bidderName = "";
-
     Optional<BidTransaction> highest = bidDAO.findHighestBid(session.getId());
     if (highest.isPresent()) {
       BidTransaction tx = highest.get();
       bidderId = tx.getBidderId();
       amount = tx.getAmount();
-      bidderName = tx.getBidderName();
     }
-
-    return new PlaceBidResponse(bidderId, amount, itemName, bidderName);
+    return new PlaceBidResponse(true, sessionId, amount, bidderId, "Success");
   }
 
   // ── 2. Đăng ký / huỷ Auto-Bid ────────────────────────────────────────────
-
   // ── 3. Truy vấn lịch sử bid ───────────────────────────────────────────────
-
   /** Trả về danh sách bid theo giá giảm dần (dùng cho bảng lịch sử). */
   public List<BidTransaction> getBidHistory(int sessionId) {
     return bidDAO.findBySession(sessionId);
@@ -113,9 +99,7 @@ public class BidService {
   }
 
   // ── Private: Auto-Bid Engine ──────────────────────────────────────────────
-
   // ── Private: Anti-Snipe ───────────────────────────────────────────────────
-
   /**
    * Nếu bid xảy ra trong ANTI_SNIPE_THRESHOLD_SECONDS giây cuối → gia hạn endTime thêm
    * ANTI_SNIPE_EXTENSION_SECONDS giây.
@@ -127,20 +111,17 @@ public class BidService {
     long secondsLeft =
         java.time.Duration.between(java.time.LocalDateTime.now(), session.getEndTime())
             .getSeconds();
-
     if (secondsLeft > 0 && secondsLeft <= ANTI_SNIPE_THRESHOLD_SECONDS) {
       session.extend(ANTI_SNIPE_EXTENSION_SECONDS);
     }
   }
 
   // ── Private: Validators ───────────────────────────────────────────────────
-
   private Auction requireRunningSession(Connection conn, int sessionId) {
     Auction session =
         sessionDAO
             .findById(conn, sessionId)
             .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
-
     if (session.getStatus() != AuctionStatus.RUNNING) {
       throw new ServiceException(
           "Phiên đấu giá đã " + session.getStatus().name().toLowerCase() + ".");

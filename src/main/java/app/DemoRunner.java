@@ -20,7 +20,6 @@ import app.service.*;
 import java.time.LocalDateTime;
 
 public class DemoRunner {
-
   static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
     System.out.println("Dang kiem tra va khoi tao Database...");
@@ -29,7 +28,6 @@ public class DemoRunner {
     AuctionDAO sessionDAO = new MySqlAuctionDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     BidDAO bidDAO = new MySqlBidDAO();
-
     UserService userService = new UserService(userDAO);
     ItemService itemService = new ItemService(itemDAO);
     AuctionService sessionService = new AuctionService(sessionDAO, bidDAO, itemDAO);
@@ -48,7 +46,6 @@ public class DemoRunner {
       System.out.println(e.getMessage());
       seller = userService.login("nguoiban", "123456");
     }
-
     try {
       buyer1 =
           UserFactory.createUser(
@@ -58,7 +55,6 @@ public class DemoRunner {
       System.out.println(e.getMessage());
       buyer1 = userService.login("nguoimua1", "123456");
     }
-
     try {
       buyer2 =
           UserFactory.createUser(

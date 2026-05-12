@@ -1,4 +1,5 @@
 package app.data;
 
 public record PlaceBidResponse(
-    int bidderId, long highestBidAmount, String itemName, String bidderName) implements Response {}
+    boolean success, long auctionId, long highestBidAmount, long bidderId, String message)
+    implements Response {}
