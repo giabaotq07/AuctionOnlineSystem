@@ -49,24 +49,6 @@ public class LoginController {
                   if (response.success()) {
                     User user = UserFactory.createUser(response.user());
                     Client.getInstance().setCurrentUser(user);
-                    Thread thread =
-                        new Thread(
-                            () -> {
-                              try {
-                                DataStore.getInstance();
-                                Thread.sleep(2000);
-                              } catch (IOException e) {
-                                Platform.runLater(
-                                    () ->
-                                        AlertUtils.showError(
-                                            "Đăng nhập thất bại", response.message()));
-                              } catch (InterruptedException e) {
-                                e.printStackTrace();
-                              }
-                            });
-                    thread.setDaemon(true);
-                    thread.start();
-
                     SwitchToUI();
                   } else {
                     AlertUtils.showError("Đăng nhập thất bại", response.message());
@@ -99,6 +81,7 @@ public class LoginController {
     if (loginHandler != null) {
       Client.getInstance().unsubscribe(PacketType.LOGIN, loginHandler);
     }
+    DataStore.getInstance();
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 

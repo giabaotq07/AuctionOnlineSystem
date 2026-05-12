@@ -35,23 +35,17 @@ public class MessController {
   @FXML private ScrollPane scrollPane;
 
   private Client client;
-  private PacketListener<Response> chatHandler;
+  private PacketListener<ChatResponse> chatHandler;
 
   @FXML
   public void initialize() {
-    client = Client.getInstance();
-
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
-
+    client = Client.getInstance();
     chatHandler =
         response -> {
-          if (!(response instanceof ChatResponse)) {
-            return;
-          }
-          ChatResponse chatResponse = (ChatResponse) response;
-          String sender = chatResponse.sender();
+          String sender = response.sender();
           Platform.runLater(
-              () -> addBubble(sender, chatResponse.content(), isMe(chatResponse.senderId())));
+              () -> addBubble(sender, response.content(), isMe(response.senderId())));
         };
     client.subscribe(PacketType.CHAT, chatHandler);
   }

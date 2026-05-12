@@ -2,6 +2,7 @@ package app.controllers;
 
 import app.config.NavigationManager;
 import app.data.AuctionSummary;
+import app.data.AuctionsResponse;
 import app.data.CreateAuctionResponse;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
@@ -11,7 +12,6 @@ import app.models.DataStore;
 import app.network.Client;
 import app.network.PacketListener;
 import app.utils.AlertUtils;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
@@ -74,19 +74,6 @@ public class FirstScene {
               : "Đăng nhập / Đăng ký");
     }
 
-    // ================= INIT DATA =================
-    try {
-      DataStore.getInstance();
-      summaries.clear();
-      summaries.addAll(DataStore.getInstance().sessions);
-    } catch (IOException e) {
-      AlertUtils.showError("Lỗi", "Mất kết nối");
-      return;
-    }
-
-    // ================= RENDER INITIAL UI =================
-    rebuildUI();
-
     if (activeAuctionsPane != null) {
       activeAuctionsPane.getChildren().setAll(createScrollBox(activeBox));
     }
@@ -95,7 +82,7 @@ public class FirstScene {
       completedAuctionsPane.getChildren().setAll(createScrollBox(completedBox));
     }
 
-    // ================= REALTIME HANDLER =================
+    // ================= RENDER INITIAL UI =================
     createAuctionHandler =
         response ->
             Platform.runLater(
@@ -125,6 +112,24 @@ public class FirstScene {
 
     client.subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
 
+    Client.getInstance()
+        .subscribe(
+            PacketType.FETCH_AUCTIONS,
+            (AuctionsResponse _) ->
+                Platform.runLater(
+                    () -> {
+                      try {
+                        summaries.clear();
+                        summaries.addAll(DataStore.getInstance().sessions);
+                        rebuildUI();
+                      } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                      }
+                    }));
+
+    summaries.clear();
+    summaries.addAll(DataStore.getInstance().sessions);
+    rebuildUI();
     logger.debug("FirstScene initialized");
   }
 

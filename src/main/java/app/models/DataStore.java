@@ -4,6 +4,7 @@ import app.data.AuctionSummary;
 import app.data.AuctionsRequest;
 import app.data.AuctionsResponse;
 import app.enums.PacketType;
+import app.exception.ConnectException;
 import app.network.Client;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,14 +25,18 @@ public class DataStore {
     logger.info("DataStore instance created");
   }
 
-  public static DataStore getInstance() throws IOException {
+  public static DataStore getInstance() {
     if (instance == null) {
       synchronized (DataStore.class) {
         if (instance == null) {
           instance = new DataStore();
           instance.loadSessions();
+          try {
           Client.getInstance()
               .sendRequest(PacketReq.of(PacketType.FETCH_AUCTIONS, new AuctionsRequest()));
+          } catch (IOException e) {
+            throw new ConnectException(e.getMessage());
+          }
           return instance;
         }
       }
@@ -43,15 +48,11 @@ public class DataStore {
     Client.getInstance()
         .subscribe(
             PacketType.FETCH_AUCTIONS,
-            response ->
+            (AuctionsResponse response) ->
                 Platform.runLater(
                     () -> {
-                      if (!(response instanceof AuctionsResponse)) {
-                        return;
-                      }
-                      AuctionsResponse auctionsResponse = (AuctionsResponse) response;
-                      if (auctionsResponse.success() && auctionsResponse.auctions() != null) {
-                        sessions = auctionsResponse.auctions();
+                      if (response.success() && response.auctions() != null) {
+                        sessions = response.auctions();
                       }
                     }));
   }

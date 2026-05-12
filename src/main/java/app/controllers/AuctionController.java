@@ -29,7 +29,7 @@ public class AuctionController {
 
   @FXML
   public void initialize() {
-
+    DataStore.getInstance();
     if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
@@ -47,11 +47,7 @@ public class AuctionController {
                 () -> {
                   if (response.success()) {
                     if (response.auction() != null) {
-                      try {
                         DataStore.getInstance().sessions.add(response.auction());
-                      } catch (IOException e) {
-                        AlertUtils.showError("Lỗi", response.message());
-                      }
                     }
                     AlertUtils.showInfo("OK", response.message());
                     if (createAuctionHandler != null) {
