@@ -69,10 +69,10 @@ public class Wallet {
     }
   }
 
-  public BigDecimal getFrozenAmount(String sessionId) {
+  public BigDecimal getFrozenAmount(String auctionId) {
     lock.lock();
     try {
-      return frozenFunds.getOrDefault(sessionId, BigDecimal.ZERO);
+      return frozenFunds.getOrDefault(auctionId, BigDecimal.ZERO);
     } finally {
       lock.unlock();
     }
@@ -107,15 +107,15 @@ public class Wallet {
     }
   }
 
-  public BigDecimal setFrozenAmount(String sessionId, BigDecimal newAmount) {
-    Objects.requireNonNull(sessionId, "sessionId");
+  public BigDecimal setFrozenAmount(String auctionId, BigDecimal newAmount) {
+    Objects.requireNonNull(auctionId, "auctionId");
     BigDecimal normalized = normalize(newAmount);
     if (normalized.signum() < 0) {
       throw new IllegalArgumentException("So tien dong bang khong hop le.");
     }
     lock.lock();
     try {
-      BigDecimal previous = frozenFunds.getOrDefault(sessionId, BigDecimal.ZERO);
+      BigDecimal previous = frozenFunds.getOrDefault(auctionId, BigDecimal.ZERO);
       BigDecimal delta = normalized.subtract(previous);
       if (delta.signum() > 0) {
         if (availableBalance.compareTo(delta) < 0) {
@@ -126,9 +126,9 @@ public class Wallet {
         availableBalance = availableBalance.add(delta.abs());
       }
       if (normalized.signum() == 0) {
-        frozenFunds.remove(sessionId);
+        frozenFunds.remove(auctionId);
       } else {
-        frozenFunds.put(sessionId, normalized);
+        frozenFunds.put(auctionId, normalized);
       }
       return previous;
     } finally {
@@ -136,11 +136,11 @@ public class Wallet {
     }
   }
 
-  public BigDecimal releaseFrozen(String sessionId) {
-    Objects.requireNonNull(sessionId, "sessionId");
+  public BigDecimal releaseFrozen(String auctionId) {
+    Objects.requireNonNull(auctionId, "auctionId");
     lock.lock();
     try {
-      BigDecimal amount = frozenFunds.remove(sessionId);
+      BigDecimal amount = frozenFunds.remove(auctionId);
       if (amount != null && amount.signum() > 0) {
         availableBalance = availableBalance.add(amount);
         return amount;
@@ -151,11 +151,11 @@ public class Wallet {
     }
   }
 
-  public BigDecimal commitFrozen(String sessionId) {
-    Objects.requireNonNull(sessionId, "sessionId");
+  public BigDecimal commitFrozen(String auctionId) {
+    Objects.requireNonNull(auctionId, "auctionId");
     lock.lock();
     try {
-      BigDecimal amount = frozenFunds.remove(sessionId);
+      BigDecimal amount = frozenFunds.remove(auctionId);
       return amount == null ? BigDecimal.ZERO : amount;
     } finally {
       lock.unlock();

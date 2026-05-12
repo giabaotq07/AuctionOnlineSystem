@@ -27,7 +27,7 @@ public class ClientHandler implements Runnable {
   private BufferedWriter writer;
   private BufferedReader reader;
   private final Object writeLock = new Object();
-  private final Session auction = new Session();
+  private final Session session = new Session();
   private volatile boolean closed = false;
   private final AuctionService auctionService;
   private final BidService bidService;
@@ -89,7 +89,7 @@ public class ClientHandler implements Runnable {
             sendPacket(PacketRes.of(false, PacketType.ERROR, "Packet type is required"));
             continue;
           }
-          auction.touch();
+          session.touch();
           handlePacket(packet);
         } catch (Exception e) {
           logger.error("Invalid packet received", e);
@@ -134,7 +134,7 @@ public class ClientHandler implements Runnable {
   }
 
   private boolean requireLogin() {
-    if (!auction.isAuthenticated()) {
+    if (!session.isAuthenticated()) {
       sendPacket(PacketRes.error(PacketType.ERROR, "Authentication required"));
       return false;
     }
@@ -151,7 +151,7 @@ public class ClientHandler implements Runnable {
         writer.newLine();
         writer.flush();
       }
-      User user = auction.getUser();
+      User user = session.getUser();
       logger.debug("Sent message to {}", user != null ? user.getName() : "unknown");
     } catch (IOException e) {
       logger.error("Failed to send message", e);
@@ -195,24 +195,24 @@ public class ClientHandler implements Runnable {
   }
 
   private void cleanup() {
-    User user = auction.getUser();
+    User user = session.getUser();
     if (user != null) {
       Server.removeClient(user.getId(), this);
     }
-    auction.logout();
+    session.logout();
     close();
   }
 
   public boolean isAuthenticated() {
-    return auction.isAuthenticated();
+    return session.isAuthenticated();
   }
 
-  public Session getSession() {
-    return auction;
+  public Session getAuction() {
+    return session;
   }
 
   public User getUser() {
-    return auction.getUser();
+    return session.getUser();
   }
 
   public Socket getSocket() {

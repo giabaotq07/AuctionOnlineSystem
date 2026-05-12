@@ -32,7 +32,7 @@ public class PlaceBidCommand implements Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     BigDecimal previousFrozen = null;
-    int sessionId = 0;
+    int auctionId = 0;
     int bidderId = 0;
     try {
       if (!clientHandler.isAuthenticated()) {
@@ -44,9 +44,9 @@ public class PlaceBidCommand implements Command {
         sendError(clientHandler, "Dữ liệu đặt giá không hợp lệ.");
         return;
       }
-      sessionId = request.sessionId();
+      auctionId = request.auctionId();
       long bidAmount = request.bidAmount();
-      if (sessionId <= 0) {
+      if (auctionId <= 0) {
         sendError(clientHandler, "Phiên đấu giá không hợp lệ.");
         return;
       }
@@ -58,8 +58,8 @@ public class PlaceBidCommand implements Command {
       // KHÔNG trust bidderId từ client
       bidderId = user.getId();
       previousFrozen =
-          userService.reserveBidAmount(bidderId, sessionId, BigDecimal.valueOf(bidAmount));
-      PlaceBidResponse response = bidService.placeBid(sessionId, bidderId, bidAmount);
+          userService.reserveBidAmount(bidderId, auctionId, BigDecimal.valueOf(bidAmount));
+      PlaceBidResponse response = bidService.placeBid(auctionId, bidderId, bidAmount);
       PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
       // sender
       clientHandler.sendPacket(packetResponse);
@@ -68,24 +68,24 @@ public class PlaceBidCommand implements Command {
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
       // refresh auction list
       broadcastAuctionList(clientHandler);
-      logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, sessionId);
+      logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
-      rollbackFrozen(bidderId, sessionId, previousFrozen);
+      rollbackFrozen(bidderId, auctionId, previousFrozen);
       sendError(clientHandler, e.getMessage());
     } catch (Exception e) {
       logger.error("Unexpected place bid error", e);
-      rollbackFrozen(bidderId, sessionId, previousFrozen);
+      rollbackFrozen(bidderId, auctionId, previousFrozen);
       sendError(clientHandler, "Không thể đặt giá.");
     }
   }
 
-  private void rollbackFrozen(int bidderId, int sessionId, BigDecimal previousFrozen) {
-    if (bidderId <= 0 || sessionId <= 0 || previousFrozen == null) {
+  private void rollbackFrozen(int bidderId, int auctionId, BigDecimal previousFrozen) {
+    if (bidderId <= 0 || auctionId <= 0 || previousFrozen == null) {
       return;
     }
     try {
-      userService.restoreFrozenAmount(bidderId, sessionId, previousFrozen);
+      userService.restoreFrozenAmount(bidderId, auctionId, previousFrozen);
     } catch (Exception e) {
       logger.warn("Failed to rollback frozen funds for user {}", bidderId, e);
     }

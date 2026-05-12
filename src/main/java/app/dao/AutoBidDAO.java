@@ -9,11 +9,11 @@ public interface AutoBidDAO {
   // ── Read operations ───────────────────────────────
   Optional<AutoBid> findById(int id);
 
-  Optional<AutoBid> findBySessionAndUser(int sessionId, int userId);
+  Optional<AutoBid> findByAuctionAndUser(int auctionId, int userId);
 
-  List<AutoBid> findBySession(int sessionId);
+  List<AutoBid> findByAuction(int auctionId);
 
-  List<AutoBid> findEnabledBySession(int sessionId);
+  List<AutoBid> findEnabledByAuction(int auctionId);
 
   // ── Write operations ──────────────────────────────
   AutoBid save(AutoBid autoBid);
@@ -25,9 +25,9 @@ public interface AutoBidDAO {
   boolean setEnabled(int id, boolean enabled);
 
   // ── Transaction-aware operations ──────────────────
-  Optional<AutoBid> findBySessionAndUser(Connection conn, int sessionId, int userId);
+  Optional<AutoBid> findByAuctionAndUser(Connection conn, int auctionId, int userId);
 
-  List<AutoBid> findEnabledBySession(Connection conn, int sessionId);
+  List<AutoBid> findEnabledByAuction(Connection conn, int auctionId);
 
   AutoBid save(Connection conn, AutoBid autoBid);
 

@@ -45,35 +45,35 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   }
 
   @Override
-  public Optional<AutoBid> findBySessionAndUser(int sessionId, int userId) {
+  public Optional<AutoBid> findByAuctionAndUser(int auctionId, int userId) {
     return withConnection(
-        conn -> findBySessionAndUser(conn, sessionId, userId), "Lỗi kết nối khi tải auto bid.");
+        conn -> findByAuctionAndUser(conn, auctionId, userId), "Lỗi kết nối khi tải auto bid.");
   }
 
   @Override
-  public List<AutoBid> findBySession(int sessionId) {
+  public List<AutoBid> findByAuction(int auctionId) {
     return withConnection(
         conn ->
             findMany(
-                conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", sessionId),
+                conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", auctionId),
         "Lỗi kết nối khi tải danh sách auto bid.");
   }
 
   @Override
-  public List<AutoBid> findEnabledBySession(int sessionId) {
+  public List<AutoBid> findEnabledByAuction(int auctionId) {
     return withConnection(
-        conn -> findEnabledBySession(conn, sessionId),
+        conn -> findEnabledByAuction(conn, auctionId),
         "Lỗi kết nối khi tải auto bid đang hoạt động.");
   }
 
   // ── Transaction-aware read operations ───────────────────
   @Override
-  public Optional<AutoBid> findBySessionAndUser(Connection conn, int sessionId, int userId) {
-    return findOne(conn, BASE_SELECT + " WHERE session_id = ? AND user_id = ?", sessionId, userId);
+  public Optional<AutoBid> findByAuctionAndUser(Connection conn, int auctionId, int userId) {
+    return findOne(conn, BASE_SELECT + " WHERE session_id = ? AND user_id = ?", auctionId, userId);
   }
 
   @Override
-  public List<AutoBid> findEnabledBySession(Connection conn, int sessionId) {
+  public List<AutoBid> findEnabledByAuction(Connection conn, int auctionId) {
     return findMany(
         conn,
         BASE_SELECT
@@ -82,7 +82,7 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
               AND enabled = TRUE
               ORDER BY max_amount DESC
               """,
-        sessionId);
+        auctionId);
   }
 
   // ── Write operations ────────────────────────────────────
@@ -124,7 +124,7 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       setParameters(
           ps,
-          autoBid.getSessionId(),
+          autoBid.getAuctionId(),
           autoBid.getUserId(),
           autoBid.getMaxAmount(),
           autoBid.getIncrementAmount(),

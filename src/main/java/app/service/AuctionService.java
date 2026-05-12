@@ -100,7 +100,7 @@ public class AuctionService {
     List<AuctionSummary> result = new ArrayList<>();
     for (Auction auction : auctionDAO.findAll()) {
       boolean isSeller = auction.getSellerId() == userId;
-      boolean hasBid = bidDAO.existsBySessionAndUser(auction.getId(), userId);
+      boolean hasBid = bidDAO.existsByAuctionAndUser(auction.getId(), userId);
       if (!isSeller && !hasBid) {
         continue;
       }

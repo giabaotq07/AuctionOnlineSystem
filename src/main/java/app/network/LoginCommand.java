@@ -41,7 +41,7 @@ public class LoginCommand implements Command {
         return;
       }
       // authenticate auction
-      clientHandler.getSession().authenticate(user);
+      clientHandler.getAuction().authenticate(user);
       // register online client
       Server.registerClient(user.getId(), clientHandler);
       logger.info("[SERVER] User {} logged in", username);

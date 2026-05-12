@@ -10,6 +10,7 @@ import app.dao.impl.MySqlAutoBidDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
+import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
@@ -28,10 +29,15 @@ public class DemoRunner {
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     BidDAO bidDAO = new MySqlBidDAO();
-    UserService userService = new UserService(userDAO);
-    ItemService itemService = new ServiceFactory().createItemService(itemDAO);
-    BidService bidService = new ServiceFactory().createBidService(bidDAO, auctionDAO);
-    AuctionService sessionService = new ServiceFactory().createAuctionService(auctionDAO, bidDAO, itemDAO);
+    //
+    TransactionManager transactionManager =  new TransactionManager();
+    BidValidator bidValidator =  new BidValidator();
+    AntiSnipeService antiSnipeService =  new AntiSnipeService();
+    //
+    UserService userService = new UserService(userDAO, transactionManager);
+    ItemService itemService = new ItemService(itemDAO, transactionManager);
+    BidService bidService = new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
+    AuctionService auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
     User seller;
     User buyer1;
     User buyer2;
@@ -91,12 +97,12 @@ public class DemoRunner {
             seller.getId(),
             LocalDateTime.now().plusSeconds(5),
             phone.getStartingPrice());
-    auction = sessionService.createAuction(auction);
+    auction = auctionService.createAuction(auction);
     System.out.println("Phien dau gia tao voi ID: " + auction.getId());
     // bắt đầu phiên
-    sessionService.updateStatus(auction.getId(), AuctionStatus.RUNNING);
+    auctionService.updateStatus(auction.getId(), AuctionStatus.RUNNING);
     auction.start();
-    sessionService.setStartTime(auction.getId(), LocalDateTime.now());
+    auctionService.setStartTime(auction.getId(), LocalDateTime.now());
     phone.setStatus(ItemStatus.UNDER_AUCTION);
     itemService.updateStatus(phone.getId(), ItemStatus.UNDER_AUCTION);
     // 4. Mua ban (Bidding)
@@ -107,11 +113,11 @@ public class DemoRunner {
     // 6. Cho doi ket thuc
     System.out.println("\n6. Cho 5.5 giay de phien het han...");
     try {
-      sessionService.setEndTime(auction.getId(), LocalDateTime.now().plusSeconds(5));
+      auctionService.setEndTime(auction.getId(), LocalDateTime.now().plusSeconds(5));
       Thread.sleep(5500);
     } catch (Exception _) {
     }
-    sessionService.handleCompletion(auction.getId());
+    auctionService.handleCompletion(auction.getId());
     // giả sử đã bán
     phone.setStatus(ItemStatus.SOLD);
     itemService.updateStatus(phone.getId(), ItemStatus.SOLD);

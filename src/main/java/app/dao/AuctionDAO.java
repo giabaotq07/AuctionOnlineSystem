@@ -33,7 +33,7 @@ public interface AuctionDAO {
 
   // ── Transaction-aware operations (use provided Connection) ────────
   // These are used within transactions to ensure ACID properties
-  void lockRow(Connection conn, int sessionId);
+  void lockRow(Connection conn, int auctionId);
 
   Auction save(Connection conn, Auction auction);
 

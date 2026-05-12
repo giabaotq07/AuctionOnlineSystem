@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class AutoBid {
   private int id;
-  private int sessionId;
+  private int auctionId;
   private int userId;
   private long maxAmount;
   private long incrementAmount;
@@ -16,7 +16,7 @@ public class AutoBid {
 
   public AutoBid(
       int id,
-      int sessionId,
+      int auctionId,
       int userId,
       long maxAmount,
       long incrementAmount,
@@ -24,7 +24,7 @@ public class AutoBid {
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
-    this.sessionId = sessionId;
+    this.auctionId = auctionId;
     this.userId = userId;
     this.maxAmount = maxAmount;
     this.incrementAmount = incrementAmount;
@@ -42,12 +42,12 @@ public class AutoBid {
     this.id = id;
   }
 
-  public int getSessionId() {
-    return sessionId;
+  public int getAuctionId() {
+    return auctionId;
   }
 
-  public void setSessionId(int sessionId) {
-    this.sessionId = sessionId;
+  public void setAuctionId(int auctionId) {
+    this.auctionId = auctionId;
   }
 
   public int getUserId() {

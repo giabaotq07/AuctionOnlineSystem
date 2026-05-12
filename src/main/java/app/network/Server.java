@@ -2,6 +2,7 @@ package app.network;
 
 import app.dao.*;
 import app.dao.impl.*;
+import app.database.TransactionManager;
 import app.models.PacketRes;
 import app.service.*;
 import java.io.IOException;
@@ -51,20 +52,21 @@ public class Server {
 
   private void initService() {
     logger.info("[SERVER] Initializing database...");
-    // DAO
+    // Dao
     UserDAO userDAO = new MySqlUserDAO();
     ItemDAO itemDAO = new MySqlItemDAO();
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     BidDAO bidDAO = new MySqlBidDAO();
-    // SERVICE
-    // cái factory này để code khởi tạo ở đây trông ngắn đi, tác dụng chính là tạo 1 đổi tượng
-    // TransactionManager dùng chung
-    ServiceFactory serviceFactory = new ServiceFactory();
-    userService = new UserService(userDAO);
-    itemService = serviceFactory.createItemService(itemDAO);
-    bidService = serviceFactory.createBidService(bidDAO, auctionDAO);
-    auctionService = serviceFactory.createAuctionService(auctionDAO, bidDAO, itemDAO);
+    //
+    TransactionManager transactionManager =  new TransactionManager();
+    BidValidator bidValidator =  new BidValidator();
+    AntiSnipeService antiSnipeService =  new AntiSnipeService();
+    // Service
+     userService = new UserService(userDAO, transactionManager);
+     itemService = new ItemService(itemDAO, transactionManager);
+     bidService = new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
+     auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
   }
 
   public void start() {

@@ -37,23 +37,23 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   @Override
-  public void insertBid(int sessionId, int userId, long bidAmount, boolean isAutoBid)
+  public void insertBid(int auctionId, int userId, long bidAmount, boolean isAutoBid)
       throws DatabaseException {
     runWithConnection(
-        conn -> insertBid(conn, sessionId, userId, bidAmount, isAutoBid),
+        conn -> insertBid(conn, auctionId, userId, bidAmount, isAutoBid),
         "Lỗi kết nối khi thêm bid.");
   }
 
   @Override
   public void insertBid(
-      Connection conn, int sessionId, int userId, long bidAmount, boolean isAutoBid) {
+      Connection conn, int auctionId, int userId, long bidAmount, boolean isAutoBid) {
     String sql =
         """
             INSERT INTO bids (session_id, user_id, bid_amount, is_auto_bid)
             VALUES (?, ?, ?, ?)
             """;
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, sessionId, userId, bidAmount, isAutoBid);
+      setParameters(ps, auctionId, userId, bidAmount, isAutoBid);
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm bid.");
       }
@@ -63,16 +63,16 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   @Override
-  public Optional<BidTransaction> findHighestBid(int sessionId) {
+  public Optional<BidTransaction> findHighestBid(int auctionId) {
     return withConnection(
-        conn -> findHighestBid(conn, sessionId), "Lỗi kết nối khi truy vấn bid cao nhất.");
+        conn -> findHighestBid(conn, auctionId), "Lỗi kết nối khi truy vấn bid cao nhất.");
   }
 
   @Override
-  public Optional<BidTransaction> findHighestBid(Connection conn, int sessionId) {
+  public Optional<BidTransaction> findHighestBid(Connection conn, int auctionId) {
     String sql = BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC LIMIT 1";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, sessionId);
+      setParameters(ps, auctionId);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? Optional.of(mapBid(rs)) : Optional.empty();
       }
@@ -82,31 +82,31 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   @Override
-  public List<BidTransaction> findBySession(int sessionId) {
+  public List<BidTransaction> findByAuction(int auctionId) {
     return withConnection(
         conn ->
-            queryBids(conn, BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC", sessionId),
+            queryBids(conn, BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC", auctionId),
         "Lỗi kết nối khi truy vấn bids.");
   }
 
   @Override
-  public List<BidTransaction> findBySessionOrderByTime(int sessionId) {
+  public List<BidTransaction> findByAuctionOrderByTime(int auctionId) {
     return withConnection(
-        conn -> queryBids(conn, BID_SELECT + " ORDER BY b.bid_time ASC", sessionId),
+        conn -> queryBids(conn, BID_SELECT + " ORDER BY b.bid_time ASC", auctionId),
         "Lỗi kết nối khi truy vấn bids.");
   }
 
   @Override
-  public boolean existsBySessionAndUser(int sessionId, int userId) {
+  public boolean existsByAuctionAndUser(int auctionId, int userId) {
     return withConnection(
-        conn -> existsBySessionAndUser(conn, sessionId, userId),
+        conn -> existsByAuctionAndUser(conn, auctionId, userId),
         "Lỗi kết nối khi kiểm tra tồn tại bid.");
   }
 
-  private boolean existsBySessionAndUser(Connection conn, int sessionId, int userId) {
+  private boolean existsByAuctionAndUser(Connection conn, int auctionId, int userId) {
     String sql = "SELECT 1 FROM bids WHERE session_id = ? AND user_id = ? LIMIT 1";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, sessionId, userId);
+      setParameters(ps, auctionId, userId);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next();
       }
@@ -116,10 +116,10 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   // ── Private helpers ───────────────────────────────────────────
-  private List<BidTransaction> queryBids(Connection conn, String sql, int sessionId) {
+  private List<BidTransaction> queryBids(Connection conn, String sql, int auctionId) {
     List<BidTransaction> bids = new ArrayList<>();
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, sessionId);
+      setParameters(ps, auctionId);
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) bids.add(mapBid(rs));
       }

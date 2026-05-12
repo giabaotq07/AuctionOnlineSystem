@@ -79,7 +79,7 @@ public class LiveController implements AuctionObserver, Cleanable {
     updateAvailableBalance();
   }
 
-  public void setSession(Auction auction) {
+  public void setAuction(Auction auction) {
     this.auction = auction;
     auction.registerObserver(this);
     try {
@@ -175,7 +175,7 @@ public class LiveController implements AuctionObserver, Cleanable {
   }
 
   private void requestWalletSettlement() {
-    if (settlementSent || session == null) {
+    if (settlementSent || auction == null) {
       return;
     }
     if (Client.getInstance().getCurrentUser() == null) {
@@ -183,7 +183,7 @@ public class LiveController implements AuctionObserver, Cleanable {
     }
     try {
       settlementSent = true;
-      SettleWalletRequest request = new SettleWalletRequest(session.getId());
+      SettleWalletRequest request = new SettleWalletRequest(auction.getId());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.SETTLE_WALLET, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");

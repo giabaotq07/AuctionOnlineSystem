@@ -29,21 +29,21 @@ public class BidService {
     this.antiSnipeService = antiSnipeService;
   }
 
-  public PlaceBidResponse placeBid(int sessionId, int userId, long bidAmount) {
+  public PlaceBidResponse placeBid(int auctionId, int userId, long bidAmount) {
     return
         transactionManager.runInTransaction(
             conn -> {
-              auctionDAO.lockRow(conn, sessionId);
+              auctionDAO.lockRow(conn, auctionId);
               Auction auction =
                   auctionDAO
-                      .findById(conn, sessionId)
+                      .findById(conn, auctionId)
                       .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
               bidValidator.validateAuctionState(auction);
               bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
               bidValidator.validateSelfBid(userId, auction.getWinnerId());
               auction.updateHighestBid(bidAmount, userId);
               antiSnipeService.apply(auction);
-              bidDAO.insertBid(conn, sessionId, userId, bidAmount, false);
+              bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
               auctionDAO.update(conn, auction);
               return new PlaceBidResponse(
                   true,

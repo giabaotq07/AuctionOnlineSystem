@@ -1,3 +1,3 @@
 package app.data;
 
-public record BidResult(int sessionId, long highestBid, Integer winnerId) {}
+public record BidResult(int auctionId, long highestBid, Integer winnerId) {}

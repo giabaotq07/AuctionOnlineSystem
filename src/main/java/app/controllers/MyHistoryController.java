@@ -132,7 +132,7 @@ public class MyHistoryController {
           .navigateTo(
               View.LIVE,
               c -> {
-                if (c instanceof LiveController) ((LiveController) c).setSession(auction);
+                if (c instanceof LiveController) ((LiveController) c).setAuction(auction);
               });
     } catch (Exception e) {
       e.printStackTrace();

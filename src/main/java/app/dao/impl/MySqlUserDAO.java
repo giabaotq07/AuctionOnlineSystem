@@ -125,7 +125,7 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
     boolean ok =
         executeUpdate(
             conn,
-            TABLE,
+
             "UPDATE users SET username = ?, password = ?, full_name = ?, available_balance = ?, frozen_funds = ?, role = ? WHERE id = ?",
             user.getAccount().getUsername(),
             // Expect password to be already hashed by service layer

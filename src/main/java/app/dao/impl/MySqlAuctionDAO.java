@@ -88,10 +88,10 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   @Override
-  public void lockRow(Connection conn, int sessionId) {
+  public void lockRow(Connection conn, int auctionId) {
     String sql = "SELECT id FROM auction_sessions WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      setParameters(ps, sessionId);
+      setParameters(ps, auctionId);
       try (ResultSet rs = ps.executeQuery()) {
         if (!rs.next()) {
           throw new DatabaseException("Phiên đấu giá không tồn tại.");

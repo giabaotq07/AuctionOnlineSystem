@@ -32,15 +32,15 @@ public class SettleWalletCommand implements Command {
         return;
       }
       SettleWalletRequest request = packet.getData(SettleWalletRequest.class);
-      if (request == null || request.sessionId() <= 0) {
+      if (request == null || request.auctionId() <= 0) {
         sendError(clientHandler, "Dữ liệu phiên đấu giá không hợp lệ.");
         return;
       }
-      int sessionId = request.sessionId();
+      int auctionId = request.auctionId();
       int userId = clientHandler.getUser().getId();
-      int winnerId = auctionService.getAuctionResult(sessionId).winner().id();
+      int winnerId = auctionService.getAuctionResult(auctionId).winner().id();
       boolean isWinner = winnerId == userId;
-      User updated = userService.settleFrozenAmount(userId, sessionId, isWinner);
+      User updated = userService.settleFrozenAmount(userId, auctionId, isWinner);
       String message = isWinner ? "Thanh toan thanh cong." : "Hoan tien thanh cong.";
       WalletUpdateResponse response =
           new WalletUpdateResponse(OperationStatus.SUCCESS, message, new UserData(updated));
