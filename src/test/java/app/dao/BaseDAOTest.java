@@ -40,9 +40,11 @@ public abstract class BaseDAOTest {
     try (Connection conn = DatabaseConnection.getDataSource().getConnection();
         Statement stmt = conn.createStatement()) {
       stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
-      // safer than truncate in FK-heavy schema
-      stmt.execute("DELETE FROM bids");
-      stmt.execute("DELETE FROM items");
+      stmt.execute("TRUNCATE TABLE auto_bids");
+      stmt.execute("TRUNCATE TABLE bids");
+      stmt.execute("TRUNCATE TABLE auction_sessions");
+      stmt.execute("TRUNCATE TABLE items");
+      stmt.execute("TRUNCATE TABLE users");
       stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
     } catch (Exception e) {
       throw new RuntimeException("Failed to clean test data", e);
