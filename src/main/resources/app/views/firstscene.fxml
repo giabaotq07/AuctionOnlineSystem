@@ -112,7 +112,7 @@
                                prefHeight="360.0"
                                style="-fx-background-color: #0f1424;" />
                     <!-- ListView ẩn để phục vụ logic search nếu cần -->
-                    <ListView fx:id="sessionListView" visible="false" managed="false" />
+                    <ListView fx:id="auctionListView" visible="false" managed="false" />
                 </VBox>
             </content>
         </ScrollPane>

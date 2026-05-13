@@ -41,7 +41,7 @@ public class FirstScene implements Cleanable {
   private static final double CARD_WIDTH = 280;
   private static final double SPACING = 30;
   @FXML private TextField searchField;
-  @FXML private ListView<AuctionSummary> sessionListView;
+  @FXML private ListView<AuctionSummary> auctionListView;
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
@@ -73,7 +73,7 @@ public class FirstScene implements Cleanable {
 
   // ================= INITIALIZE =================
   private void setupListView() {
-    sessionListView.setCellFactory(
+    auctionListView.setCellFactory(
         lv ->
             new ListCell<>() {
               @Override
@@ -86,7 +86,7 @@ public class FirstScene implements Cleanable {
                 }
               }
             });
-    sessionListView
+    auctionListView
         .getSelectionModel()
         .selectedItemProperty()
         .addListener(
@@ -161,7 +161,7 @@ public class FirstScene implements Cleanable {
 
   private void loadInitialData() {
     summaries.clear();
-    summaries.addAll(DataStore.getInstance().sessions);
+    summaries.addAll(DataStore.getInstance().auctions);
     rebuildUI();
     try {
       client.sendRequest(new PacketReq(PacketType.FETCH_AUCTIONS, null));
@@ -191,8 +191,8 @@ public class FirstScene implements Cleanable {
   }
 
   private void updateListView() {
-    if (sessionListView == null) return;
-    sessionListView.getItems().clear();
+    if (auctionListView == null) return;
+    auctionListView.getItems().clear();
     String keyword = "";
     if (searchField != null && searchField.getText() != null) {
       keyword = searchField.getText().toLowerCase().trim();
@@ -200,7 +200,7 @@ public class FirstScene implements Cleanable {
     for (AuctionSummary summary : summaries) {
       String itemName = summary.itemName() == null ? "" : summary.itemName().toLowerCase();
       if (keyword.isBlank() || itemName.contains(keyword)) {
-        sessionListView.getItems().add(summary);
+        auctionListView.getItems().add(summary);
       }
     }
   }
@@ -301,7 +301,7 @@ public class FirstScene implements Cleanable {
               View.LIVE,
               controller -> {
                 if (controller instanceof LiveController lc) {
-                  lc.setSession(auction);
+                  lc.setAuction(auction);
                 }
               });
     } catch (Exception e) {

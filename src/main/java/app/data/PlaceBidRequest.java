@@ -1,4 +1,4 @@
 package app.data;
 
-public record PlaceBidRequest(int sessionId, int bidderId, long bidAmount, long currentPrice)
+public record PlaceBidRequest(int auctionId, int bidderId, long bidAmount, long currentPrice)
     implements Request {}

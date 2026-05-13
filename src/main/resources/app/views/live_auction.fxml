@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <?import javafx.geometry.Insets?>
+
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
@@ -14,7 +15,8 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-  <BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.LiveController">
+
+<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.LiveController">
     <!-- Header -->
     <top>
         <VBox style="-fx-background-color:#161b26;">
@@ -24,7 +26,7 @@
                 </padding>
                 <Button mnemonicParsing="false" onAction="#SwitchToUI" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold; -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Label style="-fx-font-weight: bold; -fx-font-size: 24px;" text="CHI TIẾT TÀI SẢN ĐẤU GIÁ" textFill="WHITE" />
+                <Label alignment="CENTER" contentDisplay="CENTER" style="-fx-font-weight: bold; -fx-font-size: 24px;" text="CHI TIẾT TÀI SẢN ĐẤU GIÁ" textFill="WHITE" />
             </HBox>
         </VBox>
     </top>
@@ -102,7 +104,7 @@
     <bottom>
         <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color:#161b26; -fx-border-color: #2d3748; -fx-border-width: 1 0 0 0;">
             <padding>
-                <Insets left="40.0" right="40.0" top="10.0" bottom="10.0" />
+                <Insets bottom="10.0" left="40.0" right="40.0" top="10.0" />
             </padding>
             <Label fx:id="availableBalanceLabel" text="Số dư khả dụng: 0 đ" textFill="#cbd5e1" />
         </HBox>

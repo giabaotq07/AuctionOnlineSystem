@@ -5,6 +5,7 @@ import app.data.AuctionsResponse;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
 import app.enums.PacketType;
+import app.enums.UserRole;
 import app.models.*;
 import app.service.AuctionService;
 import app.service.ItemService;
@@ -39,6 +40,29 @@ public class CreateAuctionCommand implements Command {
         return;
       }
       User user = clientHandler.getUser();
+      if (user.getRole() != UserRole.SELLER && user.getRole() != UserRole.ADMIN) {
+        clientHandler.sendPacket(
+            PacketRes.of(
+                false,
+                PacketType.CREATE_AUCTION,
+                new CreateAuctionResponse(false, "Chỉ Seller/Admin được tạo phiên.", null)));
+        return;
+      }
+      if (request.name() == null
+          || request.name().isBlank()
+          || request.description() == null
+          || request.description().isBlank()
+          || request.startingPrice() <= 0
+          || request.stepPrice() <= 0
+          || request.durationMinutes() <= 0
+          || request.type() == null) {
+        clientHandler.sendPacket(
+            PacketRes.of(
+                false,
+                PacketType.CREATE_AUCTION,
+                new CreateAuctionResponse(false, "Dữ liệu phiên đấu giá không hợp lệ.", null)));
+        return;
+      }
       // KHÔNG trust sellerId từ client
       Item item =
           ItemFactory.createItem(

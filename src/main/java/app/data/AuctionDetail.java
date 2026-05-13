@@ -9,4 +9,5 @@ public record AuctionDetail(
     long startingPrice,
     long stepPrice,
     long currentPrice,
-    LocalDateTime endTime) {}
+    LocalDateTime endTime,
+    int version) {}

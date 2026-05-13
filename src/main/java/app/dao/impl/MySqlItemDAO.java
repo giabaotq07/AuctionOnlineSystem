@@ -21,7 +21,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
           SELECT id, name, seller_id, description, category,
                  starting_price, step_price, status
           FROM items
-      """;
+          """;
 
   private Item mapItem(ResultSet rs) throws SQLException {
     Item item =
@@ -44,15 +44,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
 
   @Override
   public Optional<Item> findById(Connection conn, int id) {
-    String sql = BASE_SELECT + "WHERE id = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, id);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? Optional.of(mapItem(rs)) : Optional.empty();
-      }
-    } catch (SQLException e) {
-      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
-    }
+    return findOne(conn, BASE_SELECT + " WHERE id = ?", id);
   }
 
   @Override
@@ -65,8 +57,12 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   @Override
   public List<Item> findBySeller(int sellerId) {
     return withConnection(
-        conn -> findList(conn, BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId),
-        "Lỗi kết nối khi tải danh sách item theo seller.");
+        conn -> findBySeller(conn, sellerId), "Lỗi kết nối khi tải danh sách item theo seller.");
+  }
+
+  @Override
+  public List<Item> findBySeller(Connection conn, int sellerId) {
+    return findList(conn, BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId);
   }
 
   @Override
@@ -96,12 +92,14 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         VALUES (?, ?, ?, ?, ?, ?, 'AVAILABLE')
         """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      ps.setInt(1, item.getSellerId());
-      ps.setString(2, item.getName());
-      ps.setString(3, item.getDescription());
-      ps.setString(4, item.getType().name());
-      ps.setLong(5, item.getStartingPrice());
-      ps.setLong(6, item.getStepPrice());
+      setParameters(
+          ps,
+          item.getSellerId(),
+          item.getName(),
+          item.getDescription(),
+          item.getType().name(),
+          item.getStartingPrice(),
+          item.getStepPrice());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm item.");
       }
@@ -132,7 +130,6 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         """;
     executeUpdate(
         conn,
-        TABLE,
         sql,
         item.getName(),
         item.getDescription(),
@@ -153,6 +150,17 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         }
       }
       return items;
+    } catch (SQLException e) {
+      throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
+    }
+  }
+
+  private Optional<Item> findOne(Connection conn, String sql, Object... params) {
+    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+      setParameters(ps, params);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(mapItem(rs)) : Optional.empty();
+      }
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);
     }

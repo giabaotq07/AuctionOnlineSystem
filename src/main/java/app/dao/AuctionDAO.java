@@ -24,6 +24,8 @@ public interface AuctionDAO {
 
   List<Auction> findBySeller(int sellerId);
 
+  List<Auction> findByItemId(Connection conn, int itemId);
+
   // ── Write operations for single objects ──────────────────────────
   Auction save(Auction auction);
 
@@ -33,9 +35,11 @@ public interface AuctionDAO {
 
   // ── Transaction-aware operations (use provided Connection) ────────
   // These are used within transactions to ensure ACID properties
-  void lockRow(Connection conn, int sessionId);
+  void lockRow(Connection conn, int auctionId);
 
   Auction save(Connection conn, Auction auction);
 
   boolean update(Connection conn, Auction auction);
+
+  boolean updateIfVersionMatches(Connection conn, Auction auction, int expectedVersion);
 }

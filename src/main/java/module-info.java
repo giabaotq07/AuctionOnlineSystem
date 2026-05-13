@@ -7,16 +7,15 @@ module app {
   requires ch.qos.logback.classic;
   requires com.google.gson;
   requires atlantafx.base;
-  requires com.zaxxer.hikari;
+  requires transitive com.zaxxer.hikari;
 
+  opens app.data;
   opens app.dao;
   opens app.service;
   opens app to
       javafx.fxml;
   opens app.controllers to
       javafx.fxml;
-  opens app.data to
-      com.google.gson;
   opens app.models to
       com.google.gson;
   opens app.enums to
@@ -31,4 +30,5 @@ module app {
   exports app.observer;
   exports app.data;
   exports app.dao;
+  exports app.database;
 }

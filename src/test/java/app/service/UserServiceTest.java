@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import app.dao.BaseDAOTest;
 import app.dao.UserDAO;
 import app.dao.impl.MySqlUserDAO;
+import app.database.TransactionManager;
 import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.Account;
@@ -22,6 +23,7 @@ public class UserServiceTest extends BaseDAOTest {
   private static final Logger logger = LoggerFactory.getLogger(UserServiceTest.class);
   private UserService userService;
   private UserDAO userDAO;
+  private TransactionManager transactionManager;
   private User tester;
 
   // =========================
@@ -31,7 +33,8 @@ public class UserServiceTest extends BaseDAOTest {
   void setup() {
     logger.info("Setting up UserService test...");
     userDAO = new MySqlUserDAO();
-    userService = new UserService(userDAO);
+
+    userService = new UserService(userDAO, transactionManager);
     cleanDatabase();
     tester = createTestUser();
     tester = userDAO.save(tester);

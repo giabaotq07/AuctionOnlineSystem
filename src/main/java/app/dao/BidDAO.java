@@ -6,17 +6,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BidDAO {
-  void insertBid(int sessionId, int userId, long bidAmount, boolean isAutoBid);
+  void insertBid(int auctionId, int userId, long bidAmount, boolean isAutoBid);
 
-  void insertBid(Connection conn, int sessionId, int userId, long bidAmount, boolean isAutoBid);
+  void insertBid(Connection conn, int auctionId, int userId, long bidAmount, boolean isAutoBid);
 
-  Optional<BidTransaction> findHighestBid(int sessionId);
+  Optional<BidTransaction> findHighestBid(int auctionId);
 
-  Optional<BidTransaction> findHighestBid(Connection conn, int sessionId);
+  Optional<BidTransaction> findHighestBid(Connection conn, int auctionId);
 
-  List<BidTransaction> findBySession(int sessionId);
+  List<BidTransaction> findByAuction(int auctionId);
 
-  List<BidTransaction> findBySessionForChart(int sessionId);
+  List<BidTransaction> findByAuction(Connection conn, int auctionId);
 
-  boolean existsBySessionAndUser(int sessionId, int userId);
+  List<BidTransaction> findByAuctionOrderByTime(int auctionId);
+
+  boolean existsByAuctionAndUser(int auctionId, int userId);
 }

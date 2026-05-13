@@ -4,7 +4,6 @@ import app.dao.BaseDAO;
 import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
-import app.exception.ServiceException;
 import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
@@ -126,7 +125,6 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
     boolean ok =
         executeUpdate(
             conn,
-            TABLE,
             "UPDATE users SET username = ?, password = ?, full_name = ?, available_balance = ?, frozen_funds = ?, role = ? WHERE id = ?",
             user.getAccount().getUsername(),
             // Expect password to be already hashed by service layer
@@ -145,28 +143,20 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   public void lockRow(Connection conn, int id) {
     String sql = "SELECT id FROM users WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setInt(1, id);
+      setParameters(ps, id);
       try (ResultSet rs = ps.executeQuery()) {
         if (!rs.next()) {
-          throw new ServiceException("Người dùng không tồn tại: " + id);
+          throw new DatabaseException("Người dùng không tồn tại: " + id);
         }
       }
     } catch (SQLException e) {
-      throw new DatabaseException("Lỗi khi khóa hàng người dùng.", e);
+      throw new DatabaseException("Không tìm thấy user để khóa.");
     }
   }
 
   @Override
   public void deleteAll() {
-    runWithConnection(
-        conn -> {
-          try {
-            conn.createStatement().execute("DELETE FROM users");
-          } catch (SQLException e) {
-            throw new DatabaseException("Lỗi kết nối", e);
-          }
-        },
-        "Failed to clean users");
+    runWithConnection(conn -> executeUpdate(conn, "DELETE FROM users"), "Failed to clean users");
   }
 
   private Optional<User> findOne(Connection conn, String sql, Object... params) {

@@ -1,23 +1,35 @@
 package app.service;
 
+import app.dao.AuctionDAO;
 import app.dao.ItemDAO;
-import app.database.DatabaseConnection;
+import app.database.TransactionManager;
+import app.enums.AuctionStatus;
 import app.enums.ItemStatus;
-import app.exception.DatabaseException;
+import app.enums.UserRole;
+import app.exception.ServiceException;
 import app.models.Item;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
 public class ItemService {
-  private ItemDAO itemDAO;
+  private final ItemDAO itemDAO;
+  private final AuctionDAO auctionDAO;
+  private final TransactionManager transactionManager;
 
-  public ItemService(ItemDAO itemDAO) {
+  // Updated constructor to receive TransactionManager (dependency injection) for easier testing
+  public ItemService(ItemDAO itemDAO, TransactionManager transactionManager) {
+    this(itemDAO, null, transactionManager);
+  }
+
+  public ItemService(
+      ItemDAO itemDAO, AuctionDAO auctionDAO, TransactionManager transactionManager) {
     this.itemDAO = itemDAO;
+    this.auctionDAO = auctionDAO;
+    this.transactionManager = transactionManager;
   }
 
   public Item add(Item item) {
-    return runInTransaction(conn -> itemDAO.save(conn, item));
+    return transactionManager.runInTransaction(conn -> itemDAO.save(conn, item));
   }
 
   public Optional<Item> getById(int id) {
@@ -25,7 +37,7 @@ public class ItemService {
   }
 
   public void update(Item item) {
-    runInTransaction(
+    transactionManager.runInTransaction(
         conn -> {
           itemDAO.update(conn, item);
           return null;
@@ -33,42 +45,109 @@ public class ItemService {
   }
 
   public void updateStatus(int id, ItemStatus status) {
-    runInTransaction(
-        conn ->
-            itemDAO
-                .findById(conn, id)
-                .map(
-                    item -> {
-                      item.setStatus(status);
-                      itemDAO.update(conn, item);
-                      return null;
-                    })
-                .orElse(null));
+    transactionManager.runInTransaction(
+        conn -> {
+          itemDAO
+              .findById(conn, id)
+              .map(
+                  item -> {
+                    item.setStatus(status);
+                    itemDAO.update(conn, item);
+                    return null;
+                  });
+          return null;
+        });
   }
 
   public void delete(int id) {
     updateStatus(id, ItemStatus.DELETE);
   }
 
+  public List<Item> getSellerItems(int requesterId, UserRole requesterRole, int requestedSellerId) {
+    if (requesterRole != UserRole.ADMIN && requesterId != requestedSellerId) {
+      throw new ServiceException("Bạn không có quyền xem danh sách sản phẩm này.");
+    }
+    return itemDAO.findBySeller(requestedSellerId);
+  }
+
+  public Item updateManagedItem(Item item, int requesterId, UserRole requesterRole) {
+    validateManageRequest(item.getId(), requesterId, requesterRole);
+    validateItemData(item);
+    return transactionManager.runInTransaction(
+        conn -> {
+          Item stored =
+              itemDAO
+                  .findById(conn, item.getId())
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
+          ensureManagePermission(stored, requesterId, requesterRole);
+          ensureItemNotRunning(conn, stored.getId());
+          stored.setName(item.getName());
+          stored.setDescription(item.getDescription());
+          stored.setStartingPrice(item.getStartingPrice());
+          stored.setStepPrice(item.getStepPrice());
+          stored.setType(item.getType());
+          itemDAO.update(conn, stored);
+          return stored;
+        });
+  }
+
+  public Item softDeleteManagedItem(int itemId, int requesterId, UserRole requesterRole) {
+    validateManageRequest(itemId, requesterId, requesterRole);
+    return transactionManager.runInTransaction(
+        conn -> {
+          Item stored =
+              itemDAO
+                  .findById(conn, itemId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
+          ensureManagePermission(stored, requesterId, requesterRole);
+          ensureItemNotRunning(conn, itemId);
+          stored.setStatus(ItemStatus.DELETE);
+          itemDAO.update(conn, stored);
+          return stored;
+        });
+  }
+
   public List<Item> getAll() {
     return itemDAO.findAll();
   }
 
-  private <T> T runInTransaction(java.util.function.Function<Connection, T> work) {
-    try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
-      conn.setAutoCommit(false);
-      try {
-        T result = work.apply(conn);
-        conn.commit();
-        return result;
-      } catch (Exception e) {
-        conn.rollback();
-        throw e;
-      } finally {
-        conn.setAutoCommit(true);
-      }
-    } catch (java.sql.SQLException e) {
-      throw new DatabaseException("Lỗi transaction.", e);
+  private void validateManageRequest(int itemId, int requesterId, UserRole requesterRole) {
+    if (itemId <= 0 || requesterId <= 0 || requesterRole == null) {
+      throw new ServiceException("Dữ liệu sản phẩm không hợp lệ.");
+    }
+    if (requesterRole != UserRole.SELLER && requesterRole != UserRole.ADMIN) {
+      throw new ServiceException("Bạn không có quyền quản lý sản phẩm.");
+    }
+  }
+
+  private void validateItemData(Item item) {
+    if (item == null
+        || item.getName() == null
+        || item.getName().isBlank()
+        || item.getDescription() == null
+        || item.getDescription().isBlank()
+        || item.getStartingPrice() <= 0
+        || item.getStepPrice() <= 0
+        || item.getType() == null) {
+      throw new ServiceException("Thông tin sản phẩm không hợp lệ.");
+    }
+  }
+
+  private void ensureManagePermission(Item item, int requesterId, UserRole requesterRole) {
+    if (requesterRole != UserRole.ADMIN && item.getSellerId() != requesterId) {
+      throw new ServiceException("Bạn không có quyền quản lý sản phẩm này.");
+    }
+  }
+
+  private void ensureItemNotRunning(java.sql.Connection conn, int itemId) {
+    if (auctionDAO == null) {
+      return;
+    }
+    boolean running =
+        auctionDAO.findByItemId(conn, itemId).stream()
+            .anyMatch(auction -> auction.getStatus() == AuctionStatus.RUNNING);
+    if (running) {
+      throw new ServiceException("Không thể sửa/xóa sản phẩm đang đấu giá.");
     }
   }
 }

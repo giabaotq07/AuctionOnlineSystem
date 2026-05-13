@@ -15,9 +15,8 @@ import java.util.Objects;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
@@ -27,10 +26,20 @@ public class RegisterController {
   @FXML private TextField txtName;
   @FXML private TextField txtAccount;
   @FXML private PasswordField txtPassword;
+  @FXML private RadioButton rbSeller;
+  @FXML private RadioButton rbBidder;
+
+  private final ToggleGroup roleGroup = new ToggleGroup();
   private PacketListener<RegisterResponse> registerHandler;
+  @FXML private Button registerButton;
 
   @FXML
   private void initialize() {
+    // role
+    rbSeller.setToggleGroup(roleGroup);
+    rbBidder.setToggleGroup(roleGroup);
+
+    rbBidder.setSelected(true);
     // Load background image giống login
     try {
       String url =
@@ -81,7 +90,9 @@ public class RegisterController {
       AlertUtils.showError("Lỗi đăng ký", "Vui lòng nhập đầy đủ Name, Account và Password!");
       return;
     }
-    RegisterRequest request = new RegisterRequest(name, account, password, UserRole.BIDDER);
+    UserRole role = rbSeller.isSelected() ? UserRole.SELLER : UserRole.BIDDER;
+    RegisterRequest request = new RegisterRequest(name, account, password, role);
+
     try {
       Client.getInstance().sendRequest(PacketReq.of(PacketType.REGISTER, request));
     } catch (IOException e) {

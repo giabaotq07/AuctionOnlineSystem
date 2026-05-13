@@ -6,13 +6,20 @@ import app.data.AuctionResultRequest;
 import app.data.AuctionResultResponse;
 import app.data.AuctionsRequest;
 import app.data.AuctionsResponse;
+import app.data.CancelAuctionRequest;
+import app.data.CancelAuctionResponse;
 import app.data.ChatRequest;
 import app.data.ChatResponse;
 import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
+import app.data.DeleteItemRequest;
 import app.data.DepositRequest;
+import app.data.FetchSellerItemsRequest;
+import app.data.FetchUsersRequest;
 import app.data.HistoryRequest;
 import app.data.HistoryResponse;
+import app.data.ItemListResponse;
+import app.data.ItemResponse;
 import app.data.LoginRequest;
 import app.data.LoginResponse;
 import app.data.PlaceBidRequest;
@@ -20,6 +27,8 @@ import app.data.PlaceBidResponse;
 import app.data.RegisterRequest;
 import app.data.RegisterResponse;
 import app.data.SettleWalletRequest;
+import app.data.UpdateItemRequest;
+import app.data.UsersResponse;
 import app.data.WalletUpdateResponse;
 
 public enum PacketType {
@@ -33,6 +42,11 @@ public enum PacketType {
   FETCH_HISTORY(HistoryRequest.class, HistoryResponse.class),
   FETCH_AUCTION_DETAIL(AuctionDetailRequest.class, AuctionDetailResponse.class),
   FETCH_AUCTION_RESULT(AuctionResultRequest.class, AuctionResultResponse.class),
+  FETCH_SELLER_ITEMS(FetchSellerItemsRequest.class, ItemListResponse.class),
+  UPDATE_ITEM(UpdateItemRequest.class, ItemResponse.class),
+  DELETE_ITEM(DeleteItemRequest.class, ItemResponse.class),
+  FETCH_USERS(FetchUsersRequest.class, UsersResponse.class),
+  CANCEL_AUCTION(CancelAuctionRequest.class, CancelAuctionResponse.class),
   DEPOSIT(DepositRequest.class, WalletUpdateResponse.class),
   SETTLE_WALLET(SettleWalletRequest.class, WalletUpdateResponse.class),
   WALLET_UPDATE(Void.class, WalletUpdateResponse.class),

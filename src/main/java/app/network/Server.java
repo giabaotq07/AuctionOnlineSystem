@@ -2,6 +2,7 @@ package app.network;
 
 import app.dao.*;
 import app.dao.impl.*;
+import app.database.TransactionManager;
 import app.models.PacketRes;
 import app.service.*;
 import java.io.IOException;
@@ -24,10 +25,12 @@ public class Server {
   private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
   private static final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final ExecutorService broadcastPool = Executors.newCachedThreadPool();
-  private final AuctionService auctionService;
-  private final BidService bidService;
-  private final UserService userService;
-  private final ItemService itemService;
+  private final ScheduledExecutorService auctionMaintenancePool =
+      Executors.newSingleThreadScheduledExecutor();
+  private AuctionService auctionService;
+  private BidService bidService;
+  private UserService userService;
+  private ItemService itemService;
 
   private Server() {
     try {
@@ -35,17 +38,7 @@ public class Server {
       serverSocket.setReuseAddress(true);
       serverSocket.bind(new InetSocketAddress(PORT));
       logger.info("[SERVER] Running on port {}", PORT);
-      // DAO
-      UserDAO userDAO = new MySqlUserDAO();
-      ItemDAO itemDAO = new MySqlItemDAO();
-      AuctionDAO auctionDAO = new MySqlAuctionDAO();
-      AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-      BidDAO bidDAO = new MySqlBidDAO();
-      // SERVICE
-      userService = new UserService(userDAO);
-      itemService = new ItemService(itemDAO);
-      auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
-      bidService = new BidService(bidDAO, autoBidDAO, auctionDAO, itemDAO);
+      initService();
     } catch (IOException e) {
       logger.error("[SERVER] Failed to start on port {}", PORT, e);
       throw new RuntimeException("Cannot start server", e);
@@ -57,6 +50,56 @@ public class Server {
       instance = new Server();
     }
     return instance;
+  }
+
+  private void initService() {
+    logger.info("[SERVER] Initializing database...");
+    // Dao
+    UserDAO userDAO = new MySqlUserDAO();
+    ItemDAO itemDAO = new MySqlItemDAO();
+    AuctionDAO auctionDAO = new MySqlAuctionDAO();
+    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
+    BidDAO bidDAO = new MySqlBidDAO();
+    //
+    TransactionManager transactionManager = new TransactionManager();
+    BidValidator bidValidator = new BidValidator();
+    AntiSnipeService antiSnipeService = new AntiSnipeService();
+    // Service
+    userService = new UserService(userDAO, transactionManager);
+    itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
+    bidService =
+        new BidService(
+            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
+    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
+    startAuctionMaintenance();
+  }
+
+  private void startAuctionMaintenance() {
+    auctionMaintenancePool.scheduleAtFixedRate(
+        () -> {
+          try {
+            var completedIds = auctionService.completeExpiredAuctions();
+            if (!completedIds.isEmpty()) {
+              logger.info("[SERVER] Completed expired auctions: {}", completedIds);
+              broadcastAuctionList();
+            }
+          } catch (Exception e) {
+            logger.error("[SERVER] Auction maintenance failed", e);
+          }
+        },
+        5,
+        5,
+        TimeUnit.SECONDS);
+  }
+
+  private void broadcastAuctionList() {
+    try {
+      var summaries = auctionService.getAuctionSummaries();
+      var response = new app.data.AuctionsResponse(true, "OK", summaries);
+      broadcast(PacketRes.of(app.enums.PacketType.FETCH_AUCTIONS, response), -1);
+    } catch (Exception e) {
+      logger.error("[SERVER] Failed to broadcast auction list", e);
+    }
   }
 
   public void start() {
@@ -106,6 +149,7 @@ public class Server {
       shutdownExecutor(clientPool, "clientPool");
       // shutdown broadcast pool
       shutdownExecutor(broadcastPool, "broadcastPool");
+      shutdownExecutor(auctionMaintenancePool, "auctionMaintenancePool");
       logger.info("[SERVER] Shutdown complete");
       instance = null;
     } catch (IOException e) {
@@ -130,7 +174,7 @@ public class Server {
   public static void registerClient(int userId, ClientHandler handler) {
     ClientHandler old = authenticatedClients.put(userId, handler);
     if (old != null && old != handler) {
-      logger.info("[SERVER] Replacing old session for user {}", userId);
+      logger.info("[SERVER] Replacing old auction for user {}", userId);
       authenticatedClients.remove(userId, old);
       old.close();
     }

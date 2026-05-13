@@ -4,24 +4,24 @@ import app.enums.HistoryType;
 import java.time.LocalDateTime;
 
 public class HistoryRecord {
-  private int sessionId;
+  private int auctionId;
   private HistoryType type;
   private String message;
   private LocalDateTime time;
 
-  public HistoryRecord(int sessionId, HistoryType type, String message) {
-    this.sessionId = sessionId;
+  public HistoryRecord(int auctionId, HistoryType type, String message) {
+    this.auctionId = auctionId;
     this.type = type;
     this.message = message;
     this.time = LocalDateTime.now();
   }
 
-  public int getSessionId() {
-    return sessionId;
+  public int getAuctionId() {
+    return auctionId;
   }
 
-  public void setSessionId(int sessionId) {
-    this.sessionId = sessionId;
+  public void setAuctionId(int auctionId) {
+    this.auctionId = auctionId;
   }
 
   public HistoryType getType() {

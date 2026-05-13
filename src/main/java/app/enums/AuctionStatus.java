@@ -6,7 +6,7 @@ public enum AuctionStatus {
   ENDING_SOON(2),
   FINISHED(3),
   PAID(4),
-  CANCELLED(5),
+  CANCELED(5),
   ;
   private final int state;
 

@@ -10,29 +10,21 @@ import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ClientHandler implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
-  private static final Map<PacketType, Command> commands = new HashMap<>();
-
-  static {
-    commands.put(PacketType.CHAT, new ChatCommand());
-  }
 
   private final Socket socket;
   private BufferedWriter writer;
   private BufferedReader reader;
   private final Object writeLock = new Object();
   private final Session session = new Session();
+  private final Map<PacketType, Command> commands;
   private volatile boolean closed = false;
-  private final AuctionService auctionService;
-  private final BidService bidService;
-  private final UserService userService;
-  private final ItemService itemService;
 
   public ClientHandler(
       Socket socket,
@@ -41,28 +33,33 @@ public class ClientHandler implements Runnable {
       UserService userService,
       ItemService itemService) {
     this.socket = socket;
-    this.auctionService = auctionService;
-    this.bidService = bidService;
-    this.userService = userService;
-    this.itemService = itemService;
-    initCommands();
+    this.commands = createCommands(auctionService, bidService, userService, itemService);
   }
 
-  private void initCommands() {
-    commands.putIfAbsent(PacketType.LOGIN, new LoginCommand(userService));
-    commands.putIfAbsent(PacketType.REGISTER, new RegisterCommand(userService));
-    commands.putIfAbsent(
-        PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, itemService));
-    commands.putIfAbsent(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand(auctionService));
-    commands.putIfAbsent(PacketType.FETCH_HISTORY, new FetchHistoryCommand(auctionService));
-    commands.putIfAbsent(
-        PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
-    commands.putIfAbsent(
-        PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
-    commands.putIfAbsent(PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService));
-    commands.putIfAbsent(PacketType.DEPOSIT, new DepositCommand(userService));
-    commands.putIfAbsent(
-        PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
+  private Map<PacketType, Command> createCommands(
+      AuctionService auctionService,
+      BidService bidService,
+      UserService userService,
+      ItemService itemService) {
+    Map<PacketType, Command> registry = new EnumMap<>(PacketType.class);
+    registry.put(PacketType.CHAT, new ChatCommand());
+    registry.put(PacketType.LOGIN, new LoginCommand(userService));
+    registry.put(PacketType.REGISTER, new RegisterCommand(userService));
+    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, itemService));
+    registry.put(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand(auctionService));
+    registry.put(PacketType.FETCH_HISTORY, new FetchHistoryCommand(auctionService));
+    registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
+    registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
+    registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
+    registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand(itemService));
+    registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand(itemService));
+    registry.put(PacketType.FETCH_USERS, new FetchUsersCommand(userService));
+    registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService));
+    registry.put(
+        PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
+    registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
+    registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
+    return registry;
   }
 
   @Override
@@ -128,7 +125,17 @@ public class ClientHandler implements Runnable {
 
   private boolean requiresAuthentication(PacketType type) {
     return switch (type) {
-      case PLACE_BID, CREATE_AUCTION, FETCH_HISTORY, DEPOSIT, SETTLE_WALLET -> true;
+      case PLACE_BID,
+          CREATE_AUCTION,
+          FETCH_HISTORY,
+          FETCH_SELLER_ITEMS,
+          UPDATE_ITEM,
+          DELETE_ITEM,
+          FETCH_USERS,
+          CANCEL_AUCTION,
+          DEPOSIT,
+          SETTLE_WALLET ->
+          true;
       default -> false;
     };
   }
@@ -225,21 +232,5 @@ public class ClientHandler implements Runnable {
 
   public BufferedReader getReader() {
     return reader;
-  }
-
-  public AuctionService getAuctionService() {
-    return auctionService;
-  }
-
-  public BidService getBidService() {
-    return bidService;
-  }
-
-  public UserService getUserService() {
-    return userService;
-  }
-
-  public ItemService getItemService() {
-    return itemService;
   }
 }

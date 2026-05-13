@@ -19,15 +19,15 @@ import org.slf4j.LoggerFactory;
 
 public class DataStore {
   static Logger logger = LoggerFactory.getLogger(DataStore.class);
-  public List<AuctionSummary> sessions;
+  public List<AuctionSummary> auctions;
   public User currentUser; // Track the logged-in user
   public Auction currentAuction;
   private static DataStore instance;
 
   private DataStore() {
-    sessions = new ArrayList<>();
+    auctions = new ArrayList<>();
     logger.info("DataStore instance created");
-    loadSessions();
+    loadAuctions();
     loadWalletUpdates();
   }
 
@@ -58,7 +58,7 @@ public class DataStore {
     Client.getInstance().setCurrentUser(user);
   }
 
-  void loadSessions() {
+  void loadAuctions() {
     Client.getInstance()
         .subscribe(
             PacketType.FETCH_AUCTIONS,
@@ -66,7 +66,7 @@ public class DataStore {
                 Platform.runLater(
                     () -> {
                       if (response.success() && response.auctions() != null) {
-                        sessions = response.auctions();
+                        auctions = response.auctions();
                       }
                     }));
   }

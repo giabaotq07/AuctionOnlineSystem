@@ -8,13 +8,14 @@ import app.data.UserData;
 import app.data.WalletUpdateResponse;
 import app.enums.OperationStatus;
 import app.enums.PacketType;
+import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
+import app.service.AuctionService;
 import app.service.BidService;
 import app.service.UserService;
-import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,16 +24,18 @@ public class PlaceBidCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
   private final UserService userService;
+  private final AuctionService auctionService;
 
-  public PlaceBidCommand(BidService bidService, UserService userService) {
+  public PlaceBidCommand(
+      BidService bidService, UserService userService, AuctionService auctionService) {
     this.bidService = bidService;
     this.userService = userService;
+    this.auctionService = auctionService;
   }
 
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
-    BigDecimal previousFrozen = null;
-    int sessionId = 0;
+    int auctionId = 0;
     int bidderId = 0;
     try {
       if (!clientHandler.isAuthenticated()) {
@@ -44,9 +47,9 @@ public class PlaceBidCommand implements Command {
         sendError(clientHandler, "Dữ liệu đặt giá không hợp lệ.");
         return;
       }
-      sessionId = request.sessionId();
+      auctionId = request.auctionId();
       long bidAmount = request.bidAmount();
-      if (sessionId <= 0) {
+      if (auctionId <= 0) {
         sendError(clientHandler, "Phiên đấu giá không hợp lệ.");
         return;
       }
@@ -55,40 +58,25 @@ public class PlaceBidCommand implements Command {
         return;
       }
       User user = clientHandler.getUser();
-      // KHÔNG trust bidderId từ client
+      if (user.getRole() != UserRole.BIDDER) {
+        sendError(clientHandler, "Chỉ Bidder được đặt giá.");
+        return;
+      }
       bidderId = user.getId();
-      previousFrozen =
-          userService.reserveBidAmount(bidderId, sessionId, BigDecimal.valueOf(bidAmount));
-      PlaceBidResponse response =
-          bidService.placeBidAndBuildResponse(sessionId, bidderId, bidAmount);
+      PlaceBidResponse response = bidService.placeBid(auctionId, bidderId, bidAmount);
+      auctionService.invalidateCache();
       PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
-      // sender
       clientHandler.sendPacket(packetResponse);
-      // others
       Server.broadcast(packetResponse, bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      // refresh auction list
       broadcastAuctionList(clientHandler);
-      logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, sessionId);
+      logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
-      rollbackFrozen(bidderId, sessionId, previousFrozen);
       sendError(clientHandler, e.getMessage());
     } catch (Exception e) {
       logger.error("Unexpected place bid error", e);
-      rollbackFrozen(bidderId, sessionId, previousFrozen);
       sendError(clientHandler, "Không thể đặt giá.");
-    }
-  }
-
-  private void rollbackFrozen(int bidderId, int sessionId, BigDecimal previousFrozen) {
-    if (bidderId <= 0 || sessionId <= 0 || previousFrozen == null) {
-      return;
-    }
-    try {
-      userService.restoreFrozenAmount(bidderId, sessionId, previousFrozen);
-    } catch (Exception e) {
-      logger.warn("Failed to rollback frozen funds for user {}", bidderId, e);
     }
   }
 
@@ -100,7 +88,7 @@ public class PlaceBidCommand implements Command {
 
   private void broadcastAuctionList(ClientHandler clientHandler) {
     try {
-      List<AuctionSummary> summaries = clientHandler.getAuctionService().getAuctionSummaries();
+      List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
       AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
       Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, response), -1);
     } catch (Exception e) {
