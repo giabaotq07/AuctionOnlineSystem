@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
 
-<AnchorPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0a0f16;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.UserProfileController">
+<AnchorPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0a0f16;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.UserProfileController">
     <children>
         <!-- X BUTTON - Top Right -->
-        <Button layoutX="100.0" layoutY="30.0" onAction="#handleBack" prefHeight="50.0" prefWidth="230.0" style="-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(52, 152, 219, 0.5), 10, 0, 0, 5);" text="← QUAY LẠI" textAlignment="CENTER" />
+        <Button layoutX="100.0" layoutY="30.0" onAction="#handleBack" prefHeight="50.0" prefWidth="230.0" style="-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(52, 152, 219, 0.5), 10, 0, 0, 5);" text="&lt; TRỞ VỀ TRANG CHỦ" textAlignment="CENTER" />
         <!-- MAIN CONTAINER -->
         <VBox alignment="TOP_CENTER" layoutX="100.0" layoutY="110.0" prefHeight="500.0" prefWidth="1080.0" spacing="30.0" style="-fx-background-color: rgba(22, 33, 49, 0.9); -fx-background-radius: 30; -fx-padding: 50; -fx-border-color: rgba(230, 194, 122, 0.5); -fx-border-width: 2; -fx-border-radius: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 20, 0, 0, 10);">
 
