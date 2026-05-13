@@ -16,9 +16,9 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.control.Button;
 
 public class RegisterController {
   @FXML private AnchorPane rootPane;
@@ -31,8 +31,7 @@ public class RegisterController {
 
   private final ToggleGroup roleGroup = new ToggleGroup();
   private PacketListener<RegisterResponse> registerHandler;
-    @FXML
-    private Button registerButton;
+  @FXML private Button registerButton;
 
   @FXML
   private void initialize() {
