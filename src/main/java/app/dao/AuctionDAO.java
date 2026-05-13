@@ -24,6 +24,8 @@ public interface AuctionDAO {
 
   List<Auction> findBySeller(int sellerId);
 
+  List<Auction> findByItemId(Connection conn, int itemId);
+
   // ── Write operations for single objects ──────────────────────────
   Auction save(Auction auction);
 

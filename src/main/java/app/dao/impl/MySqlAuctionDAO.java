@@ -88,6 +88,11 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   @Override
+  public List<Auction> findByItemId(Connection conn, int itemId) {
+    return findMany(conn, BASE_SELECT + " WHERE s.item_id = ? ORDER BY s.id DESC", itemId);
+  }
+
+  @Override
   public void lockRow(Connection conn, int auctionId) {
     String sql = "SELECT id FROM auction_sessions WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -173,7 +178,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   @Override
   public boolean delete(int id) {
     return withConnection(
-        conn -> executeUpdate(conn, TABLE, "DELETE FROM auction_sessions WHERE id = ?", id),
+        conn -> executeUpdate(conn, "DELETE FROM auction_sessions WHERE id = ?", id),
         "Lỗi kết nối khi xóa phiên đấu giá.");
   }
 

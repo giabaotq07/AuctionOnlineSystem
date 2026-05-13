@@ -8,6 +8,7 @@ import app.data.UserData;
 import app.data.WalletUpdateResponse;
 import app.enums.OperationStatus;
 import app.enums.PacketType;
+import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.PacketReq;
 import app.models.PacketRes;
@@ -55,6 +56,10 @@ public class PlaceBidCommand implements Command {
         return;
       }
       User user = clientHandler.getUser();
+      if (user.getRole() != UserRole.BIDDER) {
+        sendError(clientHandler, "Chỉ Bidder được đặt giá.");
+        return;
+      }
       // KHÔNG trust bidderId từ client
       bidderId = user.getId();
       previousFrozen =

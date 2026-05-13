@@ -14,11 +14,24 @@ import java.util.function.Function;
  */
 public abstract class BaseDAO {
   protected boolean executeUpdate(Connection conn, String sql, Object... params) {
+    validateUpdateSql(sql);
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       return ps.executeUpdate() > 0;
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi cập nhật bảng", e);
+    }
+  }
+
+  private void validateUpdateSql(String sql) {
+    if (sql == null || sql.isBlank()) {
+      throw new DatabaseException("SQL cập nhật không được để trống.");
+    }
+    String normalized = sql.stripLeading().toUpperCase();
+    if (!normalized.startsWith("INSERT")
+        && !normalized.startsWith("UPDATE")
+        && !normalized.startsWith("DELETE")) {
+      throw new DatabaseException("SQL cập nhật không hợp lệ: " + sql);
     }
   }
 

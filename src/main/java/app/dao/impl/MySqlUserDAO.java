@@ -156,8 +156,7 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
 
   @Override
   public void deleteAll() {
-    runWithConnection(
-        conn -> executeUpdate(conn, TABLE, "DELETE FROM users"), "Failed to clean users");
+    runWithConnection(conn -> executeUpdate(conn, "DELETE FROM users"), "Failed to clean users");
   }
 
   private Optional<User> findOne(Connection conn, String sql, Object... params) {

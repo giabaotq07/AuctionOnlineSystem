@@ -16,6 +16,8 @@ public interface BidDAO {
 
   List<BidTransaction> findByAuction(int auctionId);
 
+  List<BidTransaction> findByAuction(Connection conn, int auctionId);
+
   List<BidTransaction> findByAuctionOrderByTime(int auctionId);
 
   boolean existsByAuctionAndUser(int auctionId, int userId);

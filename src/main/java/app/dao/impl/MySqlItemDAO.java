@@ -57,8 +57,12 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   @Override
   public List<Item> findBySeller(int sellerId) {
     return withConnection(
-        conn -> findList(conn, BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId),
-        "Lỗi kết nối khi tải danh sách item theo seller.");
+        conn -> findBySeller(conn, sellerId), "Lỗi kết nối khi tải danh sách item theo seller.");
+  }
+
+  @Override
+  public List<Item> findBySeller(Connection conn, int sellerId) {
+    return findList(conn, BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId);
   }
 
   @Override
@@ -126,7 +130,6 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         """;
     executeUpdate(
         conn,
-        TABLE,
         sql,
         item.getName(),
         item.getDescription(),

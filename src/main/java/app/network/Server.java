@@ -25,6 +25,8 @@ public class Server {
   private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
   private static final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final ExecutorService broadcastPool = Executors.newCachedThreadPool();
+  private final ScheduledExecutorService auctionMaintenancePool =
+      Executors.newSingleThreadScheduledExecutor();
   private AuctionService auctionService;
   private BidService bidService;
   private UserService userService;
@@ -64,10 +66,39 @@ public class Server {
     AntiSnipeService antiSnipeService = new AntiSnipeService();
     // Service
     userService = new UserService(userDAO, transactionManager);
-    itemService = new ItemService(itemDAO, transactionManager);
+    itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     bidService =
         new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
-    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, transactionManager);
+    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
+    startAuctionMaintenance();
+  }
+
+  private void startAuctionMaintenance() {
+    auctionMaintenancePool.scheduleAtFixedRate(
+        () -> {
+          try {
+            var completedIds = auctionService.completeExpiredAuctions();
+            if (!completedIds.isEmpty()) {
+              logger.info("[SERVER] Completed expired auctions: {}", completedIds);
+              broadcastAuctionList();
+            }
+          } catch (Exception e) {
+            logger.error("[SERVER] Auction maintenance failed", e);
+          }
+        },
+        5,
+        5,
+        TimeUnit.SECONDS);
+  }
+
+  private void broadcastAuctionList() {
+    try {
+      var summaries = auctionService.getAuctionSummaries();
+      var response = new app.data.AuctionsResponse(true, "OK", summaries);
+      broadcast(PacketRes.of(app.enums.PacketType.FETCH_AUCTIONS, response), -1);
+    } catch (Exception e) {
+      logger.error("[SERVER] Failed to broadcast auction list", e);
+    }
   }
 
   public void start() {
@@ -117,6 +148,7 @@ public class Server {
       shutdownExecutor(clientPool, "clientPool");
       // shutdown broadcast pool
       shutdownExecutor(broadcastPool, "broadcastPool");
+      shutdownExecutor(auctionMaintenancePool, "auctionMaintenancePool");
       logger.info("[SERVER] Shutdown complete");
       instance = null;
     } catch (IOException e) {

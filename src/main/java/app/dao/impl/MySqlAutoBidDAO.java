@@ -99,16 +99,14 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   @Override
   public boolean delete(int id) {
     return withConnection(
-        conn -> executeUpdate(conn, TABLE, "DELETE FROM auto_bids WHERE id = ?", id),
+        conn -> executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id),
         "Lỗi kết nối khi xóa auto bid.");
   }
 
   @Override
   public boolean setEnabled(int id, boolean enabled) {
     return withConnection(
-        conn ->
-            executeUpdate(
-                conn, TABLE, "UPDATE auto_bids SET enabled = ? WHERE id = ?", enabled, id),
+        conn -> executeUpdate(conn, "UPDATE auto_bids SET enabled = ? WHERE id = ?", enabled, id),
         "Lỗi kết nối khi cập nhật trạng thái auto bid.");
   }
 
@@ -156,7 +154,6 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
         """;
     return executeUpdate(
         conn,
-        TABLE,
         sql,
         autoBid.getMaxAmount(),
         autoBid.getIncrementAmount(),

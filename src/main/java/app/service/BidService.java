@@ -36,6 +36,9 @@ public class BidService {
               auctionDAO
                   .findById(conn, auctionId)
                   .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
+          if (auction.getSellerId() == userId) {
+            throw new ServiceException("Người bán không được tự đặt giá sản phẩm của mình.");
+          }
           bidValidator.validateAuctionState(auction);
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
           bidValidator.validateSelfBid(userId, auction.getWinnerId());

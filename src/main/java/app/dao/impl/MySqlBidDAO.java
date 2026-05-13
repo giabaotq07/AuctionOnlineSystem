@@ -83,10 +83,12 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
 
   @Override
   public List<BidTransaction> findByAuction(int auctionId) {
-    return withConnection(
-        conn ->
-            queryBids(conn, BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC", auctionId),
-        "Lỗi kết nối khi truy vấn bids.");
+    return withConnection(conn -> findByAuction(conn, auctionId), "Lỗi kết nối khi truy vấn bids.");
+  }
+
+  @Override
+  public List<BidTransaction> findByAuction(Connection conn, int auctionId) {
+    return queryBids(conn, BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC", auctionId);
   }
 
   @Override

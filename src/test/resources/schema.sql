@@ -42,7 +42,7 @@ FOREIGN_KEY_CHECKS = 1;
     UNIQUE (item_id),
     seller_id      INT      NOT NULL,
     winner_id      INT NULL,
-    status         ENUM('OPEN','RUNNING','FINISHED','PAID','CANCELLED') DEFAULT 'OPEN',
+    status         ENUM('OPEN','RUNNING','FINISHED','PAID','CANCELED') DEFAULT 'OPEN',
     start_time     DATETIME NULL DEFAULT NULL,
     end_time       DATETIME NOT NULL,
     deposit_amount BIGINT    DEFAULT 0 CHECK (deposit_amount >= 0),

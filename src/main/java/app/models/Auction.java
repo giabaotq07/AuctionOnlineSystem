@@ -89,7 +89,7 @@ public class Auction implements AuctionSubject {
     if (this.status == AuctionStatus.FINISHED || this.status == AuctionStatus.PAID) {
       throw new IllegalStateException("Không thể huỷ phiên đã " + status);
     }
-    this.status = AuctionStatus.CANCELLED;
+    this.status = AuctionStatus.CANCELED;
   }
 
   public void updateHighestBid(long newBid, int bidderId) {

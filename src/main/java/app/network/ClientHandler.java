@@ -10,14 +10,14 @@ import app.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ClientHandler implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
-  private static final Map<PacketType, Command> commands = new HashMap<>();
+  private static final Map<PacketType, Command> commands = new ConcurrentHashMap<>();
 
   static {
     commands.put(PacketType.CHAT, new ChatCommand());
@@ -59,6 +59,11 @@ public class ClientHandler implements Runnable {
         PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
     commands.putIfAbsent(
         PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
+    commands.putIfAbsent(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
+    commands.putIfAbsent(PacketType.UPDATE_ITEM, new UpdateItemCommand(itemService));
+    commands.putIfAbsent(PacketType.DELETE_ITEM, new DeleteItemCommand(itemService));
+    commands.putIfAbsent(PacketType.FETCH_USERS, new FetchUsersCommand(userService));
+    commands.putIfAbsent(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService));
     commands.putIfAbsent(PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService));
     commands.putIfAbsent(PacketType.DEPOSIT, new DepositCommand(userService));
     commands.putIfAbsent(
@@ -128,7 +133,17 @@ public class ClientHandler implements Runnable {
 
   private boolean requiresAuthentication(PacketType type) {
     return switch (type) {
-      case PLACE_BID, CREATE_AUCTION, FETCH_HISTORY, DEPOSIT, SETTLE_WALLET -> true;
+      case PLACE_BID,
+          CREATE_AUCTION,
+          FETCH_HISTORY,
+          FETCH_SELLER_ITEMS,
+          UPDATE_ITEM,
+          DELETE_ITEM,
+          FETCH_USERS,
+          CANCEL_AUCTION,
+          DEPOSIT,
+          SETTLE_WALLET ->
+          true;
       default -> false;
     };
   }

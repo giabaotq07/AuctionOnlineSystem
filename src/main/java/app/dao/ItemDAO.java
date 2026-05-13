@@ -15,6 +15,8 @@ public interface ItemDAO {
 
   List<Item> findBySeller(int sellerId);
 
+  List<Item> findBySeller(Connection conn, int sellerId);
+
   List<Item> findByCategory(ItemType type);
 
   List<Item> findAvailable();

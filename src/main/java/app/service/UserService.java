@@ -6,6 +6,7 @@ import app.exception.ServiceException;
 import app.models.User;
 import app.utils.PasswordUtils;
 import java.math.BigDecimal;
+import java.util.List;
 
 public class UserService {
   private final UserDAO userDAO;
@@ -69,6 +70,14 @@ public class UserService {
     return userDAO
         .findById(userId)
         .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+  }
+
+  public List<User> getAllUsers(int requesterId) {
+    User requester = getById(requesterId);
+    if (requester.getRole() != app.enums.UserRole.ADMIN) {
+      throw new ServiceException("Chỉ Admin được xem danh sách người dùng.");
+    }
+    return userDAO.findAll();
   }
 
   public User deposit(int userId, BigDecimal amount) {

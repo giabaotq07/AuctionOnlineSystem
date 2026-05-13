@@ -62,6 +62,7 @@ public class RegisterCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.of(false, PacketType.REGISTER, null));
+    clientHandler.sendPacket(
+        PacketRes.of(false, PacketType.REGISTER, new RegisterResponse(false, message, null)));
   }
 }
