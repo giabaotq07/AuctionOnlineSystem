@@ -43,6 +43,12 @@ public class RegisterCommand implements Command {
       sendError(clientHandler, "Thông tin đăng ký không được để trống.");
       return;
     }
+    if (request.role() != null
+        && request.role() != UserRole.BIDDER
+        && request.role() != UserRole.SELLER) {
+      sendError(clientHandler, "Vai trò không hợp lệ.");
+      return;
+    }
     UserRole role = request.role() != null ? request.role() : UserRole.BIDDER;
     try {
       User newUser =
