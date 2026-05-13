@@ -25,13 +25,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuctionService {
-  private record CacheSnapshot(List<Auction> data, long timestamp) {}
+  private record CacheSnapshot(List<Auction> data, boolean loaded) {}
 
-  private record SummaryCacheSnapshot(List<AuctionSummary> data, long timestamp) {}
+  private record SummaryCacheSnapshot(List<AuctionSummary> data, boolean loaded) {}
 
-  private static final long CACHE_DURATION_MS = 2000;
-  private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), 0L);
-  private volatile SummaryCacheSnapshot summarySnapshot = new SummaryCacheSnapshot(List.of(), 0L);
+  private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), false);
+  private volatile SummaryCacheSnapshot summarySnapshot =
+      new SummaryCacheSnapshot(List.of(), false);
   private final AuctionDAO auctionDAO;
   private final BidDAO bidDAO;
   private final UserDAO userDAO;
@@ -95,17 +95,17 @@ public class AuctionService {
 
   public List<Auction> getAllAuctions() {
     CacheSnapshot current = snapshot;
-    if (isCacheValid(current)) {
+    if (current.loaded()) {
       return current.data();
     }
     List<Auction> fresh = auctionDAO.findAll();
-    snapshot = new CacheSnapshot(List.copyOf(fresh), System.currentTimeMillis());
+    snapshot = new CacheSnapshot(List.copyOf(fresh), true);
     return fresh;
   }
 
   public List<AuctionSummary> getAuctionSummaries() {
     SummaryCacheSnapshot current = summarySnapshot;
-    if (isSummaryCacheValid(current)) {
+    if (current.loaded()) {
       logger.info("[CACHE] Auction summaries cache hit: size={}", current.data().size());
       return current.data();
     }
@@ -118,7 +118,7 @@ public class AuctionService {
       }
     }
     List<AuctionSummary> cached = List.copyOf(result);
-    summarySnapshot = new SummaryCacheSnapshot(cached, System.currentTimeMillis());
+    summarySnapshot = new SummaryCacheSnapshot(cached, true);
     return cached;
   }
 
@@ -333,17 +333,9 @@ public class AuctionService {
     }
   }
 
-  private boolean isCacheValid(CacheSnapshot snapshot) {
-    return System.currentTimeMillis() - snapshot.timestamp() < CACHE_DURATION_MS;
-  }
-
-  private boolean isSummaryCacheValid(SummaryCacheSnapshot snapshot) {
-    return System.currentTimeMillis() - snapshot.timestamp() < CACHE_DURATION_MS;
-  }
-
   public void invalidateCache() {
-    snapshot = new CacheSnapshot(List.of(), 0L);
-    summarySnapshot = new SummaryCacheSnapshot(List.of(), 0L);
+    snapshot = new CacheSnapshot(List.of(), false);
+    summarySnapshot = new SummaryCacheSnapshot(List.of(), false);
     logger.info("[CACHE] Auction cache invalidated");
   }
 }
