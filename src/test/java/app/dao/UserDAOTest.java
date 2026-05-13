@@ -14,11 +14,8 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class UserDAOTest extends BaseDAOTest {
-  private static final Logger logger = LoggerFactory.getLogger(UserDAOTest.class);
   private UserDAO userDAO;
 
   @BeforeEach
