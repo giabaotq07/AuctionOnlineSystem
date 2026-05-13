@@ -37,7 +37,8 @@ public class DemoRunner {
     UserService userService = new UserService(userDAO, transactionManager);
     ItemService itemService = new ItemService(itemDAO, transactionManager);
     BidService bidService =
-        new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
+        new BidService(
+            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
     AuctionService auctionService =
         new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
     User seller;

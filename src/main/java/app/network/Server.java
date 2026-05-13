@@ -68,7 +68,8 @@ public class Server {
     userService = new UserService(userDAO, transactionManager);
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     bidService =
-        new BidService(bidDAO, auctionDAO, transactionManager, bidValidator, antiSnipeService);
+        new BidService(
+            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
     auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
     startAuctionMaintenance();
   }

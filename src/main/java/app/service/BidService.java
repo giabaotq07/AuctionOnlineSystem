@@ -2,27 +2,32 @@ package app.service;
 
 import app.dao.AuctionDAO;
 import app.dao.BidDAO;
+import app.dao.UserDAO;
 import app.data.PlaceBidResponse;
 import app.database.TransactionManager;
 import app.exception.ServiceException;
 import app.models.Auction;
+import app.models.User;
+import java.math.BigDecimal;
 
 public class BidService {
   private final BidDAO bidDAO;
   private final AuctionDAO auctionDAO;
+  private final UserDAO userDAO;
   private final TransactionManager transactionManager;
   private final BidValidator bidValidator;
   private final AntiSnipeService antiSnipeService;
 
-  // Updated constructor to receive dependencies via injection for testability
   public BidService(
       BidDAO bidDAO,
       AuctionDAO auctionDAO,
+      UserDAO userDAO,
       TransactionManager transactionManager,
       BidValidator bidValidator,
       AntiSnipeService antiSnipeService) {
     this.bidDAO = bidDAO;
     this.auctionDAO = auctionDAO;
+    this.userDAO = userDAO;
     this.transactionManager = transactionManager;
     this.bidValidator = bidValidator;
     this.antiSnipeService = antiSnipeService;
@@ -42,9 +47,22 @@ public class BidService {
           bidValidator.validateAuctionState(auction);
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
           bidValidator.validateSelfBid(userId, auction.getWinnerId());
+          userDAO.lockRow(conn, userId);
+          User bidder =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          try {
+            bidder
+                .getWallet()
+                .setFrozenAmount(String.valueOf(auctionId), BigDecimal.valueOf(bidAmount));
+          } catch (IllegalArgumentException e) {
+            throw new ServiceException(e.getMessage());
+          }
           auction.updateHighestBid(bidAmount, userId);
           antiSnipeService.apply(auction);
           bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
+          userDAO.update(conn, bidder);
           auctionDAO.update(conn, auction);
           return new PlaceBidResponse(
               true, auction.getId(), auction.getHighestBid(), auction.getWinnerId(), "Success");

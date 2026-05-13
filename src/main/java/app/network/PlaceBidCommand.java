@@ -15,7 +15,6 @@ import app.models.PacketRes;
 import app.models.User;
 import app.service.BidService;
 import app.service.UserService;
-import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,6 @@ public class PlaceBidCommand implements Command {
 
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
-    BigDecimal previousFrozen = null;
     int auctionId = 0;
     int bidderId = 0;
     try {
@@ -60,39 +58,20 @@ public class PlaceBidCommand implements Command {
         sendError(clientHandler, "Chỉ Bidder được đặt giá.");
         return;
       }
-      // KHÔNG trust bidderId từ client
       bidderId = user.getId();
-      previousFrozen =
-          userService.reserveBidAmount(bidderId, auctionId, BigDecimal.valueOf(bidAmount));
       PlaceBidResponse response = bidService.placeBid(auctionId, bidderId, bidAmount);
       PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
-      // sender
       clientHandler.sendPacket(packetResponse);
-      // others
       Server.broadcast(packetResponse, bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      // refresh auction list
       broadcastAuctionList(clientHandler);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
-      rollbackFrozen(bidderId, auctionId, previousFrozen);
       sendError(clientHandler, e.getMessage());
     } catch (Exception e) {
       logger.error("Unexpected place bid error", e);
-      rollbackFrozen(bidderId, auctionId, previousFrozen);
       sendError(clientHandler, "Không thể đặt giá.");
-    }
-  }
-
-  private void rollbackFrozen(int bidderId, int auctionId, BigDecimal previousFrozen) {
-    if (bidderId <= 0 || auctionId <= 0 || previousFrozen == null) {
-      return;
-    }
-    try {
-      userService.restoreFrozenAmount(bidderId, auctionId, previousFrozen);
-    } catch (Exception e) {
-      logger.warn("Failed to rollback frozen funds for user {}", bidderId, e);
     }
   }
 
