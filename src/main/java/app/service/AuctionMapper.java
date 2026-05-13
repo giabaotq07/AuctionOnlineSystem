@@ -41,7 +41,8 @@ public class AuctionMapper {
         item.getStartingPrice(),
         item.getStepPrice(),
         currentPrice,
-        auction.getEndTime());
+        auction.getEndTime(),
+        auction.getVersion());
   }
 
   private long getCurrentPrice(int auctionId, long fallback) {

@@ -25,10 +25,6 @@ public class ClientHandler implements Runnable {
   private final Session session = new Session();
   private final Map<PacketType, Command> commands;
   private volatile boolean closed = false;
-  private final AuctionService auctionService;
-  private final BidService bidService;
-  private final UserService userService;
-  private final ItemService itemService;
 
   public ClientHandler(
       Socket socket,
@@ -37,14 +33,14 @@ public class ClientHandler implements Runnable {
       UserService userService,
       ItemService itemService) {
     this.socket = socket;
-    this.auctionService = auctionService;
-    this.bidService = bidService;
-    this.userService = userService;
-    this.itemService = itemService;
-    this.commands = createCommands();
+    this.commands = createCommands(auctionService, bidService, userService, itemService);
   }
 
-  private Map<PacketType, Command> createCommands() {
+  private Map<PacketType, Command> createCommands(
+      AuctionService auctionService,
+      BidService bidService,
+      UserService userService,
+      ItemService itemService) {
     Map<PacketType, Command> registry = new EnumMap<>(PacketType.class);
     registry.put(PacketType.CHAT, new ChatCommand());
     registry.put(PacketType.LOGIN, new LoginCommand(userService));
@@ -59,7 +55,8 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand(itemService));
     registry.put(PacketType.FETCH_USERS, new FetchUsersCommand(userService));
     registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService));
-    registry.put(PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService));
+    registry.put(
+        PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
     registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
     return registry;
@@ -221,10 +218,6 @@ public class ClientHandler implements Runnable {
     return session;
   }
 
-  public Session getAuction() {
-    return getSession();
-  }
-
   public User getUser() {
     return session.getUser();
   }
@@ -239,21 +232,5 @@ public class ClientHandler implements Runnable {
 
   public BufferedReader getReader() {
     return reader;
-  }
-
-  public AuctionService getAuctionService() {
-    return auctionService;
-  }
-
-  public BidService getBidService() {
-    return bidService;
-  }
-
-  public UserService getUserService() {
-    return userService;
-  }
-
-  public ItemService getItemService() {
-    return itemService;
   }
 }

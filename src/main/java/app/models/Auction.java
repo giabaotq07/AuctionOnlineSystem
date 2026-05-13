@@ -19,6 +19,7 @@ public class Auction implements AuctionSubject {
   //  private long depositAmount;
   private long highestBid;
   private int extendedCount;
+  private int version;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -32,6 +33,7 @@ public class Auction implements AuctionSubject {
     this.status = AuctionStatus.OPEN;
     this.highestBid = currentPrice;
     this.extendedCount = 0;
+    this.version = 0;
     this.createdAt = LocalDateTime.now();
   }
 
@@ -46,6 +48,7 @@ public class Auction implements AuctionSubject {
       //      long depositAmount,
       long highestBid,
       int extendedCount,
+      int version,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
     this.id = id;
@@ -58,6 +61,7 @@ public class Auction implements AuctionSubject {
     //    this.depositAmount = depositAmount;
     this.highestBid = highestBid;
     this.extendedCount = extendedCount;
+    this.version = version;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -189,6 +193,18 @@ public class Auction implements AuctionSubject {
     this.extendedCount = extendedCount;
   }
 
+  public int getVersion() {
+    return version;
+  }
+
+  public void setVersion(int version) {
+    this.version = version;
+  }
+
+  public void incrementVersion() {
+    this.version++;
+  }
+
   public LocalDateTime getCreatedAt() {
     return createdAt;
   }
@@ -222,6 +238,8 @@ public class Auction implements AuctionSubject {
         + highestBid
         + ", extendedCount="
         + extendedCount
+        + ", version="
+        + version
         + '}';
   }
 

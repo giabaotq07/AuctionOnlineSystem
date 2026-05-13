@@ -7,7 +7,7 @@ module app {
   requires ch.qos.logback.classic;
   requires com.google.gson;
   requires atlantafx.base;
-  requires com.zaxxer.hikari;
+  requires transitive com.zaxxer.hikari;
 
   opens app.data;
   opens app.dao;

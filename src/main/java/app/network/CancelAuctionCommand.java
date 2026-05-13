@@ -23,12 +23,13 @@ public class CancelAuctionCommand implements Command {
     int auctionId = 0;
     try {
       CancelAuctionRequest request = packet.getData(CancelAuctionRequest.class);
-      if (request == null || request.auctionId() <= 0) {
+      if (request == null || request.auctionId() <= 0 || request.expectedVersion() < 0) {
         sendError(clientHandler, auctionId, "Dữ liệu phiên đấu giá không hợp lệ.");
         return;
       }
       auctionId = request.auctionId();
-      auctionService.cancelAuctionByAdmin(auctionId, clientHandler.getUser().getId());
+      auctionService.cancelAuctionByAdmin(
+          auctionId, clientHandler.getUser().getId(), request.expectedVersion());
       clientHandler.sendPacket(
           PacketRes.of(
               PacketType.CANCEL_AUCTION,

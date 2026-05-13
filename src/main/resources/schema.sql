@@ -49,6 +49,7 @@ CREATE TABLE users
     end_time       DATETIME NOT NULL,
     deposit_amount BIGINT    DEFAULT 0 CHECK (deposit_amount >= 0),
     highest_bid    BIGINT    DEFAULT 0,
+    version        INT       NOT NULL DEFAULT 0,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     extended_count INT       DEFAULT 0,

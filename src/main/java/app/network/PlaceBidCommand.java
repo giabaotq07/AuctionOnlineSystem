@@ -13,6 +13,7 @@ import app.exception.ServiceException;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
+import app.service.AuctionService;
 import app.service.BidService;
 import app.service.UserService;
 import java.util.List;
@@ -23,10 +24,13 @@ public class PlaceBidCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
   private final UserService userService;
+  private final AuctionService auctionService;
 
-  public PlaceBidCommand(BidService bidService, UserService userService) {
+  public PlaceBidCommand(
+      BidService bidService, UserService userService, AuctionService auctionService) {
     this.bidService = bidService;
     this.userService = userService;
+    this.auctionService = auctionService;
   }
 
   @Override
@@ -60,6 +64,7 @@ public class PlaceBidCommand implements Command {
       }
       bidderId = user.getId();
       PlaceBidResponse response = bidService.placeBid(auctionId, bidderId, bidAmount);
+      auctionService.invalidateCache();
       PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
       clientHandler.sendPacket(packetResponse);
       Server.broadcast(packetResponse, bidderId);
@@ -83,7 +88,7 @@ public class PlaceBidCommand implements Command {
 
   private void broadcastAuctionList(ClientHandler clientHandler) {
     try {
-      List<AuctionSummary> summaries = clientHandler.getAuctionService().getAuctionSummaries();
+      List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
       AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
       Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, response), -1);
     } catch (Exception e) {

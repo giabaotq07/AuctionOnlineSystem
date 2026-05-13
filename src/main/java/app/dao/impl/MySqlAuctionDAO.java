@@ -9,8 +9,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
+  private static final Logger logger = LoggerFactory.getLogger(MySqlAuctionDAO.class);
   private static final String TABLE = "auction_sessions";
   private static final String BASE_SELECT =
       """
@@ -21,6 +24,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
                   s.end_time,
                   s.highest_bid,
                   s.extended_count,
+                  s.version,
                   s.created_at,
                   s.updated_at,
                   i.id  AS item_id,
@@ -49,6 +53,7 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
             .orElse(null),
         rs.getLong("highest_bid"),
         rs.getInt("extended_count"),
+        rs.getInt("version"),
         rs.getTimestamp("created_at").toLocalDateTime(),
         rs.getTimestamp("updated_at").toLocalDateTime());
   }
@@ -152,7 +157,51 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   public boolean update(Connection conn, Auction auction) {
     String sql =
         "UPDATE auction_sessions SET status = ?, start_time = ?, end_time = ?, highest_bid = ?, "
-            + "extended_count = ?, winner_id = ? WHERE id = ?";
+            + "extended_count = ?, winner_id = ?, version = version + 1 WHERE id = ?";
+    logger.info(
+        "[DAO] Updating auction without version check: auctionId={}, status={}, currentVersion={}",
+        auction.getId(),
+        auction.getStatus(),
+        auction.getVersion());
+    boolean updated = updateAuctionRow(conn, auction, sql, auction.getId());
+    if (updated) {
+      auction.incrementVersion();
+    }
+    logger.info(
+        "[DAO] Update without version check result: auctionId={}, updated={}, newVersion={}",
+        auction.getId(),
+        updated,
+        auction.getVersion());
+    return updated;
+  }
+
+  @Override
+  public boolean updateIfVersionMatches(Connection conn, Auction auction, int expectedVersion) {
+    String sql =
+        "UPDATE auction_sessions SET status = ?, start_time = ?, end_time = ?, highest_bid = ?, "
+            + "extended_count = ?, winner_id = ?, version = version + 1 "
+            + "WHERE id = ? AND version = ?";
+    logger.info(
+        "[DAO] Reviewing auction with version check: auctionId={}, status={}, expectedVersion={}, modelVersion={}",
+        auction.getId(),
+        auction.getStatus(),
+        expectedVersion,
+        auction.getVersion());
+    boolean updated = updateAuctionRow(conn, auction, sql, auction.getId(), expectedVersion);
+    if (updated) {
+      auction.incrementVersion();
+    }
+    logger.info(
+        "[DAO] Version check result: auctionId={}, matched={}, expectedVersion={}, newVersion={}",
+        auction.getId(),
+        updated,
+        expectedVersion,
+        auction.getVersion());
+    return updated;
+  }
+
+  private boolean updateAuctionRow(
+      Connection conn, Auction auction, String sql, Object... whereParams) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setString(1, auction.getStatus().name());
       if (auction.getStartTime() == null) {
@@ -168,7 +217,9 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
       ps.setLong(4, auction.getHighestBid());
       ps.setInt(5, auction.getExtendedCount());
       ps.setObject(6, auction.getWinnerId());
-      ps.setInt(7, auction.getId());
+      for (int i = 0; i < whereParams.length; i++) {
+        ps.setObject(7 + i, whereParams[i]);
+      }
       return ps.executeUpdate() > 0;
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi cập nhật phiên đấu giá.", e);

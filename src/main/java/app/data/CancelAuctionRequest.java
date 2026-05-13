@@ -1,3 +1,3 @@
 package app.data;
 
-public record CancelAuctionRequest(int auctionId) implements Request {}
+public record CancelAuctionRequest(int auctionId, int expectedVersion) implements Request {}

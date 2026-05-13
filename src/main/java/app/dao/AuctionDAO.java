@@ -40,4 +40,6 @@ public interface AuctionDAO {
   Auction save(Connection conn, Auction auction);
 
   boolean update(Connection conn, Auction auction);
+
+  boolean updateIfVersionMatches(Connection conn, Auction auction, int expectedVersion);
 }
