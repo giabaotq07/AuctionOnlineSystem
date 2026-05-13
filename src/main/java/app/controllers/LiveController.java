@@ -22,7 +22,6 @@ import app.models.UserFactory;
 import app.models.Wallet;
 import app.network.Client;
 import app.network.PacketListener;
-import app.observer.AuctionObserver;
 import app.utils.AlertUtils;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -41,7 +40,7 @@ import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LiveController implements AuctionObserver, Cleanable {
+public class LiveController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
   private Auction auction;
   private long currentPrice;
@@ -81,7 +80,6 @@ public class LiveController implements AuctionObserver, Cleanable {
 
   public void setAuction(Auction auction) {
     this.auction = auction;
-    auction.registerObserver(this);
     try {
       AuctionDetailRequest request = new AuctionDetailRequest(auction.getId());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_DETAIL, request));
@@ -201,7 +199,6 @@ public class LiveController implements AuctionObserver, Cleanable {
     startCountdownTimer(detail.endTime());
   }
 
-  @Override
   public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
     Platform.runLater(
         () -> {
@@ -210,7 +207,6 @@ public class LiveController implements AuctionObserver, Cleanable {
         });
   }
 
-  @Override
   public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
     Platform.runLater(
         () -> {
@@ -331,9 +327,6 @@ public class LiveController implements AuctionObserver, Cleanable {
     logger.info("Cleaning up LiveController");
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
-    }
-    if (auction != null) {
-      auction.removeObserver(this);
     }
     if (placeBidHandler != null) {
       Client.getInstance().unsubscribe(PacketType.PLACE_BID, placeBidHandler);

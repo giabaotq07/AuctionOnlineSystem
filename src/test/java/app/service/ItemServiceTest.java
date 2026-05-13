@@ -4,11 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
+import app.dao.AuctionDAO;
 import app.dao.BaseDAOTest;
 import app.dao.ItemDAO;
 import app.dao.UserDAO;
+import app.dao.impl.MySqlAuctionDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
+import app.database.TransactionManager;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -26,7 +29,8 @@ class ItemServiceTest extends BaseDAOTest {
   void setUp() {
     UserDAO userDAO = new MySqlUserDAO();
     itemDAO = new MySqlItemDAO();
-    itemService = new ItemService(itemDAO);
+    AuctionDAO auctionDAO = new MySqlAuctionDAO();
+    itemService = new ItemService(itemDAO, auctionDAO, new TransactionManager());
     seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 

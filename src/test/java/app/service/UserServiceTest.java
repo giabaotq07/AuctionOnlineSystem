@@ -33,6 +33,7 @@ public class UserServiceTest extends BaseDAOTest {
   void setup() {
     logger.info("Setting up UserService test...");
     userDAO = new MySqlUserDAO();
+    transactionManager = new TransactionManager();
 
     userService = new UserService(userDAO, transactionManager);
     cleanDatabase();

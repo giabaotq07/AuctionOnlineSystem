@@ -27,7 +27,6 @@ module app {
   exports app.service;
   exports app.models;
   exports app.enums;
-  exports app.observer;
   exports app.data;
   exports app.dao;
   exports app.database;

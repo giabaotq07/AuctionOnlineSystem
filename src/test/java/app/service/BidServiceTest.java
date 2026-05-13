@@ -14,6 +14,7 @@ import app.dao.impl.MySqlAuctionDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
+import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -41,7 +42,14 @@ class BidServiceTest extends BaseDAOTest {
     itemDAO = new MySqlItemDAO();
     auctionDAO = new MySqlAuctionDAO();
     bidDAO = new MySqlBidDAO();
-    bidService = new BidService(bidDAO, null, auctionDAO, itemDAO);
+    bidService =
+        new BidService(
+            bidDAO,
+            auctionDAO,
+            userDAO,
+            new TransactionManager(),
+            new BidValidator(),
+            new AntiSnipeService());
     seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
     bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
     item = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
@@ -97,10 +105,10 @@ class BidServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void placeBidAndBuildResponse_shouldReturnCurrentHighestBid() {
+  void placeBid_shouldReturnCurrentHighestBid() {
     Auction auction = runningAuction(1000L, LocalDateTime.now().plusMinutes(10));
 
-    var response = bidService.placeBidAndBuildResponse(auction.getId(), bidder.getId(), 1300L);
+    var response = bidService.placeBid(auction.getId(), bidder.getId(), 1300L);
 
     assertTrue(response.success());
     assertEquals(auction.getId(), response.auctionId());
@@ -109,16 +117,16 @@ class BidServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void getBidHistory_shouldReturnPersistedBids() {
+  void bidDaoQueries_shouldReturnPersistedBids() {
     Auction auction = runningAuction(1000L, LocalDateTime.now().plusMinutes(10));
     User secondBidder =
         userDAO.save(TestFixtures.user(TestFixtures.unique("second_bidder"), UserRole.BIDDER));
     bidService.placeBid(auction.getId(), bidder.getId(), 1200L);
     bidService.placeBid(auction.getId(), secondBidder.getId(), 1400L);
 
-    assertEquals(2, bidService.getBidHistory(auction.getId()).size());
-    assertEquals(2, bidService.getBidHistoryForChart(auction.getId()).size());
-    assertEquals(1400L, bidService.getHighestBid(auction.getId()).orElseThrow().getAmount());
+    assertEquals(2, bidDAO.findByAuction(auction.getId()).size());
+    assertEquals(2, bidDAO.findByAuctionOrderByTime(auction.getId()).size());
+    assertEquals(1400L, bidDAO.findHighestBid(auction.getId()).orElseThrow().getAmount());
   }
 
   private Auction runningAuction(long currentPrice, LocalDateTime endTime) {

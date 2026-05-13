@@ -60,7 +60,7 @@ class MySqlBidDAOTest extends BaseDAOTest {
   }
 
   @Test
-  void findBySession_shouldReturnBidsOrderedByAmountDescending() {
+  void findByAuction_shouldReturnBidsOrderedByAmountDescending() {
     User secondBidder =
         userDAO.save(TestFixtures.user(TestFixtures.unique("second_bidder"), UserRole.BIDDER));
     User thirdBidder =
@@ -69,7 +69,7 @@ class MySqlBidDAOTest extends BaseDAOTest {
     bidDAO.insertBid(auction.getId(), secondBidder.getId(), 1500L, false);
     bidDAO.insertBid(auction.getId(), thirdBidder.getId(), 1300L, false);
 
-    var bids = bidDAO.findBySession(auction.getId());
+    var bids = bidDAO.findByAuction(auction.getId());
 
     assertEquals(3, bids.size());
     assertEquals(1500L, bids.get(0).getAmount());
@@ -78,16 +78,16 @@ class MySqlBidDAOTest extends BaseDAOTest {
   }
 
   @Test
-  void existsBySessionAndUser_shouldDetectBidPresence() {
+  void existsByAuctionAndUser_shouldDetectBidPresence() {
     bidDAO.insertBid(auction.getId(), bidder.getId(), 1200L, false);
 
-    assertTrue(bidDAO.existsBySessionAndUser(auction.getId(), bidder.getId()));
-    assertFalse(bidDAO.existsBySessionAndUser(auction.getId(), seller.getId()));
+    assertTrue(bidDAO.existsByAuctionAndUser(auction.getId(), bidder.getId()));
+    assertFalse(bidDAO.existsByAuctionAndUser(auction.getId(), seller.getId()));
   }
 
   @Test
   void findHighestBid_shouldReturnEmptyWhenSessionHasNoBids() {
     assertTrue(bidDAO.findHighestBid(auction.getId()).isEmpty());
-    assertTrue(bidDAO.findBySessionForChart(auction.getId()).isEmpty());
+    assertTrue(bidDAO.findByAuctionOrderByTime(auction.getId()).isEmpty());
   }
 }

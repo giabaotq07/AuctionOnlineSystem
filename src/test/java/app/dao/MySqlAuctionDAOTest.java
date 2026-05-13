@@ -8,6 +8,7 @@ import app.TestFixtures;
 import app.dao.impl.MySqlAuctionDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
+import app.database.DatabaseConnection;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -46,6 +47,7 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
     assertEquals(seller.getId(), found.getSellerId());
     assertEquals(AuctionStatus.OPEN, found.getStatus());
     assertEquals(1000L, found.getHighestBid());
+    assertEquals(0, found.getVersion());
   }
 
   @Test
@@ -69,6 +71,40 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
     assertEquals(bidder.getId(), found.getWinnerId());
     assertEquals(1500L, found.getHighestBid());
     assertTrue(found.getStartTime() != null);
+    assertEquals(auction.getVersion(), found.getVersion());
+    assertEquals(1, found.getVersion());
+  }
+
+  @Test
+  void updateIfVersionMatches_shouldUpdateOnlyWhenExpectedVersionMatches() throws Exception {
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Watch", ItemType.ART));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+    int initialVersion = auction.getVersion();
+
+    auction.setStatus(AuctionStatus.CANCELED);
+    boolean updated;
+    try (var conn = DatabaseConnection.getDataSource().getConnection()) {
+      updated = auctionDAO.updateIfVersionMatches(conn, auction, initialVersion);
+    }
+
+    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertTrue(updated);
+    assertEquals(AuctionStatus.CANCELED, found.getStatus());
+    assertEquals(initialVersion + 1, found.getVersion());
+
+    found.setStatus(AuctionStatus.RUNNING);
+    boolean staleUpdate;
+    try (var conn = DatabaseConnection.getDataSource().getConnection()) {
+      staleUpdate = auctionDAO.updateIfVersionMatches(conn, found, initialVersion);
+    }
+
+    Auction unchanged = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertFalse(staleUpdate);
+    assertEquals(AuctionStatus.CANCELED, unchanged.getStatus());
+    assertEquals(initialVersion + 1, unchanged.getVersion());
   }
 
   @Test

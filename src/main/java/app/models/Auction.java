@@ -1,14 +1,9 @@
 package app.models;
 
 import app.enums.AuctionStatus;
-import app.observer.AuctionObserver;
-import app.observer.AuctionSubject;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-public class Auction implements AuctionSubject {
+public class Auction {
   private int id;
   private final int itemId;
   private final int sellerId;
@@ -241,30 +236,5 @@ public class Auction implements AuctionSubject {
         + ", version="
         + version
         + '}';
-  }
-
-  /////////
-  private transient List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
-
-  @Override
-  public void registerObserver(AuctionObserver observer) {
-    if (observers == null) observers = new ArrayList<>();
-    if (!observers.contains(observer)) observers.add(observer);
-  }
-
-  @Override
-  public void removeObserver(AuctionObserver observer) {
-    if (observers != null) {
-      observers.remove(observer);
-    }
-  }
-
-  @Override
-  public void notifyObserversNewBid(long price, String bidderName) {
-    if (observers != null) {
-      for (AuctionObserver observer : observers) {
-        observer.onNewBidPlaced(String.valueOf(itemId), price, bidderName);
-      }
-    }
   }
 }

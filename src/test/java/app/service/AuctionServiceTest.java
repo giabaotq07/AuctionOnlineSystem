@@ -15,6 +15,7 @@ import app.dao.impl.MySqlAuctionDAO;
 import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
+import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -32,6 +33,7 @@ class AuctionServiceTest extends BaseDAOTest {
   private AuctionDAO auctionDAO;
   private BidDAO bidDAO;
   private AuctionService auctionService;
+  private TransactionManager transactionManager;
   private User seller;
 
   @BeforeEach
@@ -40,7 +42,8 @@ class AuctionServiceTest extends BaseDAOTest {
     itemDAO = new MySqlItemDAO();
     auctionDAO = new MySqlAuctionDAO();
     bidDAO = new MySqlBidDAO();
-    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO);
+    transactionManager = new TransactionManager();
+    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
     seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 
@@ -94,6 +97,7 @@ class AuctionServiceTest extends BaseDAOTest {
     assertEquals(auction.getId(), detail.auctionId());
     assertEquals("Laptop", detail.itemName());
     assertEquals(1500L, detail.currentPrice());
+    assertEquals(auction.getVersion(), detail.version());
   }
 
   @Test
@@ -112,6 +116,49 @@ class AuctionServiceTest extends BaseDAOTest {
     Auction finished = auctionDAO.findById(auction.getId()).orElseThrow();
     assertEquals(AuctionStatus.FINISHED, finished.getStatus());
     assertEquals(bidder.getId(), finished.getWinnerId());
+  }
+
+  @Test
+  void cancelAuctionByAdmin_shouldRejectStaleVersion() {
+    User admin = userDAO.save(TestFixtures.user(TestFixtures.unique("admin"), UserRole.ADMIN));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+    int staleVersion = auction.getVersion();
+    auction.setStatus(AuctionStatus.RUNNING);
+    auctionDAO.update(auction);
+
+    assertThrows(
+        ServiceException.class,
+        () -> auctionService.cancelAuctionByAdmin(auction.getId(), admin.getId(), staleVersion));
+
+    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(AuctionStatus.RUNNING, found.getStatus());
+  }
+
+  @Test
+  void getAuctionSummaries_shouldUseCacheUntilInvalidated() {
+    Item firstItem = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
+    auctionService.createAuction(
+        TestFixtures.auction(
+            firstItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+    var firstLoad = auctionService.getAuctionSummaries();
+
+    Item secondItem = itemDAO.save(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
+    auctionDAO.save(
+        TestFixtures.auction(
+            secondItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 2000L));
+    var cachedLoad = auctionService.getAuctionSummaries();
+
+    assertEquals(1, firstLoad.size());
+    assertEquals(1, cachedLoad.size());
+
+    auctionService.invalidateCache();
+    var refreshed = auctionService.getAuctionSummaries();
+
+    assertEquals(2, refreshed.size());
   }
 
   @Test
