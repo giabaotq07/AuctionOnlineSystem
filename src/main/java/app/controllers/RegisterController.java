@@ -33,7 +33,7 @@ public class RegisterController {
 
   @FXML
   private void initialize() {
-    //role
+    // role
     rbSeller.setToggleGroup(roleGroup);
     rbBidder.setToggleGroup(roleGroup);
 
@@ -88,10 +88,7 @@ public class RegisterController {
       AlertUtils.showError("Lỗi đăng ký", "Vui lòng nhập đầy đủ Name, Account và Password!");
       return;
     }
-    UserRole role =
-            rbSeller.isSelected()
-                    ? UserRole.SELLER
-                    : UserRole.BIDDER;
+    UserRole role = rbSeller.isSelected() ? UserRole.SELLER : UserRole.BIDDER;
     RegisterRequest request = new RegisterRequest(name, account, password, role);
 
     try {

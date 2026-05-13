@@ -98,10 +98,14 @@ public class Client {
         logger.warn("[CLIENT] Invalid packet received");
         return;
       }
-      logger.debug("[CLIENT] Received packet type: {}, data: {}", packet.getType(), packet.getRawData());
+      logger.debug(
+          "[CLIENT] Received packet type: {}, data: {}", packet.getType(), packet.getRawData());
       Response response = packet.getData();
       if (response == null) {
-        logger.warn("[CLIENT] No response data for type: {} (data was: {})", packet.getType(), packet.getRawData());
+        logger.warn(
+            "[CLIENT] No response data for type: {} (data was: {})",
+            packet.getType(),
+            packet.getRawData());
         return;
       }
       notifyListeners(packet.getType(), response);

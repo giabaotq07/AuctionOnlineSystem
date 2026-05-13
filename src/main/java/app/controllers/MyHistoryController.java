@@ -38,51 +38,35 @@ public class MyHistoryController implements Cleanable {
 
   private final Client client = Client.getInstance();
 
-  private final List<AuctionSummary> summaries =
-          new ArrayList<>();
+  private final List<AuctionSummary> summaries = new ArrayList<>();
 
-  private final User currentUser =
-          client.getCurrentUser();
+  private final User currentUser = client.getCurrentUser();
 
-  private PacketListener<HistoryResponse>
-          historyHandler;
+  private PacketListener<HistoryResponse> historyHandler;
 
   @FXML
   public void initialize() {
-    typeFilterComboBox
-            .getItems()
-            .addAll(
-                    "ALL",
-                    "ELECTRONICS",
-                    "ART",
-                    "VEHICLE"
-            );
+    typeFilterComboBox.getItems().addAll("ALL", "ELECTRONICS", "ART", "VEHICLE");
 
     typeFilterComboBox.setValue("ALL");
 
     typeFilterComboBox.setOnAction(e -> rebuildUI());
 
     historyHandler =
-            (HistoryResponse response) ->
-                    Platform.runLater(
-                            () -> {
+        (HistoryResponse response) ->
+            Platform.runLater(
+                () -> {
+                  if (response.success() && response.auctions() != null) {
 
-                              if (response.success()
-                                      && response.auctions()
-                                      != null) {
+                    summaries.clear();
 
-                                summaries.clear();
+                    summaries.addAll(response.auctions());
 
-                                summaries.addAll(
-                                        response.auctions());
+                    rebuildUI();
+                  }
+                });
 
-                                rebuildUI();
-                              }
-                            });
-
-    client.subscribe(
-            PacketType.FETCH_HISTORY,
-            historyHandler);
+    client.subscribe(PacketType.FETCH_HISTORY, historyHandler);
 
     requestHistory();
   }
@@ -95,27 +79,19 @@ public class MyHistoryController implements Cleanable {
 
     try {
 
-      HistoryRequest request =
-              new HistoryRequest(
-                      currentUser.getId());
+      HistoryRequest request = new HistoryRequest(currentUser.getId());
 
-      client.sendRequest(
-              PacketReq.of(
-                      PacketType.FETCH_HISTORY,
-                      request));
+      client.sendRequest(PacketReq.of(PacketType.FETCH_HISTORY, request));
 
     } catch (IOException e) {
 
-      AlertUtils.showError(
-              "Lỗi Kết nối",
-              "Server không phản hồi");
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
   }
 
   private void rebuildUI() {
 
-    if (runningPane == null
-            || finishedPane == null) {
+    if (runningPane == null || finishedPane == null) {
       return;
     }
 
@@ -123,28 +99,22 @@ public class MyHistoryController implements Cleanable {
 
     finishedPane.getChildren().clear();
 
-    for (AuctionSummary summary :
-            summaries) {
+    for (AuctionSummary summary : summaries) {
 
-      VBox card =
-              createAuctionCard(summary);
+      VBox card = createAuctionCard(summary);
 
-      if (summary.auction().getStatus()
-              == AuctionStatus.RUNNING) {
+      if (summary.auction().getStatus() == AuctionStatus.RUNNING) {
 
-        runningPane.getChildren().add(
-                card);
+        runningPane.getChildren().add(card);
 
       } else {
 
-        finishedPane.getChildren().add(
-                card);
+        finishedPane.getChildren().add(card);
       }
     }
   }
 
-  private VBox createAuctionCard(
-          AuctionSummary summary) {
+  private VBox createAuctionCard(AuctionSummary summary) {
 
     Auction auction = summary.auction();
 
@@ -157,121 +127,75 @@ public class MyHistoryController implements Cleanable {
     vbox.setPrefHeight(CARD_HEIGHT);
 
     vbox.setStyle(
-            "-fx-background-color: #1a1f35;"
-                    + "-fx-background-radius: 8;"
-                    + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-                    + "-fx-padding: 15;"
-                    + "-fx-spacing: 10;");
+        "-fx-background-color: #1a1f35;"
+            + "-fx-background-radius: 8;"
+            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
+            + "-fx-padding: 15;"
+            + "-fx-spacing: 10;");
 
-    StackPane imagePane =
-            new StackPane();
+    StackPane imagePane = new StackPane();
 
     imagePane.setPrefHeight(100);
 
-    imagePane.setStyle(
-            "-fx-background-color: #2a2f45;"
-                    + "-fx-background-radius: 5;");
+    imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
 
-    Label imgLabel =
-            new Label("Ảnh tài sản");
+    Label imgLabel = new Label("Ảnh tài sản");
 
-    imgLabel.setStyle(
-            "-fx-text-fill: #aaa;");
+    imgLabel.setStyle("-fx-text-fill: #aaa;");
 
-    imagePane.getChildren()
-            .add(imgLabel);
+    imagePane.getChildren().add(imgLabel);
 
     Label badge =
-            new Label(
-                    currentUser.getId()
-                            == auction.getSellerId()
-                            ? "✪ ĐỒ CỦA TÔI"
-                            : "✔ ĐÃ THAM GIA");
+        new Label(currentUser.getId() == auction.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
 
     badge.setStyle(
-            currentUser.getId()
-                    == auction.getSellerId()
-                    ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
-                    : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
+        currentUser.getId() == auction.getSellerId()
+            ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
+            : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
 
-    Label titleLabel =
-            new Label(summary.itemName());
+    Label titleLabel = new Label(summary.itemName());
 
     titleLabel.setWrapText(true);
 
     titleLabel.setStyle(
-            "-fx-font-weight: bold;"
-                    + "-fx-font-size: 14px;"
-                    + "-fx-text-fill: white;");
+        "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
 
-    Label priceLabel =
-            new Label(
-                    "Giá hiện tại: "
-                            + summary.currentPrice()
-                            + " đ");
+    Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
 
-    priceLabel.setStyle(
-            "-fx-text-fill: #e91e63;"
-                    + "-fx-font-weight: bold;");
+    priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
 
-    Label timeLabel =
-            new Label(
-                    "Kết thúc: "
-                            + auction.getEndTime());
+    Label timeLabel = new Label("Kết thúc: " + auction.getEndTime());
 
-    timeLabel.setStyle(
-            "-fx-text-fill: #9aa0b4;"
-                    + "-fx-font-size: 12px;");
+    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
 
     Button btnDetail =
-            new Button(
-                    auction.getStatus()
-                            == AuctionStatus
-                            .FINISHED
-                            ? "Xem kết quả"
-                            : "Chi tiết");
+        new Button(auction.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
 
-    btnDetail.setMaxWidth(
-            Double.MAX_VALUE);
+    btnDetail.setMaxWidth(Double.MAX_VALUE);
 
     btnDetail.setStyle(
-            "-fx-background-color: #673ab7;"
-                    + "-fx-text-fill: white;"
-                    + "-fx-cursor: hand;");
+        "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
 
-    btnDetail.setOnAction(
-            e -> handleGoToLive(auction));
+    btnDetail.setOnAction(e -> handleGoToLive(auction));
 
-    vbox.getChildren()
-            .addAll(
-                    imagePane,
-                    badge,
-                    titleLabel,
-                    priceLabel,
-                    timeLabel,
-                    btnDetail);
+    vbox.getChildren().addAll(imagePane, badge, titleLabel, priceLabel, timeLabel, btnDetail);
 
     return vbox;
   }
 
-  private void handleGoToLive(
-          Auction auction) {
+  private void handleGoToLive(Auction auction) {
 
     try {
 
       NavigationManager.getInstance()
-              .navigateTo(
-                      View.LIVE,
-                      c -> {
+          .navigateTo(
+              View.LIVE,
+              c -> {
+                if (c instanceof LiveController) {
 
-                        if (c
-                                instanceof LiveController) {
-
-                          ((LiveController) c)
-                                  .setAuction(
-                                          auction);
-                        }
-                      });
+                  ((LiveController) c).setAuction(auction);
+                }
+              });
 
     } catch (Exception e) {
 
@@ -290,15 +214,12 @@ public class MyHistoryController implements Cleanable {
 
     if (historyHandler != null) {
 
-      client.unsubscribe(
-              PacketType.FETCH_HISTORY,
-              historyHandler);
+      client.unsubscribe(PacketType.FETCH_HISTORY, historyHandler);
     }
 
     try {
 
-      NavigationManager.getInstance()
-              .navigateTo(View.UI);
+      NavigationManager.getInstance().navigateTo(View.UI);
 
     } catch (Exception e) {
 
@@ -311,9 +232,7 @@ public class MyHistoryController implements Cleanable {
 
     if (historyHandler != null) {
 
-      client.unsubscribe(
-              PacketType.FETCH_HISTORY,
-              historyHandler);
+      client.unsubscribe(PacketType.FETCH_HISTORY, historyHandler);
     }
   }
 }
