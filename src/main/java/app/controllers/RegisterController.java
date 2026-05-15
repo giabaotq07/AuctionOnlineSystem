@@ -1,8 +1,8 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.RegisterRequest;
-import app.data.RegisterResponse;
+import app.dto.RegisterRequest;
+import app.dto.RegisterResponse;
 import app.enums.PacketType;
 import app.enums.UserRole;
 import app.enums.View;

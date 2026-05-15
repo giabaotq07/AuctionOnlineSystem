@@ -2,8 +2,8 @@ package app.service;
 
 import app.dao.BidDAO;
 import app.dao.ItemDAO;
-import app.data.AuctionDetail;
-import app.data.AuctionSummary;
+import app.dto.AuctionDetail;
+import app.dto.AuctionSummary;
 import app.models.Auction;
 import app.models.BidTransaction;
 import app.models.Item;

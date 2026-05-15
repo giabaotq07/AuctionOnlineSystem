@@ -1,7 +1,7 @@
 package app.network;
 
-import app.data.CancelAuctionRequest;
-import app.data.CancelAuctionResponse;
+import app.dto.CancelAuctionRequest;
+import app.dto.CancelAuctionResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;

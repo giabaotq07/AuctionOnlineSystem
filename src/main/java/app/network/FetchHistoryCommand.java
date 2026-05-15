@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.AuctionSummary;
-import app.data.HistoryRequest;
-import app.data.HistoryResponse;
+import app.dto.AuctionSummary;
+import app.dto.HistoryRequest;
+import app.dto.HistoryResponse;
 import app.enums.PacketType;
 import app.models.PacketReq;
 import app.models.PacketRes;

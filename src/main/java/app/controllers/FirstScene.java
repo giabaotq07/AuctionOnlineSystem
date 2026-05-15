@@ -1,10 +1,10 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.AuctionSummary;
-import app.data.AuctionsResponse;
-import app.data.CreateAuctionResponse;
-import app.data.WalletUpdateResponse;
+import app.dto.AuctionSummary;
+import app.dto.AuctionsResponse;
+import app.dto.CreateAuctionResponse;
+import app.dto.WalletUpdateResponse;
 import app.enums.AuctionStatus;
 import app.enums.OperationStatus;
 import app.enums.PacketType;

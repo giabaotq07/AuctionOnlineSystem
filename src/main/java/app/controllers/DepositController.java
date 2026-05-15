@@ -1,8 +1,8 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.DepositRequest;
-import app.data.WalletUpdateResponse;
+import app.dto.DepositRequest;
+import app.dto.WalletUpdateResponse;
 import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.View;

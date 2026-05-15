@@ -1,10 +1,10 @@
 package app.models;
 
-import app.data.AuctionSummary;
-import app.data.AuctionsRequest;
-import app.data.AuctionsResponse;
-import app.data.UserData;
-import app.data.WalletUpdateResponse;
+import app.dto.AuctionSummary;
+import app.dto.AuctionsRequest;
+import app.dto.AuctionsResponse;
+import app.dto.UserData;
+import app.dto.WalletUpdateResponse;
 import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ConnectException;

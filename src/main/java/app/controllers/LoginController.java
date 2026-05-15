@@ -1,8 +1,8 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.LoginRequest;
-import app.data.LoginResponse;
+import app.dto.LoginRequest;
+import app.dto.LoginResponse;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;

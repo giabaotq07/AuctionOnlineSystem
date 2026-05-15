@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.DeleteItemRequest;
-import app.data.ItemData;
-import app.data.ItemResponse;
+import app.dto.DeleteItemRequest;
+import app.dto.ItemData;
+import app.dto.ItemResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.Item;

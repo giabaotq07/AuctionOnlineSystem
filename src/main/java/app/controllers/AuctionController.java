@@ -1,8 +1,8 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.CreateAuctionRequest;
-import app.data.CreateAuctionResponse;
+import app.dto.CreateAuctionRequest;
+import app.dto.CreateAuctionResponse;
 import app.enums.ItemType;
 import app.enums.PacketType;
 import app.enums.View;

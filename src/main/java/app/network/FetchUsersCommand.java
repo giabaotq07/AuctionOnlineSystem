@@ -1,7 +1,7 @@
 package app.network;
 
-import app.data.UserData;
-import app.data.UsersResponse;
+import app.dto.UserData;
+import app.dto.UsersResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;

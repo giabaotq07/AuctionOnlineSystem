@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.DepositRequest;
-import app.data.UserData;
-import app.data.WalletUpdateResponse;
+import app.dto.DepositRequest;
+import app.dto.UserData;
+import app.dto.WalletUpdateResponse;
 import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ServiceException;

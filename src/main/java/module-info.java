@@ -9,7 +9,7 @@ module app {
   requires atlantafx.base;
   requires transitive com.zaxxer.hikari;
 
-  opens app.data;
+  opens app.dto;
   opens app.dao;
   opens app.service;
   opens app to
@@ -27,7 +27,7 @@ module app {
   exports app.service;
   exports app.models;
   exports app.enums;
-  exports app.data;
+  exports app.dto;
   exports app.dao;
   exports app.database;
 }

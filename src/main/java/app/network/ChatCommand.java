@@ -1,7 +1,7 @@
 package app.network;
 
-import app.data.ChatRequest;
-import app.data.ChatResponse;
+import app.dto.ChatRequest;
+import app.dto.ChatResponse;
 import app.enums.PacketType;
 import app.models.PacketReq;
 import app.models.PacketRes;

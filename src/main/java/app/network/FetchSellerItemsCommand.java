@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.FetchSellerItemsRequest;
-import app.data.ItemData;
-import app.data.ItemListResponse;
+import app.dto.FetchSellerItemsRequest;
+import app.dto.ItemData;
+import app.dto.ItemListResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;

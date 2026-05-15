@@ -1,9 +1,9 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.ChatRequest;
-import app.data.ChatResponse;
-import app.data.UserData;
+import app.dto.ChatRequest;
+import app.dto.ChatResponse;
+import app.dto.UserData;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.PacketReq;

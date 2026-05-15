@@ -1,6 +1,6 @@
 package app.network;
 
-import app.data.Response;
+import app.dto.Response;
 import app.enums.PacketType;
 import app.exception.ConnectException;
 import app.models.PacketReq;

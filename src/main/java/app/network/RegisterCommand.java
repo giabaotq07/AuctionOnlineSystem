@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.RegisterRequest;
-import app.data.RegisterResponse;
-import app.data.UserData;
+import app.dto.RegisterRequest;
+import app.dto.RegisterResponse;
+import app.dto.UserData;
 import app.enums.PacketType;
 import app.enums.UserRole;
 import app.exception.ServiceException;

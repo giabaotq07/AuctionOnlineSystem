@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.AuctionDetail;
-import app.data.AuctionDetailRequest;
-import app.data.AuctionDetailResponse;
+import app.dto.AuctionDetail;
+import app.dto.AuctionDetailRequest;
+import app.dto.AuctionDetailResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;

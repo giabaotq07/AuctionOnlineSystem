@@ -1,6 +1,6 @@
 package app.dao;
 
-import app.data.ChatResponse;
+import app.dto.ChatResponse;
 import java.util.List;
 
 /** ChatDAO. */

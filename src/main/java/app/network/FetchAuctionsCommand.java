@@ -1,7 +1,7 @@
 package app.network;
 
-import app.data.AuctionSummary;
-import app.data.AuctionsResponse;
+import app.dto.AuctionSummary;
+import app.dto.AuctionsResponse;
 import app.enums.PacketType;
 import app.models.PacketReq;
 import app.models.PacketRes;

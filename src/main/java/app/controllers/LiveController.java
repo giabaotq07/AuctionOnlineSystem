@@ -1,15 +1,15 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
-import app.data.AuctionDetail;
-import app.data.AuctionDetailRequest;
-import app.data.AuctionDetailResponse;
-import app.data.AuctionResultRequest;
-import app.data.AuctionResultResponse;
-import app.data.PlaceBidRequest;
-import app.data.PlaceBidResponse;
-import app.data.SettleWalletRequest;
-import app.data.WalletUpdateResponse;
+import app.dto.AuctionDetail;
+import app.dto.AuctionDetailRequest;
+import app.dto.AuctionDetailResponse;
+import app.dto.AuctionResultRequest;
+import app.dto.AuctionResultResponse;
+import app.dto.PlaceBidRequest;
+import app.dto.PlaceBidResponse;
+import app.dto.SettleWalletRequest;
+import app.dto.WalletUpdateResponse;
 import app.enums.AuctionStatus;
 import app.enums.OperationStatus;
 import app.enums.PacketType;

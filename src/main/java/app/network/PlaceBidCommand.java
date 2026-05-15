@@ -1,11 +1,11 @@
 package app.network;
 
-import app.data.AuctionSummary;
-import app.data.AuctionsResponse;
-import app.data.PlaceBidRequest;
-import app.data.PlaceBidResponse;
-import app.data.UserData;
-import app.data.WalletUpdateResponse;
+import app.dto.AuctionSummary;
+import app.dto.AuctionsResponse;
+import app.dto.PlaceBidRequest;
+import app.dto.PlaceBidResponse;
+import app.dto.UserData;
+import app.dto.WalletUpdateResponse;
 import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.UserRole;

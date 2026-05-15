@@ -1,8 +1,8 @@
 package app.network;
 
-import app.data.LoginRequest;
-import app.data.LoginResponse;
-import app.data.UserData;
+import app.dto.LoginRequest;
+import app.dto.LoginResponse;
+import app.dto.UserData;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;

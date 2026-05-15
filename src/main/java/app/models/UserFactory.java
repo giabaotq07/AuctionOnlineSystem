@@ -1,6 +1,6 @@
 package app.models;
 
-import app.data.UserData;
+import app.dto.UserData;
 import app.enums.UserRole;
 
 /** UserFactory. */
