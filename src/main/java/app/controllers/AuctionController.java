@@ -15,8 +15,11 @@ import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 
+/** AuctionController. */
 public class AuctionController {
   @FXML private TextField nameField;
   @FXML private TextArea descriptionField;
@@ -26,6 +29,7 @@ public class AuctionController {
   @FXML private TextField durationField;
   private PacketListener<CreateAuctionResponse> createAuctionHandler;
 
+  /** Member. */
   @FXML
   public void initialize() {
     DataStore.getInstance();
@@ -59,6 +63,7 @@ public class AuctionController {
     Client.getInstance().subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
   }
 
+  /** Member. */
   @FXML
   public void handleAdd(ActionEvent event) {
     if (!Client.getInstance().isConnected()) {
@@ -101,6 +106,7 @@ public class AuctionController {
     }
   }
 
+  /** Member. */
   @FXML
   public void handleBack(ActionEvent event) {
     if (createAuctionHandler != null) {

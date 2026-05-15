@@ -5,9 +5,16 @@ import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.Session;
 import app.models.User;
-import app.service.*;
+import app.service.AuctionService;
+import app.service.BidService;
+import app.service.ItemService;
+import app.service.UserService;
 import app.utils.JsonUtil;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.EnumMap;
@@ -15,6 +22,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** ClientHandler. */
 public class ClientHandler implements Runnable {
   private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
 
@@ -26,6 +34,7 @@ public class ClientHandler implements Runnable {
   private final Map<PacketType, Command> commands;
   private volatile boolean closed = false;
 
+  /** ClientHandler. */
   public ClientHandler(
       Socket socket,
       AuctionService auctionService,
@@ -148,6 +157,7 @@ public class ClientHandler implements Runnable {
     return true;
   }
 
+  /** sendPacket. */
   public void sendPacket(PacketRes packet) {
     if (packet == null || writer == null || closed) {
       return;
@@ -166,6 +176,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /** close. */
   public synchronized void close() {
     if (closed) {
       return;
@@ -177,6 +188,7 @@ public class ClientHandler implements Runnable {
         socket.shutdownOutput();
       }
     } catch (IOException ignored) {
+      // Socket may already be half-closed by the peer.
     }
     try {
       if (reader != null) {

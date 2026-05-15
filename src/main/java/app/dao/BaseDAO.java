@@ -12,7 +12,8 @@ import java.util.function.Function;
  * Base DAO class providing common transaction and connection handling. Centralizes connection
  * management, error handling, and transaction patterns.
  */
-public abstract class BaseDAO {
+public abstract class BaseDao {
+  /** executeUpdate. */
   protected boolean executeUpdate(Connection conn, String sql, Object... params) {
     validateUpdateSql(sql);
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -35,6 +36,7 @@ public abstract class BaseDAO {
     }
   }
 
+  /** setParameters. */
   protected void setParameters(PreparedStatement ps, Object... params) throws SQLException {
     for (int i = 0; i < params.length; i++) {
       ps.setObject(i + 1, params[i]);

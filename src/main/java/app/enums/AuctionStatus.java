@@ -1,5 +1,6 @@
 package app.enums;
 
+/** AuctionStatus. */
 public enum AuctionStatus {
   OPEN(0),
   RUNNING(1),

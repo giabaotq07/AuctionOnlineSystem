@@ -27,6 +27,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
+/** MessController. */
 public class MessController {
   @FXML private TextArea myTextArea;
   @FXML private VBox chatBox;
@@ -34,6 +35,7 @@ public class MessController {
   private Client client;
   private PacketListener<ChatResponse> chatHandler;
 
+  /** Member. */
   @FXML
   public void initialize() {
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
@@ -51,9 +53,7 @@ public class MessController {
     return client.getCurrentUser().getId() == id;
   }
 
-  // =========================
-  // ADD MESSAGE BUBBLE
-  // =========================
+  /** addBubble. */
   public void addBubble(String sender, String content, boolean isMe) {
     HBox row = new HBox();
     row.setPadding(new Insets(10));
@@ -61,13 +61,10 @@ public class MessController {
     VBox messageGroup = new VBox(4);
     messageGroup.setMaxWidth(520);
     messageGroup.setAlignment(isMe ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
-    // NAME
     Label nameLabel = new Label(isMe ? "Bạn" : sender);
     nameLabel.setStyle(
         "-fx-text-fill: #94a3b8;" + "-fx-font-size: 11px;" + "-fx-font-weight: bold;");
-    // BUBBLE
     TextFlow bubble = getTextFlow(isMe);
-    // TEXT PARSE
     String[] words = content.split(" ");
     for (String word : words) {
       Text t = new Text(word + " ");
@@ -102,6 +99,7 @@ public class MessController {
     return bubble;
   }
 
+  /** Member. */
   @FXML
   public void send() {
     String text = myTextArea.getText();
@@ -118,8 +116,9 @@ public class MessController {
     }
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToUI(ActionEvent event) {
+  public void switchToUi(ActionEvent event) {
     if (chatHandler != null) {
       client.unsubscribe(PacketType.CHAT, chatHandler);
     }

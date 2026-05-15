@@ -3,7 +3,9 @@ package app.models;
 import app.data.UserData;
 import app.enums.UserRole;
 
+/** UserFactory. */
 public class UserFactory {
+  /** createUser. */
   public static User createUser(String name, Account account, Wallet wallet, UserRole role) {
     return switch (role) {
       case ADMIN -> new Admin(name, account, wallet);
@@ -12,6 +14,7 @@ public class UserFactory {
     };
   }
 
+  /** createUser. */
   public static User createUser(
       int id, String name, Account account, Wallet wallet, UserRole role) {
     return switch (role) {
@@ -21,6 +24,7 @@ public class UserFactory {
     };
   }
 
+  /** createUser. */
   public static User createUser(UserData userData) {
     UserRole role = userData.role();
     Wallet wallet = new Wallet(userData.availableBalance(), userData.frozenFunds());

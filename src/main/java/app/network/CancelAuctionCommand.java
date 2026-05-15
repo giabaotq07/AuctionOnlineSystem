@@ -10,10 +10,12 @@ import app.service.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** CancelAuctionCommand. */
 public class CancelAuctionCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(CancelAuctionCommand.class);
   private final AuctionService auctionService;
 
+  /** CancelAuctionCommand. */
   public CancelAuctionCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
   }

@@ -1,27 +1,44 @@
 package app.network;
 
-import app.dao.*;
-import app.dao.impl.*;
+import app.dao.AuctionDao;
+import app.dao.AutoBidDao;
+import app.dao.BidDao;
+import app.dao.ItemDao;
+import app.dao.UserDao;
+import app.dao.impl.MySqlAuctionDao;
+import app.dao.impl.MySqlAutoBidDao;
+import app.dao.impl.MySqlBidDao;
+import app.dao.impl.MySqlItemDao;
+import app.dao.impl.MySqlUserDao;
 import app.database.TransactionManager;
 import app.models.PacketRes;
-import app.service.*;
+import app.service.AntiSnipeService;
+import app.service.AuctionService;
+import app.service.BidService;
+import app.service.BidValidator;
+import app.service.ItemService;
+import app.service.UserService;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Server. */
 public class Server {
   private static final Logger logger = LoggerFactory.getLogger(Server.class);
   public static final int PORT = 5000;
   private static volatile Server instance;
   private ServerSocket serverSocket;
   private volatile boolean running = true;
-  // userId -> clientHandler
   private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
   private static final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final ExecutorService broadcastPool = Executors.newCachedThreadPool();
@@ -45,6 +62,7 @@ public class Server {
     }
   }
 
+  /** getInstance. */
   public static synchronized Server getInstance() {
     if (instance == null) {
       instance = new Server();
@@ -54,23 +72,20 @@ public class Server {
 
   private void initService() {
     logger.info("[SERVER] Initializing database...");
-    // Dao
-    UserDAO userDAO = new MySqlUserDAO();
-    ItemDAO itemDAO = new MySqlItemDAO();
-    AuctionDAO auctionDAO = new MySqlAuctionDAO();
-    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
-    BidDAO bidDAO = new MySqlBidDAO();
-    //
+    UserDao userDao = new MySqlUserDao();
+    ItemDao itemDao = new MySqlItemDao();
+    AuctionDao auctionDao = new MySqlAuctionDao();
+    AutoBidDao autoBidDao = new MySqlAutoBidDao();
+    BidDao bidDao = new MySqlBidDao();
     TransactionManager transactionManager = new TransactionManager();
     BidValidator bidValidator = new BidValidator();
     AntiSnipeService antiSnipeService = new AntiSnipeService();
-    // Service
-    userService = new UserService(userDAO, transactionManager);
-    itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
+    userService = new UserService(userDao, transactionManager);
+    itemService = new ItemService(itemDao, auctionDao, transactionManager);
     bidService =
         new BidService(
-            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
-    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
+            bidDao, auctionDao, userDao, transactionManager, bidValidator, antiSnipeService);
+    auctionService = new AuctionService(auctionDao, bidDao, itemDao, userDao, transactionManager);
     startAuctionMaintenance();
   }
 
@@ -102,6 +117,7 @@ public class Server {
     }
   }
 
+  /** start. */
   public void start() {
     logger.info("[SERVER] Waiting for clients...");
     try {
@@ -134,20 +150,17 @@ public class Server {
     }
   }
 
+  /** shutdown. */
   public void shutdown() {
     logger.info("[SERVER] Shutting down...");
     running = false;
     try {
-      // close server socket
       if (serverSocket != null && !serverSocket.isClosed()) {
         serverSocket.close();
       }
-      // close clients safely
       authenticatedClients.values().stream().toList().forEach(ClientHandler::close);
       authenticatedClients.clear();
-      // shutdown client pool
       shutdownExecutor(clientPool, "clientPool");
-      // shutdown broadcast pool
       shutdownExecutor(broadcastPool, "broadcastPool");
       shutdownExecutor(auctionMaintenancePool, "auctionMaintenancePool");
       logger.info("[SERVER] Shutdown complete");
@@ -171,6 +184,7 @@ public class Server {
     }
   }
 
+  /** registerClient. */
   public static void registerClient(int userId, ClientHandler handler) {
     ClientHandler old = authenticatedClients.put(userId, handler);
     if (old != null && old != handler) {
@@ -180,10 +194,12 @@ public class Server {
     }
   }
 
+  /** removeClient. */
   public static void removeClient(int userId, ClientHandler handler) {
     authenticatedClients.remove(userId, handler);
   }
 
+  /** broadcast. */
   public static void broadcast(PacketRes packet, int excludeUser) {
     if (packet == null) {
       return;
@@ -217,6 +233,7 @@ public class Server {
     return authenticatedClients.size();
   }
 
+  /** isUserOnline. */
   public static boolean isUserOnline(int userId) {
     return authenticatedClients.containsKey(userId);
   }

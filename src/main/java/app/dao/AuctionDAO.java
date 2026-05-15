@@ -12,34 +12,43 @@ import java.util.Optional;
  * <p>Methods are categorized as: 1. Read-only operations: Create own connection (no Connection
  * param) 2. Transaction operations: Accept Connection parameter for participation in transactions
  */
-public interface AuctionDAO {
-  // ── Read operations (create own connection) ──────────────────────
+public interface AuctionDao {
+  /** findById. */
   Optional<Auction> findById(int id);
 
+  /** findById. */
   Optional<Auction> findById(Connection conn, int id);
 
+  /** findAll. */
   List<Auction> findAll();
 
+  /** findByStatus. */
   List<Auction> findByStatus(AuctionStatus status);
 
+  /** findBySeller. */
   List<Auction> findBySeller(int sellerId);
 
+  /** findByItemId. */
   List<Auction> findByItemId(Connection conn, int itemId);
 
-  // ── Write operations for single objects ──────────────────────────
+  /** save. */
   Auction save(Auction auction);
 
-  boolean update(Auction auction);
-
-  boolean delete(int id);
-
-  // ── Transaction-aware operations (use provided Connection) ────────
-  // These are used within transactions to ensure ACID properties
-  void lockRow(Connection conn, int auctionId);
-
+  /** save. */
   Auction save(Connection conn, Auction auction);
 
+  /** update. */
+  boolean update(Auction auction);
+
+  /** update. */
   boolean update(Connection conn, Auction auction);
 
+  /** delete. */
+  boolean delete(int id);
+
+  /** lockRow. */
+  void lockRow(Connection conn, int auctionId);
+
+  /** updateIfVersionMatches. */
   boolean updateIfVersionMatches(Connection conn, Auction auction, int expectedVersion);
 }

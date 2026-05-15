@@ -10,7 +10,7 @@
       <VBox style="-fx-background-color: #161b26; -fx-border-color: #2d3748; -fx-border-width: 0 0 1 0;">
          <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0">
             <padding><Insets left="40.0" right="40.0" /></padding>
-            <Button onAction="#SwitchToUI" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold; -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
+            <Button onAction="#switchToUi" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold; -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
             <Region HBox.hgrow="ALWAYS" />
             <Label style="-fx-font-weight: bold; -fx-font-size: 20px;" text="PHÒNG CHAT CHUNG" textFill="WHITE" />
             <Region HBox.hgrow="ALWAYS" />
@@ -36,3 +36,4 @@
       </VBox>
    </center>
 </BorderPane>
+

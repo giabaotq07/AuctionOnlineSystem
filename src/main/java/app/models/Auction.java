@@ -3,6 +3,7 @@ package app.models;
 import app.enums.AuctionStatus;
 import java.time.LocalDateTime;
 
+/** Auction. */
 public class Auction {
   private int id;
   private final int itemId;
@@ -11,20 +12,17 @@ public class Auction {
   private AuctionStatus status;
   private LocalDateTime startTime;
   private LocalDateTime endTime;
-  //  private long depositAmount;
   private long highestBid;
   private int extendedCount;
   private int version;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
-  public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice
-      // , long depositAmount
-      ) {
+  /** Auction. */
+  public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice) {
     this.itemId = itemId;
     this.sellerId = sellerId;
     this.endTime = endTime;
-    //    this.depositAmount = depositAmount;
     this.status = AuctionStatus.OPEN;
     this.highestBid = currentPrice;
     this.extendedCount = 0;
@@ -32,6 +30,7 @@ public class Auction {
     this.createdAt = LocalDateTime.now();
   }
 
+  /** Auction. */
   public Auction(
       int id,
       int itemId,
@@ -40,7 +39,6 @@ public class Auction {
       AuctionStatus status,
       LocalDateTime startTime,
       LocalDateTime endTime,
-      //      long depositAmount,
       long highestBid,
       int extendedCount,
       int version,
@@ -53,7 +51,6 @@ public class Auction {
     this.status = status;
     this.startTime = startTime;
     this.endTime = endTime;
-    //    this.depositAmount = depositAmount;
     this.highestBid = highestBid;
     this.extendedCount = extendedCount;
     this.version = version;
@@ -61,6 +58,7 @@ public class Auction {
     this.updatedAt = updatedAt;
   }
 
+  /** start. */
   public void start() {
     if (this.status != AuctionStatus.OPEN) {
       throw new IllegalStateException("Chỉ có thể bắt đầu phiên đang OPEN, hiện tại: " + status);
@@ -69,6 +67,7 @@ public class Auction {
     this.startTime = LocalDateTime.now();
   }
 
+  /** finish. */
   public void finish() {
     if (this.status != AuctionStatus.RUNNING) {
       throw new IllegalStateException(
@@ -77,6 +76,7 @@ public class Auction {
     this.status = AuctionStatus.FINISHED;
   }
 
+  /** markPaid. */
   public void markPaid() {
     if (this.status != AuctionStatus.FINISHED) {
       throw new IllegalStateException("Chỉ có thể PAID khi FINISHED, hiện tại: " + status);
@@ -84,6 +84,7 @@ public class Auction {
     this.status = AuctionStatus.PAID;
   }
 
+  /** cancel. */
   public void cancel() {
     if (this.status == AuctionStatus.FINISHED || this.status == AuctionStatus.PAID) {
       throw new IllegalStateException("Không thể huỷ phiên đã " + status);
@@ -91,6 +92,7 @@ public class Auction {
     this.status = AuctionStatus.CANCELED;
   }
 
+  /** updateHighestBid. */
   public void updateHighestBid(long newBid, int bidderId) {
     if (newBid <= this.highestBid) {
       throw new IllegalArgumentException("Giá mới phải cao hơn giá hiện tại: " + highestBid);
@@ -99,7 +101,7 @@ public class Auction {
     this.winnerId = bidderId;
   }
 
-  /** Anti-sniping: gia hạn thêm extraSeconds nếu bid trong X giây cuối */
+  /** Anti-sniping: gia hạn thêm extraSeconds nếu bid trong X giây cuối. */
   public void extend(int extraSeconds) {
     if (this.status != AuctionStatus.RUNNING) {
       throw new IllegalStateException("Chỉ gia hạn khi đang RUNNING");
@@ -116,7 +118,6 @@ public class Auction {
     return this.status == AuctionStatus.RUNNING;
   }
 
-  // setter and getter
   public int getId() {
     return id;
   }
@@ -165,13 +166,6 @@ public class Auction {
     this.endTime = endTime;
   }
 
-  //  public long getDepositAmount() {
-  //    return depositAmount;
-  //  }
-  //
-  //  public void setDepositAmount(long depositAmount) {
-  //    this.depositAmount = depositAmount;
-  //  }
   public long getHighestBid() {
     return highestBid;
   }
@@ -196,6 +190,7 @@ public class Auction {
     this.version = version;
   }
 
+  /** incrementVersion. */
   public void incrementVersion() {
     this.version++;
   }

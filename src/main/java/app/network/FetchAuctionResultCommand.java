@@ -10,10 +10,12 @@ import app.service.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** FetchAuctionResultCommand. */
 public class FetchAuctionResultCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionResultCommand.class);
   private final AuctionService auctionService;
 
+  /** FetchAuctionResultCommand. */
   public FetchAuctionResultCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
   }

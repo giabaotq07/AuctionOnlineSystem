@@ -5,6 +5,7 @@ import app.models.User;
 import java.math.BigDecimal;
 import java.util.Map;
 
+/** UserData. */
 public record UserData(
     int id,
     String name,
@@ -12,6 +13,7 @@ public record UserData(
     BigDecimal availableBalance,
     Map<String, BigDecimal> frozenFunds,
     UserRole role) {
+  /** UserData. */
   public UserData(User user) {
     this(
         user.getId(),

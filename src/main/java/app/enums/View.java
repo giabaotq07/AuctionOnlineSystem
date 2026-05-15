@@ -1,5 +1,6 @@
 package app.enums;
 
+/** View. */
 public enum View {
   CONNECT("/app/views/ConnectServerController.fxml"),
   LOGIN("/app/views/login_scene.fxml"),

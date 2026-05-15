@@ -12,10 +12,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** FetchHistoryCommand. */
 public class FetchHistoryCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchHistoryCommand.class);
   private final AuctionService auctionService;
 
+  /** FetchHistoryCommand. */
   public FetchHistoryCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
   }

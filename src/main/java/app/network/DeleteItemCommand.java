@@ -13,10 +13,12 @@ import app.service.ItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** DeleteItemCommand. */
 public class DeleteItemCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(DeleteItemCommand.class);
   private final ItemService itemService;
 
+  /** DeleteItemCommand. */
   public DeleteItemCommand(ItemService itemService) {
     this.itemService = itemService;
   }

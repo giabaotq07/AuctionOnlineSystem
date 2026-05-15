@@ -25,7 +25,7 @@
                     <Insets left="40.0" right="40.0" />
                 </padding>
 
-                <Button onAction="#SwitchToUI" style="-fx-background-color: transparent;                                -fx-text-fill: #4f46e5;                                -fx-font-weight: bold;                                -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
+                <Button onAction="#switchToUi" style="-fx-background-color: transparent;                                -fx-text-fill: #4f46e5;                                -fx-font-weight: bold;                                -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
 
                    <Button onAction="#handleReload" style="-fx-background-color: #673ab7;                                            -fx-text-fill: white;                                            -fx-font-weight: bold;                                            -fx-cursor: hand;" text="Làm mới" />
 
@@ -99,3 +99,4 @@
     </center>
 
 </BorderPane>
+

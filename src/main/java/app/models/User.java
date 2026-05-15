@@ -2,12 +2,14 @@ package app.models;
 
 import app.enums.UserRole;
 
+/** User. */
 public abstract class User extends Entity {
   protected String name;
   protected final Account account;
   protected final Wallet wallet;
   protected UserRole role;
 
+  /** User. */
   public User(int id, String name, Account account, Wallet wallet) {
     this.id = id;
     this.name = name;
@@ -15,6 +17,7 @@ public abstract class User extends Entity {
     this.wallet = wallet;
   }
 
+  /** User. */
   public User(String name, Account account, Wallet wallet) {
     this.name = name;
     this.account = account;
@@ -37,5 +40,6 @@ public abstract class User extends Entity {
     return wallet;
   }
 
+  /** getRole. */
   public abstract UserRole getRole();
 }

@@ -28,7 +28,12 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -36,6 +41,7 @@ import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** FirstScene. */
 public class FirstScene implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(FirstScene.class);
   private static final double CARD_WIDTH = 280;
@@ -56,10 +62,11 @@ public class FirstScene implements Cleanable {
   private PacketListener<WalletUpdateResponse> walletUpdateHandler;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
+  /** Member. */
   @FXML
   public void initialize() {
-    setupHBox(activeBox);
-    setupHBox(completedBox);
+    setupHbox(activeBox);
+    setupHbox(completedBox);
     setupListView();
     setupAuthButton();
     setupSearch();
@@ -71,7 +78,6 @@ public class FirstScene implements Cleanable {
     logger.debug("FirstScene initialized");
   }
 
-  // ================= INITIALIZE =================
   private void setupListView() {
     auctionListView.setCellFactory(
         lv ->
@@ -98,7 +104,9 @@ public class FirstScene implements Cleanable {
   }
 
   private void setupAuthButton() {
-    if (btnAuth == null) return;
+    if (btnAuth == null) {
+      return;
+    }
     if (client.getCurrentUser() != null) {
       btnAuth.setText("Thông tin User: " + client.getCurrentUser().getName());
     } else {
@@ -107,7 +115,9 @@ public class FirstScene implements Cleanable {
   }
 
   private void setupSearch() {
-    if (searchField == null) return;
+    if (searchField == null) {
+      return;
+    }
     searchField
         .textProperty()
         .addListener(
@@ -153,7 +163,7 @@ public class FirstScene implements Cleanable {
                   }
                   summaries.clear();
                   summaries.addAll(response.auctions());
-                  rebuildUI();
+                  rebuildUi();
                 });
     client.subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
     client.subscribe(PacketType.FETCH_AUCTIONS, fetchAuctionsHandler);
@@ -162,7 +172,7 @@ public class FirstScene implements Cleanable {
   private void loadInitialData() {
     summaries.clear();
     summaries.addAll(DataStore.getInstance().auctions);
-    rebuildUI();
+    rebuildUi();
     try {
       client.sendRequest(new PacketReq(PacketType.FETCH_AUCTIONS, null));
     } catch (Exception e) {
@@ -170,8 +180,7 @@ public class FirstScene implements Cleanable {
     }
   }
 
-  // ================= UI =================
-  private void rebuildUI() {
+  private void rebuildUi() {
     activeBox.getChildren().clear();
     completedBox.getChildren().clear();
     for (AuctionSummary summary : summaries) {
@@ -191,7 +200,9 @@ public class FirstScene implements Cleanable {
   }
 
   private void updateListView() {
-    if (auctionListView == null) return;
+    if (auctionListView == null) {
+      return;
+    }
     auctionListView.getItems().clear();
     String keyword = "";
     if (searchField != null && searchField.getText() != null) {
@@ -205,12 +216,11 @@ public class FirstScene implements Cleanable {
     }
   }
 
-  private void setupHBox(HBox hbox) {
+  private void setupHbox(HBox hbox) {
     hbox.setAlignment(Pos.CENTER_LEFT);
     hbox.setSpacing(SPACING);
   }
 
-  // ================= SCROLL =================
   private ScrollPane createScrollBox(HBox container) {
     ScrollPane viewport = new ScrollPane(container);
     viewport.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -248,9 +258,8 @@ public class FirstScene implements Cleanable {
     return viewport;
   }
 
-  // ================= CARD =================
   private VBox createAuctionCard(AuctionSummary summary) {
-    Auction auction = summary.auction();
+    final Auction auction = summary.auction();
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -284,7 +293,6 @@ public class FirstScene implements Cleanable {
     return vbox;
   }
 
-  // ================= NAVIGATION =================
   private void openAuction(Auction auction) {
     try {
       if (!client.isConnected()) {
@@ -309,7 +317,6 @@ public class FirstScene implements Cleanable {
     }
   }
 
-  // ================= WALLET =================
   private void setupWalletSection() {
     updateBalanceLabel();
   }
@@ -360,7 +367,7 @@ public class FirstScene implements Cleanable {
     return currencyFormat.format(amount);
   }
 
-  // ================= ACTIONS =================
+  /** Member. */
   @FXML
   public void handleReload(ActionEvent event) {
     try {
@@ -372,37 +379,42 @@ public class FirstScene implements Cleanable {
     }
   }
 
+  /** Member. */
   @FXML
   public void handleAuth(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.USER_PROFILE);
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToLive(ActionEvent e) {
+  public void switchToLive(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.LIVE);
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToMine(ActionEvent e) {
+  public void switchToMine(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.HISTORY);
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToMess(ActionEvent e) {
+  public void switchToMess(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.MESSAGE);
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToOrganize(ActionEvent e) {
+  public void switchToOrganize(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.ORGANIZE);
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToDeposit(ActionEvent e) {
+  public void switchToDeposit(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.DEPOSIT);
   }
 
-  // ================= CLEANUP =================
   @Override
   public void cleanup() {
     for (Timeline timeline : timelines) {

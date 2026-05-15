@@ -4,6 +4,7 @@ import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.models.Item;
 
+/** ItemData. */
 public record ItemData(
     int id,
     int sellerId,
@@ -13,6 +14,7 @@ public record ItemData(
     long stepPrice,
     ItemType type,
     ItemStatus status) {
+  /** ItemData. */
   public ItemData(Item item) {
     this(
         item.getId(),

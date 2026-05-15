@@ -16,10 +16,15 @@ import java.io.IOException;
 import java.util.Objects;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
+/** LoginController. */
 public class LoginController {
   @FXML private TextField account;
   @FXML private PasswordField password;
@@ -49,7 +54,7 @@ public class LoginController {
                     User user = UserFactory.createUser(response.user());
                     Client.getInstance().setCurrentUser(user);
                     DataStore.getInstance().updateCurrentUser(response.user());
-                    SwitchToUI();
+                    switchToUi();
                   } else {
                     AlertUtils.showError("Đăng nhập thất bại", response.message());
                   }
@@ -57,6 +62,7 @@ public class LoginController {
     Client.getInstance().subscribe(PacketType.LOGIN, loginHandler);
   }
 
+  /** Member. */
   @FXML
   public void handleLogin() {
     loginButton.setDisable(true);
@@ -76,8 +82,9 @@ public class LoginController {
     }
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToUI() {
+  public void switchToUi() {
     if (loginHandler != null) {
       Client.getInstance().unsubscribe(PacketType.LOGIN, loginHandler);
     }
@@ -93,19 +100,19 @@ public class LoginController {
     alert.showAndWait();
   }
 
-  // 1. Hiện dấu gạch chân khi đưa chuột vào
+  /** Member. */
   @FXML
   public void handleMouseEntered(MouseEvent event) {
     lblRegister.setUnderline(true);
   }
 
-  // 2. Bỏ dấu gạch chân khi đưa chuột ra
+  /** Member. */
   @FXML
   public void handleMouseExited(MouseEvent event) {
     lblRegister.setUnderline(false);
   }
 
-  // 3. Chuyển sang màn hình Register khi Click
+  /** Member. */
   @FXML
   public void switchToRegister(MouseEvent event) {
     NavigationManager.getInstance().navigateTo(View.REGISTER);

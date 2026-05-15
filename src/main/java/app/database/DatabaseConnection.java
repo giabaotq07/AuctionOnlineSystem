@@ -3,6 +3,7 @@ package app.database;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+/** DatabaseConnection. */
 public final class DatabaseConnection {
   private static volatile HikariDataSource dataSource;
 
@@ -12,9 +13,6 @@ public final class DatabaseConnection {
 
   private DatabaseConnection() {}
 
-  // =========================
-  // INIT / REINIT CORE
-  // =========================
   private static synchronized void init() {
     DatabaseConfig cfg = DatabaseConfig.load();
     HikariConfig config = new HikariConfig();
@@ -29,17 +27,14 @@ public final class DatabaseConnection {
     dataSource = new HikariDataSource(config);
   }
 
-  // giữ lại method này cho test
+  /** resetDataSource. */
   public static synchronized void resetDataSource() {
     if (dataSource != null && !dataSource.isClosed()) {
       dataSource.close();
     }
-    init(); // tạo pool mới với config hiện tại
+    init();
   }
 
-  // =========================
-  // PUBLIC API
-  // =========================
   public static HikariDataSource getDataSource() {
     return dataSource;
   }

@@ -14,6 +14,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
+/** UserProfileController. */
 public class UserProfileController {
   @FXML private AnchorPane rootPane;
   @FXML private Circle avatarCircle;
@@ -26,6 +27,7 @@ public class UserProfileController {
 
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
+  /** Member. */
   @FXML
   public void initialize() {
     loadUserProfile();
@@ -42,16 +44,14 @@ public class UserProfileController {
       }
       return;
     }
-    // ===== HIỂN THỊ AVATAR =====
     if (avatarCircle != null) {
-      avatarCircle.setFill(Color.web("#673ab7")); // Màu tím chính
+      avatarCircle.setFill(Color.web("#673ab7"));
       avatarCircle.setRadius(80);
     }
     if (avatarLabel != null) {
       String firstLetter = currentUser.getName().substring(0, 1).toUpperCase();
       avatarLabel.setText(firstLetter);
     }
-    // ===== HIỂN THỊ THÔNG TIN =====
     if (userNameLabel != null) {
       userNameLabel.setText(currentUser.getName());
     }
@@ -67,22 +67,20 @@ public class UserProfileController {
     if (walletLabel != null) {
       BigDecimal balance = currentUser.getWallet().getTotalBalance();
       walletLabel.setText(String.format("💰 %s đ", currencyFormat.format(balance)));
-      // Đổi màu dựa trên số dư
       if (balance.compareTo(new BigDecimal("1000000")) < 0) {
-        walletLabel.setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;"); // Đỏ
+        walletLabel.setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;");
       } else {
-        walletLabel.setStyle("-fx-text-fill: #4caf50; -fx-font-weight: bold;"); // Xanh
+        walletLabel.setStyle("-fx-text-fill: #4caf50; -fx-font-weight: bold;");
       }
     }
   }
 
+  /** Member. */
   @FXML
   public void handleLogout(ActionEvent event) {
     try {
-      // Xóa user từ Client
       Client.getInstance().setCurrentUser(null);
       AlertUtils.showInfo("Thành công", "Đã đăng xuất!");
-      // Quay lại login
       NavigationManager.getInstance().navigateTo(View.LOGIN);
     } catch (Exception e) {
       AlertUtils.showError("Lỗi", "Không thể đăng xuất: " + e.getMessage());
@@ -90,6 +88,7 @@ public class UserProfileController {
     }
   }
 
+  /** Member. */
   @FXML
   public void handleBack(ActionEvent event) {
     try {

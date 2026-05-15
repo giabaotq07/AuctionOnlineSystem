@@ -1,7 +1,7 @@
 package app.dao.impl;
 
-import app.dao.BaseDAO;
-import app.dao.UserDAO;
+import app.dao.BaseDao;
+import app.dao.UserDao;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
 import app.models.Account;
@@ -9,13 +9,19 @@ import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class MySqlUserDAO extends BaseDAO implements UserDAO {
-  public MySqlUserDAO() {}
+/** MySqlUserDao. */
+public class MySqlUserDao extends BaseDao implements UserDao {
+  /** MySqlUserDao. */
+  public MySqlUserDao() {}
 
   private static final String TABLE = "users";
   private static final String BASE_SELECT =
@@ -125,7 +131,12 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
     boolean ok =
         executeUpdate(
             conn,
-            "UPDATE users SET username = ?, password = ?, full_name = ?, available_balance = ?, frozen_funds = ?, role = ? WHERE id = ?",
+            """
+            UPDATE users
+            SET username = ?, password = ?, full_name = ?, available_balance = ?,
+                frozen_funds = ?, role = ?
+            WHERE id = ?
+            """,
             user.getAccount().getUsername(),
             // Expect password to be already hashed by service layer
             user.getAccount().getPassword(),

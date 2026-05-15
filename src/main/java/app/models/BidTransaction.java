@@ -2,6 +2,7 @@ package app.models;
 
 import java.time.LocalDateTime;
 
+/** BidTransaction. */
 public class BidTransaction {
   private int id;
   private int bidderId;
@@ -10,6 +11,7 @@ public class BidTransaction {
   private LocalDateTime createAt;
   private boolean isAutoBid;
 
+  /** BidTransaction. */
   public BidTransaction(
       int id,
       int bidderId,
@@ -25,6 +27,7 @@ public class BidTransaction {
     this.isAutoBid = isAutoBid;
   }
 
+  /** BidTransaction. */
   public BidTransaction(int bidderId, String bidderName, long amount, boolean isAutoBid) {
     this.bidderId = bidderId;
     this.bidderName = bidderName;

@@ -1,8 +1,8 @@
 package app.service;
 
-import app.dao.AuctionDAO;
-import app.dao.BidDAO;
-import app.dao.UserDAO;
+import app.dao.AuctionDao;
+import app.dao.BidDao;
+import app.dao.UserDao;
 import app.data.PlaceBidResponse;
 import app.database.TransactionManager;
 import app.exception.ServiceException;
@@ -10,35 +10,38 @@ import app.models.Auction;
 import app.models.User;
 import java.math.BigDecimal;
 
+/** BidService. */
 public class BidService {
-  private final BidDAO bidDAO;
-  private final AuctionDAO auctionDAO;
-  private final UserDAO userDAO;
+  private final BidDao bidDao;
+  private final AuctionDao auctionDao;
+  private final UserDao userDao;
   private final TransactionManager transactionManager;
   private final BidValidator bidValidator;
   private final AntiSnipeService antiSnipeService;
 
+  /** BidService. */
   public BidService(
-      BidDAO bidDAO,
-      AuctionDAO auctionDAO,
-      UserDAO userDAO,
+      BidDao bidDao,
+      AuctionDao auctionDao,
+      UserDao userDao,
       TransactionManager transactionManager,
       BidValidator bidValidator,
       AntiSnipeService antiSnipeService) {
-    this.bidDAO = bidDAO;
-    this.auctionDAO = auctionDAO;
-    this.userDAO = userDAO;
+    this.bidDao = bidDao;
+    this.auctionDao = auctionDao;
+    this.userDao = userDao;
     this.transactionManager = transactionManager;
     this.bidValidator = bidValidator;
     this.antiSnipeService = antiSnipeService;
   }
 
+  /** placeBid. */
   public PlaceBidResponse placeBid(int auctionId, int userId, long bidAmount) {
     return transactionManager.runInTransaction(
         conn -> {
-          auctionDAO.lockRow(conn, auctionId);
+          auctionDao.lockRow(conn, auctionId);
           Auction auction =
-              auctionDAO
+              auctionDao
                   .findById(conn, auctionId)
                   .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
           if (auction.getSellerId() == userId) {
@@ -47,9 +50,9 @@ public class BidService {
           bidValidator.validateAuctionState(auction);
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
           bidValidator.validateSelfBid(userId, auction.getWinnerId());
-          userDAO.lockRow(conn, userId);
+          userDao.lockRow(conn, userId);
           User bidder =
-              userDAO
+              userDao
                   .findById(conn, userId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           try {
@@ -61,9 +64,9 @@ public class BidService {
           }
           auction.updateHighestBid(bidAmount, userId);
           antiSnipeService.apply(auction);
-          bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
-          userDAO.update(conn, bidder);
-          auctionDAO.update(conn, auction);
+          bidDao.insertBid(conn, auctionId, userId, bidAmount, false);
+          userDao.update(conn, bidder);
+          auctionDao.update(conn, auction);
           return new PlaceBidResponse(
               true, auction.getId(), auction.getHighestBid(), auction.getWinnerId(), "Success");
         });

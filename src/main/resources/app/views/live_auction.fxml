@@ -24,7 +24,7 @@
                 <padding>
                     <Insets left="40.0" right="40.0" />
                 </padding>
-                <Button mnemonicParsing="false" onAction="#SwitchToUI" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold; -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
+                <Button mnemonicParsing="false" onAction="#switchToUi" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold; -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Label alignment="CENTER" contentDisplay="CENTER" style="-fx-font-weight: bold; -fx-font-size: 24px;" text="CHI TIẾT TÀI SẢN ĐẤU GIÁ" textFill="WHITE" />
             </HBox>
@@ -110,3 +110,4 @@
         </HBox>
     </bottom>
 </BorderPane>
+

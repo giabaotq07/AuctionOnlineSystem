@@ -23,6 +23,7 @@ import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** DepositController. */
 public class DepositController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(DepositController.class);
   @FXML private TextField depositAmountField;
@@ -33,6 +34,7 @@ public class DepositController implements Cleanable {
   private BigDecimal pendingDepositAmount;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
+  /** Member. */
   @FXML
   public void initialize() {
     setupWalletListener();
@@ -87,6 +89,7 @@ public class DepositController implements Cleanable {
     return currencyFormat.format(amount);
   }
 
+  /** Member. */
   @FXML
   public void handleDeposit(ActionEvent event) {
     if (!client.isConnected()) {
@@ -122,6 +125,7 @@ public class DepositController implements Cleanable {
     }
   }
 
+  /** Member. */
   @FXML
   public void handleBack(ActionEvent event) {
     NavigationManager.getInstance().navigateTo(View.UI);

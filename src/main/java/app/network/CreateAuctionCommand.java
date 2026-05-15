@@ -6,18 +6,25 @@ import app.data.CreateAuctionRequest;
 import app.data.CreateAuctionResponse;
 import app.enums.PacketType;
 import app.enums.UserRole;
-import app.models.*;
+import app.models.Auction;
+import app.models.Item;
+import app.models.ItemFactory;
+import app.models.PacketReq;
+import app.models.PacketRes;
+import app.models.User;
 import app.service.AuctionService;
 import app.service.ItemService;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** CreateAuctionCommand. */
 public class CreateAuctionCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
   private final ItemService itemService;
 
+  /** CreateAuctionCommand. */
   public CreateAuctionCommand(AuctionService auctionService, ItemService itemService) {
     this.auctionService = auctionService;
     this.itemService = itemService;
@@ -80,11 +87,8 @@ public class CreateAuctionCommand implements Command {
       CreateAuctionResponse response =
           new CreateAuctionResponse(true, "Tạo phiên thành công", summary);
       PacketRes packetRes = PacketRes.of(true, PacketType.CREATE_AUCTION, response);
-      // response cho creator
       clientHandler.sendPacket(packetRes);
-      // broadcast auction mới
       Server.broadcast(packetRes, user.getId());
-      // broadcast refresh list
       broadcastAuctionList();
       logger.info("Auction created successfully by user {}", user.getId());
     } catch (Exception e) {

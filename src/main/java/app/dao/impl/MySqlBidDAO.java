@@ -1,16 +1,21 @@
 package app.dao.impl;
 
-import app.dao.BaseDAO;
-import app.dao.BidDAO;
+import app.dao.BaseDao;
+import app.dao.BidDao;
 import app.exception.DatabaseException;
-import app.models.*;
-import java.sql.*;
+import app.models.BidTransaction;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class MySqlBidDAO extends BaseDAO implements BidDAO {
-  public MySqlBidDAO() {}
+/** MySqlBidDao. */
+public class MySqlBidDao extends BaseDao implements BidDao {
+  /** MySqlBidDao. */
+  public MySqlBidDao() {}
 
   private static final String BID_SELECT =
       """
@@ -117,13 +122,14 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
     }
   }
 
-  // ── Private helpers ───────────────────────────────────────────
   private List<BidTransaction> queryBids(Connection conn, String sql, int auctionId) {
     List<BidTransaction> bids = new ArrayList<>();
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, auctionId);
       try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) bids.add(mapBid(rs));
+        while (rs.next()) {
+          bids.add(mapBid(rs));
+        }
       }
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi truy vấn bids.", e);

@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlItemDAO;
-import app.dao.impl.MySqlUserDAO;
+import app.dao.impl.MySqlAuctionDao;
+import app.dao.impl.MySqlItemDao;
+import app.dao.impl.MySqlUserDao;
 import app.database.DatabaseConnection;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
@@ -19,30 +19,30 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class MySqlAuctionDAOTest extends BaseDAOTest {
-  private UserDAO userDAO;
-  private ItemDAO itemDAO;
-  private AuctionDAO auctionDAO;
+class MySqlAuctionDaoTest extends BaseDaoTest {
+  private UserDao userDao;
+  private ItemDao itemDao;
+  private AuctionDao auctionDao;
   private User seller;
 
   @BeforeEach
   void setUp() {
-    userDAO = new MySqlUserDAO();
-    itemDAO = new MySqlItemDAO();
-    auctionDAO = new MySqlAuctionDAO();
-    seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
+    userDao = new MySqlUserDao();
+    itemDao = new MySqlItemDao();
+    auctionDao = new MySqlAuctionDao();
+    seller = userDao.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 
   @Test
   void save_shouldPersistAuctionAndReturnGeneratedId() {
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
+    Item item = itemDao.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
     Auction saved =
-        auctionDAO.save(
+        auctionDao.save(
             TestFixtures.auction(
                 item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
 
     assertTrue(saved.getId() > 0);
-    Auction found = auctionDAO.findById(saved.getId()).orElseThrow();
+    Auction found = auctionDao.findById(saved.getId()).orElseThrow();
     assertEquals(item.getId(), found.getItemId());
     assertEquals(seller.getId(), found.getSellerId());
     assertEquals(AuctionStatus.OPEN, found.getStatus());
@@ -52,10 +52,10 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
 
   @Test
   void update_shouldPersistStatusWinnerAndBidState() {
-    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Camera", ItemType.ELECTRONICS));
+    User bidder = userDao.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
+    Item item = itemDao.save(TestFixtures.item(seller.getId(), "Camera", ItemType.ELECTRONICS));
     Auction auction =
-        auctionDAO.save(
+        auctionDao.save(
             TestFixtures.auction(
                 item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
     auction.start();
@@ -63,10 +63,10 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
     auction.setStatus(AuctionStatus.FINISHED);
     auction.setEndTime(LocalDateTime.now().plusMinutes(10));
 
-    boolean updated = auctionDAO.update(auction);
+    boolean updated = auctionDao.update(auction);
 
     assertTrue(updated);
-    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    Auction found = auctionDao.findById(auction.getId()).orElseThrow();
     assertEquals(AuctionStatus.FINISHED, found.getStatus());
     assertEquals(bidder.getId(), found.getWinnerId());
     assertEquals(1500L, found.getHighestBid());
@@ -77,9 +77,9 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
 
   @Test
   void updateIfVersionMatches_shouldUpdateOnlyWhenExpectedVersionMatches() throws Exception {
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Watch", ItemType.ART));
+    Item item = itemDao.save(TestFixtures.item(seller.getId(), "Watch", ItemType.ART));
     Auction auction =
-        auctionDAO.save(
+        auctionDao.save(
             TestFixtures.auction(
                 item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
     int initialVersion = auction.getVersion();
@@ -87,10 +87,10 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
     auction.setStatus(AuctionStatus.CANCELED);
     boolean updated;
     try (var conn = DatabaseConnection.getDataSource().getConnection()) {
-      updated = auctionDAO.updateIfVersionMatches(conn, auction, initialVersion);
+      updated = auctionDao.updateIfVersionMatches(conn, auction, initialVersion);
     }
 
-    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    Auction found = auctionDao.findById(auction.getId()).orElseThrow();
     assertTrue(updated);
     assertEquals(AuctionStatus.CANCELED, found.getStatus());
     assertEquals(initialVersion + 1, found.getVersion());
@@ -98,10 +98,10 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
     found.setStatus(AuctionStatus.RUNNING);
     boolean staleUpdate;
     try (var conn = DatabaseConnection.getDataSource().getConnection()) {
-      staleUpdate = auctionDAO.updateIfVersionMatches(conn, found, initialVersion);
+      staleUpdate = auctionDao.updateIfVersionMatches(conn, found, initialVersion);
     }
 
-    Auction unchanged = auctionDAO.findById(auction.getId()).orElseThrow();
+    Auction unchanged = auctionDao.findById(auction.getId()).orElseThrow();
     assertFalse(staleUpdate);
     assertEquals(AuctionStatus.CANCELED, unchanged.getStatus());
     assertEquals(initialVersion + 1, unchanged.getVersion());
@@ -109,21 +109,21 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
 
   @Test
   void findByStatusAndSeller_shouldFilterAuctions() {
-    Item firstItem = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-    Item secondItem = itemDAO.save(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
+    Item firstItem = itemDao.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
+    Item secondItem = itemDao.save(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
     Auction openAuction =
-        auctionDAO.save(
+        auctionDao.save(
             TestFixtures.auction(
                 firstItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
     Auction runningAuction =
-        auctionDAO.save(
+        auctionDao.save(
             TestFixtures.auction(
                 secondItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 2000L));
     runningAuction.start();
-    auctionDAO.update(runningAuction);
+    auctionDao.update(runningAuction);
 
-    var openAuctions = auctionDAO.findByStatus(AuctionStatus.OPEN);
-    var sellerAuctions = auctionDAO.findBySeller(seller.getId());
+    var openAuctions = auctionDao.findByStatus(AuctionStatus.OPEN);
+    var sellerAuctions = auctionDao.findBySeller(seller.getId());
 
     assertEquals(1, openAuctions.size());
     assertEquals(openAuction.getId(), openAuctions.getFirst().getId());
@@ -132,14 +132,14 @@ class MySqlAuctionDAOTest extends BaseDAOTest {
 
   @Test
   void delete_shouldRemoveAuction() {
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Tablet", ItemType.ELECTRONICS));
+    Item item = itemDao.save(TestFixtures.item(seller.getId(), "Tablet", ItemType.ELECTRONICS));
     Auction auction =
-        auctionDAO.save(
+        auctionDao.save(
             TestFixtures.auction(
                 item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
 
-    assertTrue(auctionDAO.delete(auction.getId()));
+    assertTrue(auctionDao.delete(auction.getId()));
 
-    assertFalse(auctionDAO.findById(auction.getId()).isPresent());
+    assertFalse(auctionDao.findById(auction.getId()).isPresent());
   }
 }

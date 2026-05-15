@@ -1,19 +1,26 @@
 package app.dao.impl;
 
-import app.dao.AuctionDAO;
-import app.dao.BaseDAO;
+import app.dao.AuctionDao;
+import app.dao.BaseDao;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
-import app.models.*;
-import java.sql.*;
+import app.models.Auction;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
-  private static final Logger logger = LoggerFactory.getLogger(MySqlAuctionDAO.class);
+/** MySqlAuctionDao. */
+public class MySqlAuctionDao extends BaseDao implements AuctionDao {
+  private static final Logger logger = LoggerFactory.getLogger(MySqlAuctionDao.class);
   private static final String TABLE = "auction_sessions";
   private static final String BASE_SELECT =
       """
@@ -36,7 +43,8 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
               LEFT JOIN users w ON s.winner_id = w.id
               """;
 
-  public MySqlAuctionDAO() {}
+  /** MySqlAuctionDao. */
+  public MySqlAuctionDao() {}
 
   private Auction mapAuction(ResultSet rs) throws SQLException {
     return new Auction(
@@ -58,7 +66,6 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
         rs.getTimestamp("updated_at").toLocalDateTime());
   }
 
-  // ── Read methods ──────────────────────────────────────────────
   @Override
   public Optional<Auction> findById(int id) {
     return withConnection(conn -> findById(conn, id), "Lỗi kết nối khi tải phiên đấu giá.");
@@ -112,15 +119,9 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
     }
   }
 
-  // ── Write methods ─────────────────────────────────────────────
   @Override
   public Auction save(Auction auction) {
     return withConnection(conn -> save(conn, auction), "Lỗi kết nối khi tạo auction.");
-  }
-
-  @Override
-  public boolean update(Auction auction) {
-    return withConnection(conn -> update(conn, auction), "Lỗi kết nối khi cập nhật phiên đấu giá.");
   }
 
   @Override
@@ -154,6 +155,11 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
   }
 
   @Override
+  public boolean update(Auction auction) {
+    return withConnection(conn -> update(conn, auction), "Lỗi kết nối khi cập nhật phiên đấu giá.");
+  }
+
+  @Override
   public boolean update(Connection conn, Auction auction) {
     String sql =
         "UPDATE auction_sessions SET status = ?, start_time = ?, end_time = ?, highest_bid = ?, "
@@ -182,7 +188,8 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
             + "extended_count = ?, winner_id = ?, version = version + 1 "
             + "WHERE id = ? AND version = ?";
     logger.info(
-        "[DAO] Reviewing auction with version check: auctionId={}, status={}, expectedVersion={}, modelVersion={}",
+        "[DAO] Reviewing auction with version check: auctionId={}, status={}, "
+            + "expectedVersion={}, modelVersion={}",
         auction.getId(),
         auction.getStatus(),
         expectedVersion,
@@ -233,7 +240,6 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
         "Lỗi kết nối khi xóa phiên đấu giá.");
   }
 
-  // ── Private helpers ───────────────────────────────────────────
   private Optional<Auction> findOne(Connection conn, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);

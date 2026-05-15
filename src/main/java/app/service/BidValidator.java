@@ -4,9 +4,11 @@ import app.enums.AuctionStatus;
 import app.exception.ServiceException;
 import app.models.Auction;
 
+/** BidValidator. */
 public class BidValidator {
   private static final long MIN_INCREMENT = 1L;
 
+  /** validateAuctionState. */
   public void validateAuctionState(Auction auction) {
     if (auction.getStatus() != AuctionStatus.RUNNING) {
       throw new ServiceException(
@@ -14,6 +16,7 @@ public class BidValidator {
     }
   }
 
+  /** validateBidAmount. */
   public void validateBidAmount(long bidAmount, long currentPrice) {
     long minimumRequired = currentPrice + MIN_INCREMENT;
     if (bidAmount < minimumRequired) {
@@ -21,6 +24,7 @@ public class BidValidator {
     }
   }
 
+  /** validateSelfBid. */
   public void validateSelfBid(int userId, Integer currentWinnerId) {
     if (currentWinnerId != null && currentWinnerId == userId) {
       throw new ServiceException("Bạn đang là người giữ giá cao nhất.");

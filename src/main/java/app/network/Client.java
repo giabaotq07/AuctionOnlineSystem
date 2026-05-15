@@ -7,7 +7,11 @@ import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
 import app.utils.JsonUtil;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.List;
@@ -17,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Client. */
 public class Client {
   private static final Logger logger = LoggerFactory.getLogger(Client.class);
   private static volatile Client instance;
@@ -35,6 +40,7 @@ public class Client {
 
   private Client() {}
 
+  /** getInstance. */
   public static Client getInstance() {
     if (instance == null) {
       synchronized (Client.class) {
@@ -46,6 +52,7 @@ public class Client {
     return instance;
   }
 
+  /** connect. */
   public synchronized void connect() throws IOException {
     if (connected) {
       return;
@@ -114,6 +121,7 @@ public class Client {
     }
   }
 
+  /** sendRequest. */
   public synchronized void sendRequest(PacketReq packet) throws IOException {
     if (!connected || closed || writer == null) {
       throw new ConnectException("Chưa kết nối tới server");
@@ -129,6 +137,7 @@ public class Client {
     }
   }
 
+  /** Member. */
   @SuppressWarnings("unchecked")
   public <T extends Response> void notifyListeners(PacketType packetType, T response) {
     List<PacketListener<?>> listeners = listenersMap.get(packetType);
@@ -145,12 +154,14 @@ public class Client {
     }
   }
 
+  /** subscribe. */
   public <T extends Response> void subscribe(PacketType packetType, PacketListener<T> listener) {
     listenersMap
         .computeIfAbsent(packetType, k -> new CopyOnWriteArrayList<>())
         .addIfAbsent(listener);
   }
 
+  /** unsubscribe. */
   public <T extends Response> void unsubscribe(PacketType packetType, PacketListener<T> listener) {
     List<PacketListener<?>> listeners = listenersMap.get(packetType);
     if (listeners == null) {
@@ -162,10 +173,12 @@ public class Client {
     }
   }
 
+  /** clearListeners. */
   public void clearListeners() {
     listenersMap.clear();
   }
 
+  /** closeResources. */
   public synchronized void closeResources() {
     if (closed) {
       return;

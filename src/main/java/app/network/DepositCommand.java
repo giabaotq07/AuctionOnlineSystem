@@ -14,10 +14,12 @@ import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** DepositCommand. */
 public class DepositCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(DepositCommand.class);
   private final UserService userService;
 
+  /** DepositCommand. */
   public DepositCommand(UserService userService) {
     this.userService = userService;
   }
