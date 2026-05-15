@@ -1,164 +1,136 @@
-# Design Patterns - He thong Dau gia Truc tuyen
+# Design Patterns - Hệ thống Đấu giá Trực tuyến
 
-Tai lieu nay chi liet ke cac design pattern thuc su ro rang dang duoc ap dung trong du an. Cac ky thuat nhu thread pool, transaction, concurrency control, client-server layering, exception hierarchy... khong duoc dua vao danh sach chinh vi chung nghieng ve kien truc hoac ky thuat trien khai hon la design pattern OOP.
+Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đang được áp dụng trong dự án. Các kỹ thuật như thread pool, transaction, concurrency control, client-server layering, exception hierarchy... không được đưa vào danh sách chính vì chúng nghiêng về kiến trúc hoặc kỹ thuật triển khai hơn là design pattern OOP.
 
 ---
 
 ## 1. Singleton Pattern
+**Ý nghĩa:** Đảm bảo một class chỉ có một instance dùng chung trong vòng đời ứng dụng.
 
-**Y nghia:** Dam bao mot class chi co mot instance dung chung trong vong doi ung dung.
+**Nơi áp dụng:**
+* `app.database.DatabaseConnection`: Quản lý duy nhất một `HikariDataSource` dùng chung cho toàn bộ ứng dụng.
+* `app.network.Client`: Mỗi client JavaFX dùng một instance socket chính để kết nối server và quản lý listener.
+* `app.network.Server`: Quản lý server socket, service graph và thread pool thông qua `Server.getInstance()`.
+* `app.models.DataStore`: Lưu state cục bộ phía client như user hiện tại, danh sách phiên đấu giá và phiên đang xem.
+* `app.controllers.manager.NavigationManager`: Quản lý `primaryStage`, controller hiện tại và điều hướng màn hình JavaFX.
 
-**Noi ap dung:**
-
-* `app.database.DatabaseConnection`: Quan ly duy nhat mot `HikariDataSource` dung chung cho toan bo ung dung.
-* `app.network.Client`: Moi client JavaFX dung mot instance socket chinh de ket noi server va quan ly listener.
-* `app.network.Server`: Quan ly server socket, service graph va thread pool thong qua `Server.getInstance()`.
-* `app.models.DataStore`: Luu state cuc bo phia client nhu user hien tai, danh sach phien dau gia va phien dang xem.
-* `app.controllers.manager.NavigationManager`: Quan ly `primaryStage`, controller hien tai va dieu huong man hinh JavaFX.
-
-**Ghi chu:** `JsonUtil`, `PasswordUtils`, `AlertUtils` la static utility classes, khong phai Singleton dung nghia vi khong quan ly mot instance co state.
+**Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý một instance có state.
 
 ---
 
 ## 2. Factory Pattern / Simple Factory
+**Ý nghĩa:** Đóng gói logic tạo object, giúp code gọi không cần biết class con cụ thể.
 
-**Y nghia:** Dong goi logic tao object, giup code goi khong can biet class con cu the.
+**Nơi áp dụng:**
+* `app.models.ItemFactory`: Tạo subclass của `Item` theo `ItemType`, ví dụ `Electronics`, `Art`, `Vehicle`.
+* `app.models.UserFactory`: Tạo subclass của `User` theo `UserRole`, ví dụ `Admin`, `Seller`, `Bidder`.
+* `app.models.PacketReq` và `app.models.PacketRes`: Dùng static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response.
 
-**Noi ap dung:**
-
-* `app.models.ItemFactory`: Tao subclass cua `Item` theo `ItemType`, vi du `Electronics`, `Art`, `Vehicle`.
-* `app.models.UserFactory`: Tao subclass cua `User` theo `UserRole`, vi du `Admin`, `Seller`, `Bidder`.
-* `app.models.PacketReq` va `app.models.PacketRes`: Dung static factory methods nhu `of(...)`, `success(...)`, `error(...)` de chuan hoa cach tao packet request/response.
-
-**Loi ich trong du an:**
-
-* Giam viec rai `new Electronics(...)`, `new Bidder(...)` o nhieu noi.
-* Khi them loai item hoac role moi, logic tao object tap trung tai factory.
+**Lợi ích trong dự án:**
+* Giảm việc rải `new Electronics(...)`, `new Bidder(...)` ở nhiều nơi.
+* Khi thêm loại item hoặc role mới, logic tạo object tập trung tại factory.
 
 ---
 
 ## 3. Command Pattern
+**Ý nghĩa:** Đóng gói mỗi request thành một object có thể thực thi qua cùng một contract.
 
-**Y nghia:** Dong goi moi request thanh mot object co the thuc thi qua cung mot contract.
+**Nơi áp dụng:**
+* `app.network.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)`.
+* Các command cụ thể như `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`.
+* `app.network.ClientHandler` tạo bảng đăng ký command theo `PacketType`, sau đó dispatch request đến command tương ứng.
 
-**Noi ap dung:**
-
-* `app.network.Command` dinh nghia method `execute(ClientHandler clientHandler, PacketReq packet)`.
-* Cac command cu the nhu `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`.
-* `app.network.ClientHandler` tao bang dang ky command theo `PacketType`, sau do dispatch request den command tuong ung.
-
-**Loi ich trong du an:**
-
-* Server khong bi don logic xu ly request vao mot `switch` hoac `if-else` lon.
-* Them request moi chi can them DTO, `PacketType`, command moi va dang ky command.
+**Lợi ích trong dự án:**
+* Server không bị dồn logic xử lý request vào một `switch` hoặc `if-else` lớn.
+* Thêm request mới chỉ cần thêm DTO, `PacketType`, command mới và đăng ký command.
 
 ---
 
 ## 4. Observer Pattern / Pub-Sub Variant
+**Ý nghĩa:** Cho phép nhiều thành phần đăng ký lắng nghe sự kiện. Khi packet tương ứng xuất hiện, publisher thông báo đến các listener đã subscribe.
 
-**Y nghia:** Cho phep nhieu thanh phan dang ky lang nghe su kien. Khi packet tuong ung xuat hien, publisher thong bao den cac listener da subscribe.
+**Nơi áp dụng:**
+* `app.network.PacketListener<T>` là callback interface.
+* `app.network.Client` quản lý `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>>`.
+* `Client.subscribe(...)`, `Client.unsubscribe(...)`, `Client.notifyListeners(...)` tạo cơ chế pub-sub phía client.
+* Các controller như `FirstScene`, `LiveController`, `MyHistoryController`, `DepositController`, `RegisterController`, `LoginController`, `MessController`, `AuctionController` đăng ký listener theo từng `PacketType`.
+* `app.network.Server.broadcast(...)` gửi packet đến nhiều client đang online để cập nhật realtime giá thầu, chat, danh sách phiên đấu giá và ví.
 
-**Noi ap dung:**
-
-* `app.network.PacketListener<T>` la callback interface.
-* `app.network.Client` quan ly `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>>`.
-* `Client.subscribe(...)`, `Client.unsubscribe(...)`, `Client.notifyListeners(...)` tao co che pub-sub phia client.
-* Cac controller nhu `FirstScene`, `LiveController`, `MyHistoryController`, `DepositController`, `RegisterController`, `LoginController`, `MessController`, `AuctionController` dang ky listener theo tung `PacketType`.
-* `app.network.Server.broadcast(...)` gui packet den nhieu client dang online de cap nhat realtime gia thau, chat, danh sach phien dau gia va vi.
-
-**Loi ich trong du an:**
-
-* Controller co the phan ung voi packet realtime ma khong can polling lien tuc.
-* Cac man hinh khac nhau co the lang nghe cung mot loai packet theo nhu cau rieng.
+**Lợi ích trong dự án:**
+* Controller có thể phản ứng với packet realtime mà không cần polling liên tục.
+* Các màn hình khác nhau có thể lắng nghe cùng một loại packet theo nhu cầu riêng.
 
 ---
 
 ## 5. DAO Pattern
+**Ý nghĩa:** Tách logic truy cập database khỏi business logic.
 
-**Y nghia:** Tach logic truy cap database khoi business logic.
-
-**Noi ap dung:**
-
+**Nơi áp dụng:**
 * Interface trong `app.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
 * Implementation trong `app.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
-* `app.dao.BaseDAO` gom helper dung chung nhu `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
+* `app.dao.BaseDAO` gồm helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
 
-**Loi ich trong du an:**
-
-* Service khong chua SQL truc tiep.
-* Co the thay doi cach luu tru du lieu bang cach thay implementation DAO.
-* Cac thao tac database duoc gom theo tung nhom domain ro rang.
+**Lợi ích trong dự án:**
+* Service không chứa SQL trực tiếp.
+* Có thể thay đổi cách lưu trữ dữ liệu bằng cách thay implementation DAO.
+* Các thao tác database được gom theo từng nhóm domain rõ ràng.
 
 ---
 
 ## 6. DTO Pattern
+**Ý nghĩa:** Đóng gói dữ liệu để truyền qua mạng hoặc giữa các tầng mà không kéo theo behavior nghiệp vụ.
 
-**Y nghia:** Dong goi du lieu de truyen qua mang hoac giua cac tang ma khong keo theo behavior nghiep vu.
+**Nơi áp dụng:**
+* Package `app.data` chứa các record làm request/response DTO, ví dụ `LoginRequest`, `LoginResponse`, `CreateAuctionRequest`, `AuctionDetailResponse`, `PlaceBidRequest`, `PlaceBidResponse`, `ChatRequest`, `ChatResponse`.
+* Marker interfaces `Request` và `Response` phân biệt dữ liệu vào/ra.
+* `PacketType` ánh xạ mỗi packet type với class request/response tương ứng.
+* `PacketReq` và `PacketRes` serialize/deserialize payload bằng Gson.
 
-**Noi ap dung:**
-
-* Package `app.data` chua cac `record` lam request/response DTO, vi du `LoginRequest`, `LoginResponse`, `CreateAuctionRequest`, `AuctionDetailResponse`, `PlaceBidRequest`, `PlaceBidResponse`, `ChatRequest`, `ChatResponse`.
-* Marker interfaces `Request` va `Response` phan biet du lieu vao/ra.
-* `PacketType` anh xa moi packet type voi class request/response tuong ung.
-* `PacketReq` va `PacketRes` serialize/deserialize payload bang Gson.
-
-**Loi ich trong du an:**
-
-* Client-server trao doi JSON nhat quan.
-* Domain model khong bi gui nguyen trang qua socket.
-* Response tra ve client chi gom du lieu can thiet.
+**Lợi ích trong dự án:**
+* Client-server trao đổi JSON nhất quán.
+* Domain model không bị gửi nguyên trạng qua socket.
+* Response trả về client chỉ gồm dữ liệu cần thiết.
 
 ---
 
 ## 7. Mapper Pattern
+**Ý nghĩa:** Chuyển đổi giữa domain model và DTO/view model để giảm phụ thuộc trực tiếp giữa tầng nghiệp vụ và dữ liệu trả về client.
 
-**Y nghia:** Chuyen doi giua domain model va DTO/view model de giam phu thuoc truc tiep giua tang nghiep vu va du lieu tra ve client.
+**Nơi áp dụng:**
+* `app.service.AuctionMapper`: Chuyển `Auction` thành `AuctionSummary` và `AuctionDetail`.
+* `app.data.UserData`: Tạo DTO từ `User`.
+* `app.data.ItemData`: Tạo DTO từ `Item`.
 
-**Noi ap dung:**
-
-* `app.service.AuctionMapper`: Chuyen `Auction` thanh `AuctionSummary` va `AuctionDetail`.
-* `app.data.UserData`: Tao DTO tu `User`.
-* `app.data.ItemData`: Tao DTO tu `Item`.
-
-**Loi ich trong du an:**
-
-* Man hinh danh sach khong can nhan toan bo du lieu chi tiet.
-* Response khong expose truc tiep moi field noi bo cua domain object.
-* Logic tinh/chon du lieu hien thi duoc tap trung tai mapper.
+**Lợi ích trong dự án:**
+* Màn hình danh sách không cần nhận toàn bộ dữ liệu chi tiết.
+* Response không expose trực tiếp mọi field nội bộ của domain object.
+* Logic tính/chọn dữ liệu hiển thị được tập trung tại mapper.
 
 ---
 
 ## 8. MVC Pattern
+**Ý nghĩa:** Tách giao diện, dữ liệu/domain model và logic điều khiển màn hình.
 
-**Y nghia:** Tach giao dien, du lieu/domain model va logic dieu khien man hinh.
+**Nơi áp dụng:**
+* **View:** `src/main/resources/app/views/` chứa các file FXML.
+* **Controller:** `app.controllers` chứa controller JavaFX như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MessController`.
+* **Model:** `app.models` chứa domain object như `Auction`, `Item`, `Wallet`, `User`, `BidTransaction`, `Session`, `DataStore`.
+* **Điều hướng:** `NavigationManager` load FXML, gắn CSS và thay scene trên `Stage`.
 
-**Noi ap dung:**
-
-* **View:** `src/main/resources/app/views/` chua cac file FXML.
-* **Controller:** `app.controllers` chua controller JavaFX nhu `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MessController`.
-* **Model:** `app.models` chua domain object nhu `Auction`, `Item`, `Wallet`, `User`, `BidTransaction`, `Session`, `DataStore`.
-* **Dieu huong:** `NavigationManager` load FXML, gan CSS va thay scene tren `Stage`.
-
-**Loi ich trong du an:**
-
-* UI, state/domain model va logic dieu khien man hinh duoc tach rieng.
-* Controller khong truy cap database truc tiep ma gui request qua client-server protocol.
+**Lợi ích trong dự án:**
+* UI, state/domain model và logic điều khiển màn hình được tách riêng.
+* Controller không truy cập database trực tiếp mà gửi request qua client-server protocol.
 
 ---
 
 ## 9. Registry / Dispatcher Pattern
+**Ý nghĩa:** Dùng một bảng đăng ký để ánh xạ key sang handler tương ứng, từ đó dispatch request mà không cần chuỗi `if-else` dài.
 
-**Y nghia:** Dung mot bang dang ky de anh xa key sang handler tuong ung, tu do dispatch request ma khong can chuoi `if-else` dai.
+**Nơi áp dụng:**
+* `ClientHandler.createCommands(...)` tạo `EnumMap<PacketType, Command>`.
+* `ClientHandler.handlePacket(...)` lấy command bằng `commands.get(type)` rồi gọi `execute(...)`.
+* `PacketType` đóng vai trò key chung cho protocol client-server.
 
-**Noi ap dung:**
-
-* `ClientHandler.createCommands(...)` tao `EnumMap<PacketType, Command>`.
-* `ClientHandler.handlePacket(...)` lay command bang `commands.get(type)` roi goi `execute(...)`.
-* `PacketType` dong vai tro key chung cho protocol client-server.
-
-**Loi ich trong du an:**
-
-* De nhin toan bo request server ho tro.
-* Moi command doc lap, giam rui ro sua request nay anh huong request khac.
-
----
+**Lợi ích trong dự án:**
+* Dễ nhìn toàn bộ request server hỗ trợ.
+* Mỗi command độc lập, giảm rủi ro sửa request này ảnh hưởng request khác.
