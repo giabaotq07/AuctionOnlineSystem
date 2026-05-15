@@ -27,7 +27,6 @@ public class Client {
   private static volatile Client instance;
   private static final String HOST = "127.0.0.1";
   private static final int PORT = 5000;
-  private final Object writeLock = new Object();
   private Socket socket;
   private BufferedWriter writer;
   private BufferedReader reader;
@@ -130,11 +129,9 @@ public class Client {
       throw new IllegalArgumentException("Packet cannot be null");
     }
     String json = JsonUtil.toJson(packet);
-    synchronized (writeLock) {
       writer.write(json);
       writer.newLine();
       writer.flush();
-    }
   }
 
   /** Member. */
