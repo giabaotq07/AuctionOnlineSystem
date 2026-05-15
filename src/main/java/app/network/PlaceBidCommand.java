@@ -1,5 +1,7 @@
 package app.network;
 
+import app.dto.AuctionDetail;
+import app.dto.AuctionDetailResponse;
 import app.dto.AuctionSummary;
 import app.dto.AuctionsResponse;
 import app.dto.PlaceBidRequest;
@@ -71,7 +73,8 @@ public class PlaceBidCommand implements Command {
       clientHandler.sendPacket(packetResponse);
       Server.broadcast(packetResponse, bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      broadcastAuctionList(clientHandler);
+      broadcastAuctionSumList(clientHandler);
+      broadcastAuctionDetail(clientHandler, auctionId);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
@@ -87,13 +90,23 @@ public class PlaceBidCommand implements Command {
     clientHandler.sendPacket(PacketRes.of(true, PacketType.WALLET_UPDATE, "OK", response));
   }
 
-  private void broadcastAuctionList(ClientHandler clientHandler) {
+  private void broadcastAuctionSumList(ClientHandler clientHandler) {
     try {
       List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
       AuctionsResponse response = new AuctionsResponse(summaries);
       Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
+    }
+  }
+
+    private void broadcastAuctionDetail(ClientHandler clientHandler, int auctionId) {
+    try {
+      AuctionDetail detail = auctionService.getAuctionDetail(auctionId);
+      AuctionDetailResponse response = new AuctionDetailResponse(detail);
+      Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response), -1);
+    } catch (Exception e) {
+      logger.error("Failed to broadcast auction detail", e);
     }
   }
 
