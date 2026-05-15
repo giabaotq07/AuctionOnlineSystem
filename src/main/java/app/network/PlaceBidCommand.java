@@ -100,7 +100,7 @@ public class PlaceBidCommand implements Command {
     }
   }
 
-    private void broadcastAuctionDetail(ClientHandler clientHandler, int auctionId) {
+  private void broadcastAuctionDetail(ClientHandler clientHandler, int auctionId) {
     try {
       AuctionDetail detail = auctionService.getAuctionDetail(auctionId);
       AuctionDetailResponse response = new AuctionDetailResponse(detail);
