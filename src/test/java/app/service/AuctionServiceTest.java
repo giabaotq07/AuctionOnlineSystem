@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.TestFixtures;
 import app.DAO.AuctionDAO;
 import app.DAO.BaseDAOTest;
 import app.DAO.BidDAO;
@@ -15,6 +14,7 @@ import app.DAO.impl.MySqlAuctionDAO;
 import app.DAO.impl.MySqlBidDAO;
 import app.DAO.impl.MySqlItemDAO;
 import app.DAO.impl.MySqlUserDAO;
+import app.TestFixtures;
 import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;

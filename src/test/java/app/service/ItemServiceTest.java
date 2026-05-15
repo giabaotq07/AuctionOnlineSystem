@@ -3,7 +3,6 @@ package app.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.TestFixtures;
 import app.DAO.AuctionDAO;
 import app.DAO.BaseDAOTest;
 import app.DAO.ItemDAO;
@@ -11,6 +10,7 @@ import app.DAO.UserDAO;
 import app.DAO.impl.MySqlAuctionDAO;
 import app.DAO.impl.MySqlItemDAO;
 import app.DAO.impl.MySqlUserDAO;
+import app.TestFixtures;
 import app.database.TransactionManager;
 import app.enums.ItemStatus;
 import app.enums.ItemType;

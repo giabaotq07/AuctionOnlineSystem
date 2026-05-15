@@ -129,9 +129,9 @@ public class Client {
       throw new IllegalArgumentException("Packet cannot be null");
     }
     String json = JsonUtil.toJson(packet);
-      writer.write(json);
-      writer.newLine();
-      writer.flush();
+    writer.write(json);
+    writer.newLine();
+    writer.flush();
   }
 
   /** Member. */
