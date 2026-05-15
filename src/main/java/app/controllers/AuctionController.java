@@ -43,21 +43,21 @@ public class AuctionController {
       typeComboBox.getSelectionModel().selectFirst();
     }
     createAuctionHandler =
-        (CreateAuctionResponse response) ->
+        (CreateAuctionResponse response, boolean success, String message) ->
             Platform.runLater(
                 () -> {
-                  if (response.success()) {
+                  if (success && response != null) {
                     if (response.auction() != null) {
                       DataStore.getInstance().auctions.add(response.auction());
                     }
-                    AlertUtils.showInfo("OK", response.message());
+                    AlertUtils.showInfo("OK", message);
                     if (createAuctionHandler != null) {
                       Client.getInstance()
                           .unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
                     }
                     NavigationManager.getInstance().navigateTo(View.UI);
                   } else {
-                    AlertUtils.showError("Lỗi", response.message());
+                    AlertUtils.showError("Lỗi", message);
                   }
                 });
     Client.getInstance().subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);

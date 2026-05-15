@@ -68,7 +68,7 @@ public class BidService {
           userDAO.update(conn, bidder);
           auctionDAO.update(conn, auction);
           return new PlaceBidResponse(
-              true, auction.getId(), auction.getHighestBid(), auction.getWinnerId(), "Success");
+              auction.getId(), auction.getHighestBid(), auction.getWinnerId());
         });
   }
 }

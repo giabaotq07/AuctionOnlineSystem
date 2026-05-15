@@ -5,11 +5,9 @@ import app.dto.AuctionsRequest;
 import app.dto.AuctionsResponse;
 import app.dto.UserData;
 import app.dto.WalletUpdateResponse;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ConnectException;
 import app.network.Client;
-import app.utils.AlertUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,10 +63,10 @@ public class DataStore {
     Client.getInstance()
         .subscribe(
             PacketType.FETCH_AUCTIONS,
-            (AuctionsResponse response) ->
+            (AuctionsResponse response, boolean success, String message) ->
                 Platform.runLater(
                     () -> {
-                      if (response.success() && response.auctions() != null) {
+                      if (success && response != null && response.auctions() != null) {
                         auctions = response.auctions();
                       }
                     }));
@@ -78,14 +76,10 @@ public class DataStore {
     Client.getInstance()
         .subscribe(
             PacketType.WALLET_UPDATE,
-            (WalletUpdateResponse response) ->
+            (WalletUpdateResponse response, boolean success, String message) ->
                 Platform.runLater(
                     () -> {
-                      if (response == null) {
-                        return;
-                      }
-                      if (response.status() != OperationStatus.SUCCESS) {
-                        AlertUtils.showError("Ví", response.message());
+                      if (!success || response == null) {
                         return;
                       }
                       if (response.user() != null) {

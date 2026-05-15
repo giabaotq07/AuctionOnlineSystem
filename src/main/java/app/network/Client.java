@@ -106,14 +106,18 @@ public class Client {
       logger.debug(
           "[CLIENT] Received packet type: {}, data: {}", packet.getType(), packet.getRawData());
       Response response = packet.getData();
-      if (response == null) {
+      if (!packet.isSuccess()) {
+        notifyListeners(packet.getType(), response, false, packet.getMessage());
+        return;
+      }
+      if (response == null && packet.getType().resClass != Void.class) {
         logger.warn(
             "[CLIENT] No response data for type: {} (data was: {})",
             packet.getType(),
             packet.getRawData());
         return;
       }
-      notifyListeners(packet.getType(), response);
+      notifyListeners(packet.getType(), response, true, packet.getMessage());
     } catch (Exception e) {
       logger.error("[CLIENT] Failed to process packet", e);
     }
@@ -135,7 +139,8 @@ public class Client {
 
   /** Member. */
   @SuppressWarnings("unchecked")
-  public <T extends Response> void notifyListeners(PacketType packetType, T response) {
+  public <T extends Response> void notifyListeners(
+      PacketType packetType, T response, boolean success, String message) {
     List<PacketListener<?>> listeners = listenersMap.get(packetType);
     if (listeners == null || listeners.isEmpty()) {
       return;
@@ -143,7 +148,7 @@ public class Client {
     for (PacketListener<?> listener : listeners) {
       try {
         PacketListener<T> typedListener = (PacketListener<T>) listener;
-        typedListener.handle(response);
+        typedListener.handle(response, success, message);
       } catch (Exception e) {
         logger.error("[CLIENT] Listener error: {}", packetType, e);
       }

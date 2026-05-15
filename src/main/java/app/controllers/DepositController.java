@@ -3,7 +3,6 @@ package app.controllers;
 import app.controllers.manager.NavigationManager;
 import app.dto.DepositRequest;
 import app.dto.WalletUpdateResponse;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.DataStore;
@@ -43,17 +42,15 @@ public class DepositController implements Cleanable {
 
   private void setupWalletListener() {
     walletUpdateHandler =
-        response ->
+        (response, success, message) ->
             Platform.runLater(
                 () -> {
-                  if (response == null) {
+                  if (!success) {
+                    pendingDepositAmount = null;
+                    AlertUtils.showError("Ví", message);
                     return;
                   }
-                  if (response.status() != OperationStatus.SUCCESS) {
-                    AlertUtils.showError("Ví", response.message());
-                    return;
-                  }
-                  if (response.user() != null) {
+                  if (response != null && response.user() != null) {
                     DataStore.getInstance().updateCurrentUser(response.user());
                   }
                   updateBalanceLabels(client.getCurrentUser());

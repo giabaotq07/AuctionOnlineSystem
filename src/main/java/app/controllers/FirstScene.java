@@ -6,7 +6,6 @@ import app.dto.AuctionsResponse;
 import app.dto.CreateAuctionResponse;
 import app.dto.WalletUpdateResponse;
 import app.enums.AuctionStatus;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
@@ -137,9 +136,13 @@ public class FirstScene implements Cleanable {
 
   private void setupListeners() {
     createAuctionHandler =
-        response ->
+        (response, success, message) ->
             Platform.runLater(
                 () -> {
+                  if (!success) {
+                    AlertUtils.showError("Lỗi", message);
+                    return;
+                  }
                   if (response == null || response.auction() == null) {
                     return;
                   }
@@ -155,9 +158,13 @@ public class FirstScene implements Cleanable {
                   updateListView();
                 });
     fetchAuctionsHandler =
-        response ->
+        (response, success, message) ->
             Platform.runLater(
                 () -> {
+                  if (!success) {
+                    AlertUtils.showError("Lỗi", message);
+                    return;
+                  }
                   if (response == null || response.auctions() == null) {
                     return;
                   }
@@ -323,17 +330,14 @@ public class FirstScene implements Cleanable {
 
   private void setupWalletListener() {
     walletUpdateHandler =
-        response ->
+        (response, success, message) ->
             Platform.runLater(
                 () -> {
-                  if (response == null) {
+                  if (!success) {
+                    AlertUtils.showError("Ví", message);
                     return;
                   }
-                  if (response.status() != OperationStatus.SUCCESS) {
-                    AlertUtils.showError("Ví", response.message());
-                    return;
-                  }
-                  if (response.user() != null) {
+                  if (response != null && response.user() != null) {
                     DataStore.getInstance().updateCurrentUser(response.user());
                     updateBalanceLabel(UserFactory.createUser(response.user()));
                   } else {

@@ -39,7 +39,7 @@ public class FetchHistoryCommand implements Command {
       // KHÔNG trust userId từ client
       int userId = user.getId();
       List<AuctionSummary> summaries = auctionService.getHistorySummaries(userId);
-      HistoryResponse response = new HistoryResponse(true, "OK", summaries);
+      HistoryResponse response = new HistoryResponse(summaries);
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_HISTORY, response));
     } catch (Exception e) {
       logger.error("Failed to fetch history", e);

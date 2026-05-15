@@ -28,7 +28,8 @@ public class CreateAuctionCommand implements Command {
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
       if (!clientHandler.isAuthenticated()) {
-        clientHandler.sendPacket(PacketRes.error("Authentication required"));
+        clientHandler.sendPacket(
+            PacketRes.error(PacketType.CREATE_AUCTION, "Authentication required"));
         return;
       }
       CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
@@ -47,9 +48,9 @@ public class CreateAuctionCommand implements Command {
               request.durationMinutes(),
               user.getId(),
               user.getRole());
-      CreateAuctionResponse response =
-          new CreateAuctionResponse(true, "Tạo phiên thành công", summary);
-      PacketRes packetRes = PacketRes.of(true, PacketType.CREATE_AUCTION, response);
+      CreateAuctionResponse response = new CreateAuctionResponse(summary);
+      PacketRes packetRes =
+          PacketRes.of(true, PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);
       Server.broadcast(packetRes, user.getId());
       broadcastAuctionList();
@@ -64,15 +65,13 @@ public class CreateAuctionCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(
-        PacketRes.of(
-            false, PacketType.CREATE_AUCTION, new CreateAuctionResponse(false, message, null)));
+    clientHandler.sendPacket(PacketRes.error(PacketType.CREATE_AUCTION, message));
   }
 
   private void broadcastAuctionList() {
     try {
       List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
-      AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
+      AuctionsResponse response = new AuctionsResponse(summaries);
       Server.broadcast(PacketRes.of(true, PacketType.FETCH_AUCTIONS, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);

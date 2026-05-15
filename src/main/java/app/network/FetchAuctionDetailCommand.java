@@ -36,7 +36,7 @@ public class FetchAuctionDetailCommand implements Command {
         return;
       }
       AuctionDetail detail = auctionService.getAuctionDetail(request.auctionId());
-      AuctionDetailResponse response = new AuctionDetailResponse(true, "OK", detail);
+      AuctionDetailResponse response = new AuctionDetailResponse(detail);
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction detail failed: {}", e.getMessage());

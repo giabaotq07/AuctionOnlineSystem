@@ -45,8 +45,10 @@ public class UpdateItemCommand implements Command {
       Item updated = itemService.updateManagedItem(item, user.getId(), user.getRole());
       clientHandler.sendPacket(
           PacketRes.of(
+              true,
               PacketType.UPDATE_ITEM,
-              new ItemResponse(true, "Cập nhật sản phẩm thành công.", new ItemData(updated))));
+              "Cập nhật sản phẩm thành công.",
+              new ItemResponse(new ItemData(updated))));
     } catch (ServiceException e) {
       logger.warn("Update item failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -57,7 +59,6 @@ public class UpdateItemCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(
-        PacketRes.of(false, PacketType.UPDATE_ITEM, new ItemResponse(false, message, null)));
+    clientHandler.sendPacket(PacketRes.error(PacketType.UPDATE_ITEM, message));
   }
 }

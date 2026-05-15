@@ -46,17 +46,17 @@ public class LoginController {
             + "-fx-background-position: center center;"
             + "-fx-background-repeat: no-repeat;");
     loginHandler =
-        (LoginResponse response) ->
+        (LoginResponse response, boolean success, String message) ->
             Platform.runLater(
                 () -> {
                   loginButton.setDisable(false);
-                  if (response.success()) {
+                  if (success && response != null && response.user() != null) {
                     User user = UserFactory.createUser(response.user());
                     Client.getInstance().setCurrentUser(user);
                     DataStore.getInstance().updateCurrentUser(response.user());
                     switchToUi();
                   } else {
-                    AlertUtils.showError("Đăng nhập thất bại", response.message());
+                    AlertUtils.showError("Đăng nhập thất bại", message);
                   }
                 });
     Client.getInstance().subscribe(PacketType.LOGIN, loginHandler);

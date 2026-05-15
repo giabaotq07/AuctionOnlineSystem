@@ -24,7 +24,7 @@ public class FetchAuctionsCommand implements Command {
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
       List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
-      AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
+      AuctionsResponse response = new AuctionsResponse(summaries);
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTIONS, response));
     } catch (Exception e) {
       logger.error("Failed to fetch auctions", e);

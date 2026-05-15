@@ -3,7 +3,6 @@ package app.network;
 import app.dto.SettleWalletRequest;
 import app.dto.UserData;
 import app.dto.WalletUpdateResponse;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;
@@ -42,10 +41,9 @@ public class SettleWalletCommand implements Command {
       int userId = clientHandler.getUser().getId();
       auctionService.getAuctionResult(auctionId);
       User updated = userService.getById(userId);
-      WalletUpdateResponse response =
-          new WalletUpdateResponse(
-              OperationStatus.SUCCESS, "Cập nhật ví thành công.", new UserData(updated));
-      clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
+      WalletUpdateResponse response = new WalletUpdateResponse(new UserData(updated));
+      clientHandler.sendPacket(
+          PacketRes.of(true, PacketType.WALLET_UPDATE, "Cập nhật ví thành công.", response));
     } catch (ServiceException e) {
       logger.warn("Settle wallet failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -56,7 +54,6 @@ public class SettleWalletCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    WalletUpdateResponse response = new WalletUpdateResponse(OperationStatus.ERROR, message, null);
-    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
+    clientHandler.sendPacket(PacketRes.error(PacketType.WALLET_UPDATE, message));
   }
 }

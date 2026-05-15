@@ -92,7 +92,7 @@ public class ClientHandler implements Runnable {
         try {
           PacketReq packet = JsonUtil.fromJson(line, PacketReq.class);
           if (packet == null || packet.getType() == null) {
-            sendPacket(PacketRes.of(false, PacketType.ERROR, "Packet type is required"));
+            sendPacket(PacketRes.error(PacketType.ERROR, "Packet type is required"));
             continue;
           }
           session.touch();
@@ -115,7 +115,7 @@ public class ClientHandler implements Runnable {
   private void handlePacket(PacketReq packet) {
     PacketType type = packet.getType();
     logger.info("Processing command: {}", type);
-    if (requiresAuthentication(type) && !requireLogin()) {
+    if (requiresAuthentication(type) && !requireLogin(type)) {
       return;
     }
     Command command = commands.get(type);
@@ -149,9 +149,9 @@ public class ClientHandler implements Runnable {
     };
   }
 
-  private boolean requireLogin() {
+  private boolean requireLogin(PacketType type) {
     if (!session.isAuthenticated()) {
-      sendPacket(PacketRes.error(PacketType.ERROR, "Authentication required"));
+      sendPacket(PacketRes.error(type, "Authentication required"));
       return false;
     }
     return true;

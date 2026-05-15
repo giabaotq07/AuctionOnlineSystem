@@ -37,7 +37,7 @@ public class FetchSellerItemsCommand implements Command {
               .map(ItemData::new)
               .toList();
       clientHandler.sendPacket(
-          PacketRes.of(PacketType.FETCH_SELLER_ITEMS, new ItemListResponse(true, "OK", items)));
+          PacketRes.of(PacketType.FETCH_SELLER_ITEMS, new ItemListResponse(items)));
     } catch (ServiceException e) {
       logger.warn("Fetch seller items failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -48,8 +48,6 @@ public class FetchSellerItemsCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(
-        PacketRes.of(
-            false, PacketType.FETCH_SELLER_ITEMS, new ItemListResponse(false, message, List.of())));
+    clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_SELLER_ITEMS, message));
   }
 }

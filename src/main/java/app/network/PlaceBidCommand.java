@@ -6,7 +6,6 @@ import app.dto.PlaceBidRequest;
 import app.dto.PlaceBidResponse;
 import app.dto.UserData;
 import app.dto.WalletUpdateResponse;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.UserRole;
 import app.exception.ServiceException;
@@ -67,7 +66,8 @@ public class PlaceBidCommand implements Command {
       bidderId = user.getId();
       PlaceBidResponse response = bidService.placeBid(auctionId, bidderId, bidAmount);
       auctionService.invalidateCache();
-      PacketRes packetResponse = PacketRes.of(PacketType.PLACE_BID, response);
+      PacketRes packetResponse =
+          PacketRes.of(true, PacketType.PLACE_BID, "Đặt giá thành công.", response);
       clientHandler.sendPacket(packetResponse);
       Server.broadcast(packetResponse, bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
@@ -83,15 +83,14 @@ public class PlaceBidCommand implements Command {
   }
 
   private void sendWalletUpdate(ClientHandler clientHandler, User user) {
-    WalletUpdateResponse response =
-        new WalletUpdateResponse(OperationStatus.SUCCESS, "OK", new UserData(user));
-    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
+    WalletUpdateResponse response = new WalletUpdateResponse(new UserData(user));
+    clientHandler.sendPacket(PacketRes.of(true, PacketType.WALLET_UPDATE, "OK", response));
   }
 
   private void broadcastAuctionList(ClientHandler clientHandler) {
     try {
       List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
-      AuctionsResponse response = new AuctionsResponse(true, "OK", summaries);
+      AuctionsResponse response = new AuctionsResponse(summaries);
       Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTIONS, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
@@ -99,8 +98,6 @@ public class PlaceBidCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    WalletUpdateResponse response = new WalletUpdateResponse(OperationStatus.FAIL, message, null);
-    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
     clientHandler.sendPacket(PacketRes.error(PacketType.PLACE_BID, message));
   }
 }

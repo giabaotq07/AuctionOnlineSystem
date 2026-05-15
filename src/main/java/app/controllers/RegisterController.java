@@ -62,17 +62,17 @@ public class RegisterController {
       System.err.println("Không load được background: " + e.getMessage());
     }
     registerHandler =
-        (RegisterResponse response) -> {
+        (RegisterResponse response, boolean success, String message) -> {
           Platform.runLater(
               () -> {
-                if (response.success()) {
-                  AlertUtils.showInfo("Thành công", response.message());
+                if (success) {
+                  AlertUtils.showInfo("Thành công", message);
                   if (registerHandler != null) {
                     Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
                   }
                   NavigationManager.getInstance().navigateTo(View.LOGIN);
                 } else {
-                  AlertUtils.showError("Thất bại", response.message());
+                  AlertUtils.showError("Thất bại", message);
                 }
               });
         };

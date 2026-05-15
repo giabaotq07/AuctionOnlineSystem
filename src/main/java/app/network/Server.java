@@ -110,7 +110,7 @@ public class Server {
   private void broadcastAuctionList() {
     try {
       var summaries = auctionService.getAuctionSummaries();
-      var response = new app.dto.AuctionsResponse(true, "OK", summaries);
+      var response = new app.dto.AuctionsResponse(summaries);
       broadcast(PacketRes.of(app.enums.PacketType.FETCH_AUCTIONS, response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);

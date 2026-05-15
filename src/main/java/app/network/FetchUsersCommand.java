@@ -28,8 +28,7 @@ public class FetchUsersCommand implements Command {
           userService.getAllUsers(clientHandler.getUser().getId()).stream()
               .map(UserData::new)
               .toList();
-      clientHandler.sendPacket(
-          PacketRes.of(PacketType.FETCH_USERS, new UsersResponse(true, "OK", users)));
+      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_USERS, new UsersResponse(users)));
     } catch (ServiceException e) {
       logger.warn("Fetch users failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -40,7 +39,6 @@ public class FetchUsersCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(
-        PacketRes.of(false, PacketType.FETCH_USERS, new UsersResponse(false, message, List.of())));
+    clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_USERS, message));
   }
 }

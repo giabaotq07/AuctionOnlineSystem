@@ -34,12 +34,16 @@ public class CancelAuctionCommand implements Command {
           auctionId, clientHandler.getUser().getId(), request.expectedVersion());
       clientHandler.sendPacket(
           PacketRes.of(
+              true,
               PacketType.CANCEL_AUCTION,
-              new CancelAuctionResponse(true, "Hủy phiên thành công.", auctionId)));
+              "Hủy phiên thành công.",
+              new CancelAuctionResponse(auctionId)));
       Server.broadcast(
           PacketRes.of(
+              true,
               PacketType.CANCEL_AUCTION,
-              new CancelAuctionResponse(true, "Phiên đã bị hủy.", auctionId)),
+              "Phiên đã bị hủy.",
+              new CancelAuctionResponse(auctionId)),
           clientHandler.getUser().getId());
     } catch (ServiceException e) {
       logger.warn("Cancel auction failed: {}", e.getMessage());
@@ -53,8 +57,6 @@ public class CancelAuctionCommand implements Command {
   private void sendError(ClientHandler clientHandler, int auctionId, String message) {
     clientHandler.sendPacket(
         PacketRes.of(
-            false,
-            PacketType.CANCEL_AUCTION,
-            new CancelAuctionResponse(false, message, auctionId)));
+            false, PacketType.CANCEL_AUCTION, message, new CancelAuctionResponse(auctionId)));
   }
 }

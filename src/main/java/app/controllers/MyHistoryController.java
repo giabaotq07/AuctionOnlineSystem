@@ -55,10 +55,14 @@ public class MyHistoryController implements Cleanable {
     typeFilterComboBox.setOnAction(e -> rebuildUi());
 
     historyHandler =
-        (HistoryResponse response) ->
+        (HistoryResponse response, boolean success, String message) ->
             Platform.runLater(
                 () -> {
-                  if (response.success() && response.auctions() != null) {
+                  if (!success) {
+                    AlertUtils.showError("Lỗi", message);
+                    return;
+                  }
+                  if (response != null && response.auctions() != null) {
 
                     summaries.clear();
 

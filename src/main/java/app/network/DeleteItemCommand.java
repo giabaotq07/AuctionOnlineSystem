@@ -36,8 +36,10 @@ public class DeleteItemCommand implements Command {
           itemService.softDeleteManagedItem(request.itemId(), user.getId(), user.getRole());
       clientHandler.sendPacket(
           PacketRes.of(
+              true,
               PacketType.DELETE_ITEM,
-              new ItemResponse(true, "Xóa sản phẩm thành công.", new ItemData(deleted))));
+              "Xóa sản phẩm thành công.",
+              new ItemResponse(new ItemData(deleted))));
     } catch (ServiceException e) {
       logger.warn("Delete item failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -48,7 +50,6 @@ public class DeleteItemCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(
-        PacketRes.of(false, PacketType.DELETE_ITEM, new ItemResponse(false, message, null)));
+    clientHandler.sendPacket(PacketRes.error(PacketType.DELETE_ITEM, message));
   }
 }

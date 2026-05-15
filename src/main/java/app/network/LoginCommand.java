@@ -45,8 +45,9 @@ public class LoginCommand implements Command {
       clientHandler.getSession().authenticate(user);
       Server.registerClient(user.getId(), clientHandler);
       logger.info("[SERVER] User {} logged in", username);
-      LoginResponse response = new LoginResponse(true, "Đăng nhập thành công!", new UserData(user));
-      clientHandler.sendPacket(PacketRes.of(PacketType.LOGIN, response));
+      LoginResponse response = new LoginResponse(new UserData(user));
+      clientHandler.sendPacket(
+          PacketRes.of(true, PacketType.LOGIN, "Đăng nhập thành công!", response));
     } catch (ServiceException e) {
       logger.warn("[SERVER] Login failed: {}", e.getMessage());
       sendError(clientHandler, "Sai tên tài khoản hoặc mật khẩu.");

@@ -197,12 +197,11 @@ public class AuctionService {
     handleCompletion(auctionId);
     Optional<BidTransaction> highest = bidDAO.findHighestBid(auctionId);
     if (highest.isEmpty()) {
-      return new AuctionResultResponse(
-          true, auctionId, new ProfileData(0, "chưa có người thắng"), 0);
+      return new AuctionResultResponse(auctionId, new ProfileData(0, "chưa có người thắng"), 0);
     }
     BidTransaction bid = highest.get();
     return new AuctionResultResponse(
-        true, auctionId, new ProfileData(bid.getBidderId(), bid.getBidderName()), bid.getAmount());
+        auctionId, new ProfileData(bid.getBidderId(), bid.getBidderName()), bid.getAmount());
   }
 
   /** updateStatus. */

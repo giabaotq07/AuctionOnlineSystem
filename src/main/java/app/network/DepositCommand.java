@@ -3,7 +3,6 @@ package app.network;
 import app.dto.DepositRequest;
 import app.dto.UserData;
 import app.dto.WalletUpdateResponse;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.exception.ServiceException;
 import app.models.PacketReq;
@@ -38,9 +37,8 @@ public class DepositCommand implements Command {
       }
       BigDecimal amount = request.amount();
       User user = userService.deposit(clientHandler.getUser().getId(), amount);
-      WalletUpdateResponse response =
-          new WalletUpdateResponse(OperationStatus.SUCCESS, "OK", new UserData(user));
-      clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
+      WalletUpdateResponse response = new WalletUpdateResponse(new UserData(user));
+      clientHandler.sendPacket(PacketRes.of(true, PacketType.WALLET_UPDATE, "OK", response));
     } catch (ServiceException e) {
       logger.warn("Deposit failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -51,7 +49,6 @@ public class DepositCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    WalletUpdateResponse response = new WalletUpdateResponse(OperationStatus.FAIL, message, null);
-    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
+    clientHandler.sendPacket(PacketRes.error(PacketType.WALLET_UPDATE, message));
   }
 }

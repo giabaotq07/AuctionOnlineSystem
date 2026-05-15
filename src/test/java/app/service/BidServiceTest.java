@@ -110,7 +110,6 @@ class BidServiceTest extends BaseDAOTest {
 
     var response = bidService.placeBid(auction.getId(), bidder.getId(), 1300L);
 
-    assertTrue(response.success());
     assertEquals(auction.getId(), response.auctionId());
     assertEquals(1300L, response.highestBidAmount());
     assertEquals(bidder.getId(), response.bidderId());

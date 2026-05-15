@@ -3,5 +3,4 @@ package app.dto;
 import java.util.List;
 
 /** AuctionsResponse. */
-public record AuctionsResponse(boolean success, String message, List<AuctionSummary> auctions)
-    implements Response {}
+public record AuctionsResponse(List<AuctionSummary> auctions) implements Response {}

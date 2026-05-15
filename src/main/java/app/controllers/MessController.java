@@ -41,7 +41,14 @@ public class MessController {
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
     client = Client.getInstance();
     chatHandler =
-        response -> {
+        (response, success, message) -> {
+          if (!success) {
+            Platform.runLater(() -> AlertUtils.showError("Tin nhắn", message));
+            return;
+          }
+          if (response == null) {
+            return;
+          }
           String sender = response.sender();
           Platform.runLater(() -> addBubble(sender, response.content(), isMe(response.senderId())));
         };

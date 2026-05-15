@@ -11,7 +11,6 @@ import app.dto.PlaceBidResponse;
 import app.dto.SettleWalletRequest;
 import app.dto.WalletUpdateResponse;
 import app.enums.AuctionStatus;
-import app.enums.OperationStatus;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.Auction;
@@ -69,13 +68,42 @@ public class LiveController implements Cleanable {
   /** Member. */
   @FXML
   public void initialize() {
-    placeBidHandler = response -> Platform.runLater(() -> handleBidResponse(response));
+    placeBidHandler =
+        (response, success, message) ->
+            Platform.runLater(
+                () -> {
+                  if (!success) {
+                    AlertUtils.showError("Đặt giá thất bại", message);
+                    return;
+                  }
+                  handleBidResponse(response, message);
+                });
     Client.getInstance().subscribe(PacketType.PLACE_BID, placeBidHandler);
-    auctionDetailHandler = response -> Platform.runLater(() -> handleDetailResponse(response));
+    auctionDetailHandler =
+        (response, success, message) ->
+            Platform.runLater(
+                () -> {
+                  if (!success) {
+                    AlertUtils.showError("Lỗi", message);
+                    return;
+                  }
+                  handleDetailResponse(response);
+                });
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
-    auctionResultHandler = response -> Platform.runLater(() -> handleAuctionResult(response));
+    auctionResultHandler =
+        (response, success, message) ->
+            Platform.runLater(
+                () -> {
+                  if (!success) {
+                    AlertUtils.showError("Lỗi", message);
+                    return;
+                  }
+                  handleAuctionResult(response);
+                });
     Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
-    walletUpdateHandler = response -> Platform.runLater(() -> handleWalletUpdate(response));
+    walletUpdateHandler =
+        (response, success, message) ->
+            Platform.runLater(() -> handleWalletUpdate(response, success, message));
     Client.getInstance().subscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
     updateAvailableBalance();
   }
@@ -95,7 +123,7 @@ public class LiveController implements Cleanable {
     if (auction == null) {
       return;
     }
-    if (!response.success()
+    if (response == null
         || response.detail() == null
         || response.detail().auctionId() != auction.getId()) {
       return;
@@ -104,7 +132,10 @@ public class LiveController implements Cleanable {
     applyDetail(auctionDetail);
   }
 
-  private void handleBidResponse(PlaceBidResponse response) {
+  private void handleBidResponse(PlaceBidResponse response, String message) {
+    if (response == null) {
+      return;
+    }
     if (auction == null || response.auctionId() != auction.getId()) {
       return;
     }
@@ -113,19 +144,16 @@ public class LiveController implements Cleanable {
     bidAmountField.clear();
     if (Client.getInstance().getCurrentUser() != null
         && response.bidderId() == Client.getInstance().getCurrentUser().getId()) {
-      AlertUtils.showInfo("Thành công", "Đặt giá thành công!");
+      AlertUtils.showInfo("Thành công", message);
     }
   }
 
-  private void handleWalletUpdate(WalletUpdateResponse response) {
-    if (response == null) {
+  private void handleWalletUpdate(WalletUpdateResponse response, boolean success, String message) {
+    if (!success) {
+      AlertUtils.showError("Ví", message);
       return;
     }
-    if (response.status() != OperationStatus.SUCCESS) {
-      AlertUtils.showError("Ví", response.message());
-      return;
-    }
-    if (response.user() != null) {
+    if (response != null && response.user() != null) {
       DataStore.getInstance().updateCurrentUser(response.user());
       updateAvailableBalance(UserFactory.createUser(response.user()));
     } else {
@@ -165,7 +193,7 @@ public class LiveController implements Cleanable {
     if (auction == null) {
       return;
     }
-    if (!response.success() || response.auctionId() != auction.getId()) {
+    if (response == null || response.auctionId() != auction.getId()) {
       return;
     }
     onAuctionClosed(

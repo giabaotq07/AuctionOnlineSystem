@@ -57,9 +57,9 @@ public class RegisterCommand implements Command {
           UserFactory.createUser(name, new Account(username, password), new Wallet(), role);
       User created = userService.register(newUser);
       logger.info("[SERVER] User {} registered successfully.", username);
-      RegisterResponse response =
-          new RegisterResponse(true, "Đăng ký thành công!", new UserData(created));
-      clientHandler.sendPacket(PacketRes.of(true, PacketType.REGISTER, response));
+      RegisterResponse response = new RegisterResponse(new UserData(created));
+      clientHandler.sendPacket(
+          PacketRes.of(true, PacketType.REGISTER, "Đăng ký thành công!", response));
     } catch (ServiceException e) {
       logger.warn("[SERVER] Register failed for user {}", username);
       sendError(clientHandler, "Tài khoản đã tồn tại hoặc dữ liệu không hợp lệ.");
@@ -70,7 +70,6 @@ public class RegisterCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(
-        PacketRes.of(false, PacketType.REGISTER, new RegisterResponse(false, message, null)));
+    clientHandler.sendPacket(PacketRes.error(PacketType.REGISTER, message));
   }
 }
