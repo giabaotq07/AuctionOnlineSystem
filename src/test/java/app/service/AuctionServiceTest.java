@@ -5,16 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.DAO.AuctionDAO;
 import app.DAO.BaseDAOTest;
-import app.DAO.BidDAO;
-import app.DAO.ItemDAO;
-import app.DAO.UserDAO;
-import app.DAO.impl.MySqlAuctionDAO;
-import app.DAO.impl.MySqlBidDAO;
-import app.DAO.impl.MySqlItemDAO;
-import app.DAO.impl.MySqlUserDAO;
 import app.TestFixtures;
+import app.dao.AuctionDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlBidDAO;
+import app.dao.impl.MySqlItemDAO;
+import app.dao.impl.MySqlUserDAO;
+import app.data.AuctionSummary;
 import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
@@ -83,6 +84,26 @@ class AuctionServiceTest extends BaseDAOTest {
   }
 
   @Test
+  void createAndStartAuctionWithItem_shouldPersistItemAndRunningAuction() {
+    AuctionSummary summary =
+        auctionService.createAndStartAuctionWithItem(
+            "Camera",
+            "Test camera",
+            1000L,
+            100L,
+            ItemType.ELECTRONICS,
+            10,
+            seller.getId(),
+            seller.getRole());
+
+    Auction found = auctionDAO.findById(summary.auction().getId()).orElseThrow();
+    Item item = itemDAO.findById(found.getItemId()).orElseThrow();
+    assertEquals(AuctionStatus.RUNNING, found.getStatus());
+    assertEquals("Camera", item.getName());
+    assertEquals(seller.getId(), item.getSellerId());
+  }
+
+  @Test
   void getAuctionDetail_shouldUseHighestBidWhenBidsExist() {
     User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
     Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
@@ -119,7 +140,56 @@ class AuctionServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void cancelAuctionByAdmin_shouldRejectStaleVersion() {
+  void cancelAuction_shouldAllowSellerOwner() {
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+
+    auctionService.cancelAuction(auction.getId(), seller.getId(), auction.getVersion());
+
+    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(AuctionStatus.CANCELED, found.getStatus());
+  }
+
+  @Test
+  void cancelAuction_shouldAllowAdmin() {
+    User admin = userDAO.save(TestFixtures.user(TestFixtures.unique("admin"), UserRole.ADMIN));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+
+    auctionService.cancelAuction(auction.getId(), admin.getId(), auction.getVersion());
+
+    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(AuctionStatus.CANCELED, found.getStatus());
+  }
+
+  @Test
+  void cancelAuction_shouldRejectNonOwnerNonAdmin() {
+    User otherSeller =
+        userDAO.save(TestFixtures.user(TestFixtures.unique("other_seller"), UserRole.SELLER));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.cancelAuction(
+                auction.getId(), otherSeller.getId(), auction.getVersion()));
+
+    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(AuctionStatus.OPEN, found.getStatus());
+  }
+
+  @Test
+  void cancelAuction_shouldRejectStaleVersion() {
     User admin = userDAO.save(TestFixtures.user(TestFixtures.unique("admin"), UserRole.ADMIN));
     Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
     Auction auction =
@@ -132,7 +202,7 @@ class AuctionServiceTest extends BaseDAOTest {
 
     assertThrows(
         ServiceException.class,
-        () -> auctionService.cancelAuctionByAdmin(auction.getId(), admin.getId(), staleVersion));
+        () -> auctionService.cancelAuction(auction.getId(), admin.getId(), staleVersion));
 
     Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
     assertEquals(AuctionStatus.RUNNING, found.getStatus());

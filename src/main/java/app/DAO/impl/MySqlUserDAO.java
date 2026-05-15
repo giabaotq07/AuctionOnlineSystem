@@ -1,7 +1,7 @@
-package app.DAO.impl;
+package app.dao.impl;
 
-import app.DAO.BaseDAO;
-import app.DAO.UserDAO;
+import app.dao.BaseDAO;
+import app.dao.UserDAO;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
 import app.models.Account;

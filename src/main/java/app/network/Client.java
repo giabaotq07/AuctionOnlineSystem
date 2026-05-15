@@ -33,7 +33,6 @@ public class Client {
   private volatile boolean connected = false;
   private volatile boolean closed = true;
   private volatile User currentUser;
-  private Thread listenerThread;
   private final Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap =
       new ConcurrentHashMap<>();
 
@@ -69,7 +68,7 @@ public class Client {
   }
 
   private void startListener() {
-    listenerThread = new Thread(this::listen, "client-listener");
+    Thread listenerThread = new Thread(this::listen, "client-listener");
     listenerThread.setDaemon(true);
     listenerThread.start();
   }

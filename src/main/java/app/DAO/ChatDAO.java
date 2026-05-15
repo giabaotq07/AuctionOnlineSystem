@@ -1,4 +1,4 @@
-package app.DAO;
+package app.dao;
 
 import app.data.ChatResponse;
 import java.util.List;

@@ -1,7 +1,7 @@
 package app.service;
 
-import app.DAO.AuctionDAO;
-import app.DAO.ItemDAO;
+import app.dao.AuctionDAO;
+import app.dao.ItemDAO;
 import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemStatus;
@@ -80,6 +80,9 @@ public class ItemService {
 
   /** updateManagedItem. */
   public Item updateManagedItem(Item item, int requesterId, UserRole requesterRole) {
+    if (item == null) {
+      throw new ServiceException("Thông tin sản phẩm không hợp lệ.");
+    }
     validateManageRequest(item.getId(), requesterId, requesterRole);
     validateItemData(item);
     return transactionManager.runInTransaction(

@@ -1,18 +1,22 @@
 package app.service;
 
-import app.DAO.AuctionDAO;
-import app.DAO.BidDAO;
-import app.DAO.ItemDAO;
-import app.DAO.UserDAO;
+import app.dao.AuctionDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
 import app.data.AuctionDetail;
 import app.data.AuctionResultResponse;
 import app.data.AuctionSummary;
 import app.data.ProfileData;
 import app.database.TransactionManager;
 import app.enums.AuctionStatus;
+import app.enums.ItemType;
+import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.BidTransaction;
+import app.models.Item;
+import app.models.ItemFactory;
 import app.models.User;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -35,6 +39,7 @@ public class AuctionService {
       new SummaryCacheSnapshot(List.of(), false);
   private final AuctionDAO auctionDAO;
   private final BidDAO bidDAO;
+  private final ItemDAO itemDAO;
   private final UserDAO userDAO;
   private final TransactionManager transactionManager;
   private final AuctionMapper auctionMapper;
@@ -50,6 +55,7 @@ public class AuctionService {
       TransactionManager transactionManager) {
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
+    this.itemDAO = itemDAO;
     this.userDAO = userDAO;
     this.auctionMapper = new AuctionMapper(itemDAO, bidDAO);
     this.transactionManager = transactionManager;
@@ -82,6 +88,47 @@ public class AuctionService {
             });
     invalidateCache();
     return saved;
+  }
+
+  /** createAndStartAuctionWithItem. */
+  public AuctionSummary createAndStartAuctionWithItem(
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      int requesterId,
+      UserRole requesterRole) {
+    validateCreateAuctionRequest(
+        name,
+        description,
+        startingPrice,
+        stepPrice,
+        type,
+        durationMinutes,
+        requesterId,
+        requesterRole);
+    AuctionSummary summary =
+        transactionManager.runInTransaction(
+            conn -> {
+              Item item =
+                  ItemFactory.createItem(
+                      name, requesterId, description, startingPrice, stepPrice, type);
+              Item savedItem = itemDAO.save(conn, item);
+              Auction auction =
+                  new Auction(
+                      savedItem.getId(),
+                      requesterId,
+                      LocalDateTime.now(clock).plusMinutes(durationMinutes),
+                      savedItem.getStartingPrice());
+              Auction created = auctionDAO.save(conn, auction);
+              created.start();
+              auctionDAO.update(conn, created);
+              return new AuctionSummary(created, savedItem.getName(), created.getHighestBid());
+            });
+    invalidateCache();
+    return summary;
   }
 
   /** getAuctionById. */
@@ -120,12 +167,6 @@ public class AuctionService {
     List<AuctionSummary> cached = List.copyOf(result);
     summarySnapshot = new SummaryCacheSnapshot(cached, true);
     return cached;
-  }
-
-  /** getAllAuctionSummariesForAdmin. */
-  public List<AuctionSummary> getAllAuctionSummariesForAdmin(int userId) {
-    requireAdmin(userId);
-    return getAuctionSummaries();
   }
 
   /** getHistorySummaries. */
@@ -178,12 +219,12 @@ public class AuctionService {
     invalidateCache();
   }
 
-  /** cancelAuctionByAdmin. */
-  public void cancelAuctionByAdmin(int auctionId, int adminId, int expectedVersion) {
-    requireAdmin(adminId);
+  /** cancelAuction. */
+  public void cancelAuction(int auctionId, int requester, int expectedVersion) {
     transactionManager.runWithoutResult(
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
+          ensureCancelPermission(conn, auction, requester);
           AuctionStatus status = auction.getStatus();
           if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
             throw new ServiceException("Không thể hủy phiên đã kết thúc hoặc đã thanh toán.");
@@ -318,13 +359,43 @@ public class AuctionService {
     }
   }
 
-  private void requireAdmin(int userId) {
+  private void ensureCancelPermission(java.sql.Connection conn, Auction auction, int requesterId) {
+    if (requesterId == auction.getSellerId()) {
+      return;
+    }
     User user =
         userDAO
-            .findById(userId)
-            .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+            .findById(conn, requesterId)
+            .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + requesterId));
     if (user.getRole() != app.enums.UserRole.ADMIN) {
-      throw new ServiceException("Chỉ Admin được thực hiện thao tác này.");
+      throw new ServiceException("Bạn không có quyền hủy phiên đấu giá này.");
+    }
+  }
+
+  private void validateCreateAuctionRequest(
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      int requesterId,
+      UserRole requesterRole) {
+    if (requesterId <= 0 || requesterRole == null) {
+      throw new ServiceException("Dữ liệu người tạo phiên không hợp lệ.");
+    }
+    if (requesterRole != UserRole.SELLER && requesterRole != UserRole.ADMIN) {
+      throw new ServiceException("Chỉ Seller/Admin được tạo phiên.");
+    }
+    if (name == null
+        || name.isBlank()
+        || description == null
+        || description.isBlank()
+        || startingPrice <= 0
+        || stepPrice <= 0
+        || durationMinutes <= 0
+        || type == null) {
+      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
     }
   }
 

@@ -1,4 +1,4 @@
-package app.DAO;
+package app.dao;
 
 import app.enums.AuctionStatus;
 import app.models.Auction;

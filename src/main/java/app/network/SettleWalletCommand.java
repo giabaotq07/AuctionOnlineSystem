@@ -40,12 +40,11 @@ public class SettleWalletCommand implements Command {
       }
       int auctionId = request.auctionId();
       int userId = clientHandler.getUser().getId();
-      int winnerId = auctionService.getAuctionResult(auctionId).winner().id();
-      boolean isWinner = winnerId == userId;
-      User updated = userService.settleFrozenAmount(userId, auctionId, isWinner);
-      String message = isWinner ? "Thanh toan thanh cong." : "Hoan tien thanh cong.";
+      auctionService.getAuctionResult(auctionId);
+      User updated = userService.getById(userId);
       WalletUpdateResponse response =
-          new WalletUpdateResponse(OperationStatus.SUCCESS, message, new UserData(updated));
+          new WalletUpdateResponse(
+              OperationStatus.SUCCESS, "Cập nhật ví thành công.", new UserData(updated));
       clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATE, response));
     } catch (ServiceException e) {
       logger.warn("Settle wallet failed: {}", e.getMessage());

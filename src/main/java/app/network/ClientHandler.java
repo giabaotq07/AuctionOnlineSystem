@@ -54,7 +54,7 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.CHAT, new ChatCommand());
     registry.put(PacketType.LOGIN, new LoginCommand(userService));
     registry.put(PacketType.REGISTER, new RegisterCommand(userService));
-    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, itemService));
+    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
     registry.put(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand(auctionService));
     registry.put(PacketType.FETCH_HISTORY, new FetchHistoryCommand(auctionService));
     registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));

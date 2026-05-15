@@ -1,7 +1,7 @@
-package app.DAO.impl;
+package app.dao.impl;
 
-import app.DAO.BaseDAO;
-import app.DAO.BidDAO;
+import app.dao.BaseDAO;
+import app.dao.BidDAO;
 import app.exception.DatabaseException;
 import app.models.BidTransaction;
 import java.sql.Connection;

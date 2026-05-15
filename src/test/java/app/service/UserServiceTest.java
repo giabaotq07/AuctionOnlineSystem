@@ -3,8 +3,8 @@ package app.service;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.DAO.BaseDAOTest;
-import app.DAO.UserDAO;
-import app.DAO.impl.MySqlUserDAO;
+import app.dao.UserDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.database.TransactionManager;
 import app.enums.UserRole;
 import app.exception.ServiceException;

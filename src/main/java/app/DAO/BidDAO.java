@@ -1,4 +1,4 @@
-package app.DAO;
+package app.dao;
 
 import app.models.BidTransaction;
 import java.sql.Connection;

@@ -1,8 +1,8 @@
 package app.service;
 
-import app.DAO.AuctionDAO;
-import app.DAO.BidDAO;
-import app.DAO.UserDAO;
+import app.dao.AuctionDAO;
+import app.dao.BidDAO;
+import app.dao.UserDAO;
 import app.data.PlaceBidResponse;
 import app.database.TransactionManager;
 import app.exception.ServiceException;

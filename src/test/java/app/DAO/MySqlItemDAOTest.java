@@ -3,9 +3,11 @@ package app.DAO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.DAO.impl.MySqlItemDAO;
-import app.DAO.impl.MySqlUserDAO;
 import app.TestFixtures;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
+import app.dao.impl.MySqlItemDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;

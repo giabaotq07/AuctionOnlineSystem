@@ -1,4 +1,4 @@
-package app.DAO;
+package app.dao;
 
 import app.database.DatabaseConnection;
 import app.exception.DatabaseException;

@@ -1,6 +1,6 @@
 package app.service;
 
-import app.DAO.UserDAO;
+import app.dao.UserDAO;
 import app.database.TransactionManager;
 import app.exception.ServiceException;
 import app.models.User;

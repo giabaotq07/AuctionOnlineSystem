@@ -4,10 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.DAO.impl.MySqlAuctionDAO;
-import app.DAO.impl.MySqlItemDAO;
-import app.DAO.impl.MySqlUserDAO;
 import app.TestFixtures;
+import app.dao.AuctionDAO;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlItemDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.database.DatabaseConnection;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;

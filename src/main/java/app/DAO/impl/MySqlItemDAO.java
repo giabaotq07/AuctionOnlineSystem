@@ -1,7 +1,7 @@
-package app.DAO.impl;
+package app.dao.impl;
 
-import app.DAO.BaseDAO;
-import app.DAO.ItemDAO;
+import app.dao.BaseDAO;
+import app.dao.ItemDAO;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.exception.DatabaseException;

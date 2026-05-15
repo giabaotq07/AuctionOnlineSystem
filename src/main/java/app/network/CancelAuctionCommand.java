@@ -30,7 +30,7 @@ public class CancelAuctionCommand implements Command {
         return;
       }
       auctionId = request.auctionId();
-      auctionService.cancelAuctionByAdmin(
+      auctionService.cancelAuction(
           auctionId, clientHandler.getUser().getId(), request.expectedVersion());
       clientHandler.sendPacket(
           PacketRes.of(

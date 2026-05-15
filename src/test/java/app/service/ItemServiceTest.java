@@ -1,20 +1,22 @@
 package app.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.DAO.AuctionDAO;
 import app.DAO.BaseDAOTest;
-import app.DAO.ItemDAO;
-import app.DAO.UserDAO;
-import app.DAO.impl.MySqlAuctionDAO;
-import app.DAO.impl.MySqlItemDAO;
-import app.DAO.impl.MySqlUserDAO;
 import app.TestFixtures;
+import app.dao.AuctionDAO;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlItemDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.database.TransactionManager;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
+import app.exception.ServiceException;
 import app.models.Item;
 import app.models.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +61,13 @@ class ItemServiceTest extends BaseDAOTest {
     assertEquals("New description", found.getDescription());
     assertEquals(2000L, found.getStartingPrice());
     assertEquals(250L, found.getStepPrice());
+  }
+
+  @Test
+  void updateManagedItem_shouldRejectNullItem() {
+    assertThrows(
+        ServiceException.class,
+        () -> itemService.updateManagedItem(null, seller.getId(), seller.getRole()));
   }
 
   @Test

@@ -1,15 +1,15 @@
 package app.network;
 
-import app.DAO.AuctionDAO;
-import app.DAO.AutoBidDAO;
-import app.DAO.BidDAO;
-import app.DAO.ItemDAO;
-import app.DAO.UserDAO;
-import app.DAO.impl.MySqlAuctionDAO;
-import app.DAO.impl.MySqlAutoBidDAO;
-import app.DAO.impl.MySqlBidDAO;
-import app.DAO.impl.MySqlItemDAO;
-import app.DAO.impl.MySqlUserDAO;
+import app.dao.AuctionDAO;
+import app.dao.AutoBidDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
+import app.dao.impl.MySqlAuctionDAO;
+import app.dao.impl.MySqlAutoBidDAO;
+import app.dao.impl.MySqlBidDAO;
+import app.dao.impl.MySqlItemDAO;
+import app.dao.impl.MySqlUserDAO;
 import app.database.TransactionManager;
 import app.models.PacketRes;
 import app.service.AntiSnipeService;

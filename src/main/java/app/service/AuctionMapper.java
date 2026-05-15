@@ -1,7 +1,7 @@
 package app.service;
 
-import app.DAO.BidDAO;
-import app.DAO.ItemDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
 import app.data.AuctionDetail;
 import app.data.AuctionSummary;
 import app.models.Auction;

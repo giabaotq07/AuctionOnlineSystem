@@ -1,7 +1,7 @@
-package app.DAO.impl;
+package app.dao.impl;
 
-import app.DAO.AutoBidDAO;
-import app.DAO.BaseDAO;
+import app.dao.AutoBidDAO;
+import app.dao.BaseDAO;
 import app.exception.DatabaseException;
 import app.models.AutoBid;
 import java.sql.Connection;

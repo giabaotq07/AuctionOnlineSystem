@@ -1,7 +1,7 @@
-package app.DAO.impl;
+package app.dao.impl;
 
-import app.DAO.AuctionDAO;
-import app.DAO.BaseDAO;
+import app.dao.AuctionDAO;
+import app.dao.BaseDAO;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.models.Auction;
