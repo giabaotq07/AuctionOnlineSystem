@@ -1,8 +1,6 @@
 package app.DAO;
 
 import app.database.DatabaseConnection;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Objects;
@@ -15,20 +13,18 @@ import org.slf4j.LoggerFactory;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class BaseDAOTest {
   private static final Logger logger = LoggerFactory.getLogger(BaseDAOTest.class);
-  private static final String DB_HOST = "jdbc:mysql://localhost:3306/";
-  private static final String TEST_DB = "auction_db_test";
-  private static final String FULL_URL = DB_HOST + TEST_DB;
-  private static final String USER = System.getProperty("db.user", "root");
-  private static final String PASS = System.getProperty("db.password", "123456");
+  private static final String TEST_DB_URL =
+      "jdbc:h2:mem:auction_db_test;MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+  private static final String USER = "sa";
+  private static final String PASS = "";
 
   // =========================
   // GLOBAL SETUP (RUN ONCE)
   // =========================
   @BeforeAll
   void globalSetup() {
-    createDatabaseIfNotExists();
     configureTestEnvironment();
-    reloadConnectionPool(); // FIXED
+    reloadConnectionPool();
     initSchema();
   }
 
@@ -39,34 +35,13 @@ public abstract class BaseDAOTest {
   void cleanData() {
     try (Connection conn = DatabaseConnection.getDataSource().getConnection();
         Statement stmt = conn.createStatement()) {
-      stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
-      stmt.execute("TRUNCATE TABLE auto_bids");
-      stmt.execute("TRUNCATE TABLE bids");
-      stmt.execute("TRUNCATE TABLE auction_sessions");
-      stmt.execute("TRUNCATE TABLE items");
-      stmt.execute("TRUNCATE TABLE users");
-      stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
+      stmt.executeUpdate("DELETE FROM auto_bids");
+      stmt.executeUpdate("DELETE FROM bids");
+      stmt.executeUpdate("DELETE FROM auction_sessions");
+      stmt.executeUpdate("DELETE FROM items");
+      stmt.executeUpdate("DELETE FROM users");
     } catch (Exception e) {
       throw new RuntimeException("Failed to clean test data", e);
-    }
-  }
-
-  // =========================
-  // DB CREATE
-  // =========================
-  private void createDatabaseIfNotExists() {
-    logger.info("[DB] Ensuring test database exists...");
-    HikariConfig config = new HikariConfig();
-    config.setJdbcUrl(DB_HOST);
-    config.setUsername(USER);
-    config.setPassword(PASS);
-    try (HikariDataSource dataSource = new HikariDataSource(config);
-        Connection conn = dataSource.getConnection();
-        Statement stmt = conn.createStatement()) {
-      stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + TEST_DB);
-      logger.info("[DB] Ready: {}", TEST_DB);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to create test database", e);
     }
   }
 
@@ -74,8 +49,8 @@ public abstract class BaseDAOTest {
   // CONFIG TEST ENV
   // =========================
   private void configureTestEnvironment() {
-    logger.info("[CONFIG] Setting test DB environment...");
-    System.setProperty("db.url", FULL_URL);
+    logger.info("[CONFIG] Setting H2 test DB environment...");
+    System.setProperty("db.url", TEST_DB_URL);
     System.setProperty("db.user", USER);
     System.setProperty("db.password", PASS);
   }
@@ -85,8 +60,6 @@ public abstract class BaseDAOTest {
   // =========================
   private void reloadConnectionPool() {
     logger.info("[POOL] Reloading Hikari pool safely...");
-    // Lúc này System.setProperty đã được set bởi configureTestEnvironment()
-    // nên init() trong resetDataSource sẽ đọc đúng URL test DB
     DatabaseConnection.resetDataSource();
   }
 
