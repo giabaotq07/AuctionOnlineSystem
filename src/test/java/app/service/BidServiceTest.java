@@ -5,15 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
-import app.dao.AuctionDao;
-import app.dao.BaseDaoTest;
-import app.dao.BidDao;
-import app.dao.ItemDao;
-import app.dao.UserDao;
-import app.dao.impl.MySqlAuctionDao;
-import app.dao.impl.MySqlBidDao;
-import app.dao.impl.MySqlItemDao;
-import app.dao.impl.MySqlUserDao;
+import app.DAO.AuctionDAO;
+import app.DAO.BaseDAOTest;
+import app.DAO.BidDAO;
+import app.DAO.ItemDAO;
+import app.DAO.UserDAO;
+import app.DAO.impl.MySqlAuctionDAO;
+import app.DAO.impl.MySqlBidDAO;
+import app.DAO.impl.MySqlItemDAO;
+import app.DAO.impl.MySqlUserDAO;
 import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
@@ -26,11 +26,11 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class BidServiceTest extends BaseDaoTest {
-  private UserDao userDao;
-  private ItemDao itemDao;
-  private AuctionDao auctionDao;
-  private BidDao bidDao;
+class BidServiceTest extends BaseDAOTest {
+  private UserDAO userDAO;
+  private ItemDAO itemDAO;
+  private AuctionDAO auctionDAO;
+  private BidDAO bidDAO;
   private BidService bidService;
   private User seller;
   private User bidder;
@@ -38,21 +38,21 @@ class BidServiceTest extends BaseDaoTest {
 
   @BeforeEach
   void setUp() {
-    userDao = new MySqlUserDao();
-    itemDao = new MySqlItemDao();
-    auctionDao = new MySqlAuctionDao();
-    bidDao = new MySqlBidDao();
+    userDAO = new MySqlUserDAO();
+    itemDAO = new MySqlItemDAO();
+    auctionDAO = new MySqlAuctionDAO();
+    bidDAO = new MySqlBidDAO();
     bidService =
         new BidService(
-            bidDao,
-            auctionDao,
-            userDao,
+            bidDAO,
+            auctionDAO,
+            userDAO,
             new TransactionManager(),
             new BidValidator(),
             new AntiSnipeService());
-    seller = userDao.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
-    bidder = userDao.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
-    item = itemDao.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
+    seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
+    bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
+    item = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
   }
 
   @Test
@@ -61,8 +61,8 @@ class BidServiceTest extends BaseDaoTest {
 
     bidService.placeBid(auction.getId(), bidder.getId(), 1200L);
 
-    Auction updated = auctionDao.findById(auction.getId()).orElseThrow();
-    var highest = bidDao.findHighestBid(auction.getId()).orElseThrow();
+    Auction updated = auctionDAO.findById(auction.getId()).orElseThrow();
+    var highest = bidDAO.findHighestBid(auction.getId()).orElseThrow();
     assertEquals(1200L, updated.getHighestBid());
     assertEquals(bidder.getId(), updated.getWinnerId());
     assertEquals(1200L, highest.getAmount());
@@ -76,15 +76,15 @@ class BidServiceTest extends BaseDaoTest {
     assertThrows(
         ServiceException.class, () -> bidService.placeBid(auction.getId(), bidder.getId(), 1000L));
 
-    Auction unchanged = auctionDao.findById(auction.getId()).orElseThrow();
+    Auction unchanged = auctionDAO.findById(auction.getId()).orElseThrow();
     assertEquals(1000L, unchanged.getHighestBid());
-    assertTrue(bidDao.findHighestBid(auction.getId()).isEmpty());
+    assertTrue(bidDAO.findHighestBid(auction.getId()).isEmpty());
   }
 
   @Test
   void placeBid_shouldRejectAuctionThatIsNotRunning() {
     Auction auction =
-        auctionDao.save(
+        auctionDAO.save(
             TestFixtures.auction(
                 item.getId(), seller.getId(), LocalDateTime.now().plusMinutes(10), 1000L));
 
@@ -99,7 +99,7 @@ class BidServiceTest extends BaseDaoTest {
 
     bidService.placeBid(auction.getId(), bidder.getId(), 1200L);
 
-    Auction updated = auctionDao.findById(auction.getId()).orElseThrow();
+    Auction updated = auctionDAO.findById(auction.getId()).orElseThrow();
     assertEquals(1, updated.getExtendedCount());
     assertTrue(updated.getEndTime().isAfter(originalEndTime.plusSeconds(50)));
   }
@@ -117,25 +117,25 @@ class BidServiceTest extends BaseDaoTest {
   }
 
   @Test
-  void bidDaoQueries_shouldReturnPersistedBids() {
+  void bidDAOQueries_shouldReturnPersistedBids() {
     Auction auction = runningAuction(1000L, LocalDateTime.now().plusMinutes(10));
     User secondBidder =
-        userDao.save(TestFixtures.user(TestFixtures.unique("second_bidder"), UserRole.BIDDER));
+        userDAO.save(TestFixtures.user(TestFixtures.unique("second_bidder"), UserRole.BIDDER));
     bidService.placeBid(auction.getId(), bidder.getId(), 1200L);
     bidService.placeBid(auction.getId(), secondBidder.getId(), 1400L);
 
-    assertEquals(2, bidDao.findByAuction(auction.getId()).size());
-    assertEquals(2, bidDao.findByAuctionOrderByTime(auction.getId()).size());
-    assertEquals(1400L, bidDao.findHighestBid(auction.getId()).orElseThrow().getAmount());
+    assertEquals(2, bidDAO.findByAuction(auction.getId()).size());
+    assertEquals(2, bidDAO.findByAuctionOrderByTime(auction.getId()).size());
+    assertEquals(1400L, bidDAO.findHighestBid(auction.getId()).orElseThrow().getAmount());
   }
 
   private Auction runningAuction(long currentPrice, LocalDateTime endTime) {
     Auction auction = TestFixtures.auction(item.getId(), seller.getId(), endTime, currentPrice);
     auction.start();
-    auction = auctionDao.save(auction);
-    auctionDao.update(auction);
+    auction = auctionDAO.save(auction);
+    auctionDAO.update(auction);
     assertEquals(
-        AuctionStatus.RUNNING, auctionDao.findById(auction.getId()).orElseThrow().getStatus());
+        AuctionStatus.RUNNING, auctionDAO.findById(auction.getId()).orElseThrow().getStatus());
     return auction;
   }
 }

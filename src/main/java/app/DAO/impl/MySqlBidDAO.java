@@ -1,7 +1,7 @@
-package app.dao.impl;
+package app.DAO.impl;
 
-import app.dao.BaseDao;
-import app.dao.BidDao;
+import app.DAO.BaseDAO;
+import app.DAO.BidDAO;
 import app.exception.DatabaseException;
 import app.models.BidTransaction;
 import java.sql.Connection;
@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** MySqlBidDao. */
-public class MySqlBidDao extends BaseDao implements BidDao {
-  /** MySqlBidDao. */
-  public MySqlBidDao() {}
+/** MySqlBidDAO. */
+public class MySqlBidDAO extends BaseDAO implements BidDAO {
+  /** MySqlBidDAO. */
+  public MySqlBidDAO() {}
 
   private static final String BID_SELECT =
       """

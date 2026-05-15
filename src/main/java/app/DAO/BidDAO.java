@@ -1,12 +1,12 @@
-package app.dao;
+package app.DAO;
 
 import app.models.BidTransaction;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
-/** BidDao. */
-public interface BidDao {
+/** BidDAO. */
+public interface BidDAO {
   /** insertBid. */
   void insertBid(int auctionId, int userId, long bidAmount, boolean isAutoBid);
 

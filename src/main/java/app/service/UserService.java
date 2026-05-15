@@ -1,6 +1,6 @@
 package app.service;
 
-import app.dao.UserDao;
+import app.DAO.UserDAO;
 import app.database.TransactionManager;
 import app.exception.ServiceException;
 import app.models.User;
@@ -10,18 +10,18 @@ import java.util.List;
 
 /** UserService. */
 public class UserService {
-  private final UserDao userDao;
+  private final UserDAO userDAO;
   private final TransactionManager transactionManager;
 
   /** UserService. */
-  public UserService(UserDao userDao, TransactionManager transactionManager) {
-    this.userDao = userDao;
+  public UserService(UserDAO userDAO, TransactionManager transactionManager) {
+    this.userDAO = userDAO;
     this.transactionManager = transactionManager;
   }
 
   /** login. */
   public User login(String username, String rawPassword) {
-    User user = userDao.findByUsername(username).orElse(null);
+    User user = userDAO.findByUsername(username).orElse(null);
     if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
       throw new ServiceException("Tên đăng nhập hoặc mật khẩu không đúng");
     }
@@ -35,13 +35,13 @@ public class UserService {
     validateNotBlank(user.getName(), "Họ tên");
     return transactionManager.runInTransaction(
         conn -> {
-          if (userDao.findByUsername(conn, user.getAccount().getUsername()).isPresent()) {
+          if (userDAO.findByUsername(conn, user.getAccount().getUsername()).isPresent()) {
             throw new ServiceException("User đã tồn tại: " + user.getAccount().getUsername());
           }
           // Hash password in service layer before persisting (single responsibility)
           String hashed = PasswordUtils.hashPassword(user.getAccount().getPassword());
           user.getAccount().setPassword(hashed);
-          return userDao.save(conn, user);
+          return userDAO.save(conn, user);
         });
   }
 
@@ -51,12 +51,12 @@ public class UserService {
     transactionManager.runWithoutResult(
         conn -> {
           User stored =
-              userDao
+              userDAO
                   .findById(conn, user.getId())
                   .orElseThrow(
                       () -> new ServiceException("Không tìm thấy user với id: " + user.getId()));
           stored.setName(user.getName());
-          userDao.update(conn, stored);
+          userDAO.update(conn, stored);
         });
   }
 
@@ -68,13 +68,13 @@ public class UserService {
     transactionManager.runWithoutResult(
         conn -> {
           user.getAccount().setPassword(hashed);
-          userDao.update(conn, user);
+          userDAO.update(conn, user);
         });
   }
 
   /** getById. */
   public User getById(int userId) {
-    return userDao
+    return userDAO
         .findById(userId)
         .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
   }
@@ -85,7 +85,7 @@ public class UserService {
     if (requester.getRole() != app.enums.UserRole.ADMIN) {
       throw new ServiceException("Chỉ Admin được xem danh sách người dùng.");
     }
-    return userDao.findAll();
+    return userDAO.findAll();
   }
 
   /** deposit. */
@@ -95,9 +95,9 @@ public class UserService {
     }
     return transactionManager.runInTransaction(
         conn -> {
-          userDao.lockRow(conn, userId);
+          userDAO.lockRow(conn, userId);
           User user =
-              userDao
+              userDAO
                   .findById(conn, userId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           try {
@@ -105,7 +105,7 @@ public class UserService {
           } catch (IllegalArgumentException e) {
             throw new ServiceException(e.getMessage());
           }
-          userDao.update(conn, user);
+          userDAO.update(conn, user);
           return user;
         });
   }
@@ -118,9 +118,9 @@ public class UserService {
     }
     transactionManager.runWithoutResult(
         conn -> {
-          userDao.lockRow(conn, user.getId());
+          userDAO.lockRow(conn, user.getId());
           User stored =
-              userDao
+              userDAO
                   .findById(conn, user.getId())
                   .orElseThrow(
                       () -> new ServiceException("Không tìm thấy user với id: " + user.getId()));
@@ -129,7 +129,7 @@ public class UserService {
           } catch (IllegalArgumentException e) {
             throw new ServiceException(e.getMessage());
           }
-          userDao.update(conn, stored);
+          userDAO.update(conn, stored);
         });
   }
 
@@ -140,15 +140,15 @@ public class UserService {
     }
     return transactionManager.runInTransaction(
         conn -> {
-          userDao.lockRow(conn, userId);
+          userDAO.lockRow(conn, userId);
           User user =
-              userDao
+              userDAO
                   .findById(conn, userId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           try {
             BigDecimal previous =
                 user.getWallet().setFrozenAmount(String.valueOf(auctionId), bidAmount);
-            userDao.update(conn, user);
+            userDAO.update(conn, user);
             return previous;
           } catch (IllegalArgumentException e) {
             throw new ServiceException(e.getMessage());
@@ -160,9 +160,9 @@ public class UserService {
   public User restoreFrozenAmount(int userId, int auctionId, BigDecimal previousAmount) {
     return transactionManager.runInTransaction(
         conn -> {
-          userDao.lockRow(conn, userId);
+          userDAO.lockRow(conn, userId);
           User user =
-              userDao
+              userDAO
                   .findById(conn, userId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           try {
@@ -170,7 +170,7 @@ public class UserService {
           } catch (IllegalArgumentException e) {
             throw new ServiceException(e.getMessage());
           }
-          userDao.update(conn, user);
+          userDAO.update(conn, user);
           return user;
         });
   }
@@ -179,9 +179,9 @@ public class UserService {
   public User settleFrozenAmount(int userId, int auctionId, boolean winner) {
     return transactionManager.runInTransaction(
         conn -> {
-          userDao.lockRow(conn, userId);
+          userDAO.lockRow(conn, userId);
           User user =
-              userDao
+              userDAO
                   .findById(conn, userId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           if (winner) {
@@ -189,7 +189,7 @@ public class UserService {
           } else {
             user.getWallet().releaseFrozen(String.valueOf(auctionId));
           }
-          userDao.update(conn, user);
+          userDAO.update(conn, user);
           return user;
         });
   }

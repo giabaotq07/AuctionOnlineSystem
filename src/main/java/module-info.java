@@ -10,7 +10,7 @@ module app {
   requires transitive com.zaxxer.hikari;
 
   opens app.data;
-  opens app.dao;
+  opens app.DAO;
   opens app.service;
   opens app to
       javafx.fxml;
@@ -28,6 +28,6 @@ module app {
   exports app.models;
   exports app.enums;
   exports app.data;
-  exports app.dao;
+  exports app.DAO;
   exports app.database;
 }

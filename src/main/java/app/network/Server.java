@@ -1,15 +1,15 @@
 package app.network;
 
-import app.dao.AuctionDao;
-import app.dao.AutoBidDao;
-import app.dao.BidDao;
-import app.dao.ItemDao;
-import app.dao.UserDao;
-import app.dao.impl.MySqlAuctionDao;
-import app.dao.impl.MySqlAutoBidDao;
-import app.dao.impl.MySqlBidDao;
-import app.dao.impl.MySqlItemDao;
-import app.dao.impl.MySqlUserDao;
+import app.DAO.AuctionDAO;
+import app.DAO.AutoBidDAO;
+import app.DAO.BidDAO;
+import app.DAO.ItemDAO;
+import app.DAO.UserDAO;
+import app.DAO.impl.MySqlAuctionDAO;
+import app.DAO.impl.MySqlAutoBidDAO;
+import app.DAO.impl.MySqlBidDAO;
+import app.DAO.impl.MySqlItemDAO;
+import app.DAO.impl.MySqlUserDAO;
 import app.database.TransactionManager;
 import app.models.PacketRes;
 import app.service.AntiSnipeService;
@@ -72,20 +72,20 @@ public class Server {
 
   private void initService() {
     logger.info("[SERVER] Initializing database...");
-    UserDao userDao = new MySqlUserDao();
-    ItemDao itemDao = new MySqlItemDao();
-    AuctionDao auctionDao = new MySqlAuctionDao();
-    AutoBidDao autoBidDao = new MySqlAutoBidDao();
-    BidDao bidDao = new MySqlBidDao();
+    UserDAO userDAO = new MySqlUserDAO();
+    ItemDAO itemDAO = new MySqlItemDAO();
+    AuctionDAO auctionDAO = new MySqlAuctionDAO();
+    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
+    BidDAO bidDAO = new MySqlBidDAO();
     TransactionManager transactionManager = new TransactionManager();
     BidValidator bidValidator = new BidValidator();
     AntiSnipeService antiSnipeService = new AntiSnipeService();
-    userService = new UserService(userDao, transactionManager);
-    itemService = new ItemService(itemDao, auctionDao, transactionManager);
+    userService = new UserService(userDAO, transactionManager);
+    itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     bidService =
         new BidService(
-            bidDao, auctionDao, userDao, transactionManager, bidValidator, antiSnipeService);
-    auctionService = new AuctionService(auctionDao, bidDao, itemDao, userDao, transactionManager);
+            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
+    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
     startAuctionMaintenance();
   }
 

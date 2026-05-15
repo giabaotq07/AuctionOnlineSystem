@@ -1,4 +1,4 @@
-package app.dao;
+package app.DAO;
 
 import app.enums.ItemType;
 import app.models.Item;
@@ -6,8 +6,8 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
-/** ItemDao. */
-public interface ItemDao {
+/** ItemDAO. */
+public interface ItemDAO {
   /** findById. */
   Optional<Item> findById(int id);
 

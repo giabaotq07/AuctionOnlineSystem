@@ -1,7 +1,7 @@
-package app.dao.impl;
+package app.DAO.impl;
 
-import app.dao.BaseDao;
-import app.dao.UserDao;
+import app.DAO.BaseDAO;
+import app.DAO.UserDAO;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
 import app.models.Account;
@@ -18,10 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** MySqlUserDao. */
-public class MySqlUserDao extends BaseDao implements UserDao {
-  /** MySqlUserDao. */
-  public MySqlUserDao() {}
+/** MySqlUserDAO. */
+public class MySqlUserDAO extends BaseDAO implements UserDAO {
+  /** MySqlUserDAO. */
+  public MySqlUserDAO() {}
 
   private static final String TABLE = "users";
   private static final String BASE_SELECT =

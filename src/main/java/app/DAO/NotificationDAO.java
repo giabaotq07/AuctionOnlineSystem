@@ -1,10 +1,10 @@
-package app.dao;
+package app.DAO;
 
 import app.models.Notification;
 import java.util.List;
 
-/** NotificationDao. */
-public interface NotificationDao {
+/** NotificationDAO. */
+public interface NotificationDAO {
   /** save. */
   int save(Notification notification);
 

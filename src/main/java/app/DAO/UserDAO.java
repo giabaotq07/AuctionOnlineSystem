@@ -1,12 +1,12 @@
-package app.dao;
+package app.DAO;
 
 import app.models.User;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
-/** UserDao. */
-public interface UserDao {
+/** UserDAO. */
+public interface UserDAO {
   /** findById. */
   Optional<User> findById(int id);
 

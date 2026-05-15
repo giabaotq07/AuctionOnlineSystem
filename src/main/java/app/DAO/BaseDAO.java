@@ -1,4 +1,4 @@
-package app.dao;
+package app.DAO;
 
 import app.database.DatabaseConnection;
 import app.exception.DatabaseException;
@@ -12,7 +12,7 @@ import java.util.function.Function;
  * Base DAO class providing common transaction and connection handling. Centralizes connection
  * management, error handling, and transaction patterns.
  */
-public abstract class BaseDao {
+public abstract class BaseDAO {
   /** executeUpdate. */
   protected boolean executeUpdate(Connection conn, String sql, Object... params) {
     validateUpdateSql(sql);

@@ -1,7 +1,7 @@
-package app.dao.impl;
+package app.DAO.impl;
 
-import app.dao.AuctionDao;
-import app.dao.BaseDao;
+import app.DAO.AuctionDAO;
+import app.DAO.BaseDAO;
 import app.enums.AuctionStatus;
 import app.exception.DatabaseException;
 import app.models.Auction;
@@ -18,9 +18,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** MySqlAuctionDao. */
-public class MySqlAuctionDao extends BaseDao implements AuctionDao {
-  private static final Logger logger = LoggerFactory.getLogger(MySqlAuctionDao.class);
+/** MySqlAuctionDAO. */
+public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
+  private static final Logger logger = LoggerFactory.getLogger(MySqlAuctionDAO.class);
   private static final String TABLE = "auction_sessions";
   private static final String BASE_SELECT =
       """
@@ -43,8 +43,8 @@ public class MySqlAuctionDao extends BaseDao implements AuctionDao {
               LEFT JOIN users w ON s.winner_id = w.id
               """;
 
-  /** MySqlAuctionDao. */
-  public MySqlAuctionDao() {}
+  /** MySqlAuctionDAO. */
+  public MySqlAuctionDAO() {}
 
   private Auction mapAuction(ResultSet rs) throws SQLException {
     return new Auction(

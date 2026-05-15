@@ -1,4 +1,4 @@
-package app.dao;
+package app.DAO;
 
 import app.enums.AuctionStatus;
 import app.models.Auction;
@@ -12,7 +12,7 @@ import java.util.Optional;
  * <p>Methods are categorized as: 1. Read-only operations: Create own connection (no Connection
  * param) 2. Transaction operations: Accept Connection parameter for participation in transactions
  */
-public interface AuctionDao {
+public interface AuctionDAO {
   /** findById. */
   Optional<Auction> findById(int id);
 

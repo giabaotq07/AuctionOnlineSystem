@@ -1,15 +1,15 @@
 package app;
 
-import app.dao.AuctionDao;
-import app.dao.AutoBidDao;
-import app.dao.BidDao;
-import app.dao.ItemDao;
-import app.dao.UserDao;
-import app.dao.impl.MySqlAuctionDao;
-import app.dao.impl.MySqlAutoBidDao;
-import app.dao.impl.MySqlBidDao;
-import app.dao.impl.MySqlItemDao;
-import app.dao.impl.MySqlUserDao;
+import app.DAO.AuctionDAO;
+import app.DAO.AutoBidDAO;
+import app.DAO.BidDAO;
+import app.DAO.ItemDAO;
+import app.DAO.UserDAO;
+import app.DAO.impl.MySqlAuctionDAO;
+import app.DAO.impl.MySqlAutoBidDAO;
+import app.DAO.impl.MySqlBidDAO;
+import app.DAO.impl.MySqlItemDAO;
+import app.DAO.impl.MySqlUserDAO;
 import app.database.TransactionManager;
 import app.enums.AuctionStatus;
 import app.enums.ItemStatus;
@@ -36,21 +36,21 @@ public class DemoRunner {
   static void main() {
     System.out.println("=== BAT DAU DEMO CHAY THU HE THONG AUCTION ===");
     System.out.println("Dang kiem tra va khoi tao Database...");
-    UserDao userDao = new MySqlUserDao();
-    ItemDao itemDao = new MySqlItemDao();
-    AuctionDao auctionDao = new MySqlAuctionDao();
-    AutoBidDao autoBidDao = new MySqlAutoBidDao();
-    BidDao bidDao = new MySqlBidDao();
+    UserDAO userDAO = new MySqlUserDAO();
+    ItemDAO itemDAO = new MySqlItemDAO();
+    AuctionDAO auctionDAO = new MySqlAuctionDAO();
+    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
+    BidDAO bidDAO = new MySqlBidDAO();
     TransactionManager transactionManager = new TransactionManager();
     BidValidator bidValidator = new BidValidator();
     AntiSnipeService antiSnipeService = new AntiSnipeService();
-    UserService userService = new UserService(userDao, transactionManager);
-    final ItemService itemService = new ItemService(itemDao, transactionManager);
+    UserService userService = new UserService(userDAO, transactionManager);
+    final ItemService itemService = new ItemService(itemDAO, transactionManager);
     final BidService bidService =
         new BidService(
-            bidDao, auctionDao, userDao, transactionManager, bidValidator, antiSnipeService);
+            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
     final AuctionService auctionService =
-        new AuctionService(auctionDao, bidDao, itemDao, userDao, transactionManager);
+        new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
     User seller;
     User buyer1;
     User buyer2;

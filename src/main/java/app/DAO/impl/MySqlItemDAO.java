@@ -1,7 +1,7 @@
-package app.dao.impl;
+package app.DAO.impl;
 
-import app.dao.BaseDao;
-import app.dao.ItemDao;
+import app.DAO.BaseDAO;
+import app.DAO.ItemDAO;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.exception.DatabaseException;
@@ -16,10 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** MySqlItemDao. */
-public class MySqlItemDao extends BaseDao implements ItemDao {
-  /** MySqlItemDao. */
-  public MySqlItemDao() {}
+/** MySqlItemDAO. */
+public class MySqlItemDAO extends BaseDAO implements ItemDAO {
+  /** MySqlItemDAO. */
+  public MySqlItemDAO() {}
 
   private static final String TABLE = "items";
   private static final String BASE_SELECT =

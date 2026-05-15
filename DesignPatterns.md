@@ -87,9 +87,9 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* Interface trong `app.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
-* Implementation trong `app.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
-* `app.dao.BaseDAO` gom helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
+* Interface trong `app.DAO`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
+* Implementation trong `app.DAO.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
+* `app.DAO.BaseDAO` gom helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
 
 **Đặc điểm đáng chú ý:**
 

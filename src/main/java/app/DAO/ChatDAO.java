@@ -1,10 +1,10 @@
-package app.dao;
+package app.DAO;
 
 import app.data.ChatResponse;
 import java.util.List;
 
-/** ChatDao. */
-public interface ChatDao {
+/** ChatDAO. */
+public interface ChatDAO {
   /** save. */
   int save(ChatResponse message);
 

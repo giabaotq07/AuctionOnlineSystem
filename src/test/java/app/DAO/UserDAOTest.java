@@ -1,8 +1,8 @@
-package app.dao;
+package app.DAO;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import app.dao.impl.MySqlUserDao;
+import app.DAO.impl.MySqlUserDAO;
 import app.database.DatabaseConnection;
 import app.enums.UserRole;
 import app.exception.DatabaseException;
@@ -15,12 +15,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class UserDaoTest extends BaseDaoTest {
-  private UserDao userDao;
+class UserDAOTest extends BaseDAOTest {
+  private UserDAO userDAO;
 
   @BeforeEach
   void setUp() {
-    userDao = new MySqlUserDao();
+    userDAO = new MySqlUserDAO();
     cleanDatabase();
   }
 
@@ -54,9 +54,9 @@ class UserDaoTest extends BaseDaoTest {
   // ───── save ─────
   @Test
   void save_shouldPersistUserAndReturnId() {
-    User saved = userDao.save(makeUser("alice"));
+    User saved = userDAO.save(makeUser("alice"));
     assertTrue(saved.getId() > 0);
-    User found = userDao.findById(saved.getId()).orElseThrow();
+    User found = userDAO.findById(saved.getId()).orElseThrow();
     assertEquals("alice", found.getAccount().getUsername());
     assertEquals("Nguyen Van A", found.getName());
     assertEquals(UserRole.BIDDER, found.getRole());
@@ -65,35 +65,35 @@ class UserDaoTest extends BaseDaoTest {
 
   @Test
   void save_duplicateUsername_shouldThrow() {
-    userDao.save(makeUser("bob"));
-    assertThrows(DatabaseException.class, () -> userDao.save(makeUser("bob")));
+    userDAO.save(makeUser("bob"));
+    assertThrows(DatabaseException.class, () -> userDAO.save(makeUser("bob")));
   }
 
   // ───── findById ─────
   @Test
   void findById_shouldReturnUser() {
-    User saved = userDao.save(makeUser("charlie"));
-    Optional<User> found = userDao.findById(saved.getId());
+    User saved = userDAO.save(makeUser("charlie"));
+    Optional<User> found = userDAO.findById(saved.getId());
     assertTrue(found.isPresent());
     assertEquals("charlie", found.get().getAccount().getUsername());
   }
 
   @Test
   void findById_shouldReturnEmpty() {
-    assertTrue(userDao.findById(99999).isEmpty());
+    assertTrue(userDAO.findById(99999).isEmpty());
   }
 
   // ───── findByUsername ─────
   @Test
   void findByUsername_shouldReturnUser() {
-    userDao.save(makeUser("dave"));
-    Optional<User> found = userDao.findByUsername("dave");
+    userDAO.save(makeUser("dave"));
+    Optional<User> found = userDAO.findByUsername("dave");
     assertTrue(found.isPresent());
     assertEquals("Nguyen Van A", found.get().getName());
   }
 
   @Test
   void findByUsername_shouldReturnEmpty() {
-    assertTrue(userDao.findByUsername("ghost").isEmpty());
+    assertTrue(userDAO.findByUsername("ghost").isEmpty());
   }
 }

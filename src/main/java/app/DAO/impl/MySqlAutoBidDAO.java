@@ -1,7 +1,7 @@
-package app.dao.impl;
+package app.DAO.impl;
 
-import app.dao.AutoBidDao;
-import app.dao.BaseDao;
+import app.DAO.AutoBidDAO;
+import app.DAO.BaseDAO;
 import app.exception.DatabaseException;
 import app.models.AutoBid;
 import java.sql.Connection;
@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** MySqlAutoBidDao. */
-public class MySqlAutoBidDao extends BaseDao implements AutoBidDao {
+/** MySqlAutoBidDAO. */
+public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   private static final String TABLE = "auto_bids";
   private static final String BASE_SELECT =
       """

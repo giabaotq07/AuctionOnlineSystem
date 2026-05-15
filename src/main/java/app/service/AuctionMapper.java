@@ -1,7 +1,7 @@
 package app.service;
 
-import app.dao.BidDao;
-import app.dao.ItemDao;
+import app.DAO.BidDAO;
+import app.DAO.ItemDAO;
 import app.data.AuctionDetail;
 import app.data.AuctionSummary;
 import app.models.Auction;
@@ -11,18 +11,18 @@ import java.util.Optional;
 
 /** AuctionMapper. */
 public class AuctionMapper {
-  private final ItemDao itemDao;
-  private final BidDao bidDao;
+  private final ItemDAO itemDAO;
+  private final BidDAO bidDAO;
 
   /** AuctionMapper. */
-  public AuctionMapper(ItemDao itemDao, BidDao bidDao) {
-    this.itemDao = itemDao;
-    this.bidDao = bidDao;
+  public AuctionMapper(ItemDAO itemDAO, BidDAO bidDAO) {
+    this.itemDAO = itemDAO;
+    this.bidDAO = bidDAO;
   }
 
   /** toSummary. */
   public AuctionSummary toSummary(Auction auction) {
-    Optional<Item> itemOpt = itemDao.findById(auction.getItemId());
+    Optional<Item> itemOpt = itemDAO.findById(auction.getItemId());
     if (itemOpt.isEmpty()) {
       return null;
     }
@@ -34,7 +34,7 @@ public class AuctionMapper {
   /** toDetail. */
   public AuctionDetail toDetail(Auction auction) {
     Item item =
-        itemDao
+        itemDAO
             .findById(auction.getItemId())
             .orElseThrow(() -> new RuntimeException("Không tìm thấy vật phẩm."));
     long currentPrice = getCurrentPrice(auction.getId(), item.getStartingPrice());
@@ -50,6 +50,6 @@ public class AuctionMapper {
   }
 
   private long getCurrentPrice(int auctionId, long fallback) {
-    return bidDao.findHighestBid(auctionId).map(BidTransaction::getAmount).orElse(fallback);
+    return bidDAO.findHighestBid(auctionId).map(BidTransaction::getAmount).orElse(fallback);
   }
 }

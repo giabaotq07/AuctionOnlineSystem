@@ -1,12 +1,12 @@
-package app.dao;
+package app.DAO;
 
 import app.models.AutoBid;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
-/** AutoBidDao. */
-public interface AutoBidDao {
+/** AutoBidDAO. */
+public interface AutoBidDAO {
   /** findById. */
   Optional<AutoBid> findById(int id);
 
