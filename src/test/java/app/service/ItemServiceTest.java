@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
-import app.dao.AuctionDAO;
-import app.dao.BaseDAOTest;
-import app.dao.ItemDAO;
-import app.dao.UserDAO;
-import app.dao.impl.MySqlAuctionDAO;
-import app.dao.impl.MySqlItemDAO;
-import app.dao.impl.MySqlUserDAO;
+import app.dao.AuctionDao;
+import app.dao.BaseDaoTest;
+import app.dao.ItemDao;
+import app.dao.UserDao;
+import app.dao.impl.MySqlAuctionDao;
+import app.dao.impl.MySqlItemDao;
+import app.dao.impl.MySqlUserDao;
 import app.database.TransactionManager;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
@@ -20,18 +20,18 @@ import app.models.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ItemServiceTest extends BaseDAOTest {
-  private ItemDAO itemDAO;
+class ItemServiceTest extends BaseDaoTest {
+  private ItemDao itemDao;
   private ItemService itemService;
   private User seller;
 
   @BeforeEach
   void setUp() {
-    UserDAO userDAO = new MySqlUserDAO();
-    itemDAO = new MySqlItemDAO();
-    AuctionDAO auctionDAO = new MySqlAuctionDAO();
-    itemService = new ItemService(itemDAO, auctionDAO, new TransactionManager());
-    seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
+    UserDao userDao = new MySqlUserDao();
+    itemDao = new MySqlItemDao();
+    AuctionDao auctionDao = new MySqlAuctionDao();
+    itemService = new ItemService(itemDao, auctionDao, new TransactionManager());
+    seller = userDao.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 
   @Test
@@ -67,7 +67,7 @@ class ItemServiceTest extends BaseDAOTest {
 
     itemService.updateStatus(saved.getId(), ItemStatus.SOLD);
 
-    Item found = itemDAO.findById(saved.getId()).orElseThrow();
+    Item found = itemDao.findById(saved.getId()).orElseThrow();
     assertEquals(ItemStatus.SOLD, found.getStatus());
   }
 
@@ -77,7 +77,7 @@ class ItemServiceTest extends BaseDAOTest {
 
     itemService.delete(saved.getId());
 
-    Item found = itemDAO.findById(saved.getId()).orElseThrow();
+    Item found = itemDao.findById(saved.getId()).orElseThrow();
     assertEquals(ItemStatus.DELETE, found.getStatus());
   }
 

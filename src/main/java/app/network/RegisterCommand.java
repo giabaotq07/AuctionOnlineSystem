@@ -16,10 +16,12 @@ import app.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** RegisterCommand. */
 public class RegisterCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(RegisterCommand.class);
   private final UserService userService;
 
+  /** RegisterCommand. */
   public RegisterCommand(UserService userService) {
     this.userService = userService;
   }

@@ -10,10 +10,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/** NavigationManager. */
 public class NavigationManager {
   private static final NavigationManager instance = new NavigationManager();
   private Stage primaryStage;
-  // controller hiện tại
   private Object currentController;
 
   private NavigationManager() {}
@@ -26,13 +26,14 @@ public class NavigationManager {
     this.primaryStage = stage;
   }
 
+  /** navigateTo. */
   public void navigateTo(View view) {
     navigateTo(view, null);
   }
 
+  /** navigateTo. */
   public void navigateTo(View view, Consumer<Object> controllerCallback) {
     try {
-      // cleanup controller cũ
       if (currentController instanceof Cleanable cleanable) {
         cleanable.cleanup();
       }

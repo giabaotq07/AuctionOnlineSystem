@@ -2,7 +2,9 @@ package app.models;
 
 import app.enums.ItemType;
 
+/** ItemFactory. */
 public class ItemFactory {
+  /** createItem. */
   public static Item createItem(
       int id,
       String name,
@@ -19,6 +21,7 @@ public class ItemFactory {
     };
   }
 
+  /** createItem. */
   public static Item createItem(
       String name,
       int sellerId,

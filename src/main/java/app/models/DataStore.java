@@ -17,10 +17,11 @@ import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** DataStore. */
 public class DataStore {
   static Logger logger = LoggerFactory.getLogger(DataStore.class);
   public List<AuctionSummary> auctions;
-  public User currentUser; // Track the logged-in user
+  public User currentUser;
   public Auction currentAuction;
   private static DataStore instance;
 
@@ -31,6 +32,7 @@ public class DataStore {
     loadWalletUpdates();
   }
 
+  /** getInstance. */
   public static DataStore getInstance() {
     if (instance == null) {
       synchronized (DataStore.class) {
@@ -49,6 +51,7 @@ public class DataStore {
     return instance;
   }
 
+  /** updateCurrentUser. */
   public void updateCurrentUser(UserData data) {
     if (data == null) {
       return;

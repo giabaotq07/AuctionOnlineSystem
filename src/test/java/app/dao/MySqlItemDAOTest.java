@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
-import app.dao.impl.MySqlItemDAO;
-import app.dao.impl.MySqlUserDAO;
+import app.dao.impl.MySqlItemDao;
+import app.dao.impl.MySqlUserDao;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -14,24 +14,24 @@ import app.models.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class MySqlItemDAOTest extends BaseDAOTest {
-  private UserDAO userDAO;
-  private ItemDAO itemDAO;
+class MySqlItemDaoTest extends BaseDaoTest {
+  private UserDao userDao;
+  private ItemDao itemDao;
   private User seller;
 
   @BeforeEach
   void setUp() {
-    userDAO = new MySqlUserDAO();
-    itemDAO = new MySqlItemDAO();
-    seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
+    userDao = new MySqlUserDao();
+    itemDao = new MySqlItemDao();
+    seller = userDao.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 
   @Test
   void save_shouldPersistItemWithAvailableStatus() {
-    Item saved = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
+    Item saved = itemDao.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
 
     assertTrue(saved.getId() > 0);
-    Item found = itemDAO.findById(saved.getId()).orElseThrow();
+    Item found = itemDao.findById(saved.getId()).orElseThrow();
     assertEquals("Laptop", found.getName());
     assertEquals(seller.getId(), found.getSellerId());
     assertEquals(ItemType.ELECTRONICS, found.getType());
@@ -41,12 +41,12 @@ class MySqlItemDAOTest extends BaseDAOTest {
   @Test
   void findBySeller_shouldReturnOnlySellerItems() {
     User otherSeller =
-        userDAO.save(TestFixtures.user(TestFixtures.unique("other_seller"), UserRole.SELLER));
+        userDao.save(TestFixtures.user(TestFixtures.unique("other_seller"), UserRole.SELLER));
     Item sellerItem =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Camera", ItemType.ELECTRONICS));
-    itemDAO.save(TestFixtures.item(otherSeller.getId(), "Painting", ItemType.ART));
+        itemDao.save(TestFixtures.item(seller.getId(), "Camera", ItemType.ELECTRONICS));
+    itemDao.save(TestFixtures.item(otherSeller.getId(), "Painting", ItemType.ART));
 
-    var items = itemDAO.findBySeller(seller.getId());
+    var items = itemDao.findBySeller(seller.getId());
 
     assertEquals(1, items.size());
     assertEquals(sellerItem.getId(), items.getFirst().getId());
@@ -54,13 +54,13 @@ class MySqlItemDAOTest extends BaseDAOTest {
 
   @Test
   void findByCategoryAndAvailable_shouldFilterItems() {
-    Item phone = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-    Item painting = itemDAO.save(TestFixtures.item(seller.getId(), "Painting", ItemType.ART));
+    Item phone = itemDao.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
+    Item painting = itemDao.save(TestFixtures.item(seller.getId(), "Painting", ItemType.ART));
     painting.setStatus(ItemStatus.SOLD);
-    itemDAO.update(painting);
+    itemDao.update(painting);
 
-    var electronics = itemDAO.findByCategory(ItemType.ELECTRONICS);
-    var available = itemDAO.findAvailable();
+    var electronics = itemDao.findByCategory(ItemType.ELECTRONICS);
+    var available = itemDao.findAvailable();
 
     assertEquals(1, electronics.size());
     assertEquals(phone.getId(), electronics.getFirst().getId());
@@ -70,7 +70,7 @@ class MySqlItemDAOTest extends BaseDAOTest {
 
   @Test
   void update_shouldPersistEditableFieldsAndStatus() {
-    Item saved = itemDAO.save(TestFixtures.item(seller.getId(), "Old name", ItemType.ELECTRONICS));
+    Item saved = itemDao.save(TestFixtures.item(seller.getId(), "Old name", ItemType.ELECTRONICS));
     saved.setName("New name");
     saved.setDescription("Updated description");
     saved.setStartingPrice(2000L);
@@ -78,9 +78,9 @@ class MySqlItemDAOTest extends BaseDAOTest {
     saved.setType(ItemType.VEHICLE);
     saved.setStatus(ItemStatus.UNDER_AUCTION);
 
-    itemDAO.update(saved);
+    itemDao.update(saved);
 
-    Item found = itemDAO.findById(saved.getId()).orElseThrow();
+    Item found = itemDao.findById(saved.getId()).orElseThrow();
     assertEquals("New name", found.getName());
     assertEquals("Updated description", found.getDescription());
     assertEquals(2000L, found.getStartingPrice());

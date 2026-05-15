@@ -14,10 +14,12 @@ import app.service.ItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** UpdateItemCommand. */
 public class UpdateItemCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(UpdateItemCommand.class);
   private final ItemService itemService;
 
+  /** UpdateItemCommand. */
   public UpdateItemCommand(ItemService itemService) {
     this.itemService = itemService;
   }

@@ -15,11 +15,16 @@ import java.util.Objects;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
+/** RegisterController. */
 public class RegisterController {
   @FXML private AnchorPane rootPane;
   @FXML private Label lblLogin;
@@ -35,12 +40,10 @@ public class RegisterController {
 
   @FXML
   private void initialize() {
-    // role
     rbSeller.setToggleGroup(roleGroup);
     rbBidder.setToggleGroup(roleGroup);
 
     rbBidder.setSelected(true);
-    // Load background image giống login
     try {
       String url =
           Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
@@ -76,6 +79,7 @@ public class RegisterController {
     Client.getInstance().subscribe(PacketType.REGISTER, registerHandler);
   }
 
+  /** Member. */
   @FXML
   public void handleRegister(ActionEvent event) {
     String name = txtName.getText();
@@ -100,6 +104,7 @@ public class RegisterController {
     }
   }
 
+  /** Member. */
   @FXML
   public void backToLoginMouse(MouseEvent event) {
     if (registerHandler != null) {

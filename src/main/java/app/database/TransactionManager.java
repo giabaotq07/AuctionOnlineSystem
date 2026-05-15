@@ -6,7 +6,9 @@ import java.sql.SQLException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/** TransactionManager. */
 public class TransactionManager {
+  /** runInTransaction. */
   public <T> T runInTransaction(Function<Connection, T> work) {
     try (Connection conn = DatabaseConnection.getDataSource().getConnection()) {
       conn.setAutoCommit(false);
@@ -25,6 +27,7 @@ public class TransactionManager {
     }
   }
 
+  /** runWithoutResult. */
   public void runWithoutResult(Consumer<Connection> work) {
     runInTransaction(
         conn -> {

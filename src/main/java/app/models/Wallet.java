@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+/** Wallet. */
 public class Wallet {
   private static final Gson GSON = new GsonBuilder().create();
   private static final Type FROZEN_TYPE = new TypeToken<Map<String, BigDecimal>>() {}.getType();
@@ -18,14 +19,17 @@ public class Wallet {
   private BigDecimal availableBalance;
   private final Map<String, BigDecimal> frozenFunds;
 
+  /** Wallet. */
   public Wallet() {
     this(BigDecimal.ZERO, new HashMap<>());
   }
 
+  /** Wallet. */
   public Wallet(BigDecimal availableBalance) {
     this(availableBalance, new HashMap<>());
   }
 
+  /** Wallet. */
   public Wallet(BigDecimal availableBalance, Map<String, BigDecimal> frozenFunds) {
     this.availableBalance = normalize(availableBalance);
     this.frozenFunds = new HashMap<>();
@@ -38,6 +42,7 @@ public class Wallet {
     }
   }
 
+  /** getAvailableBalance. */
   public BigDecimal getAvailableBalance() {
     lock.lock();
     try {
@@ -47,6 +52,7 @@ public class Wallet {
     }
   }
 
+  /** getFrozenFundsSnapshot. */
   public Map<String, BigDecimal> getFrozenFundsSnapshot() {
     lock.lock();
     try {
@@ -56,6 +62,7 @@ public class Wallet {
     }
   }
 
+  /** getTotalBalance. */
   public BigDecimal getTotalBalance() {
     lock.lock();
     try {
@@ -69,6 +76,7 @@ public class Wallet {
     }
   }
 
+  /** getFrozenAmount. */
   public BigDecimal getFrozenAmount(String auctionId) {
     lock.lock();
     try {
@@ -78,6 +86,7 @@ public class Wallet {
     }
   }
 
+  /** deposit. */
   public void deposit(BigDecimal amount) {
     BigDecimal normalized = normalize(amount);
     if (normalized.signum() <= 0) {
@@ -91,6 +100,7 @@ public class Wallet {
     }
   }
 
+  /** withdraw. */
   public void withdraw(BigDecimal amount) {
     BigDecimal normalized = normalize(amount);
     if (normalized.signum() <= 0) {
@@ -107,6 +117,7 @@ public class Wallet {
     }
   }
 
+  /** setFrozenAmount. */
   public BigDecimal setFrozenAmount(String auctionId, BigDecimal newAmount) {
     Objects.requireNonNull(auctionId, "auctionId");
     BigDecimal normalized = normalize(newAmount);
@@ -136,6 +147,7 @@ public class Wallet {
     }
   }
 
+  /** releaseFrozen. */
   public BigDecimal releaseFrozen(String auctionId) {
     Objects.requireNonNull(auctionId, "auctionId");
     lock.lock();
@@ -151,6 +163,7 @@ public class Wallet {
     }
   }
 
+  /** commitFrozen. */
   public BigDecimal commitFrozen(String auctionId) {
     Objects.requireNonNull(auctionId, "auctionId");
     lock.lock();
@@ -162,6 +175,7 @@ public class Wallet {
     }
   }
 
+  /** serializeFrozenFunds. */
   public String serializeFrozenFunds() {
     lock.lock();
     try {
@@ -171,6 +185,7 @@ public class Wallet {
     }
   }
 
+  /** parseFrozenFunds. */
   public static Map<String, BigDecimal> parseFrozenFunds(String json) {
     if (json == null || json.isBlank()) {
       return new HashMap<>();

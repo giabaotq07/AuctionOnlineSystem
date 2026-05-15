@@ -2,6 +2,7 @@ package app.data;
 
 import java.time.LocalDateTime;
 
+/** AuctionDetail. */
 public record AuctionDetail(
     int auctionId,
     String itemName,

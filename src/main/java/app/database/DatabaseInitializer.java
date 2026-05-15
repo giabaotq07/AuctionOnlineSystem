@@ -6,7 +6,9 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Statement;
 
+/** DatabaseInitializer. */
 public class DatabaseInitializer {
+  /** initialize. */
   public static void initialize() {
     try (Connection conn = DatabaseConnection.getDataSource().getConnection();
         InputStream stream = DatabaseConnection.class.getResourceAsStream("/schema.sql")) {

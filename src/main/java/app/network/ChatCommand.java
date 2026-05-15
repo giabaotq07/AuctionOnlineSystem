@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** ChatCommand. */
 public class ChatCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(ChatCommand.class);
   private static final int MAX_MESSAGE_LENGTH = 500;
@@ -41,9 +42,7 @@ public class ChatCommand implements Command {
       ChatResponse response =
           new ChatResponse(user.getId(), user.getName(), content, LocalDateTime.now());
       PacketRes chatPacket = PacketRes.of(PacketType.CHAT, response);
-      // gửi lại cho sender
       clientHandler.sendPacket(chatPacket);
-      // broadcast cho user khác
       Server.broadcast(chatPacket, user.getId());
       logger.info("User {} sent chat message", user.getId());
     } catch (Exception e) {

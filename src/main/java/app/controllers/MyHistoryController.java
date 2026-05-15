@@ -25,6 +25,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/** MyHistoryController. */
 public class MyHistoryController implements Cleanable {
 
   private static final double CARD_WIDTH = 260;
@@ -44,13 +45,14 @@ public class MyHistoryController implements Cleanable {
 
   private PacketListener<HistoryResponse> historyHandler;
 
+  /** Member. */
   @FXML
   public void initialize() {
     typeFilterComboBox.getItems().addAll("ALL", "ELECTRONICS", "ART", "VEHICLE");
 
     typeFilterComboBox.setValue("ALL");
 
-    typeFilterComboBox.setOnAction(e -> rebuildUI());
+    typeFilterComboBox.setOnAction(e -> rebuildUi());
 
     historyHandler =
         (HistoryResponse response) ->
@@ -62,7 +64,7 @@ public class MyHistoryController implements Cleanable {
 
                     summaries.addAll(response.auctions());
 
-                    rebuildUI();
+                    rebuildUi();
                   }
                 });
 
@@ -89,7 +91,7 @@ public class MyHistoryController implements Cleanable {
     }
   }
 
-  private void rebuildUI() {
+  private void rebuildUi() {
 
     if (runningPane == null || finishedPane == null) {
       return;
@@ -116,7 +118,7 @@ public class MyHistoryController implements Cleanable {
 
   private VBox createAuctionCard(AuctionSummary summary) {
 
-    Auction auction = summary.auction();
+    final Auction auction = summary.auction();
 
     VBox vbox = new VBox();
 
@@ -203,14 +205,16 @@ public class MyHistoryController implements Cleanable {
     }
   }
 
+  /** Member. */
   @FXML
   public void handleReload() {
 
     requestHistory();
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToUI() {
+  public void switchToUi() {
 
     if (historyHandler != null) {
 

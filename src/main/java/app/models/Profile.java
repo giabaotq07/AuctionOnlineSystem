@@ -1,8 +1,10 @@
 package app.models;
 
+/** Profile. */
 public class Profile {
   private String name;
 
+  /** Profile. */
   public Profile(String name) {
     this.name = name;
   }

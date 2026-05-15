@@ -3,12 +3,14 @@ package app.models;
 import app.enums.HistoryType;
 import java.time.LocalDateTime;
 
+/** HistoryRecord. */
 public class HistoryRecord {
   private int auctionId;
   private HistoryType type;
   private String message;
   private LocalDateTime time;
 
+  /** HistoryRecord. */
   public HistoryRecord(int auctionId, HistoryType type, String message) {
     this.auctionId = auctionId;
     this.type = type;

@@ -57,19 +57,19 @@
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: #673ab7; -fx-text-fill: white; -fx-font-weight: bold;" />
             <Button text="ĐẤU GIÁ CỦA TÔI"
-                    onAction="#SwitchToMine"
+                    onAction="#switchToMine"
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
             <Button text="MESS CHAT"
-                    onAction="#SwitchToMess"
+                    onAction="#switchToMess"
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
             <Button text="TẠO PHIÊN ĐẤU GIÁ"
-                    onAction="#SwitchToOrganize"
+                    onAction="#switchToOrganize"
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
             <Button text="NẠP TIỀN"
-                    onAction="#SwitchToDeposit"
+                    onAction="#switchToDeposit"
                     maxWidth="Infinity" prefHeight="40"
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
             <Region VBox.vgrow="ALWAYS" />

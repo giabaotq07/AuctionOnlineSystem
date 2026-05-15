@@ -1,5 +1,6 @@
 package app.database;
 
+/** DatabaseConfig. */
 public final class DatabaseConfig {
   private final String url;
   private final String user;
@@ -11,6 +12,7 @@ public final class DatabaseConfig {
     this.password = password;
   }
 
+  /** load. */
   public static DatabaseConfig load() {
     String url = System.getProperty("db.url", "jdbc:mysql://localhost:3306/auction_db");
     String user = System.getProperty("db.user", "root");

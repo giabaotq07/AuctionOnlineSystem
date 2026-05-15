@@ -1,9 +1,11 @@
 package app.models;
 
+/** Account. */
 public class Account {
   private String username;
   private transient String password;
 
+  /** Account. */
   public Account(String username, String password) {
     this.username = username;
     this.password = password;

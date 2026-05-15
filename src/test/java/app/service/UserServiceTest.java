@@ -2,9 +2,9 @@ package app.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import app.dao.BaseDAOTest;
-import app.dao.UserDAO;
-import app.dao.impl.MySqlUserDAO;
+import app.dao.BaseDaoTest;
+import app.dao.UserDao;
+import app.dao.impl.MySqlUserDao;
 import app.database.TransactionManager;
 import app.enums.UserRole;
 import app.exception.ServiceException;
@@ -19,10 +19,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UserServiceTest extends BaseDAOTest {
+public class UserServiceTest extends BaseDaoTest {
   private static final Logger logger = LoggerFactory.getLogger(UserServiceTest.class);
   private UserService userService;
-  private UserDAO userDAO;
+  private UserDao userDao;
   private TransactionManager transactionManager;
   private User tester;
 
@@ -32,13 +32,13 @@ public class UserServiceTest extends BaseDAOTest {
   @BeforeEach
   void setup() {
     logger.info("Setting up UserService test...");
-    userDAO = new MySqlUserDAO();
+    userDao = new MySqlUserDao();
     transactionManager = new TransactionManager();
 
-    userService = new UserService(userDAO, transactionManager);
+    userService = new UserService(userDao, transactionManager);
     cleanDatabase();
     tester = createTestUser();
-    tester = userDAO.save(tester);
+    tester = userDao.save(tester);
     logger.info("Test user ready: id={}", tester.getId());
   }
 
@@ -76,7 +76,7 @@ public class UserServiceTest extends BaseDAOTest {
 
     User saved = userService.register(rawUser);
 
-    User stored = userDAO.findById(saved.getId()).orElseThrow();
+    User stored = userDao.findById(saved.getId()).orElseThrow();
     assertEquals("registered_user", stored.getAccount().getUsername());
     assertNotEquals("plain_password", stored.getAccount().getPassword());
     assertTrue(PasswordUtils.verify("plain_password", stored.getAccount().getPassword()));
@@ -99,7 +99,7 @@ public class UserServiceTest extends BaseDAOTest {
     User updated = userService.deposit(tester.getId(), new BigDecimal("50000"));
 
     assertEquals(0, updated.getWallet().getAvailableBalance().compareTo(new BigDecimal("50000")));
-    User stored = userDAO.findById(tester.getId()).orElseThrow();
+    User stored = userDao.findById(tester.getId()).orElseThrow();
     assertEquals(0, stored.getWallet().getAvailableBalance().compareTo(new BigDecimal("50000")));
   }
 
@@ -125,7 +125,7 @@ public class UserServiceTest extends BaseDAOTest {
     BigDecimal previous = userService.reserveBidAmount(tester.getId(), 10, new BigDecimal("300"));
 
     assertEquals(0, previous.compareTo(BigDecimal.ZERO));
-    User reserved = userDAO.findById(tester.getId()).orElseThrow();
+    User reserved = userDao.findById(tester.getId()).orElseThrow();
     assertEquals(0, reserved.getWallet().getAvailableBalance().compareTo(new BigDecimal("700")));
     assertEquals(0, reserved.getWallet().getFrozenAmount("10").compareTo(new BigDecimal("300")));
 
@@ -153,7 +153,7 @@ public class UserServiceTest extends BaseDAOTest {
   private void cleanDatabase() {
     logger.info("Cleaning test data...");
     try {
-      userDAO.deleteAll();
+      userDao.deleteAll();
     } catch (Exception e) {
       throw new RuntimeException("Failed to clean database", e);
     }

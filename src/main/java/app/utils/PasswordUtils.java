@@ -5,7 +5,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+/** PasswordUtils. */
 public class PasswordUtils {
+  /** hashPassword. */
   public static String hashPassword(String password) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -16,6 +18,7 @@ public class PasswordUtils {
     }
   }
 
+  /** verify. */
   public static boolean verify(String plainTextPassword, String hashedPasswordInDb) {
     String hashedInput = hashPassword(plainTextPassword);
     return hashedInput.equals(hashedPasswordInDb);

@@ -1,19 +1,25 @@
 package app.dao.impl;
 
-import app.dao.BaseDAO;
-import app.dao.ItemDAO;
+import app.dao.BaseDao;
+import app.dao.ItemDao;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 import app.exception.DatabaseException;
 import app.models.Item;
 import app.models.ItemFactory;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class MySqlItemDAO extends BaseDAO implements ItemDAO {
-  public MySqlItemDAO() {}
+/** MySqlItemDao. */
+public class MySqlItemDao extends BaseDao implements ItemDao {
+  /** MySqlItemDao. */
+  public MySqlItemDao() {}
 
   private static final String TABLE = "items";
   private static final String BASE_SELECT =
@@ -88,7 +94,9 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   public Item save(Connection conn, Item item) {
     String sql =
         """
-        INSERT INTO items (seller_id, name, description, category, starting_price, step_price, status)
+        INSERT INTO items (
+            seller_id, name, description, category, starting_price, step_price, status
+        )
         VALUES (?, ?, ?, ?, ?, ?, 'AVAILABLE')
         """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {

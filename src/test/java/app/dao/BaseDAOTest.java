@@ -13,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class BaseDAOTest {
-  private static final Logger logger = LoggerFactory.getLogger(BaseDAOTest.class);
+public abstract class BaseDaoTest {
+  private static final Logger logger = LoggerFactory.getLogger(BaseDaoTest.class);
   private static final String DB_HOST = "jdbc:mysql://localhost:3306/";
   private static final String TEST_DB = "auction_db_test";
   private static final String FULL_URL = DB_HOST + TEST_DB;
@@ -111,7 +111,7 @@ public abstract class BaseDAOTest {
   private String loadSchemaFile() {
     try {
       return new String(
-          Objects.requireNonNull(BaseDAOTest.class.getResourceAsStream("/schema.sql"))
+          Objects.requireNonNull(BaseDaoTest.class.getResourceAsStream("/schema.sql"))
               .readAllBytes());
     } catch (Exception e) {
       throw new RuntimeException("Cannot load schema.sql", e);

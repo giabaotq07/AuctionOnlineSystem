@@ -1,15 +1,20 @@
 package app.dao.impl;
 
-import app.dao.AutoBidDAO;
-import app.dao.BaseDAO;
+import app.dao.AutoBidDao;
+import app.dao.BaseDao;
 import app.exception.DatabaseException;
 import app.models.AutoBid;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
+/** MySqlAutoBidDao. */
+public class MySqlAutoBidDao extends BaseDao implements AutoBidDao {
   private static final String TABLE = "auto_bids";
   private static final String BASE_SELECT =
       """
@@ -37,7 +42,6 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
         rs.getTimestamp("updated_at").toLocalDateTime());
   }
 
-  // ── Read operations ─────────────────────────────────────
   @Override
   public Optional<AutoBid> findById(int id) {
     return withConnection(
@@ -48,6 +52,11 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   public Optional<AutoBid> findByAuctionAndUser(int auctionId, int userId) {
     return withConnection(
         conn -> findByAuctionAndUser(conn, auctionId, userId), "Lỗi kết nối khi tải auto bid.");
+  }
+
+  @Override
+  public Optional<AutoBid> findByAuctionAndUser(Connection conn, int auctionId, int userId) {
+    return findOne(conn, BASE_SELECT + " WHERE session_id = ? AND user_id = ?", auctionId, userId);
   }
 
   @Override
@@ -66,12 +75,6 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
         "Lỗi kết nối khi tải auto bid đang hoạt động.");
   }
 
-  // ── Transaction-aware read operations ───────────────────
-  @Override
-  public Optional<AutoBid> findByAuctionAndUser(Connection conn, int auctionId, int userId) {
-    return findOne(conn, BASE_SELECT + " WHERE session_id = ? AND user_id = ?", auctionId, userId);
-  }
-
   @Override
   public List<AutoBid> findEnabledByAuction(Connection conn, int auctionId) {
     return findMany(
@@ -85,32 +88,11 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
         auctionId);
   }
 
-  // ── Write operations ────────────────────────────────────
   @Override
   public AutoBid save(AutoBid autoBid) {
     return withConnection(conn -> save(conn, autoBid), "Lỗi kết nối khi tạo auto bid.");
   }
 
-  @Override
-  public boolean update(AutoBid autoBid) {
-    return withConnection(conn -> update(conn, autoBid), "Lỗi kết nối khi cập nhật auto bid.");
-  }
-
-  @Override
-  public boolean delete(int id) {
-    return withConnection(
-        conn -> executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id),
-        "Lỗi kết nối khi xóa auto bid.");
-  }
-
-  @Override
-  public boolean setEnabled(int id, boolean enabled) {
-    return withConnection(
-        conn -> executeUpdate(conn, "UPDATE auto_bids SET enabled = ? WHERE id = ?", enabled, id),
-        "Lỗi kết nối khi cập nhật trạng thái auto bid.");
-  }
-
-  // ── Transaction-aware write operations ──────────────────
   @Override
   public AutoBid save(Connection conn, AutoBid autoBid) {
     String sql =
@@ -142,6 +124,11 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   }
 
   @Override
+  public boolean update(AutoBid autoBid) {
+    return withConnection(conn -> update(conn, autoBid), "Lỗi kết nối khi cập nhật auto bid.");
+  }
+
+  @Override
   public boolean update(Connection conn, AutoBid autoBid) {
     String sql =
         """
@@ -161,7 +148,20 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
         autoBid.getId());
   }
 
-  // ── Helpers ─────────────────────────────────────────────
+  @Override
+  public boolean delete(int id) {
+    return withConnection(
+        conn -> executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id),
+        "Lỗi kết nối khi xóa auto bid.");
+  }
+
+  @Override
+  public boolean setEnabled(int id, boolean enabled) {
+    return withConnection(
+        conn -> executeUpdate(conn, "UPDATE auto_bids SET enabled = ? WHERE id = ?", enabled, id),
+        "Lỗi kết nối khi cập nhật trạng thái auto bid.");
+  }
+
   private Optional<AutoBid> findOne(Connection conn, String sql, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);

@@ -31,6 +31,7 @@ import app.data.UpdateItemRequest;
 import app.data.UsersResponse;
 import app.data.WalletUpdateResponse;
 
+/** PacketType. */
 public enum PacketType {
   LOGIN(LoginRequest.class, LoginResponse.class),
   LOGOUT(Void.class, Void.class),

@@ -20,12 +20,14 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** PlaceBidCommand. */
 public class PlaceBidCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
   private final UserService userService;
   private final AuctionService auctionService;
 
+  /** PlaceBidCommand. */
   public PlaceBidCommand(
       BidService bidService, UserService userService, AuctionService auctionService) {
     this.bidService = bidService;

@@ -5,31 +5,41 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
-public interface AutoBidDAO {
-  // ── Read operations ───────────────────────────────
+/** AutoBidDao. */
+public interface AutoBidDao {
+  /** findById. */
   Optional<AutoBid> findById(int id);
 
+  /** findByAuctionAndUser. */
   Optional<AutoBid> findByAuctionAndUser(int auctionId, int userId);
 
-  List<AutoBid> findByAuction(int auctionId);
-
-  List<AutoBid> findEnabledByAuction(int auctionId);
-
-  // ── Write operations ──────────────────────────────
-  AutoBid save(AutoBid autoBid);
-
-  boolean update(AutoBid autoBid);
-
-  boolean delete(int id);
-
-  boolean setEnabled(int id, boolean enabled);
-
-  // ── Transaction-aware operations ──────────────────
+  /** findByAuctionAndUser. */
   Optional<AutoBid> findByAuctionAndUser(Connection conn, int auctionId, int userId);
 
+  /** findByAuction. */
+  List<AutoBid> findByAuction(int auctionId);
+
+  /** findEnabledByAuction. */
+  List<AutoBid> findEnabledByAuction(int auctionId);
+
+  /** findEnabledByAuction. */
   List<AutoBid> findEnabledByAuction(Connection conn, int auctionId);
 
+  /** save. */
+  AutoBid save(AutoBid autoBid);
+
+  /** save. */
   AutoBid save(Connection conn, AutoBid autoBid);
 
+  /** update. */
+  boolean update(AutoBid autoBid);
+
+  /** update. */
   boolean update(Connection conn, AutoBid autoBid);
+
+  /** delete. */
+  boolean delete(int id);
+
+  /** setEnabled. */
+  boolean setEnabled(int id, boolean enabled);
 }

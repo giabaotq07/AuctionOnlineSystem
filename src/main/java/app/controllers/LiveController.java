@@ -40,6 +40,7 @@ import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** LiveController. */
 public class LiveController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
   private Auction auction;
@@ -65,6 +66,7 @@ public class LiveController implements Cleanable {
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private boolean settlementSent = false;
 
+  /** Member. */
   @FXML
   public void initialize() {
     placeBidHandler = response -> Platform.runLater(() -> handleBidResponse(response));
@@ -78,6 +80,7 @@ public class LiveController implements Cleanable {
     updateAvailableBalance();
   }
 
+  /** setAuction. */
   public void setAuction(Auction auction) {
     this.auction = auction;
     try {
@@ -199,6 +202,7 @@ public class LiveController implements Cleanable {
     startCountdownTimer(detail.endTime());
   }
 
+  /** onNewBidPlaced. */
   public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
     Platform.runLater(
         () -> {
@@ -207,6 +211,7 @@ public class LiveController implements Cleanable {
         });
   }
 
+  /** onAuctionClosed. */
   public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
     Platform.runLater(
         () -> {
@@ -229,6 +234,7 @@ public class LiveController implements Cleanable {
         });
   }
 
+  /** Member. */
   @FXML
   public void handlePlaceBid(ActionEvent event) throws IOException {
     if (!Client.getInstance().isConnected()) {
@@ -347,8 +353,9 @@ public class LiveController implements Cleanable {
     auction = null;
   }
 
+  /** Member. */
   @FXML
-  public void SwitchToUI(ActionEvent event) {
+  public void switchToUi(ActionEvent event) {
     cleanup();
     NavigationManager.getInstance().navigateTo(View.UI);
   }

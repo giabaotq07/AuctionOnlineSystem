@@ -3,6 +3,7 @@ package app.models;
 import app.enums.ItemStatus;
 import app.enums.ItemType;
 
+/** Item. */
 public abstract class Item extends Entity {
   protected int sellerId;
   protected String name;
@@ -12,6 +13,7 @@ public abstract class Item extends Entity {
   protected ItemType type;
   protected ItemStatus status;
 
+  /** Item. */
   public Item(
       String name,
       int sellerId,
@@ -22,6 +24,7 @@ public abstract class Item extends Entity {
     this(0, name, sellerId, description, startingPrice, stepPrice, type);
   }
 
+  /** Item. */
   public Item(
       int id,
       String name,
@@ -95,5 +98,6 @@ public abstract class Item extends Entity {
     this.status = status;
   }
 
+  /** printInfo. */
   public abstract void printInfo();
 }

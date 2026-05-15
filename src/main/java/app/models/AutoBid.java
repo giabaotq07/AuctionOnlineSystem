@@ -2,6 +2,7 @@ package app.models;
 
 import java.time.LocalDateTime;
 
+/** AutoBid. */
 public class AutoBid {
   private int id;
   private int auctionId;
@@ -12,8 +13,10 @@ public class AutoBid {
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
+  /** AutoBid. */
   public AutoBid() {}
 
+  /** AutoBid. */
   public AutoBid(
       int id,
       int auctionId,
@@ -33,7 +36,6 @@ public class AutoBid {
     this.updatedAt = updatedAt;
   }
 
-  // getters/setters
   public int getId() {
     return id;
   }
