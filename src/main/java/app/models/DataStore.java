@@ -21,12 +21,11 @@ public class DataStore {
   public List<AuctionSummary> auctions;
   public User currentUser;
   public Auction currentAuction;
-  private static DataStore instance;
+  private static volatile DataStore instance;
 
   private DataStore() {
     auctions = new ArrayList<>();
     logger.info("DataStore instance created");
-    loadAuctions();
     loadWalletUpdates();
   }
 
@@ -36,12 +35,6 @@ public class DataStore {
       synchronized (DataStore.class) {
         if (instance == null) {
           instance = new DataStore();
-          try {
-            Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
-          } catch (IOException e) {
-            throw new ConnectException(e.getMessage());
-          }
-          return instance;
         }
       }
     }
@@ -56,19 +49,6 @@ public class DataStore {
     User user = DtoMapper.toUser(data);
     currentUser = user;
     Client.getInstance().setCurrentUser(user);
-  }
-
-  void loadAuctions() {
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_SUMMARIES,
-            (AuctionSummariesResponse response, boolean success, String message) ->
-                Platform.runLater(
-                    () -> {
-                      if (success && response != null && response.auctions() != null) {
-                        auctions = response.auctions();
-                      }
-                    }));
   }
 
   void loadWalletUpdates() {

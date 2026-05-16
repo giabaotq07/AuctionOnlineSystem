@@ -301,7 +301,13 @@ public class LiveController implements Cleanable {
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
-    scheduler = Executors.newSingleThreadScheduledExecutor();
+    // create a daemon thread so the JVM can exit when the UI is closed
+    scheduler = Executors.newSingleThreadScheduledExecutor(
+        r -> {
+          Thread t = new Thread(r);
+          t.setDaemon(true);
+          return t;
+        });
     scheduler.scheduleAtFixedRate(
         () -> {
           Platform.runLater(
