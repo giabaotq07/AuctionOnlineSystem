@@ -1,10 +1,10 @@
 package app.network;
 
 import app.dto.SettleWalletRequest;
-import app.dto.UserData;
 import app.dto.WalletUpdateResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
@@ -39,9 +39,9 @@ public class SettleWalletCommand implements Command {
       }
       int auctionId = request.auctionId();
       int userId = clientHandler.getUser().getId();
-      auctionService.getAuctionResult(auctionId);
+      auctionService.completeAndGetHighestBid(auctionId);
       User updated = userService.getById(userId);
-      WalletUpdateResponse response = new WalletUpdateResponse(new UserData(updated));
+      WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(updated));
       clientHandler.sendPacket(
           PacketRes.of(true, PacketType.WALLET_UPDATE, "Cập nhật ví thành công.", response));
     } catch (ServiceException e) {

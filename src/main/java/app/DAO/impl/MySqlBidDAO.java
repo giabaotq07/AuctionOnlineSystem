@@ -21,6 +21,7 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
       """
           SELECT
               b.id,
+              b.session_id,
               b.bid_amount,
               b.bid_time,
               b.is_auto_bid,
@@ -34,6 +35,7 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   private BidTransaction mapBid(ResultSet rs) throws SQLException {
     return new BidTransaction(
         rs.getInt("id"),
+        rs.getInt("session_id"),
         rs.getInt("user_id"),
         rs.getString("full_name"),
         rs.getLong("bid_amount"),

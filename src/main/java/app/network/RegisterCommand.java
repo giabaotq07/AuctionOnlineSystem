@@ -2,10 +2,10 @@ package app.network;
 
 import app.dto.RegisterRequest;
 import app.dto.RegisterResponse;
-import app.dto.UserData;
 import app.enums.PacketType;
 import app.enums.UserRole;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
 import app.models.Account;
 import app.models.PacketReq;
 import app.models.PacketRes;
@@ -57,7 +57,7 @@ public class RegisterCommand implements Command {
           UserFactory.createUser(name, new Account(username, password), new Wallet(), role);
       User created = userService.register(newUser);
       logger.info("[SERVER] User {} registered successfully.", username);
-      RegisterResponse response = new RegisterResponse(new UserData(created));
+      RegisterResponse response = new RegisterResponse(DtoMapper.toUserData(created));
       clientHandler.sendPacket(
           PacketRes.of(true, PacketType.REGISTER, "Đăng ký thành công!", response));
     } catch (ServiceException e) {

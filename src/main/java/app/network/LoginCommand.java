@@ -2,9 +2,9 @@ package app.network;
 
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
-import app.dto.UserData;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
@@ -45,7 +45,7 @@ public class LoginCommand implements Command {
       clientHandler.getSession().authenticate(user);
       Server.registerClient(user.getId(), clientHandler);
       logger.info("[SERVER] User {} logged in", username);
-      LoginResponse response = new LoginResponse(new UserData(user));
+      LoginResponse response = new LoginResponse(DtoMapper.toUserData(user));
       clientHandler.sendPacket(
           PacketRes.of(true, PacketType.LOGIN, "Đăng nhập thành công!", response));
     } catch (ServiceException e) {

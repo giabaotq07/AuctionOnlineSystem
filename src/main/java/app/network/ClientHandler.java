@@ -54,18 +54,25 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.CHAT, new ChatCommand());
     registry.put(PacketType.LOGIN, new LoginCommand(userService));
     registry.put(PacketType.REGISTER, new RegisterCommand(userService));
-    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
-    registry.put(PacketType.FETCH_AUCTIONS, new FetchAuctionsCommand(auctionService));
-    registry.put(PacketType.FETCH_HISTORY, new FetchHistoryCommand(auctionService));
-    registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
+    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, itemService));
+    registry.put(
+        PacketType.FETCH_AUCTION_SUMMARIES,
+        new FetchAuctionSummariesCommand(auctionService, itemService));
+    registry.put(
+        PacketType.FETCH_AUCTION_HISTORY,
+        new FetchAuctionHistoryCommand(auctionService, itemService));
+    registry.put(
+        PacketType.FETCH_AUCTION_DETAIL,
+        new FetchAuctionDetailCommand(auctionService, itemService));
     registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
     registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
     registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand(itemService));
     registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand(itemService));
-    registry.put(PacketType.FETCH_USERS, new FetchUsersCommand(userService));
+    registry.put(PacketType.FETCH_USER_LIST, new FetchUserListCommand(userService));
     registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService));
     registry.put(
-        PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
+        PacketType.PLACE_BID,
+        new PlaceBidCommand(bidService, userService, auctionService, itemService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
     registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
     return registry;
@@ -136,11 +143,11 @@ public class ClientHandler implements Runnable {
     return switch (type) {
       case PLACE_BID,
           CREATE_AUCTION,
-          FETCH_HISTORY,
+          FETCH_AUCTION_HISTORY,
           FETCH_SELLER_ITEMS,
           UPDATE_ITEM,
           DELETE_ITEM,
-          FETCH_USERS,
+          FETCH_USER_LIST,
           CANCEL_AUCTION,
           DEPOSIT,
           SETTLE_WALLET ->

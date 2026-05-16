@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 /** BidTransaction. */
 public class BidTransaction {
   private int id;
+  private int auctionId;
   private int bidderId;
   private String bidderName;
   private long amount;
@@ -14,25 +15,18 @@ public class BidTransaction {
   /** BidTransaction. */
   public BidTransaction(
       int id,
+      int auctionId,
       int bidderId,
       String bidderName,
       long amount,
       LocalDateTime createAt,
       boolean isAutoBid) {
     this.id = id;
+    this.auctionId = auctionId;
     this.bidderId = bidderId;
     this.bidderName = bidderName;
     this.amount = amount;
     this.createAt = createAt;
-    this.isAutoBid = isAutoBid;
-  }
-
-  /** BidTransaction. */
-  public BidTransaction(int bidderId, String bidderName, long amount, boolean isAutoBid) {
-    this.bidderId = bidderId;
-    this.bidderName = bidderName;
-    this.amount = amount;
-    this.createAt = LocalDateTime.now();
     this.isAutoBid = isAutoBid;
   }
 
@@ -46,6 +40,14 @@ public class BidTransaction {
 
   public void setId(int id) {
     this.id = id;
+  }
+
+  public int getAuctionId() {
+    return auctionId;
+  }
+
+  public void setAuctionId(int auctionId) {
+    this.auctionId = auctionId;
   }
 
   public int getBidderId() {

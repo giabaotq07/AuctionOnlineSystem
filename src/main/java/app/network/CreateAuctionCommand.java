@@ -1,15 +1,19 @@
 package app.network;
 
+import app.dto.AuctionSummariesResponse;
 import app.dto.AuctionSummary;
-import app.dto.AuctionsResponse;
 import app.dto.CreateAuctionRequest;
 import app.dto.CreateAuctionResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
+import app.models.Auction;
+import app.models.Item;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
 import app.service.AuctionService;
+import app.service.ItemService;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +22,12 @@ import org.slf4j.LoggerFactory;
 public class CreateAuctionCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
+  private final ItemService itemService;
 
   /** CreateAuctionCommand. */
-  public CreateAuctionCommand(AuctionService auctionService) {
+  public CreateAuctionCommand(AuctionService auctionService, ItemService itemService) {
     this.auctionService = auctionService;
+    this.itemService = itemService;
   }
 
   @Override
@@ -38,7 +44,7 @@ public class CreateAuctionCommand implements Command {
         return;
       }
       User user = clientHandler.getUser();
-      AuctionSummary summary =
+      Auction auction =
           auctionService.createAndStartAuctionWithItem(
               request.name(),
               request.description(),
@@ -48,6 +54,7 @@ public class CreateAuctionCommand implements Command {
               request.durationMinutes(),
               user.getId(),
               user.getRole());
+      AuctionSummary summary = toSummary(auction);
       CreateAuctionResponse response = new CreateAuctionResponse(summary);
       PacketRes packetRes =
           PacketRes.of(true, PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
@@ -70,11 +77,23 @@ public class CreateAuctionCommand implements Command {
 
   private void broadcastAuctionList() {
     try {
-      List<AuctionSummary> summaries = auctionService.getAuctionSummaries();
-      AuctionsResponse response = new AuctionsResponse(summaries);
-      Server.broadcast(PacketRes.of(true, PacketType.FETCH_AUCTIONS, response), -1);
+      List<AuctionSummary> summaries = buildAuctionSummaries();
+      AuctionSummariesResponse response = new AuctionSummariesResponse(summaries);
+      Server.broadcast(PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
     }
+  }
+
+  private List<AuctionSummary> buildAuctionSummaries() {
+    return auctionService.getAllAuctions().stream().map(this::toSummary).toList();
+  }
+
+  private AuctionSummary toSummary(Auction auction) {
+    Item item =
+        itemService
+            .getById(auction.getItemId())
+            .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+    return DtoMapper.toAuctionSummary(auction, item);
   }
 }

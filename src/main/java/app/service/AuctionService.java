@@ -5,10 +5,6 @@ import app.dao.BidDAO;
 import app.dao.ItemDAO;
 import app.dao.UserDAO;
 import app.database.TransactionManager;
-import app.dto.AuctionDetail;
-import app.dto.AuctionResultResponse;
-import app.dto.AuctionSummary;
-import app.dto.ProfileData;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -32,17 +28,12 @@ import org.slf4j.LoggerFactory;
 public class AuctionService {
   private record CacheSnapshot(List<Auction> data, boolean loaded) {}
 
-  private record SummaryCacheSnapshot(List<AuctionSummary> data, boolean loaded) {}
-
   private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), false);
-  private volatile SummaryCacheSnapshot summarySnapshot =
-      new SummaryCacheSnapshot(List.of(), false);
   private final AuctionDAO auctionDAO;
   private final BidDAO bidDAO;
   private final ItemDAO itemDAO;
   private final UserDAO userDAO;
   private final TransactionManager transactionManager;
-  private final AuctionMapper auctionMapper;
   private final Logger logger = LoggerFactory.getLogger(AuctionService.class);
   private final Clock clock;
 
@@ -57,7 +48,6 @@ public class AuctionService {
     this.bidDAO = bidDAO;
     this.itemDAO = itemDAO;
     this.userDAO = userDAO;
-    this.auctionMapper = new AuctionMapper(itemDAO, bidDAO);
     this.transactionManager = transactionManager;
     this.clock = Clock.systemDefaultZone();
   }
@@ -91,7 +81,7 @@ public class AuctionService {
   }
 
   /** createAndStartAuctionWithItem. */
-  public AuctionSummary createAndStartAuctionWithItem(
+  public Auction createAndStartAuctionWithItem(
       String name,
       String description,
       long startingPrice,
@@ -109,7 +99,7 @@ public class AuctionService {
         durationMinutes,
         requesterId,
         requesterRole);
-    AuctionSummary summary =
+    Auction createdAuction =
         transactionManager.runInTransaction(
             conn -> {
               Item item =
@@ -125,10 +115,10 @@ public class AuctionService {
               Auction created = auctionDAO.save(conn, auction);
               created.start();
               auctionDAO.update(conn, created);
-              return new AuctionSummary(created, savedItem.getName(), created.getHighestBid());
+              return created;
             });
     invalidateCache();
-    return summary;
+    return createdAuction;
   }
 
   /** getAuctionById. */
@@ -149,59 +139,24 @@ public class AuctionService {
     return fresh;
   }
 
-  /** getAuctionSummaries. */
-  public List<AuctionSummary> getAuctionSummaries() {
-    SummaryCacheSnapshot current = summarySnapshot;
-    if (current.loaded()) {
-      logger.info("[CACHE] Auction summaries cache hit: size={}", current.data().size());
-      return current.data();
-    }
-    logger.info("[CACHE] Auction summaries cache miss, loading from database");
-    List<AuctionSummary> result = new ArrayList<>();
-    for (Auction auction : getAllAuctions()) {
-      AuctionSummary summary = auctionMapper.toSummary(auction);
-      if (summary != null) {
-        result.add(summary);
-      }
-    }
-    List<AuctionSummary> cached = List.copyOf(result);
-    summarySnapshot = new SummaryCacheSnapshot(cached, true);
-    return cached;
-  }
-
-  /** getHistorySummaries. */
-  public List<AuctionSummary> getHistorySummaries(int userId) {
-    List<AuctionSummary> result = new ArrayList<>();
+  /** getHistoryAuctions. */
+  public List<Auction> getHistoryAuctions(int userId) {
+    List<Auction> result = new ArrayList<>();
     for (Auction auction : getAllAuctions()) {
       boolean isSeller = auction.getSellerId() == userId;
       boolean hasBid = bidDAO.existsByAuctionAndUser(auction.getId(), userId);
       if (!isSeller && !hasBid) {
         continue;
       }
-      AuctionSummary summary = auctionMapper.toSummary(auction);
-      if (summary != null) {
-        result.add(summary);
-      }
+      result.add(auction);
     }
     return result;
   }
 
-  /** getAuctionDetail. */
-  public AuctionDetail getAuctionDetail(int auctionId) {
-    Auction auction = getAuctionById(auctionId);
-    return auctionMapper.toDetail(auction);
-  }
-
-  /** getAuctionResult. */
-  public AuctionResultResponse getAuctionResult(int auctionId) {
+  /** completeAndGetHighestBid. */
+  public Optional<BidTransaction> completeAndGetHighestBid(int auctionId) {
     handleCompletion(auctionId);
-    Optional<BidTransaction> highest = bidDAO.findHighestBid(auctionId);
-    if (highest.isEmpty()) {
-      return new AuctionResultResponse(auctionId, new ProfileData(0, "chưa có người thắng"), 0);
-    }
-    BidTransaction bid = highest.get();
-    return new AuctionResultResponse(
-        auctionId, new ProfileData(bid.getBidderId(), bid.getBidderName()), bid.getAmount());
+    return bidDAO.findHighestBid(auctionId);
   }
 
   /** updateStatus. */
@@ -407,7 +362,6 @@ public class AuctionService {
   /** invalidateCache. */
   public void invalidateCache() {
     snapshot = new CacheSnapshot(List.of(), false);
-    summarySnapshot = new SummaryCacheSnapshot(List.of(), false);
     logger.info("[CACHE] Auction cache invalidated");
   }
 }

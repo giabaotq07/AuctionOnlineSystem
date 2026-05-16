@@ -11,6 +11,13 @@ import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
 import app.database.TransactionManager;
+import app.dto.AuctionSummariesResponse;
+import app.dto.AuctionSummary;
+import app.enums.PacketType;
+import app.exception.ServiceException;
+import app.mapper.DtoMapper;
+import app.models.Auction;
+import app.models.Item;
 import app.models.PacketRes;
 import app.service.AntiSnipeService;
 import app.service.AuctionService;
@@ -23,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -109,12 +117,21 @@ public class Server {
 
   private void broadcastAuctionList() {
     try {
-      var summaries = auctionService.getAuctionSummaries();
-      var response = new app.dto.AuctionsResponse(summaries);
-      broadcast(PacketRes.of(app.enums.PacketType.FETCH_AUCTIONS, response), -1);
+      List<AuctionSummary> summaries =
+          auctionService.getAllAuctions().stream().map(this::toSummary).toList();
+      var response = new AuctionSummariesResponse(summaries);
+      broadcast(PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);
     }
+  }
+
+  private AuctionSummary toSummary(Auction auction) {
+    Item item =
+        itemService
+            .getById(auction.getItemId())
+            .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+    return DtoMapper.toAuctionSummary(auction, item);
   }
 
   /** start. */

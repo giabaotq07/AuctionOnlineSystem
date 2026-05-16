@@ -1,13 +1,16 @@
 package app.network;
 
-import app.dto.AuctionDetail;
 import app.dto.AuctionDetailRequest;
 import app.dto.AuctionDetailResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
+import app.models.Auction;
+import app.models.Item;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.service.AuctionService;
+import app.service.ItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,10 +18,12 @@ import org.slf4j.LoggerFactory;
 public class FetchAuctionDetailCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionDetailCommand.class);
   private final AuctionService auctionService;
+  private final ItemService itemService;
 
   /** FetchAuctionDetailCommand. */
-  public FetchAuctionDetailCommand(AuctionService auctionService) {
+  public FetchAuctionDetailCommand(AuctionService auctionService, ItemService itemService) {
     this.auctionService = auctionService;
+    this.itemService = itemService;
   }
 
   @Override
@@ -35,8 +40,13 @@ public class FetchAuctionDetailCommand implements Command {
             PacketRes.error(PacketType.FETCH_AUCTION_DETAIL, "Invalid auction id"));
         return;
       }
-      AuctionDetail detail = auctionService.getAuctionDetail(request.auctionId());
-      AuctionDetailResponse response = new AuctionDetailResponse(detail);
+      Auction auction = auctionService.getAuctionById(request.auctionId());
+      Item item =
+          itemService
+              .getById(auction.getItemId())
+              .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+      AuctionDetailResponse response =
+          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction, item));
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction detail failed: {}", e.getMessage());

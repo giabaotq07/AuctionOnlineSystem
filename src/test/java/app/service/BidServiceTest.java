@@ -108,11 +108,11 @@ class BidServiceTest extends BaseDAOTest {
   void placeBid_shouldReturnCurrentHighestBid() {
     Auction auction = runningAuction(1000L, LocalDateTime.now().plusMinutes(10));
 
-    var response = bidService.placeBid(auction.getId(), bidder.getId(), 1300L);
+    var updated = bidService.placeBid(auction.getId(), bidder.getId(), 1300L);
 
-    assertEquals(auction.getId(), response.auctionId());
-    assertEquals(1300L, response.highestBidAmount());
-    assertEquals(bidder.getId(), response.bidderId());
+    assertEquals(auction.getId(), updated.getId());
+    assertEquals(1300L, updated.getHighestBid());
+    assertEquals(bidder.getId(), updated.getWinnerId());
   }
 
   @Test

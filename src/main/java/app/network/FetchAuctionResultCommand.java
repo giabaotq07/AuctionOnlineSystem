@@ -4,9 +4,12 @@ import app.dto.AuctionResultRequest;
 import app.dto.AuctionResultResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
+import app.models.BidTransaction;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.service.AuctionService;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +36,8 @@ public class FetchAuctionResultCommand implements Command {
         sendError(clientHandler, "auctionId không hợp lệ.");
         return;
       }
-      AuctionResultResponse response = auctionService.getAuctionResult(auctionId);
-      if (response == null) {
-        sendError(clientHandler, "Không tìm thấy kết quả đấu giá.");
-        return;
-      }
+      Optional<BidTransaction> highestBid = auctionService.completeAndGetHighestBid(auctionId);
+      AuctionResultResponse response = DtoMapper.toAuctionResultResponse(auctionId, highestBid);
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_RESULT, response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction result failed: {}", e.getMessage());

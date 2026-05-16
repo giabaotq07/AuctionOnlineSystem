@@ -4,7 +4,6 @@ import app.dao.AuctionDAO;
 import app.dao.BidDAO;
 import app.dao.UserDAO;
 import app.database.TransactionManager;
-import app.dto.PlaceBidResponse;
 import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.User;
@@ -36,7 +35,7 @@ public class BidService {
   }
 
   /** placeBid. */
-  public PlaceBidResponse placeBid(int auctionId, int userId, long bidAmount) {
+  public Auction placeBid(int auctionId, int userId, long bidAmount) {
     return transactionManager.runInTransaction(
         conn -> {
           auctionDAO.lockRow(conn, auctionId);
@@ -67,8 +66,7 @@ public class BidService {
           bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
           userDAO.update(conn, bidder);
           auctionDAO.update(conn, auction);
-          return new PlaceBidResponse(
-              auction.getId(), auction.getHighestBid(), auction.getWinnerId());
+          return auction;
         });
   }
 }

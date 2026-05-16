@@ -87,14 +87,7 @@ public class AuctionController {
         return;
       }
       CreateAuctionRequest request =
-          new CreateAuctionRequest(
-              name,
-              desc,
-              startPrice,
-              stepPrice,
-              type,
-              durationMins,
-              Client.getInstance().getCurrentUser().getId());
+          new CreateAuctionRequest(name, desc, startPrice, stepPrice, type, durationMins);
       Client.getInstance().sendRequest(PacketReq.of(PacketType.CREATE_AUCTION, request));
     } catch (NumberFormatException e) {
       AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");

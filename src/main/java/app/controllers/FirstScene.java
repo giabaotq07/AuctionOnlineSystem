@@ -1,18 +1,18 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
+import app.dto.AuctionSummariesResponse;
 import app.dto.AuctionSummary;
-import app.dto.AuctionsResponse;
 import app.dto.CreateAuctionResponse;
 import app.dto.WalletUpdateResponse;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
+import app.mapper.DtoMapper;
 import app.models.Auction;
 import app.models.DataStore;
 import app.models.PacketReq;
 import app.models.User;
-import app.models.UserFactory;
 import app.models.Wallet;
 import app.network.Client;
 import app.network.PacketListener;
@@ -57,7 +57,7 @@ public class FirstScene implements Cleanable {
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
   private PacketListener<CreateAuctionResponse> createAuctionHandler;
-  private PacketListener<AuctionsResponse> fetchAuctionsHandler;
+  private PacketListener<AuctionSummariesResponse> fetchAuctionsHandler;
   private PacketListener<WalletUpdateResponse> walletUpdateHandler;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
@@ -97,7 +97,7 @@ public class FirstScene implements Cleanable {
         .addListener(
             (obs, oldVal, newVal) -> {
               if (newVal != null) {
-                openAuction(newVal.auction());
+                openAuction(toAuction(newVal));
               }
             });
   }
@@ -147,9 +147,9 @@ public class FirstScene implements Cleanable {
                     return;
                   }
                   AuctionSummary summary = response.auction();
-                  Auction auction = summary.auction();
+                  Auction auction = toAuction(summary);
                   boolean exists =
-                      summaries.stream().anyMatch(s -> s.auction().getId() == auction.getId());
+                      summaries.stream().anyMatch(s -> s.auctionId() == auction.getId());
                   if (exists) {
                     return;
                   }
@@ -173,7 +173,7 @@ public class FirstScene implements Cleanable {
                   rebuildUi();
                 });
     client.subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    client.subscribe(PacketType.FETCH_AUCTIONS, fetchAuctionsHandler);
+    client.subscribe(PacketType.FETCH_AUCTION_SUMMARIES, fetchAuctionsHandler);
   }
 
   private void loadInitialData() {
@@ -181,7 +181,7 @@ public class FirstScene implements Cleanable {
     summaries.addAll(DataStore.getInstance().auctions);
     rebuildUi();
     try {
-      client.sendRequest(new PacketReq(PacketType.FETCH_AUCTIONS, null));
+      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
     } catch (Exception e) {
       logger.error("Failed to fetch auctions", e);
     }
@@ -197,9 +197,8 @@ public class FirstScene implements Cleanable {
   }
 
   private void addAuctionCard(AuctionSummary summary) {
-    Auction auction = summary.auction();
     VBox card = createAuctionCard(summary);
-    if (auction.getStatus() == AuctionStatus.RUNNING) {
+    if (summary.status() == AuctionStatus.RUNNING) {
       activeBox.getChildren().add(card);
     } else {
       completedBox.getChildren().add(card);
@@ -266,7 +265,6 @@ public class FirstScene implements Cleanable {
   }
 
   private VBox createAuctionCard(AuctionSummary summary) {
-    final Auction auction = summary.auction();
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -289,15 +287,31 @@ public class FirstScene implements Cleanable {
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
     Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel = new Label("Kết thúc: " + auction.getEndTime());
+    Label timeLabel = new Label("Kết thúc: " + summary.endTime());
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
     Button btnDetail =
-        new Button(auction.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+        new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> openAuction(auction));
+    btnDetail.setOnAction(e -> openAuction(toAuction(summary)));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
+  }
+
+  private Auction toAuction(AuctionSummary summary) {
+    return new Auction(
+        summary.auctionId(),
+        summary.itemId(),
+        summary.sellerId(),
+        summary.winnerId(),
+        summary.status(),
+        summary.startTime(),
+        summary.endTime(),
+        summary.highestBid(),
+        summary.extendedCount(),
+        summary.version(),
+        null,
+        null);
   }
 
   private void openAuction(Auction auction) {
@@ -339,7 +353,7 @@ public class FirstScene implements Cleanable {
                   }
                   if (response != null && response.user() != null) {
                     DataStore.getInstance().updateCurrentUser(response.user());
-                    updateBalanceLabel(UserFactory.createUser(response.user()));
+                    updateBalanceLabel(DtoMapper.toUser(response.user()));
                   } else {
                     updateBalanceLabel();
                   }
@@ -375,7 +389,7 @@ public class FirstScene implements Cleanable {
   @FXML
   public void handleReload(ActionEvent event) {
     try {
-      client.sendRequest(new PacketReq(PacketType.FETCH_AUCTIONS, null));
+      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
       logger.info("Reloading auctions...");
     } catch (Exception e) {
       logger.error("Failed to reload auctions", e);
@@ -426,7 +440,7 @@ public class FirstScene implements Cleanable {
     }
     timelines.clear();
     client.unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    client.unsubscribe(PacketType.FETCH_AUCTIONS, fetchAuctionsHandler);
+    client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, fetchAuctionsHandler);
     if (walletUpdateHandler != null) {
       client.unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
     }

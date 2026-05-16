@@ -58,6 +58,7 @@ class MySqlBidDAOTest extends BaseDAOTest {
     bidDAO.insertBid(auction.getId(), secondBidder.getId(), 1500L, true);
 
     var highest = bidDAO.findHighestBid(auction.getId()).orElseThrow();
+    assertEquals(auction.getId(), highest.getAuctionId());
     assertEquals(secondBidder.getId(), highest.getBidderId());
     assertEquals(1500L, highest.getAmount());
     assertTrue(highest.isAutoBid());

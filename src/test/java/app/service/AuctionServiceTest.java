@@ -16,7 +16,6 @@ import app.dao.impl.MySqlBidDAO;
 import app.dao.impl.MySqlItemDAO;
 import app.dao.impl.MySqlUserDAO;
 import app.database.TransactionManager;
-import app.dto.AuctionSummary;
 import app.enums.AuctionStatus;
 import app.enums.ItemType;
 import app.enums.UserRole;
@@ -85,7 +84,7 @@ class AuctionServiceTest extends BaseDAOTest {
 
   @Test
   void createAndStartAuctionWithItem_shouldPersistItemAndRunningAuction() {
-    AuctionSummary summary =
+    Auction created =
         auctionService.createAndStartAuctionWithItem(
             "Camera",
             "Test camera",
@@ -96,7 +95,7 @@ class AuctionServiceTest extends BaseDAOTest {
             seller.getId(),
             seller.getRole());
 
-    Auction found = auctionDAO.findById(summary.auction().getId()).orElseThrow();
+    Auction found = auctionDAO.findById(created.getId()).orElseThrow();
     Item item = itemDAO.findById(found.getItemId()).orElseThrow();
     assertEquals(AuctionStatus.RUNNING, found.getStatus());
     assertEquals("Camera", item.getName());
@@ -104,7 +103,7 @@ class AuctionServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void getAuctionDetail_shouldUseHighestBidWhenBidsExist() {
+  void completeAndGetHighestBid_shouldReturnHighestBidWhenBidsExist() {
     User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
     Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
     Auction auction =
@@ -113,12 +112,11 @@ class AuctionServiceTest extends BaseDAOTest {
                 item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
     bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
 
-    var detail = auctionService.getAuctionDetail(auction.getId());
+    var highestBid = auctionService.completeAndGetHighestBid(auction.getId()).orElseThrow();
 
-    assertEquals(auction.getId(), detail.auctionId());
-    assertEquals("Laptop", detail.itemName());
-    assertEquals(1500L, detail.currentPrice());
-    assertEquals(auction.getVersion(), detail.version());
+    assertEquals(auction.getId(), highestBid.getAuctionId());
+    assertEquals(bidder.getId(), highestBid.getBidderId());
+    assertEquals(1500L, highestBid.getAmount());
   }
 
   @Test
@@ -209,24 +207,24 @@ class AuctionServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void getAuctionSummaries_shouldUseCacheUntilInvalidated() {
+  void getAllAuctions_shouldUseCacheUntilInvalidated() {
     Item firstItem = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
     auctionService.createAuction(
         TestFixtures.auction(
             firstItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-    var firstLoad = auctionService.getAuctionSummaries();
+    var firstLoad = auctionService.getAllAuctions();
 
     Item secondItem = itemDAO.save(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
     auctionDAO.save(
         TestFixtures.auction(
             secondItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 2000L));
-    var cachedLoad = auctionService.getAuctionSummaries();
+    var cachedLoad = auctionService.getAllAuctions();
 
     assertEquals(1, firstLoad.size());
     assertEquals(1, cachedLoad.size());
 
     auctionService.invalidateCache();
-    var refreshed = auctionService.getAuctionSummaries();
+    var refreshed = auctionService.getAllAuctions();
 
     assertEquals(2, refreshed.size());
   }

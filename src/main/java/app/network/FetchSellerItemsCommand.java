@@ -5,6 +5,7 @@ import app.dto.ItemData;
 import app.dto.ItemListResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
@@ -34,7 +35,7 @@ public class FetchSellerItemsCommand implements Command {
       User user = clientHandler.getUser();
       List<ItemData> items =
           itemService.getSellerItems(user.getId(), user.getRole(), request.sellerId()).stream()
-              .map(ItemData::new)
+              .map(DtoMapper::toItemData)
               .toList();
       clientHandler.sendPacket(
           PacketRes.of(PacketType.FETCH_SELLER_ITEMS, new ItemListResponse(items)));

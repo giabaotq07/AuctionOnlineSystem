@@ -3,7 +3,6 @@ package app.controllers;
 import app.controllers.manager.NavigationManager;
 import app.dto.ChatRequest;
 import app.dto.ChatResponse;
-import app.dto.UserData;
 import app.enums.PacketType;
 import app.enums.View;
 import app.models.PacketReq;
@@ -11,7 +10,6 @@ import app.network.Client;
 import app.network.PacketListener;
 import app.utils.AlertUtils;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -111,8 +109,7 @@ public class MessController {
   public void send() {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
-      ChatRequest chatRequest =
-          new ChatRequest(new UserData(client.getCurrentUser()), text, LocalDateTime.now());
+      ChatRequest chatRequest = new ChatRequest(text);
       try {
         client.sendRequest(PacketReq.of(PacketType.CHAT, chatRequest));
       } catch (IOException e) {

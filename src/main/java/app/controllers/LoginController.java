@@ -5,10 +5,10 @@ import app.dto.LoginRequest;
 import app.dto.LoginResponse;
 import app.enums.PacketType;
 import app.enums.View;
+import app.mapper.DtoMapper;
 import app.models.DataStore;
 import app.models.PacketReq;
 import app.models.User;
-import app.models.UserFactory;
 import app.network.Client;
 import app.network.PacketListener;
 import app.utils.AlertUtils;
@@ -51,7 +51,7 @@ public class LoginController {
                 () -> {
                   loginButton.setDisable(false);
                   if (success && response != null && response.user() != null) {
-                    User user = UserFactory.createUser(response.user());
+                    User user = DtoMapper.toUser(response.user());
                     Client.getInstance().setCurrentUser(user);
                     DataStore.getInstance().updateCurrentUser(response.user());
                     switchToUi();

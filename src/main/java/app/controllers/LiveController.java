@@ -13,11 +13,11 @@ import app.dto.WalletUpdateResponse;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
+import app.mapper.DtoMapper;
 import app.models.Auction;
 import app.models.DataStore;
 import app.models.PacketReq;
 import app.models.User;
-import app.models.UserFactory;
 import app.models.Wallet;
 import app.network.Client;
 import app.network.PacketListener;
@@ -155,7 +155,7 @@ public class LiveController implements Cleanable {
     }
     if (response != null && response.user() != null) {
       DataStore.getInstance().updateCurrentUser(response.user());
-      updateAvailableBalance(UserFactory.createUser(response.user()));
+      updateAvailableBalance(DtoMapper.toUser(response.user()));
     } else {
       updateAvailableBalance();
     }
@@ -293,12 +293,7 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
       return;
     }
-    PlaceBidRequest request =
-        new PlaceBidRequest(
-            auction.getId(),
-            Client.getInstance().getCurrentUser().getId(),
-            bidAmount,
-            currentPrice);
+    PlaceBidRequest request = new PlaceBidRequest(auction.getId(), bidAmount);
     Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
   }
 

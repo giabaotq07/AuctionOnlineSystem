@@ -1,10 +1,10 @@
 package app.network;
 
 import app.dto.DeleteItemRequest;
-import app.dto.ItemData;
 import app.dto.ItemResponse;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
 import app.models.Item;
 import app.models.PacketReq;
 import app.models.PacketRes;
@@ -39,7 +39,7 @@ public class DeleteItemCommand implements Command {
               true,
               PacketType.DELETE_ITEM,
               "Xóa sản phẩm thành công.",
-              new ItemResponse(new ItemData(deleted))));
+              new ItemResponse(DtoMapper.toItemData(deleted))));
     } catch (ServiceException e) {
       logger.warn("Delete item failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

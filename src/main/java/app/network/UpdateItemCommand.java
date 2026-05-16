@@ -1,10 +1,10 @@
 package app.network;
 
-import app.dto.ItemData;
 import app.dto.ItemResponse;
 import app.dto.UpdateItemRequest;
 import app.enums.PacketType;
 import app.exception.ServiceException;
+import app.mapper.DtoMapper;
 import app.models.Item;
 import app.models.ItemFactory;
 import app.models.PacketReq;
@@ -48,7 +48,7 @@ public class UpdateItemCommand implements Command {
               true,
               PacketType.UPDATE_ITEM,
               "Cập nhật sản phẩm thành công.",
-              new ItemResponse(new ItemData(updated))));
+              new ItemResponse(DtoMapper.toItemData(updated))));
     } catch (ServiceException e) {
       logger.warn("Update item failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

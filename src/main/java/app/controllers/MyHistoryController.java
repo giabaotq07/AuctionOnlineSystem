@@ -1,9 +1,8 @@
 package app.controllers;
 
 import app.controllers.manager.NavigationManager;
+import app.dto.AuctionHistoryResponse;
 import app.dto.AuctionSummary;
-import app.dto.HistoryRequest;
-import app.dto.HistoryResponse;
 import app.enums.AuctionStatus;
 import app.enums.PacketType;
 import app.enums.View;
@@ -43,7 +42,7 @@ public class MyHistoryController implements Cleanable {
 
   private final User currentUser = client.getCurrentUser();
 
-  private PacketListener<HistoryResponse> historyHandler;
+  private PacketListener<AuctionHistoryResponse> historyHandler;
 
   /** Member. */
   @FXML
@@ -55,7 +54,7 @@ public class MyHistoryController implements Cleanable {
     typeFilterComboBox.setOnAction(e -> rebuildUi());
 
     historyHandler =
-        (HistoryResponse response, boolean success, String message) ->
+        (AuctionHistoryResponse response, boolean success, String message) ->
             Platform.runLater(
                 () -> {
                   if (!success) {
@@ -72,7 +71,7 @@ public class MyHistoryController implements Cleanable {
                   }
                 });
 
-    client.subscribe(PacketType.FETCH_HISTORY, historyHandler);
+    client.subscribe(PacketType.FETCH_AUCTION_HISTORY, historyHandler);
 
     requestHistory();
   }
@@ -85,9 +84,7 @@ public class MyHistoryController implements Cleanable {
 
     try {
 
-      HistoryRequest request = new HistoryRequest(currentUser.getId());
-
-      client.sendRequest(PacketReq.of(PacketType.FETCH_HISTORY, request));
+      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
 
     } catch (IOException e) {
 
@@ -109,7 +106,7 @@ public class MyHistoryController implements Cleanable {
 
       VBox card = createAuctionCard(summary);
 
-      if (summary.auction().getStatus() == AuctionStatus.RUNNING) {
+      if (summary.status() == AuctionStatus.RUNNING) {
 
         runningPane.getChildren().add(card);
 
@@ -122,7 +119,7 @@ public class MyHistoryController implements Cleanable {
 
   private VBox createAuctionCard(AuctionSummary summary) {
 
-    final Auction auction = summary.auction();
+    final Auction auction = toAuction(summary);
 
     VBox vbox = new VBox();
 
@@ -189,6 +186,22 @@ public class MyHistoryController implements Cleanable {
     return vbox;
   }
 
+  private Auction toAuction(AuctionSummary summary) {
+    return new Auction(
+        summary.auctionId(),
+        summary.itemId(),
+        summary.sellerId(),
+        summary.winnerId(),
+        summary.status(),
+        summary.startTime(),
+        summary.endTime(),
+        summary.highestBid(),
+        summary.extendedCount(),
+        summary.version(),
+        null,
+        null);
+  }
+
   private void handleGoToLive(Auction auction) {
 
     try {
@@ -222,7 +235,7 @@ public class MyHistoryController implements Cleanable {
 
     if (historyHandler != null) {
 
-      client.unsubscribe(PacketType.FETCH_HISTORY, historyHandler);
+      client.unsubscribe(PacketType.FETCH_AUCTION_HISTORY, historyHandler);
     }
 
     try {
@@ -240,7 +253,7 @@ public class MyHistoryController implements Cleanable {
 
     if (historyHandler != null) {
 
-      client.unsubscribe(PacketType.FETCH_HISTORY, historyHandler);
+      client.unsubscribe(PacketType.FETCH_AUCTION_HISTORY, historyHandler);
     }
   }
 }

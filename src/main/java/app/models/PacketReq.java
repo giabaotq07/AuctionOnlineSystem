@@ -43,6 +43,11 @@ public class PacketReq {
 
   /** of. */
   public static PacketReq of(PacketType type, Object payload) {
-    return new PacketReq(type, GSON.toJson(payload));
+    return new PacketReq(type, payload == null ? null : GSON.toJson(payload));
+  }
+
+  /** of. */
+  public static PacketReq of(PacketType type) {
+    return new PacketReq(type, null);
   }
 }
