@@ -1,14 +1,11 @@
 package app.models;
 
-import app.dto.AuctionSummariesResponse;
 import app.dto.AuctionSummary;
 import app.dto.UserData;
 import app.dto.WalletUpdateResponse;
 import app.enums.PacketType;
-import app.exception.ConnectException;
 import app.mapper.DtoMapper;
 import app.network.Client;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
