@@ -12,6 +12,7 @@ public enum View {
   MESSAGE("/app/views/mess_chat.fxml"),
   USER_PROFILE("/app/views/user_profile.fxml"),
   DEPOSIT("/app/views/deposit.fxml"),
+  ALL_AUCTIONS("/app/views/All_Auctions.fxml"),
   ;
   private final String fxmlPath;
 

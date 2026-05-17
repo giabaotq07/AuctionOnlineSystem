@@ -432,6 +432,8 @@ public class FirstScene implements Cleanable {
   public void switchToDeposit(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.DEPOSIT);
   }
+  @FXML
+  public void switchToAll(ActionEvent e){ NavigationManager.getInstance().navigateTo(View.ALL_AUCTIONS);}
 
   @Override
   public void cleanup() {

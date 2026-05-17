@@ -23,6 +23,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** LoginController. */
 public class LoginController {
@@ -32,7 +34,7 @@ public class LoginController {
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
   private PacketListener<LoginResponse> loginHandler;
-
+  private Logger logger = LoggerFactory.getLogger(LoginController.class);
   @FXML
   private void initialize() {
     String url =

@@ -6,6 +6,7 @@ import app.exception.ConnectException;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
+import app.utils.AlertUtils;
 import app.utils.JsonUtil;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -115,6 +116,7 @@ public class Client {
             "[CLIENT] No response data for type: {} (data was: {})",
             packet.getType(),
             packet.getRawData());
+        notifyListeners(packet.getType(), response, true, packet.getMessage());
         return;
       }
       notifyListeners(packet.getType(), response, true, packet.getMessage());
