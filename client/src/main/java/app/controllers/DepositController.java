@@ -1,5 +1,7 @@
 package app.controllers;
 
+import app.Client;
+import app.DataStore;
 import app.controllers.manager.NavigationManager;
 import app.dto.DepositRequest;
 import app.dto.WalletUpdateResponse;
@@ -9,10 +11,7 @@ import app.models.PacketReq;
 import app.models.User;
 import app.models.Wallet;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-import app.DataStore;
-
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import javafx.application.Platform;

@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.Client;
 import app.controllers.manager.NavigationManager;
 import app.dto.AuctionHistoryResponse;
 import app.dto.AuctionSummary;
@@ -10,9 +11,7 @@ import app.models.Auction;
 import app.models.PacketReq;
 import app.models.User;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

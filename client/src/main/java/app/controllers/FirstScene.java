@@ -1,5 +1,7 @@
 package app.controllers;
 
+import app.Client;
+import app.DataStore;
 import app.controllers.manager.NavigationManager;
 import app.dto.AuctionSummariesResponse;
 import app.dto.AuctionSummary;
@@ -14,10 +16,7 @@ import app.models.PacketReq;
 import app.models.User;
 import app.models.Wallet;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-import app.DataStore;
-
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -433,8 +432,11 @@ public class FirstScene implements Cleanable {
   public void switchToDeposit(ActionEvent e) {
     NavigationManager.getInstance().navigateTo(View.DEPOSIT);
   }
+
   @FXML
-  public void switchToAll(ActionEvent e){ NavigationManager.getInstance().navigateTo(View.ALL_AUCTIONS);}
+  public void switchToAll(ActionEvent e) {
+    NavigationManager.getInstance().navigateTo(View.ALL_AUCTIONS);
+  }
 
   @Override
   public void cleanup() {

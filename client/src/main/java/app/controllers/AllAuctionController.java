@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.Client;
 import app.controllers.manager.NavigationManager;
 import app.dto.AuctionSummariesResponse;
 import app.dto.AuctionSummary;
@@ -10,9 +11,7 @@ import app.models.Auction;
 import app.models.PacketReq;
 import app.models.User;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,225 +27,225 @@ import javafx.scene.layout.VBox;
 /** MyHistoryController. */
 public class AllAuctionController implements Cleanable {
 
-    private static final double CARD_WIDTH = 260;
-    private static final double CARD_HEIGHT = 300;
+  private static final double CARD_WIDTH = 260;
+  private static final double CARD_HEIGHT = 300;
 
-    @FXML private FlowPane runningPane;
+  @FXML private FlowPane runningPane;
 
-    @FXML private ComboBox<String> typeFilterComboBox;
+  @FXML private ComboBox<String> typeFilterComboBox;
 
-    @FXML private FlowPane finishedPane;
+  @FXML private FlowPane finishedPane;
 
-    private final Client client = Client.getInstance();
+  private final Client client = Client.getInstance();
 
-    private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final List<AuctionSummary> summaries = new ArrayList<>();
 
-    private final User currentUser = client.getCurrentUser();
+  private final User currentUser = client.getCurrentUser();
 
-    private PacketListener<AuctionSummariesResponse> runningHandler;
+  private PacketListener<AuctionSummariesResponse> runningHandler;
 
-    /** Member. */
-    @FXML
-    public void initialize() {
-        typeFilterComboBox.getItems().addAll("ALL", "ELECTRONICS", "ART", "VEHICLE");
+  /** Member. */
+  @FXML
+  public void initialize() {
+    typeFilterComboBox.getItems().addAll("ALL", "ELECTRONICS", "ART", "VEHICLE");
 
-        typeFilterComboBox.setValue("ALL");
+    typeFilterComboBox.setValue("ALL");
 
-        typeFilterComboBox.setOnAction(e -> rebuildUi());
+    typeFilterComboBox.setOnAction(e -> rebuildUi());
 
-        runningHandler =
-                (AuctionSummariesResponse response, boolean success, String message) ->
-                        Platform.runLater(
-                                () -> {
-                                    if (!success) {
-                                        AlertUtils.showError("Lỗi", message);
-                                        return;
-                                    }
-                                    if (response != null && response.auctions() != null) {
+    runningHandler =
+        (AuctionSummariesResponse response, boolean success, String message) ->
+            Platform.runLater(
+                () -> {
+                  if (!success) {
+                    AlertUtils.showError("Lỗi", message);
+                    return;
+                  }
+                  if (response != null && response.auctions() != null) {
 
-                                        summaries.clear();
+                    summaries.clear();
 
-                                        summaries.addAll(response.auctions());
+                    summaries.addAll(response.auctions());
 
-                                        rebuildUi();
-                                    }
-                                });
+                    rebuildUi();
+                  }
+                });
 
-        client.subscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
+    client.subscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
 
-        requestHistory();
+    requestHistory();
+  }
+
+  private void requestHistory() {
+
+    if (currentUser == null) {
+      return;
     }
 
-    private void requestHistory() {
+    try {
 
-        if (currentUser == null) {
-            return;
-        }
+      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
 
-        try {
+    } catch (IOException e) {
 
-            client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
 
-        } catch (IOException e) {
+  private void rebuildUi() {
 
-            AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
-        }
+    if (runningPane == null || finishedPane == null) {
+      return;
     }
 
-    private void rebuildUi() {
+    runningPane.getChildren().clear();
 
-        if (runningPane == null || finishedPane == null) {
-            return;
-        }
+    finishedPane.getChildren().clear();
 
-        runningPane.getChildren().clear();
+    for (AuctionSummary summary : summaries) {
 
-        finishedPane.getChildren().clear();
+      VBox card = createAuctionCard(summary);
 
-        for (AuctionSummary summary : summaries) {
+      if (summary.status() == AuctionStatus.RUNNING) {
 
-            VBox card = createAuctionCard(summary);
+        runningPane.getChildren().add(card);
 
-            if (summary.status() == AuctionStatus.RUNNING) {
+      } else {
 
-                runningPane.getChildren().add(card);
+        finishedPane.getChildren().add(card);
+      }
+    }
+  }
 
-            } else {
+  private VBox createAuctionCard(AuctionSummary summary) {
 
-                finishedPane.getChildren().add(card);
-            }
-        }
+    final Auction auction = toAuction(summary);
+
+    VBox vbox = new VBox();
+
+    vbox.setPrefWidth(CARD_WIDTH);
+    vbox.setMinWidth(CARD_WIDTH);
+    vbox.setMaxWidth(CARD_WIDTH);
+
+    vbox.setPrefHeight(CARD_HEIGHT);
+
+    vbox.setStyle(
+        "-fx-background-color: #1a1f35;"
+            + "-fx-background-radius: 8;"
+            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
+            + "-fx-padding: 15;"
+            + "-fx-spacing: 10;");
+
+    StackPane imagePane = new StackPane();
+
+    imagePane.setPrefHeight(100);
+
+    imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
+
+    Label imgLabel = new Label("Ảnh tài sản");
+
+    imgLabel.setStyle("-fx-text-fill: #aaa;");
+
+    imagePane.getChildren().add(imgLabel);
+
+    Label titleLabel = new Label(summary.itemName());
+
+    titleLabel.setWrapText(true);
+
+    titleLabel.setStyle(
+        "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
+
+    Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
+
+    priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
+
+    Label timeLabel = new Label("Kết thúc: " + auction.getEndTime());
+
+    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
+
+    Button btnDetail =
+        new Button(auction.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+
+    btnDetail.setMaxWidth(Double.MAX_VALUE);
+
+    btnDetail.setStyle(
+        "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
+
+    btnDetail.setOnAction(e -> handleGoToLive(auction));
+
+    vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
+
+    return vbox;
+  }
+
+  private Auction toAuction(AuctionSummary summary) {
+    return new Auction(
+        summary.auctionId(),
+        summary.itemId(),
+        summary.sellerId(),
+        summary.winnerId(),
+        summary.status(),
+        summary.startTime(),
+        summary.endTime(),
+        summary.highestBid(),
+        summary.extendedCount(),
+        summary.version(),
+        null,
+        null);
+  }
+
+  private void handleGoToLive(Auction auction) {
+
+    try {
+
+      NavigationManager.getInstance()
+          .navigateTo(
+              View.LIVE,
+              c -> {
+                if (c instanceof LiveController) {
+
+                  ((LiveController) c).setAuction(auction);
+                }
+              });
+
+    } catch (Exception e) {
+
+      e.printStackTrace();
+    }
+  }
+
+  /** Member. */
+  @FXML
+  public void handleReload() {
+
+    requestHistory();
+  }
+
+  /** Member. */
+  @FXML
+  public void switchToUi() {
+
+    if (runningHandler != null) {
+
+      client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
     }
 
-    private VBox createAuctionCard(AuctionSummary summary) {
+    try {
 
-        final Auction auction = toAuction(summary);
+      NavigationManager.getInstance().navigateTo(View.UI);
 
-        VBox vbox = new VBox();
+    } catch (Exception e) {
 
-        vbox.setPrefWidth(CARD_WIDTH);
-        vbox.setMinWidth(CARD_WIDTH);
-        vbox.setMaxWidth(CARD_WIDTH);
-
-        vbox.setPrefHeight(CARD_HEIGHT);
-
-        vbox.setStyle(
-                "-fx-background-color: #1a1f35;"
-                        + "-fx-background-radius: 8;"
-                        + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-                        + "-fx-padding: 15;"
-                        + "-fx-spacing: 10;");
-
-        StackPane imagePane = new StackPane();
-
-        imagePane.setPrefHeight(100);
-
-        imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
-
-        Label imgLabel = new Label("Ảnh tài sản");
-
-        imgLabel.setStyle("-fx-text-fill: #aaa;");
-
-        imagePane.getChildren().add(imgLabel);
-
-        Label titleLabel = new Label(summary.itemName());
-
-        titleLabel.setWrapText(true);
-
-        titleLabel.setStyle(
-                "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
-
-        Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
-
-        priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-
-        Label timeLabel = new Label("Kết thúc: " + auction.getEndTime());
-
-        timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
-
-        Button btnDetail =
-                new Button(auction.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
-
-        btnDetail.setMaxWidth(Double.MAX_VALUE);
-
-        btnDetail.setStyle(
-                "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
-
-        btnDetail.setOnAction(e -> handleGoToLive(auction));
-
-        vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
-
-        return vbox;
+      e.printStackTrace();
     }
+  }
 
-    private Auction toAuction(AuctionSummary summary) {
-        return new Auction(
-                summary.auctionId(),
-                summary.itemId(),
-                summary.sellerId(),
-                summary.winnerId(),
-                summary.status(),
-                summary.startTime(),
-                summary.endTime(),
-                summary.highestBid(),
-                summary.extendedCount(),
-                summary.version(),
-                null,
-                null);
+  @Override
+  public void cleanup() {
+
+    if (runningHandler != null) {
+
+      client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
     }
-
-    private void handleGoToLive(Auction auction) {
-
-        try {
-
-            NavigationManager.getInstance()
-                    .navigateTo(
-                            View.LIVE,
-                            c -> {
-                                if (c instanceof LiveController) {
-
-                                    ((LiveController) c).setAuction(auction);
-                                }
-                            });
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    /** Member. */
-    @FXML
-    public void handleReload() {
-
-        requestHistory();
-    }
-
-    /** Member. */
-    @FXML
-    public void switchToUi() {
-
-        if (runningHandler != null) {
-
-            client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
-        }
-
-        try {
-
-            NavigationManager.getInstance().navigateTo(View.UI);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void cleanup() {
-
-        if (runningHandler != null) {
-
-            client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
-        }
-    }
+  }
 }

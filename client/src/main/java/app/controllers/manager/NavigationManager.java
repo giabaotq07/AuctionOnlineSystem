@@ -5,7 +5,6 @@ import app.enums.View;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
-
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -59,7 +58,7 @@ public class NavigationManager {
       logger.warn("Lỗi nghiêm trọng: Không thể load màn hình " + view.name());
       e.printStackTrace();
     } catch (InterruptedException e) {
-        logger.warn("Đã xảy ra lỗi khi chờ đợi: " + e.getMessage());
+      logger.warn("Đã xảy ra lỗi khi chờ đợi: " + e.getMessage());
     }
   }
 }

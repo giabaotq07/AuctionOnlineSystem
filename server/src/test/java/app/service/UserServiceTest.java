@@ -12,7 +12,6 @@ import app.models.Account;
 import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
-
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

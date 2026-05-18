@@ -7,12 +7,11 @@ import app.enums.PacketType;
 import app.mapper.DtoMapper;
 import app.models.Auction;
 import app.models.User;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /** DataStore. */
 public class DataStore {

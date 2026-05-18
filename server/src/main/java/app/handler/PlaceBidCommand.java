@@ -10,10 +10,9 @@ import app.service.AuctionService;
 import app.service.BidService;
 import app.service.ItemService;
 import app.service.UserService;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /** PlaceBidCommand. */
 public class PlaceBidCommand implements Command {

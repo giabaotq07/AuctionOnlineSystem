@@ -8,9 +8,6 @@ import app.models.PacketRes;
 import app.models.User;
 import app.network.PacketListener;
 import app.utils.JsonUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -18,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Client. */
 public class Client {

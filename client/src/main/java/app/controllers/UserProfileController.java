@@ -1,11 +1,10 @@
 package app.controllers;
 
+import app.Client;
 import app.controllers.manager.NavigationManager;
 import app.enums.View;
 import app.models.User;
-import app.Client;
 import app.utils.AlertUtils;
-
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import javafx.event.ActionEvent;

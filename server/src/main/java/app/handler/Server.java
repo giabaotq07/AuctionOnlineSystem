@@ -12,9 +12,6 @@ import app.models.Auction;
 import app.models.Item;
 import app.models.PacketRes;
 import app.service.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -23,6 +20,8 @@ import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Server. */
 public class Server {
@@ -31,7 +30,8 @@ public class Server {
   private static volatile Server instance;
   private ServerSocket serverSocket;
   private volatile boolean running = true;
-  private static final Map<Integer, app.handler.ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
+  private static final Map<Integer, app.handler.ClientHandler> authenticatedClients =
+      new ConcurrentHashMap<>();
   private static final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final ExecutorService broadcastPool = Executors.newCachedThreadPool();
   private final ScheduledExecutorService auctionMaintenancePool =
@@ -134,7 +134,8 @@ public class Server {
           socket.setSoTimeout(0);
           logger.info("[SERVER] Client connected: {}", socket.getRemoteSocketAddress());
           app.handler.ClientHandler clientHandler =
-              new app.handler.ClientHandler(socket, auctionService, bidService, userService, itemService);
+              new app.handler.ClientHandler(
+                  socket, auctionService, bidService, userService, itemService);
           clientPool.execute(clientHandler);
         } catch (SocketException e) {
           if (serverSocket.isClosed()) {

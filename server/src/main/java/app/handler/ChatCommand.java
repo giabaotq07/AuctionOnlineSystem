@@ -6,10 +6,9 @@ import app.enums.PacketType;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.LocalDateTime;
 
 /** ChatCommand. */
 public class ChatCommand implements Command {

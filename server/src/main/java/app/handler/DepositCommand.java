@@ -9,10 +9,9 @@ import app.models.PacketReq;
 import app.models.PacketRes;
 import app.models.User;
 import app.service.UserService;
+import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigDecimal;
 
 /** DepositCommand. */
 public class DepositCommand implements Command {

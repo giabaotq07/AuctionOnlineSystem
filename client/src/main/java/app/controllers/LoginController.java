@@ -1,5 +1,7 @@
 package app.controllers;
 
+import app.Client;
+import app.DataStore;
 import app.controllers.manager.NavigationManager;
 import app.dto.LoginRequest;
 import app.dto.LoginResponse;
@@ -9,10 +11,7 @@ import app.mapper.DtoMapper;
 import app.models.PacketReq;
 import app.models.User;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-import app.DataStore;
-
 import java.io.IOException;
 import java.util.Objects;
 import javafx.application.Platform;
@@ -36,6 +35,7 @@ public class LoginController {
   @FXML private AnchorPane rootPane;
   private PacketListener<LoginResponse> loginHandler;
   private Logger logger = LoggerFactory.getLogger(LoginController.class);
+
   @FXML
   private void initialize() {
     String url =

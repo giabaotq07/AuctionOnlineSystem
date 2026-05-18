@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.Client;
 import app.controllers.manager.NavigationManager;
 import app.dto.RegisterRequest;
 import app.dto.RegisterResponse;
@@ -8,9 +9,7 @@ import app.enums.UserRole;
 import app.enums.View;
 import app.models.PacketReq;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-
 import java.io.IOException;
 import java.util.Objects;
 import javafx.application.Platform;

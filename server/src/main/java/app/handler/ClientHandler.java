@@ -10,14 +10,13 @@ import app.service.BidService;
 import app.service.ItemService;
 import app.service.UserService;
 import app.utils.JsonUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.EnumMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** ClientHandler. */
 public class ClientHandler implements Runnable {

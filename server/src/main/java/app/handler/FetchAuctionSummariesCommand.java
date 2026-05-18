@@ -11,10 +11,9 @@ import app.models.PacketReq;
 import app.models.PacketRes;
 import app.service.AuctionService;
 import app.service.ItemService;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /** FetchAuctionSummariesCommand. */
 public class FetchAuctionSummariesCommand implements Command {

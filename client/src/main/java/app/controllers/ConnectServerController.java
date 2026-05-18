@@ -1,10 +1,8 @@
 package app.controllers;
 
+import app.Client;
 import app.controllers.manager.NavigationManager;
 import app.enums.View;
-import app.Client;
-import app.utils.AlertUtils;
-
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Objects;

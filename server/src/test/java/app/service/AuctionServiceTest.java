@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.dao.BaseDAOTest;
 import app.TestFixtures;
 import app.dao.AuctionDAO;
+import app.dao.BaseDAOTest;
 import app.dao.BidDAO;
 import app.dao.ItemDAO;
 import app.dao.UserDAO;

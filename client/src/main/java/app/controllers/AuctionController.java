@@ -1,5 +1,7 @@
 package app.controllers;
 
+import app.Client;
+import app.DataStore;
 import app.controllers.manager.NavigationManager;
 import app.dto.CreateAuctionRequest;
 import app.dto.CreateAuctionResponse;
@@ -8,10 +10,7 @@ import app.enums.PacketType;
 import app.enums.View;
 import app.models.PacketReq;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-import app.DataStore;
-
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;

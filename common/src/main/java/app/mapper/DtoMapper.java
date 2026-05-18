@@ -2,7 +2,6 @@ package app.mapper;
 
 import app.dto.*;
 import app.models.*;
-
 import java.util.Optional;
 
 /** DtoMapper. */

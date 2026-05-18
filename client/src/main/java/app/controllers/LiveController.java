@@ -1,5 +1,7 @@
 package app.controllers;
 
+import app.Client;
+import app.DataStore;
 import app.controllers.manager.NavigationManager;
 import app.dto.AuctionDetail;
 import app.dto.AuctionDetailRequest;
@@ -19,10 +21,7 @@ import app.models.PacketReq;
 import app.models.User;
 import app.models.Wallet;
 import app.network.PacketListener;
-import app.Client;
 import app.utils.AlertUtils;
-import app.DataStore;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;

@@ -9,10 +9,9 @@ import app.models.BidTransaction;
 import app.models.PacketReq;
 import app.models.PacketRes;
 import app.service.AuctionService;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
 
 /** FetchAuctionResultCommand. */
 public class FetchAuctionResultCommand implements Command {

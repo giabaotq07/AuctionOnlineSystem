@@ -10,10 +10,9 @@ import app.mapper.DtoMapper;
 import app.models.*;
 import app.service.AuctionService;
 import app.service.ItemService;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /** CreateAuctionCommand. */
 public class CreateAuctionCommand implements Command {

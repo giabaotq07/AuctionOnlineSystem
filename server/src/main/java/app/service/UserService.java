@@ -5,7 +5,6 @@ import app.database.TransactionManager;
 import app.exception.ServiceException;
 import app.models.User;
 import app.utils.PasswordUtils;
-
 import java.math.BigDecimal;
 import java.util.List;
 
