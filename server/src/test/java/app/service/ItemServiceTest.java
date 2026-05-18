@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.TestFixtures;
 import app.dao.AuctionDAO;
 import app.dao.BaseDAOTest;
 import app.dao.ItemDAO;
@@ -19,6 +18,7 @@ import app.enums.UserRole;
 import app.exception.ServiceException;
 import app.models.Item;
 import app.models.User;
+import app.utils.TestFixtures;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package app;
+package app.utils;
 
 import app.enums.ItemType;
 import app.enums.UserRole;

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import app.TestFixtures;
 import app.dao.AuctionDAO;
 import app.dao.BaseDAOTest;
 import app.dao.BidDAO;
@@ -22,6 +21,7 @@ import app.exception.ServiceException;
 import app.models.Auction;
 import app.models.Item;
 import app.models.User;
+import app.utils.TestFixtures;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
