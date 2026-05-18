@@ -13,6 +13,8 @@ import app.models.User;
 import app.models.UserFactory;
 import app.models.Wallet;
 import java.math.BigDecimal;
+
+import app.utils.PasswordUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
