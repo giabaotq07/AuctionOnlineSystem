@@ -1,0 +1,367 @@
+package app.service;
+
+import app.dao.AuctionDAO;
+import app.dao.BidDAO;
+import app.dao.ItemDAO;
+import app.dao.UserDAO;
+import app.database.TransactionManager;
+import app.enums.AuctionStatus;
+import app.enums.ItemType;
+import app.enums.UserRole;
+import app.exception.ServiceException;
+import app.models.Auction;
+import app.models.BidTransaction;
+import app.models.Item;
+import app.models.ItemFactory;
+import app.models.User;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/** AuctionService. */
+public class AuctionService {
+  private record CacheSnapshot(List<Auction> data, boolean loaded) {}
+
+  private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), false);
+  private final AuctionDAO auctionDAO;
+  private final BidDAO bidDAO;
+  private final ItemDAO itemDAO;
+  private final UserDAO userDAO;
+  private final TransactionManager transactionManager;
+  private final Logger logger = LoggerFactory.getLogger(AuctionService.class);
+  private final Clock clock;
+
+  /** AuctionService. */
+  public AuctionService(
+      AuctionDAO auctionDAO,
+      BidDAO bidDAO,
+      ItemDAO itemDAO,
+      UserDAO userDAO,
+      TransactionManager transactionManager) {
+    this.auctionDAO = auctionDAO;
+    this.bidDAO = bidDAO;
+    this.itemDAO = itemDAO;
+    this.userDAO = userDAO;
+    this.transactionManager = transactionManager;
+    this.clock = Clock.systemDefaultZone();
+  }
+
+  /** createAuction. */
+  public Auction createAuction(Auction auction) {
+    validateAuctionTime(auction);
+    Auction saved = transactionManager.runInTransaction(conn -> auctionDAO.save(conn, auction));
+    invalidateCache();
+    return saved;
+  }
+
+  /** createAndStartAuction. */
+  public Auction createAndStartAuction(int itemId, int sellerId, long startingPrice, int minutes) {
+    Auction saved =
+        transactionManager.runInTransaction(
+            conn -> {
+              Auction auction =
+                  new Auction(
+                      itemId,
+                      sellerId,
+                      LocalDateTime.now(clock).plusMinutes(minutes),
+                      startingPrice);
+              Auction created = auctionDAO.save(conn, auction);
+              created.start();
+              auctionDAO.update(conn, created);
+              return created;
+            });
+    invalidateCache();
+    return saved;
+  }
+
+  /** createAndStartAuctionWithItem. */
+  public Auction createAndStartAuctionWithItem(
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      int requesterId,
+      UserRole requesterRole) {
+    validateCreateAuctionRequest(
+        name,
+        description,
+        startingPrice,
+        stepPrice,
+        type,
+        durationMinutes,
+        requesterId,
+        requesterRole);
+    Auction createdAuction =
+        transactionManager.runInTransaction(
+            conn -> {
+              Item item =
+                  ItemFactory.createItem(
+                      name, requesterId, description, startingPrice, stepPrice, type);
+              Item savedItem = itemDAO.save(conn, item);
+              Auction auction =
+                  new Auction(
+                      savedItem.getId(),
+                      requesterId,
+                      LocalDateTime.now(clock).plusMinutes(durationMinutes),
+                      savedItem.getStartingPrice());
+              Auction created = auctionDAO.save(conn, auction);
+              created.start();
+              auctionDAO.update(conn, created);
+              return created;
+            });
+    invalidateCache();
+    return createdAuction;
+  }
+
+  /** getAuctionById. */
+  public Auction getAuctionById(int auctionId) {
+    return auctionDAO
+        .findById(auctionId)
+        .orElseThrow(() -> new ServiceException("Không tìm thấy phiên ID: " + auctionId));
+  }
+
+  /** getAllAuctions. */
+  public List<Auction> getAllAuctions() {
+    CacheSnapshot current = snapshot;
+    if (current.loaded()) {
+      return current.data();
+    }
+    List<Auction> fresh = auctionDAO.findAll();
+    snapshot = new CacheSnapshot(List.copyOf(fresh), true);
+    return fresh;
+  }
+
+  /** getHistoryAuctions. */
+  public List<Auction> getHistoryAuctions(int userId) {
+    List<Auction> result = new ArrayList<>();
+    for (Auction auction : getAllAuctions()) {
+      boolean isSeller = auction.getSellerId() == userId;
+      boolean hasBid = bidDAO.existsByAuctionAndUser(auction.getId(), userId);
+      if (!isSeller && !hasBid) {
+        continue;
+      }
+      result.add(auction);
+    }
+    return result;
+  }
+
+  /** completeAndGetHighestBid. */
+  public Optional<BidTransaction> completeAndGetHighestBid(int auctionId) {
+    handleCompletion(auctionId);
+    return bidDAO.findHighestBid(auctionId);
+  }
+
+  /** updateStatus. */
+  public void updateStatus(int auctionId, AuctionStatus status) {
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction auction = requireAuction(conn, auctionId);
+          auction.setStatus(status);
+          boolean ok = auctionDAO.update(conn, auction);
+          if (!ok) {
+            throw new ServiceException("Không thể cập nhật trạng thái.");
+          }
+        });
+    invalidateCache();
+  }
+
+  /** cancelAuction. */
+  public void cancelAuction(int auctionId, int requester, int expectedVersion) {
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction auction = requireAuction(conn, auctionId);
+          ensureCancelPermission(conn, auction, requester);
+          AuctionStatus status = auction.getStatus();
+          if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
+            throw new ServiceException("Không thể hủy phiên đã kết thúc hoặc đã thanh toán.");
+          }
+          auction.setStatus(AuctionStatus.CANCELED);
+          releaseWallets(conn, auction);
+          boolean ok = auctionDAO.updateIfVersionMatches(conn, auction, expectedVersion);
+          if (!ok) {
+            throw new ServiceException(
+                "Dữ liệu phiên đã thay đổi, vui lòng tải lại trước khi duyệt.");
+          }
+        });
+    invalidateCache();
+  }
+
+  /** setStartTime. */
+  public void setStartTime(int auctionId, LocalDateTime startTime) {
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction auction = requireAuction(conn, auctionId);
+          auction.setStartTime(startTime);
+          auctionDAO.update(conn, auction);
+        });
+    invalidateCache();
+  }
+
+  /** setEndTime. */
+  public void setEndTime(int auctionId, LocalDateTime endTime) {
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction auction = requireAuction(conn, auctionId);
+          auction.setEndTime(endTime);
+          auctionDAO.update(conn, auction);
+        });
+    invalidateCache();
+  }
+
+  /** handleCompletion. */
+  public void handleCompletion(int auctionId) {
+    boolean completed =
+        transactionManager.runInTransaction(
+            conn -> {
+              Auction auction = requireAuction(conn, auctionId);
+              if (!auction.isExpired()) {
+                return false;
+              }
+              AuctionStatus status = auction.getStatus();
+              if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
+                return false;
+              }
+              auction.setStatus(AuctionStatus.FINISHED);
+              bidDAO
+                  .findHighestBid(conn, auctionId)
+                  .ifPresentOrElse(
+                      bid -> {
+                        auction.setWinnerId(bid.getBidderId());
+                        logger.info(
+                            "Phiên {} kết thúc. Winner: {}, Giá: {}",
+                            auctionId,
+                            bid.getBidderName(),
+                            bid.getAmount());
+                      },
+                      () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
+              settleWallets(conn, auction);
+              auctionDAO.update(conn, auction);
+              return true;
+            });
+    if (completed) {
+      invalidateCache();
+    }
+  }
+
+  /** completeExpiredAuctions. */
+  public List<Integer> completeExpiredAuctions() {
+    List<Integer> completedIds = new ArrayList<>();
+    for (Auction auction : auctionDAO.findAll()) {
+      if (!auction.isExpired()) {
+        continue;
+      }
+      AuctionStatus status = auction.getStatus();
+      if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
+        continue;
+      }
+      handleCompletion(auction.getId());
+      completedIds.add(auction.getId());
+    }
+    return completedIds;
+  }
+
+  private Auction requireAuction(java.sql.Connection conn, int auctionId) {
+    auctionDAO.lockRow(conn, auctionId);
+    return auctionDAO
+        .findById(conn, auctionId)
+        .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
+  }
+
+  private void settleWallets(java.sql.Connection conn, Auction auction) {
+    List<BidTransaction> bids = bidDAO.findByAuction(conn, auction.getId());
+    Set<Integer> bidderIds = new LinkedHashSet<>();
+    for (BidTransaction bid : bids) {
+      bidderIds.add(bid.getBidderId());
+    }
+    for (Integer bidderId : bidderIds) {
+      userDAO.lockRow(conn, bidderId);
+      User user =
+          userDAO
+              .findById(conn, bidderId)
+              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + bidderId));
+      if (auction.getWinnerId() != null && auction.getWinnerId() == bidderId) {
+        user.getWallet().commitFrozen(String.valueOf(auction.getId()));
+      } else {
+        user.getWallet().releaseFrozen(String.valueOf(auction.getId()));
+      }
+      userDAO.update(conn, user);
+    }
+  }
+
+  private void releaseWallets(java.sql.Connection conn, Auction auction) {
+    List<BidTransaction> bids = bidDAO.findByAuction(conn, auction.getId());
+    Set<Integer> bidderIds = new LinkedHashSet<>();
+    for (BidTransaction bid : bids) {
+      bidderIds.add(bid.getBidderId());
+    }
+    for (Integer bidderId : bidderIds) {
+      userDAO.lockRow(conn, bidderId);
+      User user =
+          userDAO
+              .findById(conn, bidderId)
+              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + bidderId));
+      user.getWallet().releaseFrozen(String.valueOf(auction.getId()));
+      userDAO.update(conn, user);
+    }
+  }
+
+  private void ensureCancelPermission(java.sql.Connection conn, Auction auction, int requesterId) {
+    if (requesterId == auction.getSellerId()) {
+      return;
+    }
+    User user =
+        userDAO
+            .findById(conn, requesterId)
+            .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + requesterId));
+    if (user.getRole() != app.enums.UserRole.ADMIN) {
+      throw new ServiceException("Bạn không có quyền hủy phiên đấu giá này.");
+    }
+  }
+
+  private void validateCreateAuctionRequest(
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      int requesterId,
+      UserRole requesterRole) {
+    if (requesterId <= 0 || requesterRole == null) {
+      throw new ServiceException("Dữ liệu người tạo phiên không hợp lệ.");
+    }
+    if (requesterRole != UserRole.SELLER && requesterRole != UserRole.ADMIN) {
+      throw new ServiceException("Chỉ Seller/Admin được tạo phiên.");
+    }
+    if (name == null
+        || name.isBlank()
+        || description == null
+        || description.isBlank()
+        || startingPrice <= 0
+        || stepPrice <= 0
+        || durationMinutes <= 0
+        || type == null) {
+      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
+    }
+  }
+
+  private void validateAuctionTime(Auction auction) {
+    if (auction.getEndTime().isBefore(LocalDateTime.now(clock))) {
+      throw new ServiceException("Thời gian kết thúc không thể ở quá khứ.");
+    }
+  }
+
+  /** invalidateCache. */
+  public void invalidateCache() {
+    snapshot = new CacheSnapshot(List.of(), false);
+    logger.info("[CACHE] Auction cache invalidated");
+  }
+}
