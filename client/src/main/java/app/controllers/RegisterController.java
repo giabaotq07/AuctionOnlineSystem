@@ -76,7 +76,7 @@ public class RegisterController {
                 }
               });
         };
-    Client.getInstance().subscribe(PacketType.REGISTER, registerHandler);
+    Client.getInstance().subscribe(PacketType.REGISTER, RegisterResponse.class, registerHandler);
   }
 
   /** Member. */

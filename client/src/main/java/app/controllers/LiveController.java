@@ -78,7 +78,7 @@ public class LiveController implements Cleanable {
                   }
                   handleBidResponse(response, message);
                 });
-    Client.getInstance().subscribe(PacketType.PLACE_BID, placeBidHandler);
+    Client.getInstance().subscribe(PacketType.PLACE_BID, PlaceBidResponse.class, placeBidHandler);
     auctionDetailHandler =
         (response, success, message) ->
             Platform.runLater(
@@ -89,7 +89,9 @@ public class LiveController implements Cleanable {
                   }
                   handleDetailResponse(response);
                 });
-    Client.getInstance().subscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
+    Client.getInstance()
+        .subscribe(
+            PacketType.FETCH_AUCTION_DETAIL, AuctionDetailResponse.class, auctionDetailHandler);
     auctionResultHandler =
         (response, success, message) ->
             Platform.runLater(
@@ -100,11 +102,14 @@ public class LiveController implements Cleanable {
                   }
                   handleAuctionResult(response);
                 });
-    Client.getInstance().subscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
+    Client.getInstance()
+        .subscribe(
+            PacketType.FETCH_AUCTION_RESULT, AuctionResultResponse.class, auctionResultHandler);
     walletUpdateHandler =
         (response, success, message) ->
             Platform.runLater(() -> handleWalletUpdate(response, success, message));
-    Client.getInstance().subscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+    Client.getInstance()
+        .subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
     updateAvailableBalance();
   }
 

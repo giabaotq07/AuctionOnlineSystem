@@ -53,6 +53,7 @@ public class DataStore {
     Client.getInstance()
         .subscribe(
             PacketType.WALLET_UPDATE,
+            WalletUpdateResponse.class,
             (WalletUpdateResponse response, boolean success, String message) ->
                 Platform.runLater(
                     () -> {

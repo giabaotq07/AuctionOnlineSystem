@@ -172,8 +172,9 @@ public class FirstScene implements Cleanable {
                   summaries.addAll(response.auctions());
                   rebuildUi();
                 });
-    client.subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    client.subscribe(PacketType.FETCH_AUCTION_SUMMARIES, fetchAuctionsHandler);
+    client.subscribe(PacketType.CREATE_AUCTION, CreateAuctionResponse.class, createAuctionHandler);
+    client.subscribe(
+        PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, fetchAuctionsHandler);
   }
 
   private void loadInitialData() {
@@ -358,7 +359,7 @@ public class FirstScene implements Cleanable {
                     updateBalanceLabel();
                   }
                 });
-    client.subscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+    client.subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
   }
 
   private void updateBalanceLabel() {

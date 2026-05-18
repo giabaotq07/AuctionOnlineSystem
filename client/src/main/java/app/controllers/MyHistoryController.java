@@ -71,7 +71,8 @@ public class MyHistoryController implements Cleanable {
                   }
                 });
 
-    client.subscribe(PacketType.FETCH_AUCTION_HISTORY, historyHandler);
+    client.subscribe(
+        PacketType.FETCH_AUCTION_HISTORY, AuctionHistoryResponse.class, historyHandler);
 
     requestHistory();
   }

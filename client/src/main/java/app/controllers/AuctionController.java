@@ -60,7 +60,8 @@ public class AuctionController {
                     AlertUtils.showError("Lỗi", message);
                   }
                 });
-    Client.getInstance().subscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
+    Client.getInstance()
+        .subscribe(PacketType.CREATE_AUCTION, CreateAuctionResponse.class, createAuctionHandler);
   }
 
   /** Member. */

@@ -62,7 +62,7 @@ public class LoginController {
                     AlertUtils.showError("Đăng nhập thất bại", message);
                   }
                 });
-    Client.getInstance().subscribe(PacketType.LOGIN, loginHandler);
+    Client.getInstance().subscribe(PacketType.LOGIN, LoginResponse.class, loginHandler);
   }
 
   /** Member. */

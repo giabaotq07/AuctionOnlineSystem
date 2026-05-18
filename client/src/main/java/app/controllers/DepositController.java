@@ -61,7 +61,7 @@ public class DepositController implements Cleanable {
                     pendingDepositAmount = null;
                   }
                 });
-    client.subscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
+    client.subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
   }
 
   private void updateBalanceLabels(User user) {

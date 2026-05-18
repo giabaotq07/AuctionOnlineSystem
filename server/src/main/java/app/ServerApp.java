@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 public class ServerApp {
   private static final Logger logger = LoggerFactory.getLogger(ServerApp.class);
 
-  static void main(String[] args) {
+  public static void main(String[] args) {
     Server server = Server.getInstance();
     Runtime.getRuntime()
         .addShutdownHook(

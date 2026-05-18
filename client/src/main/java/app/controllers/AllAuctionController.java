@@ -71,7 +71,8 @@ public class AllAuctionController implements Cleanable {
                   }
                 });
 
-    client.subscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
+    client.subscribe(
+        PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, runningHandler);
 
     requestHistory();
   }

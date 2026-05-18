@@ -1,5 +1,6 @@
 package app.models;
 
+import app.dto.Response;
 import app.enums.PacketType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -65,9 +66,8 @@ public class PacketRes {
     return GSON.fromJson(data, clazz);
   }
 
-  /** Member. */
-  @SuppressWarnings("unchecked")
-  public <T> T getData() {
+  /** getData. */
+  public Response getData() {
     if (type == null
         || type.resClass == null
         || type.resClass == Void.class
@@ -75,7 +75,10 @@ public class PacketRes {
         || data.isBlank()) {
       return null;
     }
-    return (T) GSON.fromJson(data, type.resClass);
+    if (!Response.class.isAssignableFrom(type.resClass)) {
+      throw new IllegalStateException("Packet type does not declare a Response class");
+    }
+    return Response.class.cast(GSON.fromJson(data, type.resClass));
   }
 
   public boolean isSuccess() {

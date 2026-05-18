@@ -135,18 +135,16 @@ public class Client {
     writer.flush();
   }
 
-  /** Member. */
   @SuppressWarnings("unchecked")
-  public <T extends Response> void notifyListeners(
-      PacketType packetType, T response, boolean success, String message) {
+  private void notifyListeners(
+      PacketType packetType, Response response, boolean success, String message) {
     List<PacketListener<?>> listeners = listenersMap.get(packetType);
     if (listeners == null || listeners.isEmpty()) {
       return;
     }
     for (PacketListener<?> listener : listeners) {
       try {
-        PacketListener<T> typedListener = (PacketListener<T>) listener;
-        typedListener.handle(response, success, message);
+        ((PacketListener<Response>) listener).handle(response, success, message);
       } catch (Exception e) {
         logger.error("[CLIENT] Listener error: {}", packetType, e);
       }
@@ -154,7 +152,9 @@ public class Client {
   }
 
   /** subscribe. */
-  public <T extends Response> void subscribe(PacketType packetType, PacketListener<T> listener) {
+  public <T extends Response> void subscribe(
+      PacketType packetType, Class<T> responseClass, PacketListener<T> listener) {
+    validateSubscription(packetType, responseClass, listener);
     listenersMap
         .computeIfAbsent(packetType, k -> new CopyOnWriteArrayList<>())
         .addIfAbsent(listener);
@@ -166,7 +166,7 @@ public class Client {
     if (listeners == null) {
       return;
     }
-    listeners.remove(listener);
+    listeners.removeIf(registered -> registered == listener || registered.equals(listener));
     if (listeners.isEmpty()) {
       listenersMap.remove(packetType);
     }
@@ -228,5 +228,22 @@ public class Client {
 
   public void setCurrentUser(User currentUser) {
     this.currentUser = currentUser;
+  }
+
+  private static <T extends Response> void validateSubscription(
+      PacketType packetType, Class<T> responseClass, PacketListener<T> listener) {
+    if (packetType == null) {
+      throw new IllegalArgumentException("Packet type cannot be null");
+    }
+    if (responseClass == null) {
+      throw new IllegalArgumentException("Response class cannot be null");
+    }
+    if (listener == null) {
+      throw new IllegalArgumentException("Listener cannot be null");
+    }
+    if (!packetType.resClass.equals(responseClass)) {
+      throw new IllegalArgumentException(
+          "Response class does not match packet type: " + packetType);
+    }
   }
 }

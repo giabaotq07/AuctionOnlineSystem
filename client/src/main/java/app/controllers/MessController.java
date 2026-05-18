@@ -50,7 +50,7 @@ public class MessController {
           String sender = response.sender();
           Platform.runLater(() -> addBubble(sender, response.content(), isMe(response.senderId())));
         };
-    client.subscribe(PacketType.CHAT, chatHandler);
+    client.subscribe(PacketType.CHAT, ChatResponse.class, chatHandler);
   }
 
   boolean isMe(int id) {
