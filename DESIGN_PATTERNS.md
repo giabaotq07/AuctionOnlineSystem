@@ -66,9 +66,9 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Tách logic truy cập database khỏi business logic.
 
 **Nơi áp dụng:**
-* Interface trong `app.DAO`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
-* Implementation trong `app.DAO.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
-* `app.DAO.BaseDAO` gồm helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
+* Interface trong `app.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
+* Implementation trong `app.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
+* `app.dao.BaseDAO` gồm helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
 
 **Lợi ích trong dự án:**
 * Service không chứa SQL trực tiếp.
