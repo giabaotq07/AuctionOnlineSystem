@@ -17,6 +17,7 @@ public class Auction {
   private int version;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  private String itemName;
 
   /** Auction. */
   public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice) {
@@ -205,6 +206,14 @@ public class Auction {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public String getItemName() {
+    return itemName;
+  }
+
+  public void setItemName(String itemName) {
+    this.itemName = itemName;
   }
 
   @Override

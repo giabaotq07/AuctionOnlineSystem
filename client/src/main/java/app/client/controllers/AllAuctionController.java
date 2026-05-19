@@ -50,7 +50,7 @@ public class AllAuctionController implements Cleanable {
 
   private void requestAuctions() {
     summaries.clear();
-    summaries.addAll(SummaryStore.getInstance().getAuctionSummaries());
+    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
   }
 
   private void rebuildUi() {

@@ -53,7 +53,7 @@ public final class DtoMapper {
   public static AuctionSummary toAuctionSummary(Auction auction, Item item) {
     return new AuctionSummary(
         auction.getId(),
-        item.getName(),
+        item == null ? auction.getItemName() : item.getName(),
         currentPrice(auction, item),
         auction.getEndTime(),
         auction.getStatus(),
@@ -103,6 +103,29 @@ public final class DtoMapper {
         auctionData.updatedAt());
   }
 
+  /** toAuction. */
+  public static Auction toAuction(AuctionSummary summary) {
+    if (summary == null) {
+      return null;
+    }
+    Auction auction =
+        new Auction(
+            summary.auctionId(),
+            0,
+            0,
+            null,
+            summary.status(),
+            null,
+            summary.endTime(),
+            summary.currentPrice(),
+            0,
+            summary.version(),
+            null,
+            null);
+    auction.setItemName(summary.itemName());
+    return auction;
+  }
+
   /** toAuctionResultResponse. */
   public static AuctionResultResponse toAuctionResultResponse(
       int auctionId, Optional<Bid> highestBid) {
@@ -126,6 +149,9 @@ public final class DtoMapper {
   }
 
   private static long currentPrice(Auction auction, Item item) {
-    return auction.getHighestBid() > 0 ? auction.getHighestBid() : item.getStartingPrice();
+    if (auction.getHighestBid() > 0 || item == null) {
+      return auction.getHighestBid();
+    }
+    return item.getStartingPrice();
   }
 }
