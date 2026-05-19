@@ -30,11 +30,6 @@ public class PacketReq {
     return new PacketReq(type, payload == null ? null : GSON.toJson(payload));
   }
 
-  /** of. */
-  public static PacketReq of(PacketType type) {
-    return new PacketReq(type, null);
-  }
-
   public PacketType getType() {
     return type;
   }
