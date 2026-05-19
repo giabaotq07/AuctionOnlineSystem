@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.LoginRequest;
 import app.common.dto.LoginResponse;
@@ -8,6 +8,8 @@ import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.common.models.User;
+import app.server.network.ClientHandler;
+import app.server.network.Server;
 import app.server.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

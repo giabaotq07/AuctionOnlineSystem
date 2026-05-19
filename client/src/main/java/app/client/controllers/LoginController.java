@@ -4,14 +4,11 @@ import app.client.Client;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.LoginRequest;
-import app.common.dto.LoginResponse;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import java.util.Objects;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -30,7 +27,6 @@ public class LoginController {
   @FXML private Button loginButton;
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
-  private PacketListener<LoginResponse> loginHandler;
   private Logger logger = LoggerFactory.getLogger(LoginController.class);
 
   @FXML
@@ -45,19 +41,6 @@ public class LoginController {
             + "-fx-background-size: cover;"
             + "-fx-background-position: center center;"
             + "-fx-background-repeat: no-repeat;");
-    loginHandler =
-        (LoginResponse response, boolean success, String message) ->
-            Platform.runLater(
-                () -> {
-                  loginButton.setDisable(false);
-                  if (success && response != null && response.user() != null) {
-                    Client.getInstance().updateCurrentUser(response.user());
-                    switchToUi();
-                  } else {
-                    AlertUtils.showError("Đăng nhập thất bại", message);
-                  }
-                });
-    Client.getInstance().subscribe(PacketType.LOGIN, LoginResponse.class, loginHandler);
   }
 
   /** Member. */
@@ -83,9 +66,6 @@ public class LoginController {
   /** Member. */
   @FXML
   public void switchToUi() {
-    if (loginHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.LOGIN, loginHandler);
-    }
     try {
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));

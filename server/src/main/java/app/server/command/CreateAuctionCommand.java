@@ -1,10 +1,12 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.*;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
+import app.server.network.ClientHandler;
+import app.server.network.Server;
 import app.server.service.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

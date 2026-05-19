@@ -2,18 +2,16 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;
 import app.common.dto.DepositRequest;
-import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
-import app.common.observer.PacketListener;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -28,36 +26,12 @@ public class DepositController implements Cleanable {
   @FXML private Label totalBalanceLabel;
   @FXML private Label availableBalanceLabel;
   private final Client client = Client.getInstance();
-  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
-  private BigDecimal pendingDepositAmount;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
   /** Member. */
   @FXML
   public void initialize() {
-    setupWalletListener();
-    updateBalanceLabels(client.getCurrentUser());
-  }
-
-  private void setupWalletListener() {
-    walletUpdateHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    pendingDepositAmount = null;
-                    AlertUtils.showError("Ví", message);
-                    return;
-                  }
-                  updateBalanceLabels(client.getCurrentUser());
-                  if (pendingDepositAmount != null) {
-                    AlertUtils.showInfo(
-                        "Nạp tiền thành công",
-                        "Đã nạp: " + formatCurrency(pendingDepositAmount) + " đ");
-                    pendingDepositAmount = null;
-                  }
-                });
-    client.subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
+    updateBalanceLabels(UserSession.getInstance().getCurrentUser());
   }
 
   private void updateBalanceLabels(User user) {
@@ -89,7 +63,7 @@ public class DepositController implements Cleanable {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
-    if (client.getCurrentUser() == null) {
+    if (UserSession.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để nạp tiền!");
       return;
     }
@@ -108,11 +82,9 @@ public class DepositController implements Cleanable {
       return;
     }
     try {
-      pendingDepositAmount = amount;
       client.sendRequest(PacketReq.of(PacketType.DEPOSIT, new DepositRequest(amount)));
       depositAmountField.clear();
     } catch (Exception e) {
-      pendingDepositAmount = null;
       logger.error("Failed to deposit", e);
       AlertUtils.showError("Lỗi", "Không thể nạp tiền.");
     }
@@ -125,9 +97,5 @@ public class DepositController implements Cleanable {
   }
 
   @Override
-  public void cleanup() {
-    if (walletUpdateHandler != null) {
-      client.unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
-    }
-  }
+  public void cleanup() {}
 }

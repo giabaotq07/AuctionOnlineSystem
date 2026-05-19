@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.FetchSellerItemsRequest;
 import app.common.dto.ItemData;
@@ -9,6 +9,7 @@ import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.common.models.User;
+import app.server.network.ClientHandler;
 import app.server.service.ItemService;
 import java.util.List;
 import org.slf4j.Logger;

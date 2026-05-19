@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.network;
 
 import app.common.dto.AuctionSummariesResponse;
 import app.common.enums.PacketType;
@@ -25,8 +25,7 @@ public class Server {
   private static volatile Server instance;
   private ServerSocket serverSocket;
   private volatile boolean running = true;
-  private static final Map<Integer, app.server.handler.ClientHandler> authenticatedClients =
-      new ConcurrentHashMap<>();
+  private static final Map<Integer, ClientHandler> authenticatedClients = new ConcurrentHashMap<>();
   private static final ExecutorService clientPool = Executors.newCachedThreadPool();
   private static final ExecutorService broadcastPool = Executors.newCachedThreadPool();
   private final ScheduledExecutorService auctionMaintenancePool =
@@ -122,9 +121,8 @@ public class Server {
           socket.setKeepAlive(true);
           socket.setSoTimeout(0);
           logger.info("[SERVER] Client connected: {}", socket.getRemoteSocketAddress());
-          app.server.handler.ClientHandler clientHandler =
-              new app.server.handler.ClientHandler(
-                  socket, auctionService, bidService, userService, itemService);
+          ClientHandler clientHandler =
+              new ClientHandler(socket, auctionService, bidService, userService, itemService);
           clientPool.execute(clientHandler);
         } catch (SocketException e) {
           if (serverSocket.isClosed()) {
@@ -149,9 +147,7 @@ public class Server {
       if (serverSocket != null && !serverSocket.isClosed()) {
         serverSocket.close();
       }
-      authenticatedClients.values().stream()
-          .toList()
-          .forEach(app.server.handler.ClientHandler::close);
+      authenticatedClients.values().stream().toList().forEach(ClientHandler::close);
       authenticatedClients.clear();
       shutdownExecutor(clientPool, "clientPool");
       shutdownExecutor(broadcastPool, "broadcastPool");
@@ -178,8 +174,8 @@ public class Server {
   }
 
   /** registerClient. */
-  public static void registerClient(int userId, app.server.handler.ClientHandler handler) {
-    app.server.handler.ClientHandler old = authenticatedClients.put(userId, handler);
+  public static void registerClient(int userId, ClientHandler handler) {
+    ClientHandler old = authenticatedClients.put(userId, handler);
     if (old != null && old != handler) {
       logger.info("[SERVER] Replacing old auction for user {}", userId);
       authenticatedClients.remove(userId, old);

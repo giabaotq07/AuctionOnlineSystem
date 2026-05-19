@@ -1,0 +1,9 @@
+package app.client.command;
+
+import app.common.models.PacketRes;
+
+/** RegisterCommand. */
+public class RegisterCommand implements Command {
+  @Override
+  public void execute(PacketRes packet) {}
+}

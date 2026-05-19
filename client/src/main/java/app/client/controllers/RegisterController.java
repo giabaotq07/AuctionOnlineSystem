@@ -4,15 +4,12 @@ import app.client.Client;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.RegisterRequest;
-import app.common.dto.RegisterResponse;
 import app.common.enums.PacketType;
 import app.common.enums.UserRole;
 import app.common.enums.View;
 import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import java.util.Objects;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -35,7 +32,6 @@ public class RegisterController {
   @FXML private RadioButton rbBidder;
 
   private final ToggleGroup roleGroup = new ToggleGroup();
-  private PacketListener<RegisterResponse> registerHandler;
   @FXML private Button registerButton;
 
   @FXML
@@ -61,22 +57,6 @@ public class RegisterController {
     } catch (Exception e) {
       System.err.println("Không load được background: " + e.getMessage());
     }
-    registerHandler =
-        (RegisterResponse response, boolean success, String message) -> {
-          Platform.runLater(
-              () -> {
-                if (success) {
-                  AlertUtils.showInfo("Thành công", message);
-                  if (registerHandler != null) {
-                    Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
-                  }
-                  NavigationManager.getInstance().navigateTo(View.LOGIN);
-                } else {
-                  AlertUtils.showError("Thất bại", message);
-                }
-              });
-        };
-    Client.getInstance().subscribe(PacketType.REGISTER, RegisterResponse.class, registerHandler);
   }
 
   /** Member. */
@@ -107,9 +87,6 @@ public class RegisterController {
   /** Member. */
   @FXML
   public void backToLoginMouse(MouseEvent event) {
-    if (registerHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
-    }
     NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 }

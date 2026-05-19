@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.DepositRequest;
 import app.common.dto.WalletUpdateResponse;
@@ -8,6 +8,7 @@ import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.common.models.User;
+import app.server.network.ClientHandler;
 import app.server.service.UserService;
 import java.math.BigDecimal;
 import org.slf4j.Logger;

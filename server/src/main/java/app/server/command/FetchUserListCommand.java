@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.UserData;
 import app.common.dto.UserListResponse;
@@ -7,6 +7,7 @@ import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
+import app.server.network.ClientHandler;
 import app.server.service.UserService;
 import java.util.List;
 import org.slf4j.Logger;

@@ -32,7 +32,8 @@ public final class AuctionNavigator {
     detailHandler =
         (response, success, message) ->
             Platform.runLater(() -> handleDetailResponse(response, success, message));
-    client.subscribe(PacketType.FETCH_AUCTION_DETAIL, AuctionDetailResponse.class, detailHandler);
+    //    client.subscribe(PacketType.FETCH_AUCTION_DETAIL, AuctionDetailResponse.class,
+    // detailHandler);
   }
 
   /** getInstance. */
@@ -56,7 +57,7 @@ public final class AuctionNavigator {
       AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
       return;
     }
-    if (client.getCurrentUser() == null) {
+    if (UserSession.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;

@@ -1,21 +1,16 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.manager.AuctionNavigator;
-import app.client.manager.DataStore;
-import app.client.manager.NavigationManager;
+import app.client.manager.*;
 import app.client.utils.AlertUtils;
-import app.common.dto.AuctionHistoryResponse;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.models.User;
-import app.common.observer.PacketListener;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -40,9 +35,7 @@ public class MyHistoryController implements Cleanable {
 
   private final List<AuctionSummary> summaries = new ArrayList<>();
 
-  private final User currentUser = client.getCurrentUser();
-
-  private PacketListener<AuctionHistoryResponse> historyHandler;
+  private final User currentUser = UserSession.getInstance().getCurrentUser();
 
   /** Member. */
   @FXML
@@ -53,25 +46,6 @@ public class MyHistoryController implements Cleanable {
 
     typeFilterComboBox.setOnAction(e -> rebuildUi());
 
-    historyHandler =
-        (AuctionHistoryResponse response, boolean success, String message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  if (response != null && response.auctions() != null) {
-
-                    summaries.clear();
-                    summaries.addAll(response.auctions());
-                    rebuildUi();
-                  }
-                });
-
-    client.subscribe(
-        PacketType.FETCH_AUCTION_HISTORY, AuctionHistoryResponse.class, historyHandler);
-
     requestHistory();
     rebuildUi();
   }
@@ -81,7 +55,7 @@ public class MyHistoryController implements Cleanable {
       return;
     }
     summaries.clear();
-    summaries.addAll(DataStore.getInstance().getAuctionHistory());
+    summaries.addAll(HistoryStore.getInstance().getAuctionHistory());
   }
 
   private void rebuildUi() {
@@ -183,12 +157,6 @@ public class MyHistoryController implements Cleanable {
   /** Member. */
   @FXML
   public void switchToUi() {
-
-    if (historyHandler != null) {
-
-      client.unsubscribe(PacketType.FETCH_AUCTION_HISTORY, historyHandler);
-    }
-
     try {
 
       NavigationManager.getInstance().navigateTo(View.UI);
@@ -200,11 +168,5 @@ public class MyHistoryController implements Cleanable {
   }
 
   @Override
-  public void cleanup() {
-
-    if (historyHandler != null) {
-
-      client.unsubscribe(PacketType.FETCH_AUCTION_HISTORY, historyHandler);
-    }
-  }
+  public void cleanup() {}
 }

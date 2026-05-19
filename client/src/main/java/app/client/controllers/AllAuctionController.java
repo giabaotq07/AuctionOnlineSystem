@@ -2,19 +2,16 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
-import app.client.manager.DataStore;
 import app.client.manager.NavigationManager;
+import app.client.manager.SummaryStore;
 import app.client.utils.AlertUtils;
-import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -39,8 +36,6 @@ public class AllAuctionController implements Cleanable {
 
   private final List<AuctionSummary> summaries = new ArrayList<>();
 
-  private PacketListener<AuctionSummariesResponse> runningHandler;
-
   /** Member. */
   @FXML
   public void initialize() {
@@ -50,33 +45,13 @@ public class AllAuctionController implements Cleanable {
 
     typeFilterComboBox.setOnAction(e -> rebuildUi());
 
-    runningHandler =
-        (AuctionSummariesResponse response, boolean success, String message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  if (response != null && response.auctions() != null) {
-
-                    summaries.clear();
-
-                    summaries.addAll(response.auctions());
-
-                    rebuildUi();
-                  }
-                });
-
-    client.subscribe(
-        PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, runningHandler);
     requestAuctions();
     rebuildUi();
   }
 
   private void requestAuctions() {
     summaries.clear();
-    summaries.addAll(DataStore.getInstance().getAuctionSummaries());
+    summaries.addAll(SummaryStore.getInstance().getAuctionSummaries());
   }
 
   private void rebuildUi() {
@@ -176,12 +151,6 @@ public class AllAuctionController implements Cleanable {
   /** Member. */
   @FXML
   public void switchToUi() {
-
-    if (runningHandler != null) {
-
-      client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
-    }
-
     try {
 
       NavigationManager.getInstance().navigateTo(View.UI);
@@ -193,11 +162,5 @@ public class AllAuctionController implements Cleanable {
   }
 
   @Override
-  public void cleanup() {
-
-    if (runningHandler != null) {
-
-      client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, runningHandler);
-    }
-  }
+  public void cleanup() {}
 }

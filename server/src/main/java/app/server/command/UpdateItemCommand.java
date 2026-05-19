@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.ItemResponse;
 import app.common.dto.UpdateItemRequest;
@@ -6,6 +6,7 @@ import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
+import app.server.network.ClientHandler;
 import app.server.service.ItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

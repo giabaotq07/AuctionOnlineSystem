@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.CancelAuctionRequest;
 import app.common.dto.CancelAuctionResponse;
@@ -6,6 +6,8 @@ import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
+import app.server.network.ClientHandler;
+import app.server.network.Server;
 import app.server.service.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

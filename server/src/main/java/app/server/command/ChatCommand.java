@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.ChatRequest;
 import app.common.dto.ChatResponse;
@@ -6,6 +6,8 @@ import app.common.enums.PacketType;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.common.models.User;
+import app.server.network.ClientHandler;
+import app.server.network.Server;
 import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ public class ChatCommand implements Command {
       Server.broadcast(chatPacket, user.getId());
       logger.info("User {} sent chat message", user.getId());
     } catch (Exception e) {
-      logger.error("Chat command failed", e);
+      logger.error("Chat network failed", e);
       clientHandler.sendPacket(PacketRes.error(PacketType.CHAT, "Failed to send message"));
     }
   }

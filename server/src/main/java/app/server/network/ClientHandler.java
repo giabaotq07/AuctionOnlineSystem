@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.network;
 
 import app.common.enums.PacketType;
 import app.common.models.PacketReq;
@@ -6,6 +6,7 @@ import app.common.models.PacketRes;
 import app.common.models.Session;
 import app.common.models.User;
 import app.common.utils.JsonUtil;
+import app.server.command.*;
 import app.server.service.AuctionService;
 import app.server.service.BidService;
 import app.server.service.ItemService;
@@ -76,7 +77,7 @@ public class ClientHandler implements Runnable {
       reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       listen();
     } catch (IOException e) {
-      logger.error("Error initializing client handler", e);
+      logger.error("Error initializing client command", e);
     } finally {
       cleanup();
     }
@@ -111,21 +112,21 @@ public class ClientHandler implements Runnable {
 
   private void handlePacket(PacketReq packet) {
     PacketType type = packet.getType();
-    logger.info("Processing command: {}", type);
+    logger.info("Processing network: {}", type);
     if (requiresAuthentication(type) && !requireLogin(type)) {
       return;
     }
     Command command = commands.get(type);
     if (command == null) {
-      logger.warn("Unrecognized command type: {}", type);
-      sendPacket(PacketRes.error(PacketType.ERROR, "Unrecognized command type"));
+      logger.warn("Unrecognized network type: {}", type);
+      sendPacket(PacketRes.error(PacketType.ERROR, "Unrecognized network type"));
       return;
     }
     try {
       command.execute(this, packet);
     } catch (Exception e) {
-      logger.error("Error executing command: {}", type, e);
-      sendPacket(PacketRes.error(PacketType.ERROR, "Error executing command"));
+      logger.error("Error executing network: {}", type, e);
+      sendPacket(PacketRes.error(PacketType.ERROR, "Error executing network"));
     }
   }
 

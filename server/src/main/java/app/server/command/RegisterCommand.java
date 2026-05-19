@@ -1,4 +1,4 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.RegisterRequest;
 import app.common.dto.RegisterResponse;
@@ -7,6 +7,7 @@ import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
+import app.server.network.ClientHandler;
 import app.server.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

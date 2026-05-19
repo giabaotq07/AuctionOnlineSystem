@@ -3,6 +3,7 @@ package app.client.controllers;
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
@@ -18,7 +19,6 @@ import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -42,9 +42,6 @@ public class LiveController implements Cleanable {
   private AuctionData auction;
   private long currentPrice;
   private AuctionDetail auctionDetail;
-  private PacketListener<PlaceBidResponse> placeBidHandler;
-  private PacketListener<AuctionDetailResponse> auctionDetailHandler;
-  private PacketListener<AuctionResultResponse> auctionResultHandler;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
@@ -58,55 +55,12 @@ public class LiveController implements Cleanable {
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
-  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private boolean settlementSent = false;
 
   /** Member. */
   @FXML
   public void initialize() {
-    placeBidHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Đặt giá thất bại", message);
-                    return;
-                  }
-                  handleBidResponse(response, message);
-                });
-    Client.getInstance().subscribe(PacketType.PLACE_BID, PlaceBidResponse.class, placeBidHandler);
-    auctionDetailHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  handleDetailResponse(response);
-                });
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_DETAIL, AuctionDetailResponse.class, auctionDetailHandler);
-    auctionResultHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  handleAuctionResult(response);
-                });
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_RESULT, AuctionResultResponse.class, auctionResultHandler);
-    walletUpdateHandler =
-        (response, success, message) ->
-            Platform.runLater(() -> handleWalletUpdate(response, success, message));
-    Client.getInstance()
-        .subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
     updateAvailableBalance();
   }
 
@@ -151,8 +105,8 @@ public class LiveController implements Cleanable {
     currentPrice = Math.max(currentPrice, response.highestBidAmount());
     currentPriceLabel.setText(formatCurrency(currentPrice));
     bidAmountField.clear();
-    if (Client.getInstance().getCurrentUser() != null
-        && response.bidderId() == Client.getInstance().getCurrentUser().getId()) {
+    if (UserSession.getInstance().getCurrentUser() != null
+        && response.bidderId() == UserSession.getInstance().getCurrentUser().getId()) {
       AlertUtils.showInfo("Thành công", message);
     }
   }
@@ -166,7 +120,7 @@ public class LiveController implements Cleanable {
   }
 
   private void updateAvailableBalance() {
-    updateAvailableBalance(Client.getInstance().getCurrentUser());
+    updateAvailableBalance(UserSession.getInstance().getCurrentUser());
   }
 
   private void updateAvailableBalance(User user) {
@@ -211,7 +165,7 @@ public class LiveController implements Cleanable {
     if (settlementSent || auction == null) {
       return;
     }
-    if (Client.getInstance().getCurrentUser() == null) {
+    if (UserSession.getInstance().getCurrentUser() == null) {
       return;
     }
     try {
@@ -277,7 +231,7 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
-    if (Client.getInstance().getCurrentUser() == null) {
+    if (UserSession.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
@@ -292,7 +246,7 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
       return;
     }
-    BigDecimal available = Client.getInstance().getCurrentUser().getWallet().getAvailableBalance();
+    BigDecimal available = UserSession.getInstance().getCurrentUser().getWallet().getAvailableBalance();
     if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
       AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
       return;
@@ -364,18 +318,6 @@ public class LiveController implements Cleanable {
     logger.info("Cleaning up LiveController");
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
-    }
-    if (placeBidHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.PLACE_BID, placeBidHandler);
-    }
-    if (auctionDetailHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
-    }
-    if (auctionResultHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
-    }
-    if (walletUpdateHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
     }
     resultRequested = false;
     auctionClosedShown = false;

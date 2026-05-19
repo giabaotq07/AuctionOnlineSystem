@@ -2,27 +2,23 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
-import app.client.manager.DataStore;
 import app.client.manager.NavigationManager;
+import app.client.manager.SummaryStore;
+import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;
-import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.AuctionSummary;
-import app.common.dto.CreateAuctionResponse;
-import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
-import app.common.observer.PacketListener;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -55,9 +51,6 @@ public class FirstScene implements Cleanable {
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
-  private PacketListener<CreateAuctionResponse> createAuctionHandler;
-  private PacketListener<AuctionSummariesResponse> fetchAuctionsHandler;
-  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
   /** Member. */
@@ -69,9 +62,7 @@ public class FirstScene implements Cleanable {
     setupAuthButton();
     setupSearch();
     setupScrollPanes();
-    setupListeners();
     setupWalletSection();
-    setupWalletListener();
     loadInitialData();
     logger.debug("FirstScene initialized");
   }
@@ -105,8 +96,8 @@ public class FirstScene implements Cleanable {
     if (btnAuth == null) {
       return;
     }
-    if (client.getCurrentUser() != null) {
-      btnAuth.setText("Thông tin User: " + client.getCurrentUser().getName());
+    if (UserSession.getInstance().getCurrentUser() != null) {
+      btnAuth.setText("Thông tin User: " + UserSession.getInstance().getCurrentUser().getName());
     } else {
       btnAuth.setText("Đăng nhập / Đăng ký");
     }
@@ -133,45 +124,9 @@ public class FirstScene implements Cleanable {
     }
   }
 
-  private void setupListeners() {
-    createAuctionHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  if (response == null || response.auction() == null) {
-                    return;
-                  }
-                  AuctionSummary summary = response.auction();
-                  upsertSummary(summary);
-                  rebuildUi();
-                });
-    fetchAuctionsHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  if (response == null || response.auctions() == null) {
-                    return;
-                  }
-                  summaries.clear();
-                  summaries.addAll(response.auctions());
-                  rebuildUi();
-                });
-    client.subscribe(PacketType.CREATE_AUCTION, CreateAuctionResponse.class, createAuctionHandler);
-    client.subscribe(
-        PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, fetchAuctionsHandler);
-  }
-
   private void loadInitialData() {
     summaries.clear();
-    summaries.addAll(DataStore.getInstance().getAuctionSummaries());
+    summaries.addAll(SummaryStore.getInstance().getAuctionSummaries());
     rebuildUi();
   }
 
@@ -290,32 +245,8 @@ public class FirstScene implements Cleanable {
     updateBalanceLabel();
   }
 
-  private void upsertSummary(AuctionSummary summary) {
-    for (int i = 0; i < summaries.size(); i++) {
-      if (summaries.get(i).auctionId() == summary.auctionId()) {
-        summaries.set(i, summary);
-        return;
-      }
-    }
-    summaries.add(summary);
-  }
-
-  private void setupWalletListener() {
-    walletUpdateHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Ví", message);
-                    return;
-                  }
-                  updateBalanceLabel();
-                });
-    client.subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
-  }
-
   private void updateBalanceLabel() {
-    updateBalanceLabel(Client.getInstance().getCurrentUser());
+    updateBalanceLabel(UserSession.getInstance().getCurrentUser());
   }
 
   private void updateBalanceLabel(User user) {
@@ -397,11 +328,6 @@ public class FirstScene implements Cleanable {
       timeline.stop();
     }
     timelines.clear();
-    client.unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, fetchAuctionsHandler);
-    if (walletUpdateHandler != null) {
-      client.unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
-    }
     logger.debug("FirstScene cleaned up");
   }
 }

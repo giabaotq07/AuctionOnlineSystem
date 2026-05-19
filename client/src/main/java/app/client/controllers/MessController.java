@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;
 import app.common.dto.ChatRequest;
 import app.common.dto.ChatResponse;
@@ -10,7 +11,6 @@ import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.observer.PacketListener;
 import java.io.IOException;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -37,25 +37,10 @@ public class MessController {
   @FXML
   public void initialize() {
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
-    client = Client.getInstance();
-    chatHandler =
-        (response, success, message) -> {
-          if (!success) {
-            Platform.runLater(() -> AlertUtils.showError("Tin nhắn", message));
-            return;
-          }
-          if (response == null) {
-            return;
-          }
-          String sender = response.sender();
-          Platform.runLater(() -> addBubble(sender, response.content(), isMe(response.senderId())));
-        };
-    client.subscribe(PacketType.CHAT, ChatResponse.class, chatHandler);
   }
 
   boolean isMe(int id) {
-    Client client = Client.getInstance();
-    return client.getCurrentUser().getId() == id;
+    return UserSession.getInstance().getCurrentUser().getId() == id;
   }
 
   /** addBubble. */
@@ -123,9 +108,6 @@ public class MessController {
   /** Member. */
   @FXML
   public void switchToUi(ActionEvent event) {
-    if (chatHandler != null) {
-      client.unsubscribe(PacketType.CHAT, chatHandler);
-    }
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

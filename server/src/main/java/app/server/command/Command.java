@@ -1,6 +1,7 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.models.PacketReq;
+import app.server.network.ClientHandler;
 
 /** Command. */
 public interface Command {

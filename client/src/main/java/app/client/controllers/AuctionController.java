@@ -2,14 +2,13 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;
 import app.common.dto.CreateAuctionRequest;
-import app.common.dto.CreateAuctionResponse;
 import app.common.enums.ItemType;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -26,12 +25,11 @@ public class AuctionController {
   @FXML private TextField stepPriceField;
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
-  private PacketListener<CreateAuctionResponse> createAuctionHandler;
 
   /** Member. */
   @FXML
   public void initialize() {
-    if (Client.getInstance().getCurrentUser() == null) {
+    if (UserSession.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
       return;
@@ -40,23 +38,6 @@ public class AuctionController {
       typeComboBox.getItems().setAll(ItemType.values());
       typeComboBox.getSelectionModel().selectFirst();
     }
-    createAuctionHandler =
-        (CreateAuctionResponse response, boolean success, String message) ->
-            Platform.runLater(
-                () -> {
-                  if (success && response != null) {
-                    AlertUtils.showInfo("OK", message);
-                    if (createAuctionHandler != null) {
-                      Client.getInstance()
-                          .unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-                    }
-                    NavigationManager.getInstance().navigateTo(View.UI);
-                  } else {
-                    AlertUtils.showError("Lỗi", message);
-                  }
-                });
-    Client.getInstance()
-        .subscribe(PacketType.CREATE_AUCTION, CreateAuctionResponse.class, createAuctionHandler);
   }
 
   /** Member. */
@@ -66,7 +47,7 @@ public class AuctionController {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
-    if (Client.getInstance().getCurrentUser() == null) {
+    if (UserSession.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
@@ -98,9 +79,6 @@ public class AuctionController {
   /** Member. */
   @FXML
   public void handleBack(ActionEvent event) {
-    if (createAuctionHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    }
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }
