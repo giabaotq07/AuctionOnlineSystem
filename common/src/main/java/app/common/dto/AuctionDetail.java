@@ -3,9 +3,7 @@ package app.common.dto;
 import java.time.LocalDateTime;
 
 /** AuctionDetail. */
-public record AuctionDetail(AuctionData auction,
-                            ItemData item
-) {
+public record AuctionDetail(AuctionData auction, ItemData item) {
   public int auctionId() {
     return auction.id();
   }
