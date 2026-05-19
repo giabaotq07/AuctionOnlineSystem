@@ -5,7 +5,6 @@ import app.client.manager.NavigationManager;
 import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;
 import app.common.dto.ChatRequest;
-import app.common.dto.ChatResponse;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;

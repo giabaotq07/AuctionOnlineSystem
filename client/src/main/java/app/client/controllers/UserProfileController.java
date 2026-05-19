@@ -1,6 +1,5 @@
 package app.client.controllers;
 
-import app.client.Client;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserSession;
 import app.client.utils.AlertUtils;

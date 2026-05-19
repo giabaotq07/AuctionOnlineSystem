@@ -246,7 +246,8 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
       return;
     }
-    BigDecimal available = UserSession.getInstance().getCurrentUser().getWallet().getAvailableBalance();
+    BigDecimal available =
+        UserSession.getInstance().getCurrentUser().getWallet().getAvailableBalance();
     if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
       AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
       return;
