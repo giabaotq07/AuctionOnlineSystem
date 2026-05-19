@@ -32,6 +32,23 @@ public final class DtoMapper {
         item.isDeleted());
   }
 
+  /** toAuctionData. */
+  public static AuctionData toAuctionData(Auction auction) {
+    return new AuctionData(
+        auction.getId(),
+        auction.getItemId(),
+        auction.getSellerId(),
+        auction.getWinnerId(),
+        auction.getStatus(),
+        auction.getStartTime(),
+        auction.getEndTime(),
+        auction.getHighestBid(),
+        auction.getExtendedCount(),
+        auction.getVersion(),
+        auction.getCreatedAt(),
+        auction.getUpdatedAt());
+  }
+
   /** toAuctionSummary. */
   public static AuctionSummary toAuctionSummary(Auction auction, Item item) {
     return new AuctionSummary(
@@ -45,7 +62,7 @@ public final class DtoMapper {
 
   /** toAuctionDetail. */
   public static AuctionDetail toAuctionDetail(Auction auction, Item item) {
-    return new AuctionDetail(auction, toItemData(item), currentPrice(auction, item));
+    return new AuctionDetail(toAuctionData(auction), toItemData(item));
   }
 
   /** toAuctionResultResponse. */
