@@ -475,11 +475,11 @@ package app.data {
   }
   class BidRequest <<record>> {
     +auctionId: int
-    +bidTransaction: BidTransaction
+    +bid: BidTransaction
   }
   class BidResponse <<record>> {
     +auctionId: int
-    +bidTransaction: BidTransaction
+    +bid: BidTransaction
   }
   class BidResult <<record>> {
     +auctionId: int

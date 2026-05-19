@@ -10,6 +10,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,17 +40,15 @@ public class Client {
     registry.put(PacketType.REGISTER, new RegisterCommand());
     registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand());
     registry.put(PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand());
-    registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand());
     registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand());
     registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand());
-    registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand());
     registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand());
     registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand());
-    registry.put(PacketType.FETCH_USER_LIST, new FetchUserListCommand());
     registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand());
     registry.put(PacketType.PLACE_BID, new PlaceBidCommand());
     registry.put(PacketType.DEPOSIT, new DepositCommand());
     registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand());
+    registry.put(PacketType.WALLET_UPDATE, new WalletUpdateCommand());
     return registry;
   }
 
@@ -183,5 +182,19 @@ public class Client {
 
   public boolean isClosed() {
     return closed;
+  }
+
+  public void addListener(PacketType type, Consumer<String> listener) {
+    Command command = commands.get(type);
+    if (command != null) {
+      command.addListener(listener);
+    }
+  }
+
+  public void removeListener(PacketType type, Consumer<String> listener) {
+    Command command = commands.get(type);
+    if (command != null) {
+      command.removeListener(listener);
+    }
   }
 }

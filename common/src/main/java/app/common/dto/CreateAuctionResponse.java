@@ -1,4 +1,4 @@
 package app.common.dto;
 
 /** CreateAuctionResponse. */
-public record CreateAuctionResponse(AuctionSummary auction) implements Response {}
+public record CreateAuctionResponse(AuctionDetail detail) implements Response {}

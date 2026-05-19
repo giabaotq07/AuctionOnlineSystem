@@ -45,13 +45,10 @@ public class CreateAuctionCommand extends Command {
               request.durationMinutes(),
               user.getId(),
               user.getRole());
-      AuctionSummary summary =
-          auctionService.getAuctions().stream()
-              .filter(candidate -> candidate.auctionId() == auction.getId())
-              .findFirst()
-              .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
-              .orElseThrow(() -> new ServiceException("Không tìm thấy phiên vừa tạo."));
-      CreateAuctionResponse response = new CreateAuctionResponse(summary);
+      var createdSnapshot = auctionService.getAuction(auction.getId());
+      CreateAuctionResponse response =
+          new CreateAuctionResponse(
+              DtoMapper.toAuctionDetail(createdSnapshot.auction(), createdSnapshot.item()));
       PacketRes packetRes =
           PacketRes.of(true, PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);

@@ -1,7 +1,7 @@
 package app.client.controllers;
 
 import app.client.manager.NavigationManager;
-import app.client.manager.UserSession;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.enums.View;
 import app.common.models.User;
@@ -34,7 +34,7 @@ public class UserProfileController {
   }
 
   private void loadUserProfile() {
-    User currentUser = UserSession.getInstance().getCurrentUser();
+    User currentUser = UserManager.getInstance().getCurrentUser();
     if (currentUser == null) {
       AlertUtils.showError("Lỗi", "Không tìm thấy thông tin user!");
       try {
@@ -79,7 +79,7 @@ public class UserProfileController {
   @FXML
   public void handleLogout(ActionEvent event) {
     try {
-      UserSession.getInstance().setCurrentUser(null);
+      UserManager.getInstance().setCurrentUser(null);
       AlertUtils.showInfo("Thành công", "Đã đăng xuất!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
     } catch (Exception e) {

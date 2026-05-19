@@ -1,6 +1,6 @@
 package app.server.dao;
 
-import app.common.models.BidTransaction;
+import app.common.models.Bid;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
@@ -14,19 +14,19 @@ public interface BidDAO {
   void insertBid(Connection conn, int auctionId, int userId, long bidAmount, boolean isAutoBid);
 
   /** findHighestBid. */
-  Optional<BidTransaction> findHighestBid(int auctionId);
+  Optional<Bid> findHighestBid(int auctionId);
 
   /** findHighestBid. */
-  Optional<BidTransaction> findHighestBid(Connection conn, int auctionId);
+  Optional<Bid> findHighestBid(Connection conn, int auctionId);
 
   /** findByAuction. */
-  List<BidTransaction> findByAuction(int auctionId);
+  List<Bid> findByAuction(int auctionId);
 
   /** findByAuction. */
-  List<BidTransaction> findByAuction(Connection conn, int auctionId);
+  List<Bid> findByAuction(Connection conn, int auctionId);
 
   /** findByAuctionOrderByTime. */
-  List<BidTransaction> findByAuctionOrderByTime(int auctionId);
+  List<Bid> findByAuctionOrderByTime(int auctionId);
 
   /** existsByAuctionAndUser. */
   boolean existsByAuctionAndUser(int auctionId, int userId);

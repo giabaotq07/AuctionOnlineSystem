@@ -1,10 +1,9 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.manager.AuctionNavigator;
+import app.client.store.AuctionStore;
 import app.client.manager.NavigationManager;
-import app.client.manager.SummaryStore;
-import app.client.manager.UserSession;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
@@ -87,7 +86,7 @@ public class FirstScene implements Cleanable {
         .addListener(
             (obs, oldVal, newVal) -> {
               if (newVal != null) {
-                AuctionNavigator.getInstance().open(newVal);
+                AuctionStore.getInstance().open(newVal);
               }
             });
   }
@@ -96,8 +95,8 @@ public class FirstScene implements Cleanable {
     if (btnAuth == null) {
       return;
     }
-    if (UserSession.getInstance().getCurrentUser() != null) {
-      btnAuth.setText("Thông tin User: " + UserSession.getInstance().getCurrentUser().getName());
+    if (UserManager.getInstance().getCurrentUser() != null) {
+      btnAuth.setText("Thông tin User: " + UserManager.getInstance().getCurrentUser().getName());
     } else {
       btnAuth.setText("Đăng nhập / Đăng ký");
     }
@@ -236,7 +235,7 @@ public class FirstScene implements Cleanable {
         new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
+    btnDetail.setOnAction(e -> AuctionStore.getInstance().open(summary));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
@@ -246,7 +245,7 @@ public class FirstScene implements Cleanable {
   }
 
   private void updateBalanceLabel() {
-    updateBalanceLabel(UserSession.getInstance().getCurrentUser());
+    updateBalanceLabel(UserManager.getInstance().getCurrentUser());
   }
 
   private void updateBalanceLabel(User user) {

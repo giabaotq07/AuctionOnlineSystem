@@ -65,13 +65,51 @@ public final class DtoMapper {
     return new AuctionDetail(toAuctionData(auction), toItemData(item));
   }
 
+  /** toItem. */
+  public static Item toItem(ItemData itemData) {
+    if (itemData == null) {
+      return null;
+    }
+    Item item =
+        ItemFactory.createItem(
+            itemData.id(),
+            itemData.name(),
+            itemData.sellerId(),
+            itemData.description(),
+            itemData.startingPrice(),
+            itemData.stepPrice(),
+            itemData.type());
+    item.setDeleted(itemData.deleted());
+    return item;
+  }
+
+  /** toAuction. */
+  public static Auction toAuction(AuctionData auctionData) {
+    if (auctionData == null) {
+      return null;
+    }
+    return new Auction(
+        auctionData.id(),
+        auctionData.itemId(),
+        auctionData.sellerId(),
+        auctionData.winnerId(),
+        auctionData.status(),
+        auctionData.startTime(),
+        auctionData.endTime(),
+        auctionData.highestBid(),
+        auctionData.extendedCount(),
+        auctionData.version(),
+        auctionData.createdAt(),
+        auctionData.updatedAt());
+  }
+
   /** toAuctionResultResponse. */
   public static AuctionResultResponse toAuctionResultResponse(
-      int auctionId, Optional<BidTransaction> highestBid) {
+      int auctionId, Optional<Bid> highestBid) {
     if (highestBid.isEmpty()) {
       return new AuctionResultResponse(auctionId, new ProfileData(0, "chưa có người thắng"), 0);
     }
-    BidTransaction bid = highestBid.get();
+    Bid bid = highestBid.get();
     return new AuctionResultResponse(
         auctionId, new ProfileData(bid.getBidderId(), bid.getBidderName()), bid.getAmount());
   }

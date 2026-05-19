@@ -1,9 +1,9 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.manager.AuctionNavigator;
+import app.client.store.AuctionStore;
 import app.client.manager.NavigationManager;
-import app.client.manager.UserSession;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
@@ -84,12 +84,12 @@ public class LiveController implements Cleanable {
     }
     AuctionDetail detail = response.detail();
     if (detail == null && response.notModified()) {
-      detail = AuctionNavigator.getInstance().getCachedDetail(response.auctionId());
+      detail = AuctionStore.getInstance().getCachedDetail(response.auctionId());
     }
     if (detail == null || detail.auctionId() != auction.id()) {
       return;
     }
-    AuctionNavigator.getInstance().cacheDetail(detail);
+    AuctionStore.getInstance().cacheDetail(detail);
     auctionDetail = detail;
     auction = detail.auction();
     applyDetail(auctionDetail);
@@ -105,8 +105,8 @@ public class LiveController implements Cleanable {
     currentPrice = Math.max(currentPrice, response.highestBidAmount());
     currentPriceLabel.setText(formatCurrency(currentPrice));
     bidAmountField.clear();
-    if (UserSession.getInstance().getCurrentUser() != null
-        && response.bidderId() == UserSession.getInstance().getCurrentUser().getId()) {
+    if (UserManager.getInstance().getCurrentUser() != null
+        && response.bidderId() == UserManager.getInstance().getCurrentUser().getId()) {
       AlertUtils.showInfo("Thành công", message);
     }
   }
@@ -120,7 +120,7 @@ public class LiveController implements Cleanable {
   }
 
   private void updateAvailableBalance() {
-    updateAvailableBalance(UserSession.getInstance().getCurrentUser());
+    updateAvailableBalance(UserManager.getInstance().getCurrentUser());
   }
 
   private void updateAvailableBalance(User user) {
@@ -165,7 +165,7 @@ public class LiveController implements Cleanable {
     if (settlementSent || auction == null) {
       return;
     }
-    if (UserSession.getInstance().getCurrentUser() == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
       return;
     }
     try {
@@ -231,7 +231,7 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
-    if (UserSession.getInstance().getCurrentUser() == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
@@ -247,7 +247,7 @@ public class LiveController implements Cleanable {
       return;
     }
     BigDecimal available =
-        UserSession.getInstance().getCurrentUser().getWallet().getAvailableBalance();
+        UserManager.getInstance().getCurrentUser().getWallet().getAvailableBalance();
     if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
       AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
       return;

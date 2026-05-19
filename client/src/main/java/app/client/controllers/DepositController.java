@@ -2,7 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
-import app.client.manager.UserSession;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.DepositRequest;
 import app.common.enums.PacketType;
@@ -31,7 +31,7 @@ public class DepositController implements Cleanable {
   /** Member. */
   @FXML
   public void initialize() {
-    updateBalanceLabels(UserSession.getInstance().getCurrentUser());
+    updateBalanceLabels(UserManager.getInstance().getCurrentUser());
   }
 
   private void updateBalanceLabels(User user) {
@@ -63,7 +63,7 @@ public class DepositController implements Cleanable {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
-    if (UserSession.getInstance().getCurrentUser() == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để nạp tiền!");
       return;
     }

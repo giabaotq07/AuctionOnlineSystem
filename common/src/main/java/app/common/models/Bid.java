@@ -2,8 +2,8 @@ package app.common.models;
 
 import java.time.LocalDateTime;
 
-/** BidTransaction. */
-public class BidTransaction {
+/** Bid. */
+public class Bid {
   private int id;
   private int auctionId;
   private int bidderId;
@@ -12,8 +12,8 @@ public class BidTransaction {
   private LocalDateTime createAt;
   private boolean isAutoBid;
 
-  /** BidTransaction. */
-  public BidTransaction(
+  /** Bid. */
+  public Bid(
       int id,
       int auctionId,
       int bidderId,

@@ -5,5 +5,7 @@ import app.common.models.PacketRes;
 /** DepositCommand. */
 public class DepositCommand extends Command {
   @Override
-  public void execute(PacketRes packet) {}
+  public void execute(PacketRes packet) {
+    notify(packet.getMessage());
+  }
 }

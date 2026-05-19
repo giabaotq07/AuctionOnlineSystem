@@ -2,7 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
-import app.client.manager.UserSession;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.ChatRequest;
 import app.common.enums.PacketType;
@@ -37,7 +37,7 @@ public class MessController {
   }
 
   boolean isMe(int id) {
-    return UserSession.getInstance().getCurrentUser().getId() == id;
+    return UserManager.getInstance().getCurrentUser().getId() == id;
   }
 
   /** addBubble. */

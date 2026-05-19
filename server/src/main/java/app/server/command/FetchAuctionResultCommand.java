@@ -5,7 +5,7 @@ import app.common.dto.AuctionResultResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
-import app.common.models.BidTransaction;
+import app.common.models.Bid;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.server.network.ClientHandler;
@@ -37,7 +37,7 @@ public class FetchAuctionResultCommand extends Command {
         sendError(clientHandler, "auctionId không hợp lệ.");
         return;
       }
-      Optional<BidTransaction> highestBid = auctionService.completeAndGetHighestBid(auctionId);
+      Optional<Bid> highestBid = auctionService.completeAndGetHighestBid(auctionId);
       AuctionResultResponse response = DtoMapper.toAuctionResultResponse(auctionId, highestBid);
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_RESULT, response));
     } catch (ServiceException e) {

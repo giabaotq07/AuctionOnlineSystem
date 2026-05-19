@@ -2,17 +2,17 @@ package app.client.manager;
 
 import app.common.models.User;
 
-public class UserSession {
-  private static volatile UserSession instance;
+public class UserManager {
+  private static volatile UserManager instance;
   private User currentUser;
 
-  private UserSession() {}
+  private UserManager() {}
 
-  public static UserSession getInstance() {
+  public static UserManager getInstance() {
     if (instance == null) {
-      synchronized (UserSession.class) {
+      synchronized (UserManager.class) {
         if (instance == null) {
-          instance = new UserSession();
+          instance = new UserManager();
         }
       }
     }

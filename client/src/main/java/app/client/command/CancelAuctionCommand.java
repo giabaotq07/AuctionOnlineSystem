@@ -1,9 +1,19 @@
 package app.client.command;
 
+import app.client.store.AuctionStore;
+import app.common.dto.CancelAuctionResponse;
 import app.common.models.PacketRes;
 
 /** CancelAuctionCommand. */
 public class CancelAuctionCommand extends Command {
   @Override
-  public void execute(PacketRes packet) {}
+  public void execute(PacketRes packet) {
+    if (packet.isSuccess()) {
+      CancelAuctionResponse response = packet.getData(CancelAuctionResponse.class);
+      if (response != null && response.auctionId() > 0) {
+        AuctionStore.getInstance().markCanceled(response.auctionId());
+      }
+    }
+    notify(packet.getMessage());
+  }
 }

@@ -4,11 +4,7 @@ import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
-import app.common.models.Auction;
-import app.common.models.BidTransaction;
-import app.common.models.Item;
-import app.common.models.ItemFactory;
-import app.common.models.User;
+import app.common.models.*;
 import app.server.dao.AuctionDAO;
 import app.server.dao.BidDAO;
 import app.server.dao.ItemDAO;
@@ -126,7 +122,7 @@ public class AuctionService {
     return getAuction(auctionId).version() == knownVersion;
   }
 
-  public Optional<BidTransaction> completeAndGetHighestBid(int auctionId) {
+  public Optional<Bid> completeAndGetHighestBid(int auctionId) {
     handleCompletion(auctionId);
     return bidDAO.findHighestBid(auctionId);
   }
@@ -209,9 +205,9 @@ public class AuctionService {
   }
 
   private void settleWallets(java.sql.Connection conn, Auction auction) {
-    List<BidTransaction> bids = bidDAO.findByAuction(conn, auction.getId());
+    List<Bid> bids = bidDAO.findByAuction(conn, auction.getId());
     Set<Integer> bidderIds = new LinkedHashSet<>();
-    for (BidTransaction bid : bids) {
+    for (Bid bid : bids) {
       bidderIds.add(bid.getBidderId());
     }
     for (Integer bidderId : bidderIds) {
@@ -230,9 +226,9 @@ public class AuctionService {
   }
 
   private void releaseWallets(java.sql.Connection conn, Auction auction) {
-    List<BidTransaction> bids = bidDAO.findByAuction(conn, auction.getId());
+    List<Bid> bids = bidDAO.findByAuction(conn, auction.getId());
     Set<Integer> bidderIds = new LinkedHashSet<>();
-    for (BidTransaction bid : bids) {
+    for (Bid bid : bids) {
       bidderIds.add(bid.getBidderId());
     }
     for (Integer bidderId : bidderIds) {

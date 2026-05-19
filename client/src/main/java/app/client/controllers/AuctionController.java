@@ -2,7 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
-import app.client.manager.UserSession;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.CreateAuctionRequest;
 import app.common.enums.ItemType;
@@ -29,7 +29,7 @@ public class AuctionController {
   /** Member. */
   @FXML
   public void initialize() {
-    if (UserSession.getInstance().getCurrentUser() == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
       return;
@@ -47,7 +47,7 @@ public class AuctionController {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
-    if (UserSession.getInstance().getCurrentUser() == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
