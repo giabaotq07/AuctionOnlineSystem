@@ -3,12 +3,12 @@ package app.client.command;
 import app.client.store.ItemStore;
 import app.common.dto.ItemResponse;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketRes;
+import app.common.protocol.ServerPacket;
 
 /** DeleteItemCommand. */
 public class DeleteItemCommand extends Command {
   @Override
-  public void execute(PacketRes packet) {
+  public void execute(ServerPacket packet) {
     if (packet.isSuccess()) {
       ItemResponse response = packet.getData(ItemResponse.class);
       if (response != null && response.item() != null) {

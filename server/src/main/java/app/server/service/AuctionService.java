@@ -123,8 +123,7 @@ public class AuctionService {
   }
 
   public Optional<Bid> completeAndGetHighestBid(int auctionId) {
-    handleCompletion(auctionId);
-    return bidDAO.findHighestBid(auctionId);
+    return completeAuction(auctionId).highestBid();
   }
 
   public void cancelAuction(int auctionId, int requester, int expectedVersion) {
@@ -136,7 +135,7 @@ public class AuctionService {
           if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
             throw new ServiceException("Không thể hủy phiên đã kết thúc hoặc đã thanh toán.");
           }
-          auction.setStatus(AuctionStatus.CANCELED);
+          auction.cancel();
           releaseWallets(conn, auction);
           boolean ok = auctionDAO.updateIfVersionMatches(conn, auction, expectedVersion);
           if (!ok) {
@@ -147,42 +146,44 @@ public class AuctionService {
     invalidateCache();
   }
 
-  private void handleCompletion(int auctionId) {
-    boolean completed =
+  public AuctionCompletion completeAuction(int auctionId) {
+    AuctionCompletion completion =
         transactionManager.runInTransaction(
             conn -> {
               Auction auction = requireAuction(conn, auctionId);
+              Optional<Bid> highestBid = bidDAO.findHighestBid(conn, auctionId);
               if (!auction.isExpired()) {
-                return false;
+                return new AuctionCompletion(auctionId, false, highestBid, Set.of());
               }
               AuctionStatus status = auction.getStatus();
               if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-                return false;
+                return new AuctionCompletion(auctionId, false, highestBid, Set.of());
               }
-              auction.setStatus(AuctionStatus.FINISHED);
-              bidDAO
-                  .findHighestBid(conn, auctionId)
-                  .ifPresentOrElse(
-                      bid -> {
-                        auction.setWinnerId(bid.getBidderId());
-                        logger.info(
-                            "Phiên {} kết thúc. Winner: {}, Giá: {}",
-                            auctionId,
-                            bid.getBidderName(),
-                            bid.getAmount());
-                      },
-                      () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
-              settleWallets(conn, auction);
+              auction.finish(highestBid.map(Bid::getBidderId).orElse(null));
+              highestBid.ifPresentOrElse(
+                  bid ->
+                      logger.info(
+                          "Phiên {} kết thúc. Winner: {}, Giá: {}",
+                          auctionId,
+                          bid.getBidderName(),
+                          bid.getAmount()),
+                  () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
+              Set<Integer> settledUserIds = settleWallets(conn, auction);
               auctionDAO.update(conn, auction);
-              return true;
+              return new AuctionCompletion(auctionId, true, highestBid, settledUserIds);
             });
-    if (completed) {
+    if (completion.completed()) {
       invalidateCache();
     }
+    return completion;
   }
 
   public List<Integer> completeExpiredAuctions() {
-    List<Integer> completedIds = new ArrayList<>();
+    return completeExpiredAuctionCompletions().stream().map(AuctionCompletion::auctionId).toList();
+  }
+
+  public List<AuctionCompletion> completeExpiredAuctionCompletions() {
+    List<AuctionCompletion> completions = new ArrayList<>();
     for (Auction auction : auctionDAO.findAll()) {
       if (!auction.isExpired()) {
         continue;
@@ -191,10 +192,12 @@ public class AuctionService {
       if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
         continue;
       }
-      handleCompletion(auction.getId());
-      completedIds.add(auction.getId());
+      AuctionCompletion completion = completeAuction(auction.getId());
+      if (completion.completed()) {
+        completions.add(completion);
+      }
     }
-    return completedIds;
+    return completions;
   }
 
   private Auction requireAuction(java.sql.Connection conn, int auctionId) {
@@ -204,7 +207,7 @@ public class AuctionService {
         .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
   }
 
-  private void settleWallets(java.sql.Connection conn, Auction auction) {
+  private Set<Integer> settleWallets(java.sql.Connection conn, Auction auction) {
     List<Bid> bids = bidDAO.findByAuction(conn, auction.getId());
     Set<Integer> bidderIds = new LinkedHashSet<>();
     for (Bid bid : bids) {
@@ -223,6 +226,7 @@ public class AuctionService {
       }
       userDAO.update(conn, user);
     }
+    return bidderIds;
   }
 
   private void releaseWallets(java.sql.Connection conn, Auction auction) {

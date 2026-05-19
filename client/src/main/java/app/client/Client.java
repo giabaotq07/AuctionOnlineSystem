@@ -3,8 +3,8 @@ package app.client;
 import app.client.command.*;
 import app.common.enums.PacketType;
 import app.common.exception.ConnectException;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.common.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
@@ -39,6 +39,7 @@ public class Client {
     registry.put(PacketType.REGISTER, new RegisterCommand());
     registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand());
     registry.put(PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand());
+    registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand());
     registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand());
     registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand());
     registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand());
@@ -46,8 +47,13 @@ public class Client {
     registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand());
     registry.put(PacketType.PLACE_BID, new PlaceBidCommand());
     registry.put(PacketType.DEPOSIT, new DepositCommand());
-    registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand());
-    registry.put(PacketType.WALLET_UPDATE, new WalletUpdateCommand());
+    registry.put(PacketType.CHAT_MESSAGE, new ChatCommand());
+    registry.put(PacketType.AUCTION_CREATED, new CreateAuctionCommand());
+    registry.put(PacketType.BID_PLACED, new PlaceBidCommand());
+    registry.put(PacketType.AUCTION_CANCELLED, new CancelAuctionCommand());
+    registry.put(PacketType.AUCTION_SUMMARIES_UPDATED, new FetchAuctionSummariesCommand());
+    registry.put(PacketType.AUCTION_DETAIL_UPDATED, new FetchAuctionDetailCommand());
+    registry.put(PacketType.WALLET_UPDATED, new WalletUpdateCommand());
     return registry;
   }
 
@@ -94,12 +100,7 @@ public class Client {
           logger.warn("[CLIENT] Server disconnected");
           break;
         }
-        PacketRes packet = JsonUtil.fromJson(line, PacketRes.class);
-        if (packet == null || packet.getType() == null) {
-          logger.error("[CLIENT] Packet type is required");
-          continue;
-        }
-        handlePacket(packet);
+        handleIncoming(line);
       }
     } catch (IOException e) {
       if (!closed) {
@@ -110,18 +111,31 @@ public class Client {
     }
   }
 
+  private void handleIncoming(String line) {
+    try {
+      PacketRes packet = JsonUtil.fromJson(line, PacketRes.class);
+      if (packet == null || packet.getType() == null) {
+        logger.error("[CLIENT] Packet type is required");
+        return;
+      }
+      handlePacket(packet);
+    } catch (Exception e) {
+      logger.error("[CLIENT] Invalid packet received", e);
+    }
+  }
+
   private void handlePacket(PacketRes packet) {
     PacketType type = packet.getType();
-    logger.info("Processing network: {}", type);
+    logger.info("Processing packet: {}", type);
     Command command = commands.get(type);
     if (command == null) {
-      logger.warn("Unrecognized network type: {}", type);
+      logger.warn("Unrecognized packet type: {}", type);
       return;
     }
     try {
       command.execute(packet);
     } catch (Exception e) {
-      logger.error("Error executing network: {}", type, e);
+      logger.error("Error executing packet: {}", type, e);
     }
   }
 

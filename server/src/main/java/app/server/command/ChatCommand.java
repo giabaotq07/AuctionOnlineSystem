@@ -3,9 +3,9 @@ package app.server.command;
 import app.common.dto.ChatRequest;
 import app.common.dto.ChatResponse;
 import app.common.enums.PacketType;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
 import app.common.models.User;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
 import java.time.LocalDateTime;
@@ -43,7 +43,7 @@ public class ChatCommand extends Command {
       // KHÔNG trust sender từ client
       ChatResponse response =
           new ChatResponse(user.getId(), user.getName(), content, LocalDateTime.now());
-      PacketRes chatPacket = PacketRes.of(PacketType.CHAT, response);
+      PacketRes chatPacket = PacketRes.of(PacketType.CHAT_MESSAGE, response);
       clientHandler.sendPacket(chatPacket);
       Server.broadcast(chatPacket, user.getId());
       logger.info("User {} sent chat message", user.getId());

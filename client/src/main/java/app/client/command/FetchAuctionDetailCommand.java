@@ -4,12 +4,12 @@ import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
 import app.common.dto.AuctionDetailResponse;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketRes;
+import app.common.protocol.ServerPacket;
 
 /** FetchAuctionDetailCommand. */
 public class FetchAuctionDetailCommand extends Command {
   @Override
-  public void execute(PacketRes packet) {
+  public void execute(ServerPacket packet) {
     if (packet.isSuccess()) {
       AuctionDetailResponse response = packet.getData(AuctionDetailResponse.class);
       if (response != null && response.detail() != null) {

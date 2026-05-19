@@ -1,5 +1,6 @@
-package app.common.models;
+package app.common.protocol;
 
+import app.common.dto.Request;
 import app.common.enums.PacketType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -24,17 +25,8 @@ public class PacketReq {
     return data;
   }
 
-  /** Member. */
-  @SuppressWarnings("unchecked")
-  public <T> T getData() {
-    if (type == null || type.reqClass == null || type.reqClass == Void.class || data == null) {
-      return null;
-    }
-    return (T) GSON.fromJson(data, type.reqClass);
-  }
-
   /** getData. */
-  public <T> T getData(Class<T> clazz) {
+  public <T extends Request> T getData(Class<T> clazz) {
     if (clazz == null || data == null) {
       return null;
     }
@@ -42,7 +34,7 @@ public class PacketReq {
   }
 
   /** of. */
-  public static PacketReq of(PacketType type, Object payload) {
+  public static PacketReq of(PacketType type, Request payload) {
     return new PacketReq(type, payload == null ? null : GSON.toJson(payload));
   }
 

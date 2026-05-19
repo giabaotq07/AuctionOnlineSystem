@@ -1,5 +1,6 @@
-package app.common.models;
+package app.server.network;
 
+import app.common.models.User;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

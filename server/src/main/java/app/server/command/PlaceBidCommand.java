@@ -6,6 +6,8 @@ import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
 import app.server.service.AuctionService;
@@ -66,7 +68,8 @@ public class PlaceBidCommand extends Command {
       PacketRes packetResponse =
           PacketRes.of(true, PacketType.PLACE_BID, "Đặt giá thành công.", response);
       clientHandler.sendPacket(packetResponse);
-      Server.broadcast(packetResponse, bidderId);
+      Server.broadcast(
+          PacketRes.of(PacketType.BID_PLACED, "Có lượt đặt giá mới.", response), bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
       broadcastAuctionSumList();
       AuctionHistoryResponse historyResponse =
@@ -88,7 +91,7 @@ public class PlaceBidCommand extends Command {
 
   private void sendWalletUpdate(ClientHandler clientHandler, User user) {
     WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
-    clientHandler.sendPacket(PacketRes.of(true, PacketType.WALLET_UPDATE, "OK", response));
+    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATED, response));
   }
 
   private void broadcastAuctionSumList() {
@@ -98,7 +101,7 @@ public class PlaceBidCommand extends Command {
               auctionService.getAuctions().stream()
                   .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
                   .toList());
-      Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
+      Server.broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
     }
@@ -109,7 +112,7 @@ public class PlaceBidCommand extends Command {
       var auction = auctionService.getAuction(auctionId);
       AuctionDetailResponse response =
           new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction.auction(), auction.item()));
-      Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response), -1);
+      Server.broadcast(PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction detail", e);
     }

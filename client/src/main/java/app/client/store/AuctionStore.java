@@ -16,6 +16,8 @@ public final class AuctionStore {
   private static volatile AuctionStore instance;
 
   private final Map<Integer, Auction> auctionMap = new ConcurrentHashMap<>();
+  private final Object historyLock = new Object();
+  private List<Integer> historyAuctionIds = new ArrayList<>();
 
   private AuctionStore() {}
 
@@ -60,6 +62,53 @@ public final class AuctionStore {
     return summaries;
   }
 
+  /** setHistorySummaries. */
+  public void setHistorySummaries(List<AuctionSummary> summaries) {
+    List<Integer> nextIds = new ArrayList<>();
+    if (summaries == null) {
+      synchronized (historyLock) {
+        historyAuctionIds = nextIds;
+      }
+      return;
+    }
+    for (AuctionSummary summary : summaries) {
+      if (summary == null) {
+        continue;
+      }
+      nextIds.add(summary.auctionId());
+      addAuction(DtoMapper.toAuction(summary));
+    }
+    synchronized (historyLock) {
+      historyAuctionIds = nextIds;
+    }
+  }
+
+  /** getHistorySummaries. */
+  public List<AuctionSummary> getHistorySummaries() {
+    List<Integer> ids;
+    synchronized (historyLock) {
+      ids = new ArrayList<>(historyAuctionIds);
+    }
+    List<AuctionSummary> summaries = new ArrayList<>();
+    for (Integer id : ids) {
+      Auction auction = id == null ? null : auctionMap.get(id);
+      if (auction == null) {
+        continue;
+      }
+      Item item =
+          auction.getItemId() > 0 ? ItemStore.getInstance().getItem(auction.getItemId()) : null;
+      summaries.add(DtoMapper.toAuctionSummary(auction, item));
+    }
+    return summaries;
+  }
+
+  /** clearHistory. */
+  public void clearHistory() {
+    synchronized (historyLock) {
+      historyAuctionIds = new ArrayList<>();
+    }
+  }
+
   /** getAuctionDetail. */
   public AuctionDetail getAuctionDetail(int auctionId) {
     Auction auction = getAuction(auctionId);
@@ -78,7 +127,7 @@ public final class AuctionStore {
     Auction auction =
         auctionMap.computeIfAbsent(toIntId(auctionId), id -> partialAuction(id, highestBid));
     auction.setHighestBid(highestBid);
-    if (bidderId <= Integer.MAX_VALUE) {
+    if (bidderId > 0 && bidderId <= Integer.MAX_VALUE) {
       auction.setWinnerId((int) bidderId);
     }
   }

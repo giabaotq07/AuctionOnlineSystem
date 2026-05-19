@@ -5,6 +5,8 @@ import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
 import app.server.service.AuctionService;
@@ -52,7 +54,9 @@ public class CreateAuctionCommand extends Command {
       PacketRes packetRes =
           PacketRes.of(true, PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);
-      Server.broadcast(packetRes, user.getId());
+      Server.broadcast(
+          PacketRes.of(PacketType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
+          user.getId());
       broadcastAuctionList();
       AuctionHistoryResponse historyResponse =
           new AuctionHistoryResponse(
@@ -82,8 +86,7 @@ public class CreateAuctionCommand extends Command {
               auctionService.getAuctions().stream()
                   .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
                   .toList());
-      Server.broadcast(
-          PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, summariesResponse), -1);
+      Server.broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, summariesResponse), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
     }

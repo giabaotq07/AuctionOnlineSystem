@@ -1,4 +1,4 @@
-package app.common.models;
+package app.common.protocol;
 
 import app.common.dto.Response;
 import app.common.enums.PacketType;
@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /** PacketRes. */
-public class PacketRes {
+public class PacketRes   {
   private static final Gson GSON = new GsonBuilder().create();
   private final boolean success;
   private final PacketType type;
@@ -22,17 +22,22 @@ public class PacketRes {
   }
 
   /** of. */
-  public static PacketRes of(PacketType type, Object payload) {
+  public static PacketRes of(PacketType type, Response payload) {
     return new PacketRes(true, type, "OK", toJson(payload));
   }
 
   /** of. */
-  public static PacketRes of(boolean success, PacketType type, Object payload) {
+  public static PacketRes of(PacketType type, String message, Response payload) {
+    return new PacketRes(true, type, message, toJson(payload));
+  }
+
+  /** of. */
+  public static PacketRes of(boolean success, PacketType type, Response payload) {
     return new PacketRes(success, type, success ? "OK" : "FAILED", toJson(payload));
   }
 
   /** of. */
-  public static PacketRes of(boolean success, PacketType type, String message, Object payload) {
+  public static PacketRes of(boolean success, PacketType type, String message, Response payload) {
     return new PacketRes(success, type, message, toJson(payload));
   }
 
@@ -51,7 +56,7 @@ public class PacketRes {
     return new PacketRes(false, type, message, null);
   }
 
-  private static String toJson(Object payload) {
+  private static String toJson(Response payload) {
     if (payload == null) {
       return null;
     }
@@ -59,28 +64,15 @@ public class PacketRes {
   }
 
   /** getData. */
-  public <T> T getData(Class<T> clazz) {
+  @Override
+  public <T extends Response> T getData(Class<T> clazz) {
     if (clazz == null || data == null || data.isBlank()) {
       return null;
     }
     return GSON.fromJson(data, clazz);
   }
 
-  /** getData. */
-  public Response getData() {
-    if (type == null
-        || type.resClass == null
-        || type.resClass == Void.class
-        || data == null
-        || data.isBlank()) {
-      return null;
-    }
-    if (!Response.class.isAssignableFrom(type.resClass)) {
-      throw new IllegalStateException("Packet type does not declare a Response class");
-    }
-    return Response.class.cast(GSON.fromJson(data, type.resClass));
-  }
-
+  @Override
   public boolean isSuccess() {
     return success;
   }
@@ -89,10 +81,12 @@ public class PacketRes {
     return type;
   }
 
+  @Override
   public String getMessage() {
     return message;
   }
 
+  @Override
   public String getRawData() {
     return data;
   }

@@ -53,7 +53,6 @@ public class LiveController implements Cleanable {
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
-  private boolean settlementSent = false;
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private boolean bidLoading;
@@ -148,7 +147,6 @@ public class LiveController implements Cleanable {
     Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
     if (cachedAuction != null && cachedAuction.getStatus() == AuctionStatus.FINISHED) {
       showAuctionClosed(message);
-      requestWalletSettlement();
       return;
     }
     AlertUtils.showError("Kết thúc", message);
@@ -174,21 +172,6 @@ public class LiveController implements Cleanable {
     if (cachedAuction != null) {
       currentPrice = Math.max(currentPrice, cachedAuction.getHighestBid());
       currentPriceLabel.setText(formatCurrency(currentPrice));
-    }
-  }
-
-  private void requestWalletSettlement() {
-    if (settlementSent || auction == null) {
-      return;
-    }
-    if (UserManager.getInstance().getCurrentUser() == null) {
-      return;
-    }
-    try {
-      settlementSent = true;
-      requests.settleWallet(auction.id());
-    } catch (IOException e) {
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
   }
 
@@ -369,7 +352,6 @@ public class LiveController implements Cleanable {
     setBidLoading(false);
     resultRequested = false;
     auctionClosedShown = false;
-    settlementSent = false;
     auctionDetail = null;
     auction = null;
   }

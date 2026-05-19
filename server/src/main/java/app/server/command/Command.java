@@ -1,6 +1,6 @@
 package app.server.command;
 
-import app.common.models.PacketReq;
+import app.common.protocol.PacketReq;
 import app.server.network.ClientHandler;
 
 /** Command. */

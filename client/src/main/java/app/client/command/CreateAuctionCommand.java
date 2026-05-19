@@ -5,12 +5,12 @@ import app.client.store.ItemStore;
 import app.common.dto.AuctionDetail;
 import app.common.dto.CreateAuctionResponse;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketRes;
+import app.common.protocol.ServerPacket;
 
 /** CreateAuctionCommand. */
 public class CreateAuctionCommand extends Command {
   @Override
-  public void execute(PacketRes packet) {
+  public void execute(ServerPacket packet) {
     if (packet.isSuccess()) {
       CreateAuctionResponse response = packet.getData(CreateAuctionResponse.class);
       if (response != null && response.detail() != null) {

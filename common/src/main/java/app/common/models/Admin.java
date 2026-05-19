@@ -7,13 +7,11 @@ public class Admin extends User {
   /** Admin. */
   public Admin(int id, String name, Account account, Wallet wallet) {
     super(id, name, account, wallet);
-    role = UserRole.ADMIN;
   }
 
   /** Admin. */
   public Admin(String name, Account account, Wallet wallet) {
     super(name, account, wallet);
-    role = UserRole.ADMIN;
   }
 
   @Override

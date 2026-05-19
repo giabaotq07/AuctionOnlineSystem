@@ -96,7 +96,4 @@ public abstract class Item extends Entity {
   public void setDeleted(boolean deleted) {
     this.deleted = deleted;
   }
-
-  /** printInfo. */
-  public abstract void printInfo();
 }

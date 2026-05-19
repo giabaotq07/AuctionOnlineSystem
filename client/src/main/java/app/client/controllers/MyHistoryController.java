@@ -7,7 +7,6 @@ import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
-import app.common.models.User;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
@@ -30,7 +29,6 @@ public class MyHistoryController implements Cleanable {
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
-  private final User currentUser = UserManager.getInstance().getCurrentUser();
   private boolean reloadLoading;
   private Button reloadButton;
   private Runnable stopReloadLoading = () -> {};
@@ -38,7 +36,7 @@ public class MyHistoryController implements Cleanable {
       () ->
           Platform.runLater(
               () -> {
-                requestHistory();
+                loadCachedHistory();
                 rebuildUi();
                 setReloadLoading(false);
               });
@@ -50,16 +48,29 @@ public class MyHistoryController implements Cleanable {
     typeFilterComboBox.setValue("ALL");
     typeFilterComboBox.setOnAction(e -> rebuildUi());
     notifications.addUpdateListener(summariesListener);
+    loadCachedHistory();
     requestHistory();
     rebuildUi();
   }
 
   private void requestHistory() {
-    if (currentUser == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
+      AuctionStore.getInstance().clearHistory();
+      loadCachedHistory();
+      rebuildUi();
       return;
     }
+    try {
+      requests.fetchAuctionHistory();
+    } catch (Exception e) {
+      setReloadLoading(false);
+      AlertUtils.showError("Lỗi", e.getMessage());
+    }
+  }
+
+  private void loadCachedHistory() {
     summaries.clear();
-    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
+    summaries.addAll(AuctionStore.getInstance().getHistorySummaries());
   }
 
   private void rebuildUi() {
@@ -120,12 +131,12 @@ public class MyHistoryController implements Cleanable {
     if (reloadLoading) {
       return;
     }
-    requestHistory();
+    loadCachedHistory();
     rebuildUi();
     try {
       reloadButton = LoadingButton.fromEvent(event);
       setReloadLoading(true);
-      requests.fetchAuctionSummaries();
+      requests.fetchAuctionHistory();
     } catch (Exception e) {
       setReloadLoading(false);
       AlertUtils.showError("Lỗi", e.getMessage());

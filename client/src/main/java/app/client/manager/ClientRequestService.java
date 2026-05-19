@@ -9,9 +9,9 @@ import app.common.dto.DepositRequest;
 import app.common.dto.LoginRequest;
 import app.common.dto.PlaceBidRequest;
 import app.common.dto.RegisterRequest;
-import app.common.dto.SettleWalletRequest;
+import app.common.dto.Request;
 import app.common.enums.PacketType;
-import app.common.models.PacketReq;
+import app.common.protocol.PacketReq;
 import java.io.IOException;
 import java.math.BigDecimal;
 
@@ -60,6 +60,11 @@ public final class ClientRequestService {
     send(PacketType.FETCH_AUCTION_SUMMARIES, null);
   }
 
+  /** fetchAuctionHistory. */
+  public void fetchAuctionHistory() throws IOException {
+    send(PacketType.FETCH_AUCTION_HISTORY, null);
+  }
+
   /** fetchAuctionDetail. */
   public void fetchAuctionDetail(int auctionId, int knownVersion) throws IOException {
     send(PacketType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auctionId, knownVersion));
@@ -80,17 +85,12 @@ public final class ClientRequestService {
     send(PacketType.DEPOSIT, new DepositRequest(amount));
   }
 
-  /** settleWallet. */
-  public void settleWallet(int auctionId) throws IOException {
-    send(PacketType.SETTLE_WALLET, new SettleWalletRequest(auctionId));
-  }
-
   /** chat. */
   public void chat(ChatRequest request) throws IOException {
     send(PacketType.CHAT, request);
   }
 
-  private void send(PacketType type, Object payload) throws IOException {
+  private void send(PacketType type, Request payload) throws IOException {
     client.sendRequest(PacketReq.of(type, payload));
   }
 }

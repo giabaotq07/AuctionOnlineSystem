@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
+import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
 import app.common.enums.View;
 import app.common.models.User;
@@ -79,6 +80,7 @@ public class UserProfileController {
   public void handleLogout(ActionEvent event) {
     try {
       UserManager.getInstance().setCurrentUser(null);
+      AuctionStore.getInstance().clearHistory();
       AlertUtils.showInfo("Thành công", "Đã đăng xuất!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
     } catch (Exception e) {

@@ -1,9 +1,10 @@
 package app.server.network;
 
 import app.common.dto.AuctionSummariesResponse;
+import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketRes;
+import app.common.protocol.PacketRes;
 import app.server.dao.*;
 import app.server.dao.impl.*;
 import app.server.database.TransactionManager;
@@ -13,7 +14,10 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,10 +83,13 @@ public class Server {
     auctionMaintenancePool.scheduleAtFixedRate(
         () -> {
           try {
-            var completedIds = auctionService.completeExpiredAuctions();
-            if (!completedIds.isEmpty()) {
-              logger.info("[SERVER] Completed expired auctions: {}", completedIds);
+            var completions = auctionService.completeExpiredAuctionCompletions();
+            if (!completions.isEmpty()) {
+              logger.info(
+                  "[SERVER] Completed expired auctions: {}",
+                  completions.stream().map(completion -> completion.auctionId()).toList());
               broadcastAuctionList();
+              sendWalletUpdates(completions);
             }
           } catch (Exception e) {
             logger.error("[SERVER] Auction maintenance failed", e);
@@ -100,9 +107,31 @@ public class Server {
               auctionService.getAuctions().stream()
                   .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
                   .toList());
-      broadcast(PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
+      broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);
+    }
+  }
+
+  private void sendWalletUpdates(List<AuctionCompletion> completions) {
+    Set<Integer> userIds = new LinkedHashSet<>();
+    for (AuctionCompletion completion : completions) {
+      userIds.addAll(completion.settledUserIds());
+    }
+    for (Integer userId : userIds) {
+      sendWalletUpdate(userId);
+    }
+  }
+
+  private void sendWalletUpdate(int userId) {
+    try {
+      var user = userService.getById(userId);
+      sendPacketToUser(
+          userId,
+          PacketRes.of(
+              PacketType.WALLET_UPDATED, new WalletUpdateResponse(DtoMapper.toUserData(user))));
+    } catch (Exception e) {
+      logger.warn("[SERVER] Failed to send wallet update to user {}", userId, e);
     }
   }
 
@@ -216,6 +245,22 @@ public class Server {
                     }
                   });
             });
+  }
+
+  /** sendPacketToUser. */
+  public static void sendPacketToUser(int userId, PacketRes packet) {
+    ClientHandler handler = authenticatedClients.get(userId);
+    if (handler == null || !handler.isAuthenticated() || packet == null) {
+      return;
+    }
+    broadcastPool.execute(
+        () -> {
+          try {
+            handler.sendPacket(packet);
+          } catch (Exception e) {
+            logger.warn("[SERVER] Packet send failed to user {}", userId, e);
+          }
+        });
   }
 
   public static int getOnlineUserCount() {

@@ -4,8 +4,8 @@ import app.common.dto.CancelAuctionRequest;
 import app.common.dto.CancelAuctionResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
 import app.server.service.AuctionService;
@@ -42,8 +42,7 @@ public class CancelAuctionCommand extends Command {
               new CancelAuctionResponse(auctionId)));
       Server.broadcast(
           PacketRes.of(
-              true,
-              PacketType.CANCEL_AUCTION,
+              PacketType.AUCTION_CANCELLED,
               "Phiên đã bị hủy.",
               new CancelAuctionResponse(auctionId)),
           clientHandler.getUser().getId());

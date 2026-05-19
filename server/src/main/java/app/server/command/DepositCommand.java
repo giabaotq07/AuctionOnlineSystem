@@ -5,9 +5,9 @@ import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
 import app.common.models.User;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.UserService;
 import java.math.BigDecimal;
@@ -39,7 +39,7 @@ public class DepositCommand extends Command {
       BigDecimal amount = request.amount();
       User user = userService.deposit(clientHandler.getUser().getId(), amount);
       WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
-      clientHandler.sendPacket(PacketRes.of(true, PacketType.WALLET_UPDATE, "OK", response));
+      clientHandler.sendPacket(PacketRes.of(true, PacketType.DEPOSIT, "OK", response));
     } catch (ServiceException e) {
       logger.warn("Deposit failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -50,6 +50,6 @@ public class DepositCommand extends Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.WALLET_UPDATE, message));
+    clientHandler.sendPacket(PacketRes.error(PacketType.DEPOSIT, message));
   }
 }

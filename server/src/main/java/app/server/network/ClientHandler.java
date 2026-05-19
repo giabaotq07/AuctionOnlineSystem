@@ -1,10 +1,9 @@
 package app.server.network;
 
 import app.common.enums.PacketType;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
-import app.common.models.Session;
 import app.common.models.User;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.common.utils.JsonUtil;
 import app.server.command.*;
 import app.server.service.AuctionService;
@@ -54,8 +53,11 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
     registry.put(
         PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionService));
+    registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionService));
     registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
-    registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
+    registry.put(
+        PacketType.FETCH_AUCTION_RESULT,
+        new FetchAuctionResultCommand(auctionService, userService));
     registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
     registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand(itemService));
     registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand(itemService));
@@ -64,7 +66,6 @@ public class ClientHandler implements Runnable {
     registry.put(
         PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
-    registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
     return registry;
   }
 
@@ -139,8 +140,7 @@ public class ClientHandler implements Runnable {
           DELETE_ITEM,
           FETCH_USER_LIST,
           CANCEL_AUCTION,
-          DEPOSIT,
-          SETTLE_WALLET ->
+          DEPOSIT ->
           true;
       default -> false;
     };
@@ -156,6 +156,10 @@ public class ClientHandler implements Runnable {
 
   /** sendPacket. */
   public void sendPacket(PacketRes packet) {
+    send(packet);
+  }
+
+  private void send(Object packet) {
     if (packet == null || writer == null || closed) {
       return;
     }

@@ -7,7 +7,6 @@ public abstract class User extends Entity {
   protected String name;
   protected final Account account;
   protected final Wallet wallet;
-  protected UserRole role;
 
   /** User. */
   public User(int id, String name, Account account, Wallet wallet) {
