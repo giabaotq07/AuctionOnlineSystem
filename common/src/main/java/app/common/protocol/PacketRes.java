@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /** PacketRes. */
-public class PacketRes   {
+public class PacketRes {
   private static final Gson GSON = new GsonBuilder().create();
   private final boolean success;
   private final PacketType type;
