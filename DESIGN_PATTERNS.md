@@ -8,11 +8,11 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đảm bảo một class chỉ có một instance dùng chung trong vòng đời ứng dụng.
 
 **Nơi áp dụng:**
-* `app.database.DatabaseConnection`: Quản lý duy nhất một `HikariDataSource` dùng chung cho toàn bộ ứng dụng.
-* `app.network.Client`: Mỗi client JavaFX dùng một instance socket chính để kết nối server và quản lý listener.
-* `app.network.Server`: Quản lý server socket, service graph và thread pool thông qua `Server.getInstance()`.
+* `app.server.database.DatabaseConnection`: Quản lý duy nhất một `HikariDataSource` dùng chung cho toàn bộ ứng dụng.
+* `app.observer.Client`: Mỗi client JavaFX dùng một instance socket chính để kết nối server và quản lý listener.
+* `app.observer.Server`: Quản lý server socket, service graph và thread pool thông qua `Server.getInstance()`.
 * `app.models.DataStore`: Lưu state cục bộ phía client như user hiện tại, danh sách phiên đấu giá và phiên đang xem.
-* `app.controllers.manager.NavigationManager`: Quản lý `primaryStage`, controller hiện tại và điều hướng màn hình JavaFX.
+* `app.client.controllers.manager.NavigationManager`: Quản lý `primaryStage`, controller hiện tại và điều hướng màn hình JavaFX.
 
 **Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý một instance có state.
 
@@ -22,9 +22,9 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói logic tạo object, giúp code gọi không cần biết class con cụ thể.
 
 **Nơi áp dụng:**
-* `app.models.ItemFactory`: Tạo subclass của `Item` theo `ItemType`, ví dụ `Electronics`, `Art`, `Vehicle`.
-* `app.models.UserFactory`: Tạo subclass của `User` theo `UserRole`, ví dụ `Admin`, `Seller`, `Bidder`.
-* `app.models.PacketReq` và `app.models.PacketRes`: Dùng static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response.
+* `app.common.models.ItemFactory`: Tạo subclass của `Item` theo `ItemType`, ví dụ `Electronics`, `Art`, `Vehicle`.
+* `app.common.models.UserFactory`: Tạo subclass của `User` theo `UserRole`, ví dụ `Admin`, `Seller`, `Bidder`.
+* `app.common.models.PacketReq` và `app.common.models.PacketRes`: Dùng static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response.
 
 **Lợi ích trong dự án:**
 * Giảm việc rải `new Electronics(...)`, `new Bidder(...)` ở nhiều nơi.
@@ -36,9 +36,9 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói mỗi request thành một object có thể thực thi qua cùng một contract.
 
 **Nơi áp dụng:**
-* `app.network.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)`.
+* `app.observer.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)`.
 * Các command cụ thể như `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`.
-* `app.network.ClientHandler` tạo bảng đăng ký command theo `PacketType`, sau đó dispatch request đến command tương ứng.
+* `app.observer.ClientHandler` tạo bảng đăng ký command theo `PacketType`, sau đó dispatch request đến command tương ứng.
 
 **Lợi ích trong dự án:**
 * Server không bị dồn logic xử lý request vào một `switch` hoặc `if-else` lớn.
@@ -50,11 +50,11 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Cho phép nhiều thành phần đăng ký lắng nghe sự kiện. Khi packet tương ứng xuất hiện, publisher thông báo đến các listener đã subscribe.
 
 **Nơi áp dụng:**
-* `app.network.PacketListener<T>` là callback interface.
-* `app.network.Client` quản lý `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>>`.
+* `app.common.observer.PacketListener<T>` là callback interface.
+* `app.observer.Client` quản lý `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>>`.
 * `Client.subscribe(...)`, `Client.unsubscribe(...)`, `Client.notifyListeners(...)` tạo cơ chế pub-sub phía client.
 * Các controller như `FirstScene`, `LiveController`, `MyHistoryController`, `DepositController`, `RegisterController`, `LoginController`, `MessController`, `AuctionController` đăng ký listener theo từng `PacketType`.
-* `app.network.Server.broadcast(...)` gửi packet đến nhiều client đang online để cập nhật realtime giá thầu, chat, danh sách phiên đấu giá và ví.
+* `app.observer.Server.broadcast(...)` gửi packet đến nhiều client đang online để cập nhật realtime giá thầu, chat, danh sách phiên đấu giá và ví.
 
 **Lợi ích trong dự án:**
 * Controller có thể phản ứng với packet realtime mà không cần polling liên tục.
@@ -66,9 +66,9 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Tách logic truy cập database khỏi business logic.
 
 **Nơi áp dụng:**
-* Interface trong `app.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
-* Implementation trong `app.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
-* `app.dao.BaseDAO` gồm helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
+* Interface trong `app.server.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
+* Implementation trong `app.server.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
+* `app.server.dao.BaseDAO` gồm helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
 
 **Lợi ích trong dự án:**
 * Service không chứa SQL trực tiếp.
@@ -97,7 +97,7 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Chuyển đổi giữa domain model và DTO/view model để giảm phụ thuộc trực tiếp giữa tầng nghiệp vụ và dữ liệu trả về client.
 
 **Nơi áp dụng:**
-* `app.service.AuctionMapper`: Chuyển `Auction` thành `AuctionSummary` và `AuctionDetail`.
+* `app.server.service.AuctionMapper`: Chuyển `Auction` thành `AuctionSummary` và `AuctionDetail`.
 * `app.data.UserData`: Tạo DTO từ `User`.
 * `app.data.ItemData`: Tạo DTO từ `Item`.
 
@@ -113,7 +113,7 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 
 **Nơi áp dụng:**
 * **View:** `src/main/resources/app/views/` chứa các file FXML.
-* **Controller:** `app.controllers` chứa controller JavaFX như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MessController`.
+* **Controller:** `app.client.controllers` chứa controller JavaFX như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MessController`.
 * **Model:** `app.models` chứa domain object như `Auction`, `Item`, `Wallet`, `User`, `BidTransaction`, `Session`, `DataStore`.
 * **Điều hướng:** `NavigationManager` load FXML, gắn CSS và thay scene trên `Stage`.
 

@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.DepositController">
+<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.DepositController">
   <top>
     <HBox alignment="CENTER_LEFT" spacing="20.0" style="-fx-background-color: #11182d;">
       <padding>

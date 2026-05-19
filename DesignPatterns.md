@@ -10,11 +10,11 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* `app.database.DatabaseConnection`: Quản lý duy nhất một `HikariDataSource` dùng chung cho toàn bộ ứng dụng. Class có constructor private, `static volatile HikariDataSource`, API `getDataSource()` và `resetDataSource()` phục vụ test/re-init.
-* `app.network.Client`: Mỗi client JavaFX dùng một instance socket duy nhất để kết nối server, gửi request và quản lý danh sách listener. Dùng double-checked locking trong `getInstance()`.
-* `app.network.Server`: Server socket, service graph và thread pool được khởi tạo qua `Server.getInstance()`, tránh mở nhiều server cùng port `5000`.
+* `app.server.database.DatabaseConnection`: Quản lý duy nhất một `HikariDataSource` dùng chung cho toàn bộ ứng dụng. Class có constructor private, `static volatile HikariDataSource`, API `getDataSource()` và `resetDataSource()` phục vụ test/re-init.
+* `app.observer.Client`: Mỗi client JavaFX dùng một instance socket duy nhất để kết nối server, gửi request và quản lý danh sách listener. Dùng double-checked locking trong `getInstance()`.
+* `app.observer.Server`: Server socket, service graph và thread pool được khởi tạo qua `Server.getInstance()`, tránh mở nhiều server cùng port `5000`.
 * `app.models.DataStore`: Lưu state cục bộ phía client như user hiện tại, danh sách phiên đấu giá và phiên đang xem. Dùng `getInstance()` và đăng ký listener để đồng bộ dữ liệu.
-* `app.controllers.manager.NavigationManager`: Singleton eager initialization, giữ `primaryStage` và controller hiện tại để điều hướng màn hình JavaFX.
+* `app.client.controllers.manager.NavigationManager`: Singleton eager initialization, giữ `primaryStage` và controller hiện tại để điều hướng màn hình JavaFX.
 
 **Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý một instance có state.
 
@@ -26,9 +26,9 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* `app.models.ItemFactory`: Tạo đúng subclass của `Item` theo `ItemType`: `Electronics`, `Art`, `Vehicle`.
-* `app.models.UserFactory`: Tạo đúng subclass của `User` theo `UserRole`: `Admin`, `Seller`, `Bidder`.
-* `app.models.PacketReq` và `app.models.PacketRes`: Có các static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response trước khi serialize JSON.
+* `app.common.models.ItemFactory`: Tạo đúng subclass của `Item` theo `ItemType`: `Electronics`, `Art`, `Vehicle`.
+* `app.common.models.UserFactory`: Tạo đúng subclass của `User` theo `UserRole`: `Admin`, `Seller`, `Bidder`.
+* `app.common.models.PacketReq` và `app.common.models.PacketRes`: Có các static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response trước khi serialize JSON.
 
 **Lợi ích trong dự án:**
 
@@ -43,9 +43,9 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* Interface `app.network.Command` định nghĩa `execute(ClientHandler clientHandler, PacketReq packet)`.
-* Các command cụ thể trong `app.network`: `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`, `FetchAuctionDetailCommand`, `SettleWalletCommand`, v.v.
-* `app.network.ClientHandler` tạo registry `EnumMap<PacketType, Command>` trong `createCommands(...)`, sau đó dispatch request theo `PacketType`.
+* Interface `app.observer.Command` định nghĩa `execute(ClientHandler clientHandler, PacketReq packet)`.
+* Các command cụ thể trong `app.observer`: `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`, `FetchAuctionDetailCommand`, `SettleWalletCommand`, v.v.
+* `app.observer.ClientHandler` tạo registry `EnumMap<PacketType, Command>` trong `createCommands(...)`, sau đó dispatch request theo `PacketType`.
 
 **Luồng xử lý:**
 
@@ -68,11 +68,11 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* `app.network.PacketListener<T>` là callback interface.
-* `app.network.Client` giữ `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap`.
+* `app.common.observer.PacketListener<T>` là callback interface.
+* `app.observer.Client` giữ `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap`.
 * `Client.subscribe(...)`, `Client.unsubscribe(...)`, `Client.notifyListeners(...)` tạo cơ chế pub-sub phía client.
 * Các controller như `FirstScene`, `LiveController`, `MyHistoryController`, `DepositController`, `RegisterController`, `LoginController`, `MessController`, `AuctionController` đăng ký listener theo từng `PacketType`.
-* `app.network.Server.broadcast(...)` gửi packet tới nhiều client đang online, phục vụ realtime update giá thầu, chat, danh sách phiên đấu giá và cập nhật ví.
+* `app.observer.Server.broadcast(...)` gửi packet tới nhiều client đang online, phục vụ realtime update giá thầu, chat, danh sách phiên đấu giá và cập nhật ví.
 
 **Điểm triển khai quan trọng:**
 
@@ -87,9 +87,9 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* Interface trong `app.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
-* Implementation trong `app.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
-* `app.dao.BaseDAO` gom helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
+* Interface trong `app.server.dao`: `UserDAO`, `ItemDAO`, `AuctionDAO`, `BidDAO`, `AutoBidDAO`, `ChatDAO`, `NotificationDAO`.
+* Implementation trong `app.server.dao.impl`: `MySqlUserDAO`, `MySqlItemDAO`, `MySqlAuctionDAO`, `MySqlBidDAO`, `MySqlAutoBidDAO`.
+* `app.server.dao.BaseDAO` gom helper dùng chung như `withConnection(...)`, `executeUpdate(...)`, `setParameters(...)`, `runInTransaction(...)`.
 
 **Đặc điểm đáng chú ý:**
 
@@ -105,12 +105,12 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* `app.service.UserService`: Đăng nhập, đăng ký, nạp/rút tiền, reserve/settle tiền trong ví, kiểm tra quyền admin.
-* `app.service.ItemService`: Thêm/sửa/xóa mềm sản phẩm, kiểm tra quyền quản lý sản phẩm, chặn sửa/xóa item đang đấu giá.
-* `app.service.BidService`: Xử lý đặt giá, khóa auction/user, validate bid, đóng băng tiền, cập nhật giá cao nhất.
-* `app.service.AuctionService`: Tạo phiên, lấy danh sách/detail/result, hủy phiên, hoàn tất phiên hết hạn, settle/release ví.
-* `app.service.BidValidator`: Tách các rule validate giá đấu và trạng thái phiên.
-* `app.service.AntiSnipeService`: Tách logic gia hạn phiên khi có bid ở những giây cuối.
+* `app.server.service.UserService`: Đăng nhập, đăng ký, nạp/rút tiền, reserve/settle tiền trong ví, kiểm tra quyền admin.
+* `app.server.service.ItemService`: Thêm/sửa/xóa mềm sản phẩm, kiểm tra quyền quản lý sản phẩm, chặn sửa/xóa item đang đấu giá.
+* `app.server.service.BidService`: Xử lý đặt giá, khóa auction/user, validate bid, đóng băng tiền, cập nhật giá cao nhất.
+* `app.server.service.AuctionService`: Tạo phiên, lấy danh sách/detail/result, hủy phiên, hoàn tất phiên hết hạn, settle/release ví.
+* `app.server.service.BidValidator`: Tách các rule validate giá đấu và trạng thái phiên.
+* `app.server.service.AntiSnipeService`: Tách logic gia hạn phiên khi có bid ở những giây cuối.
 
 **Lợi ích trong dự án:**
 
@@ -126,7 +126,7 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 
 **Nơi áp dụng:**
 
-* `app.database.TransactionManager` cung cấp `runInTransaction(...)` và `runWithoutResult(...)`.
+* `app.server.database.TransactionManager` cung cấp `runInTransaction(...)` và `runWithoutResult(...)`.
 * `UserService`, `ItemService`, `BidService`, `AuctionService` dùng `TransactionManager` để đảm bảo các thao tác liên quan cùng commit/rollback.
 * DAO có method nhận `Connection` để cùng tham gia một transaction, ví dụ:
     * `auctionDAO.lockRow(conn, auctionId)`
@@ -148,7 +148,7 @@ Trong `BidService.placeBid(...)`, hệ thống khóa phiên đấu giá, khóa u
 **Nơi áp dụng:**
 
 * **View:** `src/main/resources/app/views/` chứa các file FXML như `firstscene.fxml`, `live_auction.fxml`, `login_scene.fxml`, `register_account.fxml`, `deposit.fxml`, `mess_chat.fxml`.
-* **Controller:** `app.controllers` chứa controller JavaFX như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MyHistoryController`, `MessController`, `UserProfileController`.
+* **Controller:** `app.client.controllers` chứa controller JavaFX như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MyHistoryController`, `MessController`, `UserProfileController`.
 * **Model:** `app.models` chứa domain object như `Auction`, `Item`, `Wallet`, `User`, `BidTransaction`, `Session`, `DataStore`.
 * **Điều hướng view:** `NavigationManager` load FXML, gắn CSS và thay scene trên `Stage`.
 
@@ -189,7 +189,7 @@ Trong `BidService.placeBid(...)`, hệ thống khóa phiên đấu giá, khóa u
 
 **Nơi áp dụng:**
 
-* `app.service.AuctionMapper` chuyển `Auction` thành:
+* `app.server.service.AuctionMapper` chuyển `Auction` thành:
     * `AuctionSummary` dùng cho danh sách phiên.
     * `AuctionDetail` dùng cho màn hình chi tiết/live auction.
 * `app.data.UserData` có constructor nhận `User` để tạo DTO an toàn hơn khi trả về client.
@@ -281,10 +281,10 @@ Trong `BidService.placeBid(...)`, hệ thống khóa phiên đấu giá, khóa u
 
 **Nơi áp dụng:**
 
-* `app.enums.AuctionStatus`: `OPEN`, `RUNNING`, `FINISHED`, `PAID`, `CANCELED`.
-* `app.models.Auction` có các method thay đổi trạng thái như `start()`, `finish()`, `markPaid()`, `cancel()`.
+* `app.common.enums.AuctionStatus`: `OPEN`, `RUNNING`, `FINISHED`, `PAID`, `CANCELED`.
+* `app.common.models.Auction` có các method thay đổi trạng thái như `start()`, `finish()`, `markPaid()`, `cancel()`.
 * `AuctionService` kiểm tra trạng thái trước khi hủy, hoàn tất, settle ví hoặc trả kết quả.
-* `app.enums.ItemStatus` quản lý trạng thái item như active/delete tùy theo schema và DAO.
+* `app.common.enums.ItemStatus` quản lý trạng thái item như active/delete tùy theo schema và DAO.
 
 **Ghi chú:** Đây là state machine bằng enum, chưa phải GoF State Pattern đầy đủ vì chưa có các class state riêng biệt.
 
@@ -296,7 +296,7 @@ Trong `BidService.placeBid(...)`, hệ thống khóa phiên đấu giá, khóa u
 
 **Nơi áp dụng:**
 
-* `app.controllers.Cleanable` định nghĩa `cleanup()`.
+* `app.client.controllers.Cleanable` định nghĩa `cleanup()`.
 * `NavigationManager.navigateTo(...)` gọi `cleanup()` nếu controller hiện tại implement `Cleanable`.
 * Các controller như `FirstScene`, `LiveController`, `MyHistoryController`, `DepositController` dừng scheduler/timeline và unsubscribe listener trong `cleanup()`.
 
@@ -313,10 +313,10 @@ Trong `BidService.placeBid(...)`, hệ thống khóa phiên đấu giá, khóa u
 
 **Nơi áp dụng:**
 
-* `app.exception.AppException`: base runtime exception của ứng dụng.
-* `app.exception.DatabaseException`: lỗi database/DAO.
-* `app.exception.ServiceException`: lỗi nghiệp vụ ở service.
-* `app.exception.ConnectException`: lỗi kết nối client-server.
+* `app.common.exception.AppException`: base runtime exception của ứng dụng.
+* `app.common.exception.DatabaseException`: lỗi database/DAO.
+* `app.common.exception.ServiceException`: lỗi nghiệp vụ ở service.
+* `app.common.exception.ConnectException`: lỗi kết nối client-server.
 
 **Lợi ích trong dự án:**
 

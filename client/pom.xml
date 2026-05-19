@@ -55,7 +55,7 @@
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>app.App</mainClass>
+                    <mainClass>app.client.App</mainClass>
                     <jlinkZipName>app</jlinkZipName>
                     <jlinkImageName>app</jlinkImageName>
                     <stripDebug>true</stripDebug>
