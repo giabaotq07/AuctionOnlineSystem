@@ -1,12 +1,11 @@
 package app.common.dto;
 
-import app.common.models.Auction;
 import java.time.LocalDateTime;
 
 /** AuctionDetail. */
-public record AuctionDetail(Auction auction, ItemData item, long currentPrice) {
+public record AuctionDetail(AuctionData auction, ItemData item) {
   public int auctionId() {
-    return auction.getId();
+    return auction.id();
   }
 
   public String itemName() {
@@ -26,10 +25,10 @@ public record AuctionDetail(Auction auction, ItemData item, long currentPrice) {
   }
 
   public LocalDateTime endTime() {
-    return auction.getEndTime();
+    return auction.endTime();
   }
 
   public int version() {
-    return auction.getVersion();
+    return auction.version();
   }
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="/AuctionDetail (snapshot).java">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/AuctionDetail (snapshot).java" />
+              <option name="originalContent" value="package app.common.dto;&#10;&#10;import app.common.models.Auction;&#10;import java.time.LocalDateTime;&#10;&#10;/** AuctionDetail. */&#10;public record AuctionDetail(Auction auction, ItemData item, long currentPrice) {&#10;  public int auctionId() {&#10;    return auction.getId();&#10;  }&#10;&#10;  public String itemName() {&#10;    return item.name();&#10;  }&#10;&#10;  public String description() {&#10;    return item.description();&#10;  }&#10;&#10;  public long startingPrice() {&#10;    return item.startingPrice();&#10;  }&#10;&#10;  public long stepPrice() {&#10;    return item.stepPrice();&#10;  }&#10;&#10;  public LocalDateTime endTime() {&#10;    return auction.getEndTime();&#10;  }&#10;&#10;  public int version() {&#10;    return auction.getVersion();&#10;  }&#10;}&#10;" />
+              <option name="updatedContent" value="package app.common.dto;&#10;&#10;import app.common.models.AuctionData;&#10;import java.time.LocalDateTime;&#10;&#10;/** AuctionDetail. */&#10;public record AuctionDetail(AuctionData auction, ItemData item, long currentPrice) {&#10;  public int auctionId() {&#10;    return auction.id();&#10;  }&#10;&#10;  public String itemName() {&#10;    return item.name();&#10;  }&#10;&#10;  public String description() {&#10;    return item.description();&#10;  }&#10;&#10;  public long startingPrice() {&#10;    return item.startingPrice();&#10;  }&#10;&#10;  public long stepPrice() {&#10;    return item.stepPrice();&#10;  }&#10;&#10;  public LocalDateTime endTime() {&#10;    return auction.endTime();&#10;  }&#10;&#10;  public int version() {&#10;    return auction.version();&#10;  }&#10;}" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

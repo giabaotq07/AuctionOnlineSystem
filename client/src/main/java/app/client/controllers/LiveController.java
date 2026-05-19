@@ -4,6 +4,7 @@ import app.client.Client;
 import app.client.manager.AuctionNavigator;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
+import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
 import app.common.dto.AuctionDetailResponse;
 import app.common.dto.AuctionResultRequest;
@@ -12,10 +13,8 @@ import app.common.dto.PlaceBidRequest;
 import app.common.dto.PlaceBidResponse;
 import app.common.dto.SettleWalletRequest;
 import app.common.dto.WalletUpdateResponse;
-import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.Auction;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
@@ -40,7 +39,7 @@ import org.slf4j.LoggerFactory;
 /** LiveController. */
 public class LiveController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
-  private Auction auction;
+  private AuctionData auction;
   private long currentPrice;
   private AuctionDetail auctionDetail;
   private PacketListener<PlaceBidResponse> placeBidHandler;
@@ -118,7 +117,7 @@ public class LiveController implements Cleanable {
     }
     auctionDetail = detail;
     auction = detail.auction();
-    currentPrice = detail.currentPrice();
+    currentPrice = auction.highestBid();
     applyDetail(detail);
   }
 
@@ -133,7 +132,7 @@ public class LiveController implements Cleanable {
     if (detail == null && response.notModified()) {
       detail = AuctionNavigator.getInstance().getCachedDetail(response.auctionId());
     }
-    if (detail == null || detail.auctionId() != auction.getId()) {
+    if (detail == null || detail.auctionId() != auction.id()) {
       return;
     }
     AuctionNavigator.getInstance().cacheDetail(detail);
@@ -146,7 +145,7 @@ public class LiveController implements Cleanable {
     if (response == null) {
       return;
     }
-    if (auction == null || response.auctionId() != auction.getId()) {
+    if (auction == null || response.auctionId() != auction.id()) {
       return;
     }
     currentPrice = Math.max(currentPrice, response.highestBidAmount());
@@ -198,7 +197,7 @@ public class LiveController implements Cleanable {
     if (auction == null) {
       return;
     }
-    if (response == null || response.auctionId() != auction.getId()) {
+    if (response == null || response.auctionId() != auction.id()) {
       return;
     }
     onAuctionClosed(
@@ -217,7 +216,7 @@ public class LiveController implements Cleanable {
     }
     try {
       settlementSent = true;
-      SettleWalletRequest request = new SettleWalletRequest(auction.getId());
+      SettleWalletRequest request = new SettleWalletRequest(auction.id());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.SETTLE_WALLET, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
@@ -228,7 +227,7 @@ public class LiveController implements Cleanable {
     itemNameLabel.setText(detail.itemName());
     startPriceLabel.setText(formatCurrency(detail.startingPrice()));
     stepPriceLabel.setText(formatCurrency(detail.stepPrice()));
-    currentPrice = Math.max(currentPrice, detail.currentPrice());
+    currentPrice = Math.max(currentPrice, detail.auction().highestBid());
     currentPriceLabel.setText(formatCurrency(currentPrice));
     depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
     description.setText(detail.description());
@@ -298,7 +297,7 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
       return;
     }
-    PlaceBidRequest request = new PlaceBidRequest(auction.getId(), bidAmount);
+    PlaceBidRequest request = new PlaceBidRequest(auction.id(), bidAmount);
     Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
   }
 
@@ -325,9 +324,6 @@ public class LiveController implements Cleanable {
                     requestAuctionResult();
                   }
                   scheduler.shutdownNow();
-                  if (auction != null && auction.isRunning()) {
-                    auction.setStatus(AuctionStatus.FINISHED);
-                  }
                 } else {
                   updateCountdownLabel(now, endTime);
                 }
@@ -343,7 +339,7 @@ public class LiveController implements Cleanable {
       return;
     }
     try {
-      AuctionResultRequest request = new AuctionResultRequest(auction.getId());
+      AuctionResultRequest request = new AuctionResultRequest(auction.id());
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_RESULT, request));
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
