@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** FetchAuctionResultCommand. */
-public class FetchAuctionResultCommand implements Command {
+public class FetchAuctionResultCommand extends Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionResultCommand.class);
   private final AuctionService auctionService;
 

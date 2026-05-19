@@ -3,7 +3,7 @@ package app.client.command;
 import app.common.models.PacketRes;
 
 /** FetchAuctionDetailCommand. */
-public class FetchAuctionDetailCommand implements Command {
+public class FetchAuctionDetailCommand extends Command {
   @Override
   public void execute(PacketRes packet) {}
 }

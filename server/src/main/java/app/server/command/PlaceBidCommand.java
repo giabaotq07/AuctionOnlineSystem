@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** PlaceBidCommand. */
-public class PlaceBidCommand implements Command {
+public class PlaceBidCommand extends Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
   private final UserService userService;

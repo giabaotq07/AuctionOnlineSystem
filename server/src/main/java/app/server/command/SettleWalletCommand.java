@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** SettleWalletCommand. */
-public class SettleWalletCommand implements Command {
+public class SettleWalletCommand extends Command {
   private static final Logger logger = LoggerFactory.getLogger(SettleWalletCommand.class);
   private final AuctionService auctionService;
   private final UserService userService;

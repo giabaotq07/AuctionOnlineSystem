@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** CreateAuctionCommand. */
-public class CreateAuctionCommand implements Command {
+public class CreateAuctionCommand extends Command {
   private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
 

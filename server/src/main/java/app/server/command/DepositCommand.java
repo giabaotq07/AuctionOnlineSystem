@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** DepositCommand. */
-public class DepositCommand implements Command {
+public class DepositCommand extends Command {
   private static final Logger logger = LoggerFactory.getLogger(DepositCommand.class);
   private final UserService userService;
 
