@@ -105,7 +105,6 @@ public class LoginController implements Cleanable {
     } catch (IOException e) {
       AlertUtils.showError("Lỗi", e.getMessage());
     }
-
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 

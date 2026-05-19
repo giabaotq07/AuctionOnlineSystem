@@ -32,7 +32,6 @@ public class RegisterController implements Cleanable {
   @FXML private PasswordField txtPassword;
   @FXML private RadioButton rbSeller;
   @FXML private RadioButton rbBidder;
-
   private final ToggleGroup roleGroup = new ToggleGroup();
   @FXML private Button registerButton;
   private final ClientRequestService requests = ClientRequestService.getInstance();
@@ -47,7 +46,6 @@ public class RegisterController implements Cleanable {
     rbSeller.setToggleGroup(roleGroup);
     rbBidder.setToggleGroup(roleGroup);
     notifications.addMessageListener(registerListener);
-
     rbBidder.setSelected(true);
     try {
       String url =
@@ -88,7 +86,6 @@ public class RegisterController implements Cleanable {
     }
     UserRole role = rbSeller.isSelected() ? UserRole.SELLER : UserRole.BIDDER;
     RegisterRequest request = new RegisterRequest(name, account, password, role);
-
     try {
       setRegisterLoading(true);
       requests.register(request);

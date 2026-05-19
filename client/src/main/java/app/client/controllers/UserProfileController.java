@@ -24,7 +24,6 @@ public class UserProfileController {
   @FXML private Label walletLabel;
   @FXML private Label roleLabel;
   @FXML private Label idLabel;
-
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
   /** Member. */
