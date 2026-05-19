@@ -1,19 +1,21 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
-import app.common.dto.DepositRequest;
-import app.common.enums.PacketType;
+import app.client.utils.LoadingButton;
 import app.common.enums.View;
-import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.function.Consumer;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
@@ -25,12 +27,20 @@ public class DepositController implements Cleanable {
   @FXML private TextField depositAmountField;
   @FXML private Label totalBalanceLabel;
   @FXML private Label availableBalanceLabel;
-  private final Client client = Client.getInstance();
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
+  private boolean depositLoading;
+  private Button depositButton;
+  private Runnable stopDepositLoading = () -> {};
+  private BigDecimal balanceBeforeDeposit;
+  private final Consumer<String> walletListener =
+      message -> Platform.runLater(() -> handleWalletUpdate(message));
 
   /** Member. */
   @FXML
   public void initialize() {
+    notifications.addListener(walletListener);
     updateBalanceLabels(UserManager.getInstance().getCurrentUser());
   }
 
@@ -59,7 +69,10 @@ public class DepositController implements Cleanable {
   /** Member. */
   @FXML
   public void handleDeposit(ActionEvent event) {
-    if (!client.isConnected()) {
+    if (depositLoading) {
+      return;
+    }
+    if (!requests.isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
@@ -82,11 +95,61 @@ public class DepositController implements Cleanable {
       return;
     }
     try {
-      client.sendRequest(PacketReq.of(PacketType.DEPOSIT, new DepositRequest(amount)));
-      depositAmountField.clear();
+      depositButton = LoadingButton.fromEvent(event);
+      balanceBeforeDeposit = currentTotalBalance();
+      setDepositLoading(true);
+      requests.deposit(amount);
     } catch (Exception e) {
+      setDepositLoading(false);
       logger.error("Failed to deposit", e);
       AlertUtils.showError("Lỗi", "Không thể nạp tiền.");
+    }
+  }
+
+  private void handleWalletUpdate(String message) {
+    if (!depositLoading) {
+      updateBalanceLabels(UserManager.getInstance().getCurrentUser());
+      return;
+    }
+    setDepositLoading(false);
+    updateBalanceLabels(UserManager.getInstance().getCurrentUser());
+    if (!hasBalanceChanged() && !isSuccessMessage(message)) {
+      AlertUtils.showError("Ví", message);
+      return;
+    }
+    if (depositAmountField != null) {
+      depositAmountField.clear();
+    }
+  }
+
+  private BigDecimal currentTotalBalance() {
+    User user = UserManager.getInstance().getCurrentUser();
+    if (user == null || user.getWallet() == null || user.getWallet().getTotalBalance() == null) {
+      return BigDecimal.ZERO;
+    }
+    return user.getWallet().getTotalBalance();
+  }
+
+  private boolean hasBalanceChanged() {
+    return balanceBeforeDeposit != null
+        && currentTotalBalance().compareTo(balanceBeforeDeposit) > 0;
+  }
+
+  private boolean isSuccessMessage(String message) {
+    if (message == null) {
+      return false;
+    }
+    String normalized = message.toLowerCase();
+    return normalized.contains("ok") || normalized.contains("thành công");
+  }
+
+  private void setDepositLoading(boolean loading) {
+    depositLoading = loading;
+    if (loading) {
+      stopDepositLoading = LoadingButton.show(depositButton);
+    } else {
+      stopDepositLoading.run();
+      stopDepositLoading = () -> {};
     }
   }
 
@@ -97,5 +160,8 @@ public class DepositController implements Cleanable {
   }
 
   @Override
-  public void cleanup() {}
+  public void cleanup() {
+    notifications.removeListener(walletListener);
+    setDepositLoading(false);
+  }
 }

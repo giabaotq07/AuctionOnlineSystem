@@ -18,6 +18,6 @@ public class FetchAuctionSummariesCommand extends Command {
         }
       }
     }
-    notify(packet.getMessage());
+    notify(packet == null ? "" : packet.getMessage());
   }
 }

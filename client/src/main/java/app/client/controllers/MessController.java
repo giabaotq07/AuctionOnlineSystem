@@ -1,13 +1,11 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.ChatRequest;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -28,7 +26,7 @@ public class MessController {
   @FXML private TextArea myTextArea;
   @FXML private VBox chatBox;
   @FXML private ScrollPane scrollPane;
-  private Client client;
+  private final ClientRequestService requests = ClientRequestService.getInstance();
 
   /** Member. */
   @FXML
@@ -93,7 +91,7 @@ public class MessController {
     if (text != null && !text.trim().isEmpty()) {
       ChatRequest chatRequest = new ChatRequest(text);
       try {
-        client.sendRequest(PacketReq.of(PacketType.CHAT, chatRequest));
+        requests.chat(chatRequest);
       } catch (IOException e) {
         AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
         return;

@@ -10,6 +10,6 @@ public class RegisterCommand extends Command {
     if (packet.isSuccess()) {
       packet.getData(RegisterResponse.class);
     }
-    notify(packet.getMessage());
+    notify(packet == null ? "" : packet.getMessage());
   }
 }

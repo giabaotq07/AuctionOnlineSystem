@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
+import app.client.utils.LoadingButton;
 import app.common.enums.View;
 import app.common.exception.AppException;
 import java.io.IOException;
@@ -20,6 +21,8 @@ public class ConnectServerController {
   @FXML private Label statusLabel;
   @FXML private AnchorPane rootPane;
   private static final int CONNECTION_TIMEOUT = 5000;
+  private boolean connecting;
+  private Runnable stopConnectionLoading = () -> {};
 
   @FXML
   private void initialize() {
@@ -45,9 +48,12 @@ public class ConnectServerController {
   /** Member. */
   @FXML
   public void connectServer(ActionEvent event) {
+    if (connecting) {
+      return;
+    }
     if (connectButton != null) {
-      connectButton.setDisable(true);
-      connectButton.setText("Đang kết nối...");
+      connecting = true;
+      stopConnectionLoading = LoadingButton.show(connectButton);
     }
     if (statusLabel != null) {
       statusLabel.setText("Đang kết nối tới Server...");
@@ -65,6 +71,7 @@ public class ConnectServerController {
                           statusLabel.setText("✓ Kết nối thành công!");
                           statusLabel.setStyle("-fx-text-fill: #00AA00;");
                         }
+                        resetConnectionButton();
                         try {
                           handleLoginClick(event);
                         } catch (IOException e) {
@@ -140,8 +147,10 @@ public class ConnectServerController {
   }
 
   private void resetConnectionButton() {
+    connecting = false;
+    stopConnectionLoading.run();
+    stopConnectionLoading = () -> {};
     if (connectButton != null) {
-      connectButton.setDisable(false);
       connectButton.setText("Kết nối");
     }
   }

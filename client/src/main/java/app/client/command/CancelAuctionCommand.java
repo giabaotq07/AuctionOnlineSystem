@@ -14,6 +14,6 @@ public class CancelAuctionCommand extends Command {
         AuctionStore.getInstance().markCanceled(response.auctionId());
       }
     }
-    notify(packet.getMessage());
+    notify(packet == null ? "" : packet.getMessage());
   }
 }

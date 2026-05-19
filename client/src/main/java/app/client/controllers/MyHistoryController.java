@@ -1,17 +1,20 @@
 package app.client.controllers;
 
-import app.client.Client;
 import app.client.manager.*;
 import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
+import app.common.models.PacketRes;
 import app.common.models.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -32,11 +35,27 @@ public class MyHistoryController implements Cleanable {
 
   @FXML private FlowPane finishedPane;
 
-  private final Client client = Client.getInstance();
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
 
   private final List<AuctionSummary> summaries = new ArrayList<>();
 
   private final User currentUser = UserManager.getInstance().getCurrentUser();
+  private boolean reloadLoading;
+  private Button reloadButton;
+  private Runnable stopReloadLoading = () -> {};
+  private final Consumer<PacketRes> summariesListener =
+      packet -> {
+        if (packet == null || packet.getType() != PacketType.FETCH_AUCTION_SUMMARIES) {
+          return;
+        }
+        Platform.runLater(
+            () -> {
+              requestHistory();
+              rebuildUi();
+              setReloadLoading(false);
+            });
+      };
 
   /** Member. */
   @FXML
@@ -46,6 +65,7 @@ public class MyHistoryController implements Cleanable {
     typeFilterComboBox.setValue("ALL");
 
     typeFilterComboBox.setOnAction(e -> rebuildUi());
+    notifications.addListener(summariesListener);
 
     requestHistory();
     rebuildUi();
@@ -56,7 +76,7 @@ public class MyHistoryController implements Cleanable {
       return;
     }
     summaries.clear();
-    summaries.addAll(HistoryStore.getInstance().getAuctionHistory());
+    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
   }
 
   private void rebuildUi() {
@@ -136,7 +156,7 @@ public class MyHistoryController implements Cleanable {
     btnDetail.setStyle(
         "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
 
-    btnDetail.setOnAction(e -> AuctionStore.getInstance().open(summary));
+    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
 
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
 
@@ -145,13 +165,29 @@ public class MyHistoryController implements Cleanable {
 
   /** Member. */
   @FXML
-  public void handleReload() {
+  public void handleReload(ActionEvent event) {
+    if (reloadLoading) {
+      return;
+    }
     requestHistory();
     rebuildUi();
     try {
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
+      reloadButton = LoadingButton.fromEvent(event);
+      setReloadLoading(true);
+      requests.fetchAuctionSummaries();
     } catch (Exception e) {
+      setReloadLoading(false);
       AlertUtils.showError("Lỗi", e.getMessage());
+    }
+  }
+
+  private void setReloadLoading(boolean loading) {
+    reloadLoading = loading;
+    if (loading) {
+      stopReloadLoading = LoadingButton.show(reloadButton);
+    } else {
+      stopReloadLoading.run();
+      stopReloadLoading = () -> {};
     }
   }
 
@@ -169,5 +205,8 @@ public class MyHistoryController implements Cleanable {
   }
 
   @Override
-  public void cleanup() {}
+  public void cleanup() {
+    notifications.removeListener(summariesListener);
+    setReloadLoading(false);
+  }
 }

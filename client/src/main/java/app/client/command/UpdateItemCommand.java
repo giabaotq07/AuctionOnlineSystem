@@ -15,6 +15,6 @@ public class UpdateItemCommand extends Command {
         ItemStore.getInstance().addItem(DtoMapper.toItem(response.item()));
       }
     }
-    notify(packet.getMessage());
+    notify(packet == null ? "" : packet.getMessage());
   }
 }

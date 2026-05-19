@@ -15,6 +15,6 @@ public class DeleteItemCommand extends Command {
         ItemStore.getInstance().addItem(DtoMapper.toItem(response.item()));
       }
     }
-    notify(packet.getMessage());
+    notify(packet == null ? "" : packet.getMessage());
   }
 }

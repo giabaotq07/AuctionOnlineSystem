@@ -1,7 +1,11 @@
 package app.client.store;
 
+import app.common.dto.AuctionDetail;
+import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
+import app.common.mapper.DtoMapper;
 import app.common.models.Auction;
+import app.common.models.Item;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +49,30 @@ public final class AuctionStore {
     return new ArrayList<>(auctionMap.values());
   }
 
+  /** getAuctionSummaries. */
+  public List<AuctionSummary> getAuctionSummaries() {
+    List<AuctionSummary> summaries = new ArrayList<>();
+    for (Auction auction : auctionMap.values()) {
+      Item item =
+          auction.getItemId() > 0 ? ItemStore.getInstance().getItem(auction.getItemId()) : null;
+      summaries.add(DtoMapper.toAuctionSummary(auction, item));
+    }
+    return summaries;
+  }
+
+  /** getAuctionDetail. */
+  public AuctionDetail getAuctionDetail(int auctionId) {
+    Auction auction = getAuction(auctionId);
+    if (auction == null || auction.getItemId() <= 0) {
+      return null;
+    }
+    Item item = ItemStore.getInstance().getItem(auction.getItemId());
+    if (item == null) {
+      return null;
+    }
+    return DtoMapper.toAuctionDetail(auction, item);
+  }
+
   /** updateBid. */
   public void updateBid(long auctionId, long highestBid, long bidderId) {
     Auction auction =
@@ -63,10 +91,18 @@ public final class AuctionStore {
 
   /** markFinished. */
   public void markFinished(long auctionId, long finalPrice) {
+    markFinished(auctionId, finalPrice, null);
+  }
+
+  /** markFinished. */
+  public void markFinished(long auctionId, long finalPrice, Integer winnerId) {
     Auction auction =
         auctionMap.computeIfAbsent(toIntId(auctionId), id -> partialAuction(id, finalPrice));
     auction.setStatus(AuctionStatus.FINISHED);
     auction.setHighestBid(finalPrice);
+    if (winnerId != null && winnerId > 0) {
+      auction.setWinnerId(winnerId);
+    }
   }
 
   private Auction mergeAuction(Auction existing, Auction incoming) {

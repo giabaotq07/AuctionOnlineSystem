@@ -1,15 +1,19 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.RegisterRequest;
 import app.common.enums.PacketType;
 import app.common.enums.UserRole;
 import app.common.enums.View;
-import app.common.models.PacketReq;
+import app.common.models.PacketRes;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -22,7 +26,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
 /** RegisterController. */
-public class RegisterController {
+public class RegisterController implements Cleanable {
   @FXML private AnchorPane rootPane;
   @FXML private Label lblLogin;
   @FXML private TextField txtName;
@@ -33,11 +37,23 @@ public class RegisterController {
 
   private final ToggleGroup roleGroup = new ToggleGroup();
   @FXML private Button registerButton;
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
+  private boolean registerLoading;
+  private Runnable stopRegisterLoading = () -> {};
+  private final Consumer<PacketRes> registerListener =
+      packet -> {
+        if (packet == null || packet.getType() != PacketType.REGISTER) {
+          return;
+        }
+        Platform.runLater(() -> handleRegisterResult(packet));
+      };
 
   @FXML
   private void initialize() {
     rbSeller.setToggleGroup(roleGroup);
     rbBidder.setToggleGroup(roleGroup);
+    notifications.addListener(registerListener);
 
     rbBidder.setSelected(true);
     try {
@@ -62,6 +78,9 @@ public class RegisterController {
   /** Member. */
   @FXML
   public void handleRegister(ActionEvent event) {
+    if (registerLoading) {
+      return;
+    }
     String name = txtName.getText();
     String account = txtAccount.getText();
     String password = txtPassword.getText();
@@ -78,9 +97,31 @@ public class RegisterController {
     RegisterRequest request = new RegisterRequest(name, account, password, role);
 
     try {
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.REGISTER, request));
+      setRegisterLoading(true);
+      requests.register(request);
     } catch (IOException e) {
+      setRegisterLoading(false);
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private void handleRegisterResult(PacketRes result) {
+    setRegisterLoading(false);
+    if (!result.isSuccess()) {
+      AlertUtils.showError("Lỗi đăng ký", result.getMessage());
+      return;
+    }
+    AlertUtils.showInfo("Đăng ký", result.getMessage());
+    NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+
+  private void setRegisterLoading(boolean loading) {
+    registerLoading = loading;
+    if (loading) {
+      stopRegisterLoading = LoadingButton.show(registerButton);
+    } else {
+      stopRegisterLoading.run();
+      stopRegisterLoading = () -> {};
     }
   }
 
@@ -88,5 +129,11 @@ public class RegisterController {
   @FXML
   public void backToLoginMouse(MouseEvent event) {
     NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+
+  @Override
+  public void cleanup() {
+    notifications.removeListener(registerListener);
+    setRegisterLoading(false);
   }
 }

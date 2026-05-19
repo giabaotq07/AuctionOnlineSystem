@@ -6,6 +6,6 @@ import app.common.models.PacketRes;
 public class ChatCommand extends Command {
   @Override
   public void execute(PacketRes packet) {
-    notify(packet.getMessage());
+    notify(packet == null ? "" : packet.getMessage());
   }
 }

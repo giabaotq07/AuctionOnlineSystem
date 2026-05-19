@@ -1,23 +1,28 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.AuctionNavigator;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
+import app.common.models.PacketRes;
 import app.common.models.User;
 import app.common.models.Wallet;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -45,12 +50,27 @@ public class FirstScene implements Cleanable {
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
   @FXML private Label balanceLabel;
-  private final Client client = Client.getInstance();
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
+  private boolean reloadLoading;
+  private Button reloadButton;
+  private Runnable stopReloadLoading = () -> {};
+  private final Consumer<PacketRes> summariesListener =
+      packet -> {
+        if (packet == null || packet.getType() != PacketType.FETCH_AUCTION_SUMMARIES) {
+          return;
+        }
+        Platform.runLater(
+            () -> {
+              loadInitialData();
+              setReloadLoading(false);
+            });
+      };
 
   /** Member. */
   @FXML
@@ -62,6 +82,7 @@ public class FirstScene implements Cleanable {
     setupSearch();
     setupScrollPanes();
     setupWalletSection();
+    notifications.addListener(summariesListener);
     loadInitialData();
     logger.debug("FirstScene initialized");
   }
@@ -86,7 +107,7 @@ public class FirstScene implements Cleanable {
         .addListener(
             (obs, oldVal, newVal) -> {
               if (newVal != null) {
-                AuctionStore.getInstance().open(newVal);
+                AuctionNavigator.getInstance().open(newVal);
               }
             });
   }
@@ -125,7 +146,7 @@ public class FirstScene implements Cleanable {
 
   private void loadInitialData() {
     summaries.clear();
-    summaries.addAll(SummaryStore.getInstance().getAuctionSummaries());
+    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
     rebuildUi();
   }
 
@@ -235,7 +256,7 @@ public class FirstScene implements Cleanable {
         new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> AuctionStore.getInstance().open(summary));
+    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
@@ -271,12 +292,28 @@ public class FirstScene implements Cleanable {
   /** Member. */
   @FXML
   public void handleReload(ActionEvent event) {
+    if (reloadLoading) {
+      return;
+    }
     try {
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
+      reloadButton = LoadingButton.fromEvent(event);
+      setReloadLoading(true);
+      requests.fetchAuctionSummaries();
       logger.info("Reloading auctions...");
     } catch (Exception e) {
+      setReloadLoading(false);
       logger.error("Failed to reload auctions", e);
       AlertUtils.showError("Lỗi", e.getMessage());
+    }
+  }
+
+  private void setReloadLoading(boolean loading) {
+    reloadLoading = loading;
+    if (loading) {
+      stopReloadLoading = LoadingButton.show(reloadButton);
+    } else {
+      stopReloadLoading.run();
+      stopReloadLoading = () -> {};
     }
   }
 
@@ -323,6 +360,8 @@ public class FirstScene implements Cleanable {
 
   @Override
   public void cleanup() {
+    notifications.removeListener(summariesListener);
+    setReloadLoading(false);
     for (Timeline timeline : timelines) {
       timeline.stop();
     }

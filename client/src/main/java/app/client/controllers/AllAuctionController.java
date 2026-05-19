@@ -1,16 +1,20 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.AuctionNavigator;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -31,9 +35,21 @@ public class AllAuctionController implements Cleanable {
 
   @FXML private FlowPane finishedPane;
 
-  private final Client client = Client.getInstance();
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
 
   private final List<AuctionSummary> summaries = new ArrayList<>();
+  private boolean reloadLoading;
+  private Button reloadButton;
+  private Runnable stopReloadLoading = () -> {};
+  private final Consumer<String> summariesListener =
+      message ->
+          Platform.runLater(
+              () -> {
+                requestAuctions();
+                rebuildUi();
+                setReloadLoading(false);
+              });
 
   /** Member. */
   @FXML
@@ -43,6 +59,7 @@ public class AllAuctionController implements Cleanable {
     typeFilterComboBox.setValue("ALL");
 
     typeFilterComboBox.setOnAction(e -> rebuildUi());
+    notifications.addListener(summariesListener);
 
     requestAuctions();
     rebuildUi();
@@ -130,7 +147,7 @@ public class AllAuctionController implements Cleanable {
     btnDetail.setStyle(
         "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
 
-    btnDetail.setOnAction(e -> AuctionStore.getInstance().open(summary));
+    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
 
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
 
@@ -139,11 +156,27 @@ public class AllAuctionController implements Cleanable {
 
   /** Member. */
   @FXML
-  public void handleReload() {
+  public void handleReload(ActionEvent event) {
+    if (reloadLoading) {
+      return;
+    }
     try {
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
+      reloadButton = LoadingButton.fromEvent(event);
+      setReloadLoading(true);
+      requests.fetchAuctionSummaries();
     } catch (Exception e) {
+      setReloadLoading(false);
       AlertUtils.showError("Lỗi", e.getMessage());
+    }
+  }
+
+  private void setReloadLoading(boolean loading) {
+    reloadLoading = loading;
+    if (loading) {
+      stopReloadLoading = LoadingButton.show(reloadButton);
+    } else {
+      stopReloadLoading.run();
+      stopReloadLoading = () -> {};
     }
   }
 
@@ -161,5 +194,8 @@ public class AllAuctionController implements Cleanable {
   }
 
   @Override
-  public void cleanup() {}
+  public void cleanup() {
+    notifications.removeListener(summariesListener);
+    setReloadLoading(false);
+  }
 }
