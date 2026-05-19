@@ -2,8 +2,8 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
-import app.client.manager.NavigationManager;
 import app.client.manager.DataStore;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.AuctionSummary;
@@ -12,7 +12,6 @@ import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.observer.PacketListener;
-
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;

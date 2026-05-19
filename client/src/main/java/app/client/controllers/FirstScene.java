@@ -2,8 +2,8 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
-import app.client.manager.NavigationManager;
 import app.client.manager.DataStore;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.AuctionSummary;

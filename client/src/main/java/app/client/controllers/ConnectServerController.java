@@ -2,10 +2,8 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
-import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.exception.AppException;
-import app.common.models.PacketReq;
 import java.io.IOException;
 import java.util.Objects;
 import javafx.application.Platform;

@@ -90,9 +90,8 @@ public class LoginController {
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
       Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
     } catch (IOException e) {
-      AlertUtils.showError("Lỗi",  e.getMessage());
+      AlertUtils.showError("Lỗi", e.getMessage());
     }
-
 
     NavigationManager.getInstance().navigateTo(View.UI);
   }
