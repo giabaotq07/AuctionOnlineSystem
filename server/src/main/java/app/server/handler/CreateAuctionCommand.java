@@ -1,9 +1,6 @@
 package app.server.handler;
 
-import app.common.dto.AuctionSummariesResponse;
-import app.common.dto.AuctionSummary;
-import app.common.dto.CreateAuctionRequest;
-import app.common.dto.CreateAuctionResponse;
+import app.common.dto.*;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
@@ -58,6 +55,13 @@ public class CreateAuctionCommand implements Command {
       clientHandler.sendPacket(packetRes);
       Server.broadcast(packetRes, user.getId());
       broadcastAuctionList();
+      AuctionHistoryResponse historyResponse =
+          new AuctionHistoryResponse(
+              auctionService.getHistoryAuctions(clientHandler.getUser().getId()).stream()
+                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+                  .toList());
+      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_HISTORY, historyResponse));
+
       logger.info("Auction created successfully by user {}", user.getId());
     } catch (ServiceException e) {
       logger.warn("Create auction failed: {}", e.getMessage());
@@ -74,12 +78,13 @@ public class CreateAuctionCommand implements Command {
 
   private void broadcastAuctionList() {
     try {
-      AuctionSummariesResponse response =
+      AuctionSummariesResponse summariesResponse =
           new AuctionSummariesResponse(
               auctionService.getAuctions().stream()
                   .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
                   .toList());
-      Server.broadcast(PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
+      Server.broadcast(
+          PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, summariesResponse), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
     }

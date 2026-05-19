@@ -2,9 +2,11 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.NavigationManager;
+import app.common.enums.PacketType;
 import app.common.enums.View;
+import app.common.exception.AppException;
+import app.common.models.PacketReq;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Objects;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -67,8 +69,8 @@ public class ConnectServerController {
                         }
                         try {
                           handleLoginClick(event);
-                        } catch (SQLException e) {
-                          throw new RuntimeException(e);
+                        } catch (IOException e) {
+                          throw new AppException("Lỗi");
                         }
                       });
                 } else {
@@ -156,7 +158,7 @@ public class ConnectServerController {
 
   /** Member. */
   @FXML
-  public void handleLoginClick(ActionEvent event) throws SQLException {
+  public void handleLoginClick(ActionEvent event) throws IOException {
     NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 }

@@ -1,8 +1,7 @@
 package app.client;
 
-import app.common.dto.Response;
-import app.common.dto.UserData;
-import app.common.dto.WalletUpdateResponse;
+import app.client.manager.DataStore;
+import app.common.dto.*;
 import app.common.enums.PacketType;
 import app.common.exception.ConnectException;
 import app.common.mapper.DtoMapper;
@@ -119,6 +118,16 @@ public class Client {
         return;
       }
       updateSessionState(response);
+      if (response instanceof AuctionSummariesResponse) {
+        DataStore.getInstance()
+            .handleSummaryResponse(
+                (AuctionSummariesResponse) response, packet.isSuccess(), packet.getMessage());
+      }
+      if (response instanceof AuctionHistoryResponse) {
+        DataStore.getInstance()
+            .handleHistoryResponse(
+                (AuctionHistoryResponse) response, packet.isSuccess(), packet.getMessage());
+      }
       notifyListeners(packet.getType(), response, true, packet.getMessage());
     } catch (Exception e) {
       logger.error("[CLIENT] Failed to process packet", e);

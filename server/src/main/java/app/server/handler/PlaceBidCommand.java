@@ -67,6 +67,12 @@ public class PlaceBidCommand implements Command {
       Server.broadcast(packetResponse, bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
       broadcastAuctionSumList();
+      AuctionHistoryResponse historyResponse =
+          new AuctionHistoryResponse(
+              auctionService.getHistoryAuctions(clientHandler.getUser().getId()).stream()
+                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+                  .toList());
+      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_HISTORY, historyResponse));
       broadcastAuctionDetail(auctionId);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
