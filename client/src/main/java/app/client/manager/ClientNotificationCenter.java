@@ -8,7 +8,8 @@ import java.util.function.Consumer;
 public final class ClientNotificationCenter {
   private static volatile ClientNotificationCenter instance;
 
-  private final List<Consumer<String>> listeners = new ArrayList<>();
+  private final List<Consumer<String>> messageListeners = new ArrayList<>();
+  private final List<Runnable> updateListeners = new ArrayList<>();
 
   private ClientNotificationCenter() {}
 
@@ -24,24 +25,60 @@ public final class ClientNotificationCenter {
     return instance;
   }
 
-  /** addListener. */
-  public synchronized void addListener(Consumer<String> listener) {
-    listeners.add(listener);
+  /** addMessageListener. */
+  public synchronized void addMessageListener(Consumer<String> listener) {
+    messageListeners.add(listener);
   }
 
-  /** removeListener. */
-  public synchronized void removeListener(Consumer<String> listener) {
-    listeners.remove(listener);
+  /** removeMessageListener. */
+  public synchronized void removeMessageListener(Consumer<String> listener) {
+    messageListeners.remove(listener);
   }
 
-  /** notify. */
-  public void notify(String message) {
+  /** addUpdateListener. */
+  public synchronized void addUpdateListener(Runnable listener) {
+    updateListeners.add(listener);
+  }
+
+  /** removeUpdateListener. */
+  public synchronized void removeUpdateListener(Runnable listener) {
+    updateListeners.remove(listener);
+  }
+
+  /** notifyMessage. */
+  public void notifyMessage(String message) {
     List<Consumer<String>> snapshot;
     synchronized (this) {
-      snapshot = new ArrayList<>(listeners);
+      snapshot = new ArrayList<>(messageListeners);
     }
     for (Consumer<String> listener : snapshot) {
       listener.accept(message);
     }
+  }
+
+  /** notifyUpdate. */
+  public void notifyUpdate() {
+    List<Runnable> snapshot;
+    synchronized (this) {
+      snapshot = new ArrayList<>(updateListeners);
+    }
+    for (Runnable listener : snapshot) {
+      listener.run();
+    }
+  }
+
+  /** addListener. */
+  public synchronized void addListener(Consumer<String> listener) {
+    addMessageListener(listener);
+  }
+
+  /** removeListener. */
+  public synchronized void removeListener(Consumer<String> listener) {
+    removeMessageListener(listener);
+  }
+
+  /** notify. */
+  public void notify(String message) {
+    notifyMessage(message);
   }
 }

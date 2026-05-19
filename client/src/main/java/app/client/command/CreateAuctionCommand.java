@@ -18,7 +18,8 @@ public class CreateAuctionCommand extends Command {
         AuctionStore.getInstance().addAuction(DtoMapper.toAuction(detail.auction()));
         ItemStore.getInstance().addItem(DtoMapper.toItem(detail.item()));
       }
+      notifyUpdate();
     }
-    notify(packet == null ? "" : packet.getMessage());
+    notifyMessage(packet == null ? "" : packet.getMessage());
   }
 }

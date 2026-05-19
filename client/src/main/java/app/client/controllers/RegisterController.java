@@ -6,10 +6,8 @@ import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.RegisterRequest;
-import app.common.enums.PacketType;
 import app.common.enums.UserRole;
 import app.common.enums.View;
-import app.common.models.PacketRes;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -41,19 +39,14 @@ public class RegisterController implements Cleanable {
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private boolean registerLoading;
   private Runnable stopRegisterLoading = () -> {};
-  private final Consumer<PacketRes> registerListener =
-      packet -> {
-        if (packet == null || packet.getType() != PacketType.REGISTER) {
-          return;
-        }
-        Platform.runLater(() -> handleRegisterResult(packet));
-      };
+  private final Consumer<String> registerListener =
+      message -> Platform.runLater(() -> handleRegisterResult(message));
 
   @FXML
   private void initialize() {
     rbSeller.setToggleGroup(roleGroup);
     rbBidder.setToggleGroup(roleGroup);
-    notifications.addListener(registerListener);
+    notifications.addMessageListener(registerListener);
 
     rbBidder.setSelected(true);
     try {
@@ -105,13 +98,20 @@ public class RegisterController implements Cleanable {
     }
   }
 
-  private void handleRegisterResult(PacketRes result) {
-    setRegisterLoading(false);
-    if (!result.isSuccess()) {
-      AlertUtils.showError("Lỗi đăng ký", result.getMessage());
+  private void handleRegisterResult(String message) {
+    if (!registerLoading) {
       return;
     }
-    AlertUtils.showInfo("Đăng ký", result.getMessage());
+    setRegisterLoading(false);
+    if (message == null || message.isBlank()) {
+      return;
+    }
+    String lower = message.toLowerCase();
+    if (lower.contains("lỗi") || lower.contains("thất bại")) {
+      AlertUtils.showError("Lỗi đăng ký", message);
+      return;
+    }
+    AlertUtils.showInfo("Đăng ký", message);
     NavigationManager.getInstance().navigateTo(View.LOGIN);
   }
 
@@ -133,7 +133,7 @@ public class RegisterController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(registerListener);
+    notifications.removeMessageListener(registerListener);
     setRegisterLoading(false);
   }
 }

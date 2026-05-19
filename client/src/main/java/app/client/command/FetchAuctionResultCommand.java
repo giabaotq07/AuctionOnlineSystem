@@ -23,7 +23,8 @@ public class FetchAuctionResultCommand extends Command {
                 + " với giá: "
                 + String.format("%,d đ", response.finalPrice());
       }
+      notifyUpdate();
     }
-    notify(message);
+    notifyMessage(message);
   }
 }

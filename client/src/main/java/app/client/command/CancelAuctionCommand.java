@@ -13,7 +13,8 @@ public class CancelAuctionCommand extends Command {
       if (response != null && response.auctionId() > 0) {
         AuctionStore.getInstance().markCanceled(response.auctionId());
       }
+      notifyUpdate();
     }
-    notify(packet == null ? "" : packet.getMessage());
+    notifyMessage(packet == null ? "" : packet.getMessage());
   }
 }

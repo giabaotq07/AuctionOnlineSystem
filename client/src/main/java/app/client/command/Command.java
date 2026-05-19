@@ -8,7 +8,18 @@ public abstract class Command {
   /** execute. */
   public abstract void execute(PacketRes packet);
 
+  public void notifyMessage(String msg) {
+    if (msg == null || msg.isBlank()) {
+      return;
+    }
+    ClientNotificationCenter.getInstance().notifyMessage(msg);
+  }
+
+  public void notifyUpdate() {
+    ClientNotificationCenter.getInstance().notifyUpdate();
+  }
+
   public void notify(String msg) {
-    ClientNotificationCenter.getInstance().notify(msg == null ? "" : msg);
+    notifyMessage(msg);
   }
 }

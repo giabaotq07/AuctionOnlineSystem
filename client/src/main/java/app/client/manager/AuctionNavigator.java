@@ -5,10 +5,8 @@ import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionDetail;
 import app.common.dto.AuctionSummary;
-import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketRes;
 import java.io.IOException;
 import java.util.function.Consumer;
 import javafx.application.Platform;
@@ -59,28 +57,43 @@ public final class AuctionNavigator {
 
   private void requestAndOpen(int auctionId) {
     @SuppressWarnings("unchecked")
-    Consumer<PacketRes>[] listenerRef = new Consumer[1];
-    listenerRef[0] =
-        packet -> {
-          if (packet == null || packet.getType() != PacketType.FETCH_AUCTION_DETAIL) {
-            return;
-          }
-          Platform.runLater(
-              () -> {
-                notifications.removeListener(listenerRef[0]);
-                AuctionDetail detail = AuctionStore.getInstance().getAuctionDetail(auctionId);
-                if (detail != null) {
+    Runnable[] updateRef = new Runnable[1];
+    @SuppressWarnings("unchecked")
+    Consumer<String>[] messageRef = new Consumer[1];
+    updateRef[0] =
+        () ->
+            Platform.runLater(
+                () -> {
+                  AuctionDetail detail = AuctionStore.getInstance().getAuctionDetail(auctionId);
+                  if (detail == null) {
+                    return;
+                  }
+                  notifications.removeUpdateListener(updateRef[0]);
+                  notifications.removeMessageListener(messageRef[0]);
                   navigateToLive(detail);
-                } else {
-                  AlertUtils.showError("Lỗi", packet.getMessage());
-                }
-              });
-        };
-    notifications.addListener(listenerRef[0]);
+                });
+    messageRef[0] =
+        message ->
+            Platform.runLater(
+                () -> {
+                  if (message == null || message.isBlank()) {
+                    return;
+                  }
+                  AuctionDetail detail = AuctionStore.getInstance().getAuctionDetail(auctionId);
+                  if (detail != null) {
+                    return;
+                  }
+                  notifications.removeUpdateListener(updateRef[0]);
+                  notifications.removeMessageListener(messageRef[0]);
+                  AlertUtils.showError("Lỗi", message);
+                });
+    notifications.addUpdateListener(updateRef[0]);
+    notifications.addMessageListener(messageRef[0]);
     try {
       requests.fetchAuctionDetail(auctionId, -1);
     } catch (IOException e) {
-      notifications.removeListener(listenerRef[0]);
+      notifications.removeUpdateListener(updateRef[0]);
+      notifications.removeMessageListener(messageRef[0]);
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
     }
   }

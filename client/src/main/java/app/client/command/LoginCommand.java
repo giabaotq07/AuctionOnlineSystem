@@ -14,7 +14,8 @@ public class LoginCommand extends Command {
       if (response != null && response.user() != null) {
         UserManager.getInstance().setCurrentUser(DtoMapper.toUser(response.user()));
       }
+      notifyUpdate();
     }
-    notify(packet == null ? "" : packet.getMessage());
+    notifyMessage(packet == null ? "" : packet.getMessage());
   }
 }

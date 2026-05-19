@@ -16,7 +16,8 @@ public class FetchAuctionDetailCommand extends Command {
         AuctionStore.getInstance().addAuction(DtoMapper.toAuction(response.detail().auction()));
         ItemStore.getInstance().addItem(DtoMapper.toItem(response.detail().item()));
       }
+      notifyUpdate();
     }
-    notify(packet == null ? "" : packet.getMessage());
+    notifyMessage(packet == null ? "" : packet.getMessage());
   }
 }

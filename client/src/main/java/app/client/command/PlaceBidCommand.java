@@ -14,7 +14,8 @@ public class PlaceBidCommand extends Command {
         AuctionStore.getInstance()
             .updateBid(response.auctionId(), response.highestBidAmount(), response.bidderId());
       }
+      notifyUpdate();
     }
-    notify(packet == null ? "" : packet.getMessage());
+    notifyMessage(packet == null ? "" : packet.getMessage());
   }
 }

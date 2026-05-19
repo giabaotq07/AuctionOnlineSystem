@@ -50,7 +50,7 @@ public class LoginController implements Cleanable {
             + "-fx-background-size: cover;"
             + "-fx-background-position: center center;"
             + "-fx-background-repeat: no-repeat;");
-    notifications.addListener(loginListener);
+    notifications.addMessageListener(loginListener);
   }
 
   /** Member. */
@@ -137,7 +137,7 @@ public class LoginController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(loginListener);
+    notifications.removeMessageListener(loginListener);
     setLoginLoading(false);
   }
 }

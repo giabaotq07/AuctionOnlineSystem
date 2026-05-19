@@ -6,13 +6,10 @@ import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketRes;
 import app.common.models.User;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -44,18 +41,14 @@ public class MyHistoryController implements Cleanable {
   private boolean reloadLoading;
   private Button reloadButton;
   private Runnable stopReloadLoading = () -> {};
-  private final Consumer<PacketRes> summariesListener =
-      packet -> {
-        if (packet == null || packet.getType() != PacketType.FETCH_AUCTION_SUMMARIES) {
-          return;
-        }
-        Platform.runLater(
-            () -> {
-              requestHistory();
-              rebuildUi();
-              setReloadLoading(false);
-            });
-      };
+  private final Runnable summariesListener =
+      () ->
+          Platform.runLater(
+              () -> {
+                requestHistory();
+                rebuildUi();
+                setReloadLoading(false);
+              });
 
   /** Member. */
   @FXML
@@ -65,7 +58,7 @@ public class MyHistoryController implements Cleanable {
     typeFilterComboBox.setValue("ALL");
 
     typeFilterComboBox.setOnAction(e -> rebuildUi());
-    notifications.addListener(summariesListener);
+    notifications.addUpdateListener(summariesListener);
 
     requestHistory();
     rebuildUi();
@@ -206,7 +199,7 @@ public class MyHistoryController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(summariesListener);
+    notifications.removeUpdateListener(summariesListener);
     setReloadLoading(false);
   }
 }

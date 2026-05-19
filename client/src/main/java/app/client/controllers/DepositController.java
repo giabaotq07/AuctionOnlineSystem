@@ -40,7 +40,7 @@ public class DepositController implements Cleanable {
   /** Member. */
   @FXML
   public void initialize() {
-    notifications.addListener(walletListener);
+    notifications.addMessageListener(walletListener);
     updateBalanceLabels(UserManager.getInstance().getCurrentUser());
   }
 
@@ -161,7 +161,7 @@ public class DepositController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(walletListener);
+    notifications.removeMessageListener(walletListener);
     setDepositLoading(false);
   }
 }

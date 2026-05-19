@@ -38,7 +38,7 @@ public class AuctionController implements Cleanable {
   /** Member. */
   @FXML
   public void initialize() {
-    notifications.addListener(createAuctionListener);
+    notifications.addMessageListener(createAuctionListener);
     if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
@@ -132,7 +132,7 @@ public class AuctionController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(createAuctionListener);
+    notifications.removeMessageListener(createAuctionListener);
     setCreateLoading(false);
   }
 }

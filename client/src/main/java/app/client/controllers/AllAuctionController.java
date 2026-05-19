@@ -12,7 +12,6 @@ import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -42,8 +41,8 @@ public class AllAuctionController implements Cleanable {
   private boolean reloadLoading;
   private Button reloadButton;
   private Runnable stopReloadLoading = () -> {};
-  private final Consumer<String> summariesListener =
-      message ->
+  private final Runnable summariesListener =
+      () ->
           Platform.runLater(
               () -> {
                 requestAuctions();
@@ -59,7 +58,7 @@ public class AllAuctionController implements Cleanable {
     typeFilterComboBox.setValue("ALL");
 
     typeFilterComboBox.setOnAction(e -> rebuildUi());
-    notifications.addListener(summariesListener);
+    notifications.addUpdateListener(summariesListener);
 
     requestAuctions();
     rebuildUi();
@@ -195,7 +194,7 @@ public class AllAuctionController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(summariesListener);
+    notifications.removeUpdateListener(summariesListener);
     setReloadLoading(false);
   }
 }

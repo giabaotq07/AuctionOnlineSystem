@@ -10,16 +10,13 @@ import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketRes;
 import app.common.models.User;
 import app.common.models.Wallet;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -60,17 +57,13 @@ public class FirstScene implements Cleanable {
   private boolean reloadLoading;
   private Button reloadButton;
   private Runnable stopReloadLoading = () -> {};
-  private final Consumer<PacketRes> summariesListener =
-      packet -> {
-        if (packet == null || packet.getType() != PacketType.FETCH_AUCTION_SUMMARIES) {
-          return;
-        }
-        Platform.runLater(
-            () -> {
-              loadInitialData();
-              setReloadLoading(false);
-            });
-      };
+  private final Runnable summariesListener =
+      () ->
+          Platform.runLater(
+              () -> {
+                loadInitialData();
+                setReloadLoading(false);
+              });
 
   /** Member. */
   @FXML
@@ -82,7 +75,7 @@ public class FirstScene implements Cleanable {
     setupSearch();
     setupScrollPanes();
     setupWalletSection();
-    notifications.addListener(summariesListener);
+    notifications.addUpdateListener(summariesListener);
     loadInitialData();
     logger.debug("FirstScene initialized");
   }
@@ -360,7 +353,7 @@ public class FirstScene implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeListener(summariesListener);
+    notifications.removeUpdateListener(summariesListener);
     setReloadLoading(false);
     for (Timeline timeline : timelines) {
       timeline.stop();
