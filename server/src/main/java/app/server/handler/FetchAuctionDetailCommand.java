@@ -5,12 +5,10 @@ import app.common.dto.AuctionDetailResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
-import app.common.models.Auction;
-import app.common.models.Item;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.server.service.AuctionService;
-import app.server.service.ItemService;
+import app.server.service.AuctionSnapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +16,10 @@ import org.slf4j.LoggerFactory;
 public class FetchAuctionDetailCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionDetailCommand.class);
   private final AuctionService auctionService;
-  private final ItemService itemService;
 
   /** FetchAuctionDetailCommand. */
-  public FetchAuctionDetailCommand(AuctionService auctionService, ItemService itemService) {
+  public FetchAuctionDetailCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
-    this.itemService = itemService;
   }
 
   @Override
@@ -40,13 +36,15 @@ public class FetchAuctionDetailCommand implements Command {
             PacketRes.error(PacketType.FETCH_AUCTION_DETAIL, "Invalid auction id"));
         return;
       }
-      Auction auction = auctionService.getAuctionById(request.auctionId());
-      Item item =
-          itemService
-              .getById(auction.getItemId())
-              .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+      if (auctionService.isAuctionVersionCurrent(request.auctionId(), request.knownVersion())) {
+        AuctionDetailResponse response =
+            AuctionDetailResponse.notModified(request.auctionId(), request.knownVersion());
+        clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
+        return;
+      }
+      AuctionSnapshot auction = auctionService.getAuction(request.auctionId());
       AuctionDetailResponse response =
-          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction, item));
+          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction.auction(), auction.item()));
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction detail failed: {}", e.getMessage());

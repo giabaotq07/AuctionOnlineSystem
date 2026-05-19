@@ -1,11 +1,11 @@
 package app.server.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
-import app.common.enums.ItemStatus;
 import app.common.enums.ItemType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
@@ -43,7 +43,7 @@ class ItemServiceTest extends BaseDAOTest {
     assertTrue(saved.getId() > 0);
     Item found = itemService.getById(saved.getId()).orElseThrow();
     assertEquals("Laptop", found.getName());
-    assertEquals(ItemStatus.AVAILABLE, found.getStatus());
+    assertFalse(found.isDeleted());
   }
 
   @Test
@@ -71,23 +71,13 @@ class ItemServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void updateStatus_shouldPersistStatus() {
-    Item saved = itemService.add(TestFixtures.item(seller.getId(), "Painting", ItemType.ART));
-
-    itemService.updateStatus(saved.getId(), ItemStatus.SOLD);
-
-    Item found = itemDAO.findById(saved.getId()).orElseThrow();
-    assertEquals(ItemStatus.SOLD, found.getStatus());
-  }
-
-  @Test
   void delete_shouldMarkItemAsDeleted() {
     Item saved = itemService.add(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
 
     itemService.delete(saved.getId());
 
     Item found = itemDAO.findById(saved.getId()).orElseThrow();
-    assertEquals(ItemStatus.DELETE, found.getStatus());
+    assertTrue(found.isDeleted());
   }
 
   @Test

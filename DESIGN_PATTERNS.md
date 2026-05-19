@@ -12,7 +12,7 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 * `app.observer.Client`: Mỗi client JavaFX dùng một instance socket chính để kết nối server và quản lý listener.
 * `app.observer.Server`: Quản lý server socket, service graph và thread pool thông qua `Server.getInstance()`.
 * `app.models.DataStore`: Lưu state cục bộ phía client như user hiện tại, danh sách phiên đấu giá và phiên đang xem.
-* `app.client.controllers.manager.NavigationManager`: Quản lý `primaryStage`, controller hiện tại và điều hướng màn hình JavaFX.
+* `app.client.manager.NavigationManager`: Quản lý `primaryStage`, controller hiện tại và điều hướng màn hình JavaFX.
 
 **Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý một instance có state.
 

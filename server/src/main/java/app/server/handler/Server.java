@@ -1,12 +1,8 @@
 package app.server.handler;
 
 import app.common.dto.AuctionSummariesResponse;
-import app.common.dto.AuctionSummary;
 import app.common.enums.PacketType;
-import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
-import app.common.models.Auction;
-import app.common.models.Item;
 import app.common.models.PacketRes;
 import app.server.dao.*;
 import app.server.dao.impl.*;
@@ -17,7 +13,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
@@ -101,21 +96,15 @@ public class Server {
 
   private void broadcastAuctionList() {
     try {
-      List<AuctionSummary> summaries =
-          auctionService.getAllAuctions().stream().map(this::toSummary).toList();
-      var response = new AuctionSummariesResponse(summaries);
+      var response =
+          new AuctionSummariesResponse(
+              auctionService.getAuctions().stream()
+                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+                  .toList());
       broadcast(PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);
     }
-  }
-
-  private AuctionSummary toSummary(Auction auction) {
-    Item item =
-        itemService
-            .getById(auction.getItemId())
-            .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
-    return DtoMapper.toAuctionSummary(auction, item);
   }
 
   /** start. */

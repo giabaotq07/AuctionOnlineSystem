@@ -1,6 +1,5 @@
 package app.server.dao.impl;
 
-import app.common.enums.ItemStatus;
 import app.common.enums.ItemType;
 import app.common.exception.DatabaseException;
 import app.common.models.Item;
@@ -25,7 +24,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   private static final String BASE_SELECT =
       """
           SELECT id, name, seller_id, description, category,
-                 starting_price, step_price, status
+                 starting_price, step_price, deleted
           FROM items
           """;
 
@@ -39,7 +38,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
             rs.getLong("starting_price"),
             rs.getLong("step_price"),
             ItemType.valueOf(rs.getString("category")));
-    item.setStatus(ItemStatus.valueOf(rs.getString("status")));
+    item.setDeleted(rs.getBoolean("deleted"));
     return item;
   }
 
@@ -81,7 +80,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   @Override
   public List<Item> findAvailable() {
     return withConnection(
-        conn -> findList(conn, BASE_SELECT + "WHERE status = 'AVAILABLE' ORDER BY id DESC"),
+        conn -> findList(conn, BASE_SELECT + "WHERE deleted = FALSE ORDER BY id DESC"),
         "Lỗi kết nối khi tải danh sách item khả dụng.");
   }
 
@@ -95,9 +94,9 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
     String sql =
         """
         INSERT INTO items (
-            seller_id, name, description, category, starting_price, step_price, status
+            seller_id, name, description, category, starting_price, step_price
         )
-        VALUES (?, ?, ?, ?, ?, ?, 'AVAILABLE')
+        VALUES (?, ?, ?, ?, ?, ?)
         """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       setParameters(
@@ -133,7 +132,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         """
         UPDATE items
         SET name = ?, description = ?, starting_price = ?, step_price = ?, category = ?,
-            status = COALESCE(?, status)
+            deleted = ?
         WHERE id = ?
         """;
     executeUpdate(
@@ -144,7 +143,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         item.getStartingPrice(),
         item.getStepPrice(),
         item.getType().name(),
-        item.getStatus() == null ? null : item.getStatus().name(),
+        item.isDeleted(),
         item.getId());
   }
 

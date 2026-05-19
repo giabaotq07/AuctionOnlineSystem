@@ -23,11 +23,4 @@ public class BidValidator {
       throw new ServiceException("Giá đặt phải tối thiểu " + minimumRequired + " VNĐ.");
     }
   }
-
-  /** validateSelfBid. */
-  public void validateSelfBid(int userId, Integer currentWinnerId) {
-    if (currentWinnerId != null && currentWinnerId == userId) {
-      throw new ServiceException("Bạn đang là người giữ giá cao nhất.");
-    }
-  }
 }

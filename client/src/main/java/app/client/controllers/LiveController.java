@@ -1,11 +1,10 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.DataStore;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.AuctionNavigator;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionDetail;
-import app.common.dto.AuctionDetailRequest;
 import app.common.dto.AuctionDetailResponse;
 import app.common.dto.AuctionResultRequest;
 import app.common.dto.AuctionResultResponse;
@@ -16,7 +15,6 @@ import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.mapper.DtoMapper;
 import app.common.models.Auction;
 import app.common.models.PacketReq;
 import app.common.models.User;
@@ -114,26 +112,33 @@ public class LiveController implements Cleanable {
   }
 
   /** setAuction. */
-  public void setAuction(Auction auction) {
-    this.auction = auction;
-    try {
-      AuctionDetailRequest request = new AuctionDetailRequest(auction.getId());
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_DETAIL, request));
-    } catch (IOException e) {
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+  public void setAuction(AuctionDetail detail) {
+    if (detail == null || detail.auction() == null) {
+      return;
     }
+    auctionDetail = detail;
+    auction = detail.auction();
+    currentPrice = detail.currentPrice();
+    applyDetail(detail);
   }
 
   private void handleDetailResponse(AuctionDetailResponse response) {
     if (auction == null) {
       return;
     }
-    if (response == null
-        || response.detail() == null
-        || response.detail().auctionId() != auction.getId()) {
+    if (response == null) {
       return;
     }
-    auctionDetail = response.detail();
+    AuctionDetail detail = response.detail();
+    if (detail == null && response.notModified()) {
+      detail = AuctionNavigator.getInstance().getCachedDetail(response.auctionId());
+    }
+    if (detail == null || detail.auctionId() != auction.getId()) {
+      return;
+    }
+    AuctionNavigator.getInstance().cacheDetail(detail);
+    auctionDetail = detail;
+    auction = detail.auction();
     applyDetail(auctionDetail);
   }
 
@@ -158,12 +163,7 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Ví", message);
       return;
     }
-    if (response != null && response.user() != null) {
-      DataStore.getInstance().updateCurrentUser(response.user());
-      updateAvailableBalance(DtoMapper.toUser(response.user()));
-    } else {
-      updateAvailableBalance();
-    }
+    updateAvailableBalance();
   }
 
   private void updateAvailableBalance() {

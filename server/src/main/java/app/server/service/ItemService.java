@@ -1,7 +1,6 @@
 package app.server.service;
 
 import app.common.enums.AuctionStatus;
-import app.common.enums.ItemStatus;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Item;
@@ -49,25 +48,17 @@ public class ItemService {
         });
   }
 
-  /** updateStatus. */
-  public void updateStatus(int id, ItemStatus status) {
-    transactionManager.runInTransaction(
-        conn -> {
-          itemDAO
-              .findById(conn, id)
-              .map(
-                  item -> {
-                    item.setStatus(status);
-                    itemDAO.update(conn, item);
-                    return null;
-                  });
-          return null;
-        });
-  }
-
   /** delete. */
   public void delete(int id) {
-    updateStatus(id, ItemStatus.DELETE);
+    transactionManager.runWithoutResult(
+        conn ->
+            itemDAO
+                .findById(conn, id)
+                .ifPresent(
+                    item -> {
+                      item.setDeleted(true);
+                      itemDAO.update(conn, item);
+                    }));
   }
 
   /** getSellerItems. */
@@ -114,7 +105,7 @@ public class ItemService {
                   .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
           ensureManagePermission(stored, requesterId, requesterRole);
           ensureItemNotRunning(conn, itemId);
-          stored.setStatus(ItemStatus.DELETE);
+          stored.setDeleted(true);
           itemDAO.update(conn, stored);
           return stored;
         });

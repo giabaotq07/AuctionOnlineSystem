@@ -48,7 +48,6 @@ public class BidService {
           }
           bidValidator.validateAuctionState(auction);
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
-          bidValidator.validateSelfBid(userId, auction.getWinnerId());
           userDAO.lockRow(conn, userId);
           User bidder =
               userDAO

@@ -8,9 +8,7 @@ import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.server.service.AuctionService;
 import app.server.service.BidService;
-import app.server.service.ItemService;
 import app.server.service.UserService;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,18 +18,13 @@ public class PlaceBidCommand implements Command {
   private final BidService bidService;
   private final UserService userService;
   private final AuctionService auctionService;
-  private final ItemService itemService;
 
   /** PlaceBidCommand. */
   public PlaceBidCommand(
-      BidService bidService,
-      UserService userService,
-      AuctionService auctionService,
-      ItemService itemService) {
+      BidService bidService, UserService userService, AuctionService auctionService) {
     this.bidService = bidService;
     this.userService = userService;
     this.auctionService = auctionService;
-    this.itemService = itemService;
   }
 
   @Override
@@ -73,8 +66,8 @@ public class PlaceBidCommand implements Command {
       clientHandler.sendPacket(packetResponse);
       Server.broadcast(packetResponse, bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      broadcastAuctionSumList(clientHandler);
-      broadcastAuctionDetail(clientHandler, auctionId);
+      broadcastAuctionSumList();
+      broadcastAuctionDetail(auctionId);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
@@ -90,23 +83,24 @@ public class PlaceBidCommand implements Command {
     clientHandler.sendPacket(PacketRes.of(true, PacketType.WALLET_UPDATE, "OK", response));
   }
 
-  private void broadcastAuctionSumList(ClientHandler clientHandler) {
+  private void broadcastAuctionSumList() {
     try {
-      List<AuctionSummary> summaries =
-          auctionService.getAllAuctions().stream().map(this::toSummary).toList();
-      AuctionSummariesResponse response = new AuctionSummariesResponse(summaries);
+      AuctionSummariesResponse response =
+          new AuctionSummariesResponse(
+              auctionService.getAuctions().stream()
+                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+                  .toList());
       Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
     }
   }
 
-  private void broadcastAuctionDetail(ClientHandler clientHandler, int auctionId) {
+  private void broadcastAuctionDetail(int auctionId) {
     try {
-      Auction auction = auctionService.getAuctionById(auctionId);
-      Item item = requireItem(auction);
+      var auction = auctionService.getAuction(auctionId);
       AuctionDetailResponse response =
-          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction, item));
+          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction.auction(), auction.item()));
       Server.broadcast(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction detail", e);
@@ -115,15 +109,5 @@ public class PlaceBidCommand implements Command {
 
   private void sendError(ClientHandler clientHandler, String message) {
     clientHandler.sendPacket(PacketRes.error(PacketType.PLACE_BID, message));
-  }
-
-  private AuctionSummary toSummary(Auction auction) {
-    return DtoMapper.toAuctionSummary(auction, requireItem(auction));
-  }
-
-  private Item requireItem(Auction auction) {
-    return itemService
-        .getById(auction.getItemId())
-        .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
   }
 }

@@ -1,8 +1,7 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.DataStore;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.CreateAuctionRequest;
 import app.common.dto.CreateAuctionResponse;
@@ -32,7 +31,6 @@ public class AuctionController {
   /** Member. */
   @FXML
   public void initialize() {
-    DataStore.getInstance();
     if (Client.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
@@ -47,9 +45,6 @@ public class AuctionController {
             Platform.runLater(
                 () -> {
                   if (success && response != null) {
-                    if (response.auction() != null) {
-                      DataStore.getInstance().auctions.add(response.auction());
-                    }
                     AlertUtils.showInfo("OK", message);
                     if (createAuctionHandler != null) {
                       Client.getInstance()

@@ -9,8 +9,6 @@ import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.server.service.AuctionService;
-import app.server.service.ItemService;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +16,10 @@ import org.slf4j.LoggerFactory;
 public class CreateAuctionCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
-  private final ItemService itemService;
 
   /** CreateAuctionCommand. */
-  public CreateAuctionCommand(AuctionService auctionService, ItemService itemService) {
+  public CreateAuctionCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
-    this.itemService = itemService;
   }
 
   @Override
@@ -50,7 +46,12 @@ public class CreateAuctionCommand implements Command {
               request.durationMinutes(),
               user.getId(),
               user.getRole());
-      AuctionSummary summary = toSummary(auction);
+      AuctionSummary summary =
+          auctionService.getAuctions().stream()
+              .filter(candidate -> candidate.auctionId() == auction.getId())
+              .findFirst()
+              .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+              .orElseThrow(() -> new ServiceException("Không tìm thấy phiên vừa tạo."));
       CreateAuctionResponse response = new CreateAuctionResponse(summary);
       PacketRes packetRes =
           PacketRes.of(true, PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
@@ -73,23 +74,14 @@ public class CreateAuctionCommand implements Command {
 
   private void broadcastAuctionList() {
     try {
-      List<AuctionSummary> summaries = buildAuctionSummaries();
-      AuctionSummariesResponse response = new AuctionSummariesResponse(summaries);
+      AuctionSummariesResponse response =
+          new AuctionSummariesResponse(
+              auctionService.getAuctions().stream()
+                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+                  .toList());
       Server.broadcast(PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
     }
-  }
-
-  private List<AuctionSummary> buildAuctionSummaries() {
-    return auctionService.getAllAuctions().stream().map(this::toSummary).toList();
-  }
-
-  private AuctionSummary toSummary(Auction auction) {
-    Item item =
-        itemService
-            .getById(auction.getItemId())
-            .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
-    return DtoMapper.toAuctionSummary(auction, item);
   }
 }
