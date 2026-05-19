@@ -10,7 +10,7 @@ import app.common.dto.AuctionSummary;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,13 +25,12 @@ public final class AuctionNavigator {
 
   private final Client client = Client.getInstance();
   private final Map<Integer, AuctionDetail> detailCache = new ConcurrentHashMap<>();
-  private final PacketListener<AuctionDetailResponse> detailHandler;
   private Integer pendingAuctionId;
 
   private AuctionNavigator() {
-    detailHandler =
-        (response, success, message) ->
-            Platform.runLater(() -> handleDetailResponse(response, success, message));
+//    detailHandler =
+//        (response, success, message) ->
+//            Platform.runLater(() -> handleDetailResponse(response, success, message));
     //    client.subscribe(PacketType.FETCH_AUCTION_DETAIL, AuctionDetailResponse.class,
     // detailHandler);
   }

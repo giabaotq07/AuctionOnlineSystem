@@ -1,14 +1,10 @@
 package app.client;
 
 import app.client.command.*;
-import app.common.dto.*;
 import app.common.enums.PacketType;
 import app.common.exception.ConnectException;
-import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
-import app.common.models.User;
-import app.common.observer.PacketListener;
 import app.common.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
@@ -31,9 +27,6 @@ public class Client {
   private volatile boolean connected = false;
   private volatile boolean closed = true;
   private int retryCount = 0;
-
-  private final Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap =
-      new ConcurrentHashMap<>();
 
   private final Map<PacketType, Command> commands;
 

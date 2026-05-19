@@ -9,7 +9,6 @@ import app.common.dto.ChatResponse;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,7 +30,6 @@ public class MessController {
   @FXML private VBox chatBox;
   @FXML private ScrollPane scrollPane;
   private Client client;
-  private PacketListener<ChatResponse> chatHandler;
 
   /** Member. */
   @FXML
