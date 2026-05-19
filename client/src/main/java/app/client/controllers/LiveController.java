@@ -1,9 +1,9 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.store.AuctionStore;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
+import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
