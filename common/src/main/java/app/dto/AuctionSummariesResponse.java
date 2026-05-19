@@ -1,6 +1,0 @@
-package app.dto;
-
-import java.util.List;
-
-/** AuctionSummariesResponse. */
-public record AuctionSummariesResponse(List<AuctionSummary> auctions) implements Response {}

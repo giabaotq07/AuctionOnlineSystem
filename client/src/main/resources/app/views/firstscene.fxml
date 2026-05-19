@@ -6,7 +6,7 @@
             style="-fx-background-color: #0f1424;"
             xmlns="http://javafx.com/javafx/17.0.12"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="app.controllers.FirstScene">
+            fx:controller="app.client.controllers.FirstScene">
     <top>
         <VBox style="-fx-background-color: #11182d;">
             <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0"

@@ -19,7 +19,7 @@ package app {
   }
 }
 
-package app.controllers {
+package app.client.controllers {
   class AuctionController {
     +handleAdd(event: ActionEvent): void
     +handleBack(event: ActionEvent): void
@@ -236,7 +236,7 @@ package app.controllers {
   }
 }
 
-package app.controllers.manager {
+package app.client.controllers.manager {
   class NavigationManager {
     ~NavigationManager(): private
     +getInstance()
@@ -249,7 +249,7 @@ package app.controllers.manager {
   }
 }
 
-package app.dao {
+package app.server.dao {
   interface AuctionDAO {
     ~delete(id: int): boolean
     ~findAll(): List
@@ -334,7 +334,7 @@ package app.dao {
   }
 }
 
-package app.dao.impl {
+package app.server.dao.impl {
   class MySqlAuctionDAO {
     ~MySqlAuctionDAO(): public
     +delete(id: int): boolean
@@ -633,7 +633,7 @@ package app.data {
   }
 }
 
-package app.database {
+package app.server.database {
   class DatabaseConfig {
     ~DatabaseConfig(url: String, user: String, password: String): private
     +getPassword(): String
@@ -1060,7 +1060,7 @@ package app.models {
   }
 }
 
-package app.network {
+package app.observer {
   class CancelAuctionCommand {
     ~CancelAuctionCommand(auctionService: AuctionService): public
     +execute(clientHandler: ClientHandler, packet: PacketReq): void
@@ -1263,7 +1263,7 @@ package app.network {
   }
 }
 
-package app.service {
+package app.server.service {
   class AntiSnipeService {
     ~AntiSnipeService(): public
     +apply(auction: Auction): void
@@ -1370,7 +1370,7 @@ package app.service {
   }
 }
 
-package app.utils {
+package app.server.utils {
   class AlertUtils {
     +showError(header: String, content: String): void
     +showInfo(header: String, content: String): void

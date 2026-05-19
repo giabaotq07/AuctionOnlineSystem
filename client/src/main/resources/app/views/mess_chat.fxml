@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.controllers.MessController">
+<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.MessController">
    <!-- Header: Giống trang đấu giá -->
    <top>
       <VBox style="-fx-background-color: #161b26; -fx-border-color: #2d3748; -fx-border-width: 0 0 1 0;">

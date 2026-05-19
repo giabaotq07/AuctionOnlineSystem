@@ -3,7 +3,11 @@ package app.models;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import app.enums.UserRole;
+import app.common.enums.UserRole;
+import app.common.models.Account;
+import app.common.models.User;
+import app.common.models.UserFactory;
+import app.common.models.Wallet;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
