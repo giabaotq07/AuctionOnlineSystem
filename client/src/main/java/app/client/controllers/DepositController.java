@@ -1,8 +1,7 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.DataStore;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.DepositRequest;
 import app.common.dto.WalletUpdateResponse;
@@ -49,9 +48,6 @@ public class DepositController implements Cleanable {
                     pendingDepositAmount = null;
                     AlertUtils.showError("Ví", message);
                     return;
-                  }
-                  if (response != null && response.user() != null) {
-                    DataStore.getInstance().updateCurrentUser(response.user());
                   }
                   updateBalanceLabels(client.getCurrentUser());
                   if (pendingDepositAmount != null) {

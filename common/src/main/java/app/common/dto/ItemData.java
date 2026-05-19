@@ -1,6 +1,5 @@
 package app.common.dto;
 
-import app.common.enums.ItemStatus;
 import app.common.enums.ItemType;
 
 /** ItemData. */
@@ -12,4 +11,4 @@ public record ItemData(
     long startingPrice,
     long stepPrice,
     ItemType type,
-    ItemStatus status) {}
+    boolean deleted) {}

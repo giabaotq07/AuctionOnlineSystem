@@ -1,8 +1,8 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.DataStore;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.AuctionNavigator;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.AuctionSummary;
@@ -11,8 +11,6 @@ import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.mapper.DtoMapper;
-import app.common.models.Auction;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
@@ -97,7 +95,7 @@ public class FirstScene implements Cleanable {
         .addListener(
             (obs, oldVal, newVal) -> {
               if (newVal != null) {
-                openAuction(toAuction(newVal));
+                AuctionNavigator.getInstance().open(newVal);
               }
             });
   }
@@ -147,15 +145,8 @@ public class FirstScene implements Cleanable {
                     return;
                   }
                   AuctionSummary summary = response.auction();
-                  Auction auction = toAuction(summary);
-                  boolean exists =
-                      summaries.stream().anyMatch(s -> s.auctionId() == auction.getId());
-                  if (exists) {
-                    return;
-                  }
-                  summaries.add(summary);
-                  addAuctionCard(summary);
-                  updateListView();
+                  upsertSummary(summary);
+                  rebuildUi();
                 });
     fetchAuctionsHandler =
         (response, success, message) ->
@@ -179,7 +170,6 @@ public class FirstScene implements Cleanable {
 
   private void loadInitialData() {
     summaries.clear();
-    summaries.addAll(DataStore.getInstance().auctions);
     rebuildUi();
     try {
       client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
@@ -294,53 +284,23 @@ public class FirstScene implements Cleanable {
         new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> openAuction(toAuction(summary)));
+    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
 
-  private Auction toAuction(AuctionSummary summary) {
-    return new Auction(
-        summary.auctionId(),
-        summary.itemId(),
-        summary.sellerId(),
-        summary.winnerId(),
-        summary.status(),
-        summary.startTime(),
-        summary.endTime(),
-        summary.highestBid(),
-        summary.extendedCount(),
-        summary.version(),
-        null,
-        null);
-  }
-
-  private void openAuction(Auction auction) {
-    try {
-      if (!client.isConnected()) {
-        AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
-        return;
-      }
-      if (client.getCurrentUser() == null) {
-        AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
-        NavigationManager.getInstance().navigateTo(View.LOGIN);
-        return;
-      }
-      NavigationManager.getInstance()
-          .navigateTo(
-              View.LIVE,
-              controller -> {
-                if (controller instanceof LiveController lc) {
-                  lc.setAuction(auction);
-                }
-              });
-    } catch (Exception e) {
-      logger.error("Failed to open auction", e);
-    }
-  }
-
   private void setupWalletSection() {
     updateBalanceLabel();
+  }
+
+  private void upsertSummary(AuctionSummary summary) {
+    for (int i = 0; i < summaries.size(); i++) {
+      if (summaries.get(i).auctionId() == summary.auctionId()) {
+        summaries.set(i, summary);
+        return;
+      }
+    }
+    summaries.add(summary);
   }
 
   private void setupWalletListener() {
@@ -352,12 +312,7 @@ public class FirstScene implements Cleanable {
                     AlertUtils.showError("Ví", message);
                     return;
                   }
-                  if (response != null && response.user() != null) {
-                    DataStore.getInstance().updateCurrentUser(response.user());
-                    updateBalanceLabel(DtoMapper.toUser(response.user()));
-                  } else {
-                    updateBalanceLabel();
-                  }
+                  updateBalanceLabel();
                 });
     client.subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
   }

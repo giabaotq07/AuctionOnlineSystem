@@ -1,14 +1,14 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.AuctionNavigator;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionHistoryResponse;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.Auction;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.observer.PacketListener;
@@ -120,8 +120,6 @@ public class MyHistoryController implements Cleanable {
 
   private VBox createAuctionCard(AuctionSummary summary) {
 
-    final Auction auction = toAuction(summary);
-
     VBox vbox = new VBox();
 
     vbox.setPrefWidth(CARD_WIDTH);
@@ -149,14 +147,6 @@ public class MyHistoryController implements Cleanable {
 
     imagePane.getChildren().add(imgLabel);
 
-    Label badge =
-        new Label(currentUser.getId() == auction.getSellerId() ? "✪ ĐỒ CỦA TÔI" : "✔ ĐÃ THAM GIA");
-
-    badge.setStyle(
-        currentUser.getId() == auction.getSellerId()
-            ? "-fx-text-fill: #00ff88; -fx-font-weight: bold;"
-            : "-fx-text-fill: #4caf50; -fx-font-weight: bold;");
-
     Label titleLabel = new Label(summary.itemName());
 
     titleLabel.setWrapText(true);
@@ -168,59 +158,23 @@ public class MyHistoryController implements Cleanable {
 
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
 
-    Label timeLabel = new Label("Kết thúc: " + auction.getEndTime());
+    Label timeLabel = new Label("Kết thúc: " + summary.endTime());
 
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
 
     Button btnDetail =
-        new Button(auction.getStatus() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+        new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
 
     btnDetail.setMaxWidth(Double.MAX_VALUE);
 
     btnDetail.setStyle(
         "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
 
-    btnDetail.setOnAction(e -> handleGoToLive(auction));
+    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
 
-    vbox.getChildren().addAll(imagePane, badge, titleLabel, priceLabel, timeLabel, btnDetail);
+    vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
 
     return vbox;
-  }
-
-  private Auction toAuction(AuctionSummary summary) {
-    return new Auction(
-        summary.auctionId(),
-        summary.itemId(),
-        summary.sellerId(),
-        summary.winnerId(),
-        summary.status(),
-        summary.startTime(),
-        summary.endTime(),
-        summary.highestBid(),
-        summary.extendedCount(),
-        summary.version(),
-        null,
-        null);
-  }
-
-  private void handleGoToLive(Auction auction) {
-
-    try {
-
-      NavigationManager.getInstance()
-          .navigateTo(
-              View.LIVE,
-              c -> {
-                if (c instanceof LiveController) {
-
-                  ((LiveController) c).setAuction(auction);
-                }
-              });
-
-    } catch (Exception e) {
-
-      e.printStackTrace();
-    }
   }
 
   /** Member. */

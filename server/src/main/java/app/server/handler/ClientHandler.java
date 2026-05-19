@@ -50,16 +50,11 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.CHAT, new ChatCommand());
     registry.put(PacketType.LOGIN, new LoginCommand(userService));
     registry.put(PacketType.REGISTER, new RegisterCommand(userService));
-    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, itemService));
+    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
     registry.put(
-        PacketType.FETCH_AUCTION_SUMMARIES,
-        new FetchAuctionSummariesCommand(auctionService, itemService));
-    registry.put(
-        PacketType.FETCH_AUCTION_HISTORY,
-        new FetchAuctionHistoryCommand(auctionService, itemService));
-    registry.put(
-        PacketType.FETCH_AUCTION_DETAIL,
-        new FetchAuctionDetailCommand(auctionService, itemService));
+        PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionService));
+    registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionService));
+    registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
     registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand(auctionService));
     registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
     registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand(itemService));
@@ -67,8 +62,7 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.FETCH_USER_LIST, new FetchUserListCommand(userService));
     registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService));
     registry.put(
-        PacketType.PLACE_BID,
-        new PlaceBidCommand(bidService, userService, auctionService, itemService));
+        PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
     registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
     return registry;

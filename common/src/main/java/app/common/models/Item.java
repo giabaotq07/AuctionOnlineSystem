@@ -1,6 +1,5 @@
 package app.common.models;
 
-import app.common.enums.ItemStatus;
 import app.common.enums.ItemType;
 
 /** Item. */
@@ -11,7 +10,7 @@ public abstract class Item extends Entity {
   protected long startingPrice;
   protected long stepPrice;
   protected ItemType type;
-  protected ItemStatus status;
+  protected boolean deleted;
 
   /** Item. */
   public Item(
@@ -90,12 +89,12 @@ public abstract class Item extends Entity {
     this.type = type;
   }
 
-  public ItemStatus getStatus() {
-    return status;
+  public boolean isDeleted() {
+    return deleted;
   }
 
-  public void setStatus(ItemStatus status) {
-    this.status = status;
+  public void setDeleted(boolean deleted) {
+    this.deleted = deleted;
   }
 
   /** printInfo. */

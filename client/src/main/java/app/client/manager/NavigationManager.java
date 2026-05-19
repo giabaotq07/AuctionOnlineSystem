@@ -1,4 +1,4 @@
-package app.client.controllers.manager;
+package app.client.manager;
 
 import app.client.controllers.Cleanable;
 import app.common.enums.View;
@@ -37,7 +37,6 @@ public class NavigationManager {
   /** navigateTo. */
   public void navigateTo(View view, Consumer<Object> controllerCallback) {
     try {
-      Thread.sleep(500);
       if (currentController instanceof Cleanable cleanable) {
         cleanable.cleanup();
       }
@@ -57,8 +56,6 @@ public class NavigationManager {
     } catch (IOException e) {
       logger.warn("Lỗi nghiêm trọng: Không thể load màn hình " + view.name());
       e.printStackTrace();
-    } catch (InterruptedException e) {
-      logger.warn("Đã xảy ra lỗi khi chờ đợi: " + e.getMessage());
     }
   }
 }

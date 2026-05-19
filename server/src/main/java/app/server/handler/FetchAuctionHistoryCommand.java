@@ -1,14 +1,10 @@
 package app.server.handler;
 
 import app.common.dto.AuctionHistoryResponse;
-import app.common.dto.AuctionSummary;
 import app.common.enums.PacketType;
-import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.server.service.AuctionService;
-import app.server.service.ItemService;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +12,10 @@ import org.slf4j.LoggerFactory;
 public class FetchAuctionHistoryCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionHistoryCommand.class);
   private final AuctionService auctionService;
-  private final ItemService itemService;
 
   /** FetchAuctionHistoryCommand. */
-  public FetchAuctionHistoryCommand(AuctionService auctionService, ItemService itemService) {
+  public FetchAuctionHistoryCommand(AuctionService auctionService) {
     this.auctionService = auctionService;
-    this.itemService = itemService;
   }
 
   @Override
@@ -35,22 +29,16 @@ public class FetchAuctionHistoryCommand implements Command {
       User user = clientHandler.getUser();
       // KHÔNG trust userId từ client
       int userId = user.getId();
-      List<AuctionSummary> summaries =
-          auctionService.getHistoryAuctions(userId).stream().map(this::toSummary).toList();
-      AuctionHistoryResponse response = new AuctionHistoryResponse(summaries);
+      AuctionHistoryResponse response =
+          new AuctionHistoryResponse(
+              auctionService.getHistoryAuctions(userId).stream()
+                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
+                  .toList());
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_HISTORY, response));
     } catch (Exception e) {
       logger.error("Failed to fetch history", e);
       clientHandler.sendPacket(
           PacketRes.error(PacketType.FETCH_AUCTION_HISTORY, "Không thể tải lịch sử đấu giá"));
     }
-  }
-
-  private AuctionSummary toSummary(Auction auction) {
-    Item item =
-        itemService
-            .getById(auction.getItemId())
-            .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
-    return DtoMapper.toAuctionSummary(auction, item);
   }
 }

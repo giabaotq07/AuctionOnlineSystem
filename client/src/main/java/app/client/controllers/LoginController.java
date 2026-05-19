@@ -1,16 +1,13 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.DataStore;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.LoginRequest;
 import app.common.dto.LoginResponse;
 import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
-import app.common.models.User;
 import app.common.observer.PacketListener;
 import java.io.IOException;
 import java.util.Objects;
@@ -54,9 +51,7 @@ public class LoginController {
                 () -> {
                   loginButton.setDisable(false);
                   if (success && response != null && response.user() != null) {
-                    User user = DtoMapper.toUser(response.user());
-                    Client.getInstance().setCurrentUser(user);
-                    DataStore.getInstance().updateCurrentUser(response.user());
+                    Client.getInstance().updateCurrentUser(response.user());
                     switchToUi();
                   } else {
                     AlertUtils.showError("Đăng nhập thất bại", message);
@@ -91,7 +86,6 @@ public class LoginController {
     if (loginHandler != null) {
       Client.getInstance().unsubscribe(PacketType.LOGIN, loginHandler);
     }
-    DataStore.getInstance();
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 

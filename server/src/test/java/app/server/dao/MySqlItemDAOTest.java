@@ -1,10 +1,10 @@
 package app.server.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
-import app.common.enums.ItemStatus;
 import app.common.enums.ItemType;
 import app.common.enums.UserRole;
 import app.common.models.Item;
@@ -27,7 +27,7 @@ class MySqlItemDAOTest extends BaseDAOTest {
   }
 
   @Test
-  void save_shouldPersistItemWithAvailableStatus() {
+  void save_shouldPersistNotDeletedItem() {
     Item saved = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
 
     assertTrue(saved.getId() > 0);
@@ -35,7 +35,7 @@ class MySqlItemDAOTest extends BaseDAOTest {
     assertEquals("Laptop", found.getName());
     assertEquals(seller.getId(), found.getSellerId());
     assertEquals(ItemType.ELECTRONICS, found.getType());
-    assertEquals(ItemStatus.AVAILABLE, found.getStatus());
+    assertFalse(found.isDeleted());
   }
 
   @Test
@@ -56,7 +56,7 @@ class MySqlItemDAOTest extends BaseDAOTest {
   void findByCategoryAndAvailable_shouldFilterItems() {
     Item phone = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
     Item painting = itemDAO.save(TestFixtures.item(seller.getId(), "Painting", ItemType.ART));
-    painting.setStatus(ItemStatus.SOLD);
+    painting.setDeleted(true);
     itemDAO.update(painting);
 
     var electronics = itemDAO.findByCategory(ItemType.ELECTRONICS);
@@ -69,14 +69,14 @@ class MySqlItemDAOTest extends BaseDAOTest {
   }
 
   @Test
-  void update_shouldPersistEditableFieldsAndStatus() {
+  void update_shouldPersistEditableFieldsAndDeletedFlag() {
     Item saved = itemDAO.save(TestFixtures.item(seller.getId(), "Old name", ItemType.ELECTRONICS));
     saved.setName("New name");
     saved.setDescription("Updated description");
     saved.setStartingPrice(2000L);
     saved.setStepPrice(200L);
     saved.setType(ItemType.VEHICLE);
-    saved.setStatus(ItemStatus.UNDER_AUCTION);
+    saved.setDeleted(true);
 
     itemDAO.update(saved);
 
@@ -86,6 +86,6 @@ class MySqlItemDAOTest extends BaseDAOTest {
     assertEquals(2000L, found.getStartingPrice());
     assertEquals(200L, found.getStepPrice());
     assertEquals(ItemType.VEHICLE, found.getType());
-    assertEquals(ItemStatus.UNDER_AUCTION, found.getStatus());
+    assertTrue(found.isDeleted());
   }
 }

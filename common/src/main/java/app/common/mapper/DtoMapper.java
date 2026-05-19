@@ -29,37 +29,23 @@ public final class DtoMapper {
         item.getStartingPrice(),
         item.getStepPrice(),
         item.getType(),
-        item.getStatus());
+        item.isDeleted());
   }
 
   /** toAuctionSummary. */
   public static AuctionSummary toAuctionSummary(Auction auction, Item item) {
     return new AuctionSummary(
         auction.getId(),
-        auction.getItemId(),
-        auction.getSellerId(),
-        auction.getWinnerId(),
-        auction.getStatus(),
-        auction.getStartTime(),
-        auction.getEndTime(),
-        auction.getHighestBid(),
-        auction.getExtendedCount(),
-        auction.getVersion(),
         item.getName(),
-        currentPrice(auction, item));
+        currentPrice(auction, item),
+        auction.getEndTime(),
+        auction.getStatus(),
+        auction.getVersion());
   }
 
   /** toAuctionDetail. */
   public static AuctionDetail toAuctionDetail(Auction auction, Item item) {
-    return new AuctionDetail(
-        auction.getId(),
-        item.getName(),
-        item.getDescription(),
-        item.getStartingPrice(),
-        item.getStepPrice(),
-        currentPrice(auction, item),
-        auction.getEndTime(),
-        auction.getVersion());
+    return new AuctionDetail(auction, toItemData(item), currentPrice(auction, item));
   }
 
   /** toAuctionResultResponse. */

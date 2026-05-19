@@ -1,7 +1,7 @@
 package app.client.controllers;
 
 import app.client.Client;
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.enums.View;
 import app.common.models.User;

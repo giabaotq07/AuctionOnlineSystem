@@ -70,6 +70,21 @@ class BidServiceTest extends BaseDAOTest {
   }
 
   @Test
+  void placeBid_shouldAllowHighestBidderToBidAgain() {
+    Auction auction = runningAuction(1000L, LocalDateTime.now().plusMinutes(10));
+
+    bidService.placeBid(auction.getId(), bidder.getId(), 1200L);
+    bidService.placeBid(auction.getId(), bidder.getId(), 1500L);
+
+    Auction updated = auctionDAO.findById(auction.getId()).orElseThrow();
+    var highest = bidDAO.findHighestBid(auction.getId()).orElseThrow();
+    assertEquals(1500L, updated.getHighestBid());
+    assertEquals(bidder.getId(), updated.getWinnerId());
+    assertEquals(1500L, highest.getAmount());
+    assertEquals(2, bidDAO.findByAuction(auction.getId()).size());
+  }
+
+  @Test
   void placeBid_shouldRejectBidBelowMinimumAndRollback() {
     Auction auction = runningAuction(1000L, LocalDateTime.now().plusMinutes(10));
 

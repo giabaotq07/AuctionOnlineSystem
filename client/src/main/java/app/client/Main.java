@@ -1,6 +1,6 @@
 package app.client;
 
-import app.client.controllers.manager.NavigationManager;
+import app.client.manager.NavigationManager;
 import atlantafx.base.theme.PrimerDark;
 import java.io.IOException;
 import java.util.Objects;

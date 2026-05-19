@@ -14,7 +14,7 @@ Tài liệu này tổng hợp các mẫu thiết kế và mẫu kiến trúc đa
 * `app.observer.Client`: Mỗi client JavaFX dùng một instance socket duy nhất để kết nối server, gửi request và quản lý danh sách listener. Dùng double-checked locking trong `getInstance()`.
 * `app.observer.Server`: Server socket, service graph và thread pool được khởi tạo qua `Server.getInstance()`, tránh mở nhiều server cùng port `5000`.
 * `app.models.DataStore`: Lưu state cục bộ phía client như user hiện tại, danh sách phiên đấu giá và phiên đang xem. Dùng `getInstance()` và đăng ký listener để đồng bộ dữ liệu.
-* `app.client.controllers.manager.NavigationManager`: Singleton eager initialization, giữ `primaryStage` và controller hiện tại để điều hướng màn hình JavaFX.
+* `app.client.manager.NavigationManager`: Singleton eager initialization, giữ `primaryStage` và controller hiện tại để điều hướng màn hình JavaFX.
 
 **Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý một instance có state.
 

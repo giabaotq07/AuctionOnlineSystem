@@ -24,11 +24,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** AuctionService. */
 public class AuctionService {
-  private record CacheSnapshot(List<Auction> data, boolean loaded) {}
-
-  private volatile CacheSnapshot snapshot = new CacheSnapshot(List.of(), false);
+  private volatile List<AuctionSnapshot> snapshotCache;
   private final AuctionDAO auctionDAO;
   private final BidDAO bidDAO;
   private final ItemDAO itemDAO;
@@ -37,7 +34,6 @@ public class AuctionService {
   private final Logger logger = LoggerFactory.getLogger(AuctionService.class);
   private final Clock clock;
 
-  /** AuctionService. */
   public AuctionService(
       AuctionDAO auctionDAO,
       BidDAO bidDAO,
@@ -52,35 +48,6 @@ public class AuctionService {
     this.clock = Clock.systemDefaultZone();
   }
 
-  /** createAuction. */
-  public Auction createAuction(Auction auction) {
-    validateAuctionTime(auction);
-    Auction saved = transactionManager.runInTransaction(conn -> auctionDAO.save(conn, auction));
-    invalidateCache();
-    return saved;
-  }
-
-  /** createAndStartAuction. */
-  public Auction createAndStartAuction(int itemId, int sellerId, long startingPrice, int minutes) {
-    Auction saved =
-        transactionManager.runInTransaction(
-            conn -> {
-              Auction auction =
-                  new Auction(
-                      itemId,
-                      sellerId,
-                      LocalDateTime.now(clock).plusMinutes(minutes),
-                      startingPrice);
-              Auction created = auctionDAO.save(conn, auction);
-              created.start();
-              auctionDAO.update(conn, created);
-              return created;
-            });
-    invalidateCache();
-    return saved;
-  }
-
-  /** createAndStartAuctionWithItem. */
   public Auction createAndStartAuctionWithItem(
       String name,
       String description,
@@ -121,59 +88,49 @@ public class AuctionService {
     return createdAuction;
   }
 
-  /** getAuctionById. */
-  public Auction getAuctionById(int auctionId) {
-    return auctionDAO
-        .findById(auctionId)
-        .orElseThrow(() -> new ServiceException("Không tìm thấy phiên ID: " + auctionId));
-  }
-
-  /** getAllAuctions. */
-  public List<Auction> getAllAuctions() {
-    CacheSnapshot current = snapshot;
-    if (current.loaded()) {
-      return current.data();
+  public List<AuctionSnapshot> getAuctions() {
+    List<AuctionSnapshot> cached = snapshotCache;
+    if (cached != null) {
+      return cached;
     }
-    List<Auction> fresh = auctionDAO.findAll();
-    snapshot = new CacheSnapshot(List.copyOf(fresh), true);
-    return fresh;
+    snapshotCache = auctionDAO.findAll().stream().map(this::toSnapshot).toList();
+    return snapshotCache;
   }
 
-  /** getHistoryAuctions. */
-  public List<Auction> getHistoryAuctions(int userId) {
-    List<Auction> result = new ArrayList<>();
-    for (Auction auction : getAllAuctions()) {
-      boolean isSeller = auction.getSellerId() == userId;
-      boolean hasBid = bidDAO.existsByAuctionAndUser(auction.getId(), userId);
-      if (!isSeller && !hasBid) {
-        continue;
+  public List<AuctionSnapshot> getHistoryAuctions(int userId) {
+    return getAuctions().stream()
+        .filter(snapshot -> isSellerOrBidder(snapshot.auction(), userId))
+        .toList();
+  }
+
+  public AuctionSnapshot getAuction(int auctionId) {
+    List<AuctionSnapshot> cached = snapshotCache;
+    if (cached != null) {
+      for (AuctionSnapshot snapshot : cached) {
+        if (snapshot.auctionId() == auctionId) {
+          return snapshot;
+        }
       }
-      result.add(auction);
     }
-    return result;
+    Auction auction =
+        auctionDAO
+            .findById(auctionId)
+            .orElseThrow(() -> new ServiceException("Không tìm thấy phiên ID: " + auctionId));
+    return toSnapshot(auction);
   }
 
-  /** completeAndGetHighestBid. */
+  public boolean isAuctionVersionCurrent(int auctionId, int knownVersion) {
+    if (knownVersion < 0) {
+      return false;
+    }
+    return getAuction(auctionId).version() == knownVersion;
+  }
+
   public Optional<BidTransaction> completeAndGetHighestBid(int auctionId) {
     handleCompletion(auctionId);
     return bidDAO.findHighestBid(auctionId);
   }
 
-  /** updateStatus. */
-  public void updateStatus(int auctionId, AuctionStatus status) {
-    transactionManager.runWithoutResult(
-        conn -> {
-          Auction auction = requireAuction(conn, auctionId);
-          auction.setStatus(status);
-          boolean ok = auctionDAO.update(conn, auction);
-          if (!ok) {
-            throw new ServiceException("Không thể cập nhật trạng thái.");
-          }
-        });
-    invalidateCache();
-  }
-
-  /** cancelAuction. */
   public void cancelAuction(int auctionId, int requester, int expectedVersion) {
     transactionManager.runWithoutResult(
         conn -> {
@@ -194,30 +151,7 @@ public class AuctionService {
     invalidateCache();
   }
 
-  /** setStartTime. */
-  public void setStartTime(int auctionId, LocalDateTime startTime) {
-    transactionManager.runWithoutResult(
-        conn -> {
-          Auction auction = requireAuction(conn, auctionId);
-          auction.setStartTime(startTime);
-          auctionDAO.update(conn, auction);
-        });
-    invalidateCache();
-  }
-
-  /** setEndTime. */
-  public void setEndTime(int auctionId, LocalDateTime endTime) {
-    transactionManager.runWithoutResult(
-        conn -> {
-          Auction auction = requireAuction(conn, auctionId);
-          auction.setEndTime(endTime);
-          auctionDAO.update(conn, auction);
-        });
-    invalidateCache();
-  }
-
-  /** handleCompletion. */
-  public void handleCompletion(int auctionId) {
+  private void handleCompletion(int auctionId) {
     boolean completed =
         transactionManager.runInTransaction(
             conn -> {
@@ -251,7 +185,6 @@ public class AuctionService {
     }
   }
 
-  /** completeExpiredAuctions. */
   public List<Integer> completeExpiredAuctions() {
     List<Integer> completedIds = new ArrayList<>();
     for (Auction auction : auctionDAO.findAll()) {
@@ -353,15 +286,21 @@ public class AuctionService {
     }
   }
 
-  private void validateAuctionTime(Auction auction) {
-    if (auction.getEndTime().isBefore(LocalDateTime.now(clock))) {
-      throw new ServiceException("Thời gian kết thúc không thể ở quá khứ.");
-    }
+  public void invalidateCache() {
+    snapshotCache = null;
+    logger.info("[CACHE] Auction cache invalidated");
   }
 
-  /** invalidateCache. */
-  public void invalidateCache() {
-    snapshot = new CacheSnapshot(List.of(), false);
-    logger.info("[CACHE] Auction cache invalidated");
+  private boolean isSellerOrBidder(Auction auction, int userId) {
+    return auction.getSellerId() == userId
+        || bidDAO.existsByAuctionAndUser(auction.getId(), userId);
+  }
+
+  private AuctionSnapshot toSnapshot(Auction auction) {
+    Item item =
+        itemDAO
+            .findById(auction.getItemId())
+            .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+    return new AuctionSnapshot(auction, item);
   }
 }

@@ -1,8 +1,11 @@
 package app.client;
 
 import app.common.dto.Response;
+import app.common.dto.UserData;
+import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ConnectException;
+import app.common.mapper.DtoMapper;
 import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.common.models.User;
@@ -115,9 +118,16 @@ public class Client {
         notifyListeners(packet.getType(), response, true, packet.getMessage());
         return;
       }
+      updateSessionState(response);
       notifyListeners(packet.getType(), response, true, packet.getMessage());
     } catch (Exception e) {
       logger.error("[CLIENT] Failed to process packet", e);
+    }
+  }
+
+  private void updateSessionState(Response response) {
+    if (response instanceof WalletUpdateResponse walletUpdate && walletUpdate.user() != null) {
+      updateCurrentUser(walletUpdate.user());
     }
   }
 
@@ -228,6 +238,14 @@ public class Client {
 
   public void setCurrentUser(User currentUser) {
     this.currentUser = currentUser;
+  }
+
+  /** updateCurrentUser. */
+  public void updateCurrentUser(UserData userData) {
+    if (userData == null) {
+      return;
+    }
+    currentUser = DtoMapper.toUser(userData);
   }
 
   private static <T extends Response> void validateSubscription(
