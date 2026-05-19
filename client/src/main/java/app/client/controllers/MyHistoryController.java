@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
+import app.client.manager.DataStore;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionHistoryResponse;
@@ -12,7 +13,6 @@ import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.observer.PacketListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
@@ -64,9 +64,7 @@ public class MyHistoryController implements Cleanable {
                   if (response != null && response.auctions() != null) {
 
                     summaries.clear();
-
                     summaries.addAll(response.auctions());
-
                     rebuildUi();
                   }
                 });
@@ -75,22 +73,15 @@ public class MyHistoryController implements Cleanable {
         PacketType.FETCH_AUCTION_HISTORY, AuctionHistoryResponse.class, historyHandler);
 
     requestHistory();
+    rebuildUi();
   }
 
   private void requestHistory() {
-
     if (currentUser == null) {
       return;
     }
-
-    try {
-
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
-
-    } catch (IOException e) {
-
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
-    }
+    summaries.clear();
+    summaries.addAll(DataStore.getInstance().getAuctionHistory());
   }
 
   private void rebuildUi() {
@@ -180,8 +171,13 @@ public class MyHistoryController implements Cleanable {
   /** Member. */
   @FXML
   public void handleReload() {
-
     requestHistory();
+    rebuildUi();
+    try {
+      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
+    } catch (Exception e) {
+      AlertUtils.showError("Lỗi", e.getMessage());
+    }
   }
 
   /** Member. */

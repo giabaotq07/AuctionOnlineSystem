@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
+import app.client.manager.DataStore;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionSummariesResponse;
@@ -11,7 +12,6 @@ import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
 import app.common.observer.PacketListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
@@ -70,21 +70,13 @@ public class AllAuctionController implements Cleanable {
 
     client.subscribe(
         PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, runningHandler);
-
-    rebuildUi();
-
     requestAuctions();
+    rebuildUi();
   }
 
   private void requestAuctions() {
-    try {
-
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
-
-    } catch (IOException e) {
-
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
-    }
+    summaries.clear();
+    summaries.addAll(DataStore.getInstance().getAuctionSummaries());
   }
 
   private void rebuildUi() {
@@ -174,8 +166,11 @@ public class AllAuctionController implements Cleanable {
   /** Member. */
   @FXML
   public void handleReload() {
-
-    requestAuctions();
+    try {
+      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
+    } catch (Exception e) {
+      AlertUtils.showError("Lỗi", e.getMessage());
+    }
   }
 
   /** Member. */

@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.Client;
 import app.client.manager.AuctionNavigator;
+import app.client.manager.DataStore;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionSummariesResponse;
@@ -170,12 +171,8 @@ public class FirstScene implements Cleanable {
 
   private void loadInitialData() {
     summaries.clear();
+    summaries.addAll(DataStore.getInstance().getAuctionSummaries());
     rebuildUi();
-    try {
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
-    } catch (Exception e) {
-      logger.error("Failed to fetch auctions", e);
-    }
   }
 
   private void rebuildUi() {
