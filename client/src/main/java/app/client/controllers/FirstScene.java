@@ -49,9 +49,11 @@ public class FirstScene implements Cleanable {
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
+  @FXML private StackPane upcomingAuctionsPane;
   @FXML private Label balanceLabel;
   private final Client client = Client.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final HBox upcomingBox = new HBox();
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
@@ -63,6 +65,7 @@ public class FirstScene implements Cleanable {
   /** Member. */
   @FXML
   public void initialize() {
+    setupHbox(upcomingBox);
     setupHbox(activeBox);
     setupHbox(completedBox);
     setupListView();
@@ -125,6 +128,9 @@ public class FirstScene implements Cleanable {
   }
 
   private void setupScrollPanes() {
+    if (upcomingAuctionsPane != null) {
+      upcomingAuctionsPane.getChildren().setAll(createScrollBox(upcomingBox));
+    }
     if (activeAuctionsPane != null) {
       activeAuctionsPane.getChildren().setAll(createScrollBox(activeBox));
     }
@@ -176,6 +182,7 @@ public class FirstScene implements Cleanable {
   }
 
   private void rebuildUi() {
+    upcomingBox.getChildren().clear();
     activeBox.getChildren().clear();
     completedBox.getChildren().clear();
     for (AuctionSummary summary : summaries) {
@@ -186,11 +193,15 @@ public class FirstScene implements Cleanable {
 
   private void addAuctionCard(AuctionSummary summary) {
     VBox card = createAuctionCard(summary);
-    if (summary.status() == AuctionStatus.RUNNING) {
-      activeBox.getChildren().add(card);
-    } else {
-      completedBox.getChildren().add(card);
+    if (summary.status() == AuctionStatus.OPEN) {
+      upcomingBox.getChildren().add(card);
+      return;
     }
+    if (summary.status() == AuctionStatus.RUNNING || summary.status() == AuctionStatus.ENDING_SOON) {
+      activeBox.getChildren().add(card);
+      return;
+    }
+    completedBox.getChildren().add(card);
   }
 
   private void updateListView() {
@@ -278,7 +289,10 @@ public class FirstScene implements Cleanable {
     Label timeLabel = new Label("Kết thúc: " + summary.endTime());
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
     Button btnDetail =
-        new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+        new Button(
+            summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
+                ? "Xem kết quả"
+                : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
     btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));

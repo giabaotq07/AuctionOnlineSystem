@@ -100,6 +100,13 @@
                                style="-fx-font-size: 24px;"
                                textFill="#999999" />
                     </StackPane>
+                    <!-- Upcoming Auctions -->
+                    <Label text="TÀI SẢN SẮP ĐẤU GIÁ"
+                           style="-fx-font-weight: bold; -fx-font-size: 20px;"
+                           textFill="#673ab7" />
+                    <StackPane fx:id="upcomingAuctionsPane"
+                               prefHeight="360.0"
+                               style="-fx-background-color: #0f1424;" />
                     <!-- Active Auctions -->
                     <Label text="TÀI SẢN ĐANG ĐẤU GIÁ"
                            style="-fx-font-weight: bold; -fx-font-size: 20px;"

@@ -27,6 +27,7 @@ import app.common.dto.SettleWalletRequest;
 import app.common.dto.UpdateItemRequest;
 import app.common.dto.UserListResponse;
 import app.common.dto.WalletUpdateResponse;
+import app.common.dto.AuctionPaidNoticeResponse;
 
 /** PacketType. */
 public enum PacketType {
@@ -48,6 +49,7 @@ public enum PacketType {
   DEPOSIT(DepositRequest.class, WalletUpdateResponse.class),
   SETTLE_WALLET(SettleWalletRequest.class, WalletUpdateResponse.class),
   WALLET_UPDATE(Void.class, WalletUpdateResponse.class),
+  AUCTION_PAID_NOTICE(Void.class, AuctionPaidNoticeResponse.class),
   ERROR(Void.class, Void.class);
   public final Class<?> reqClass;
   public final Class<?> resClass;

@@ -10,9 +10,12 @@ import app.common.models.PacketRes;
 import app.common.models.User;
 import app.common.observer.PacketListener;
 import app.common.utils.JsonUtil;
+import app.client.utils.AlertUtils;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.text.DecimalFormat;
+import javafx.application.Platform;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +37,7 @@ public class Client {
   private volatile User currentUser;
   private final Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap =
       new ConcurrentHashMap<>();
+  private boolean paidNoticeRegistered = false;
 
   private Client() {}
 
@@ -63,6 +67,7 @@ public class Client {
     reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     connected = true;
     startListener();
+    registerPaidNoticeListener();
     logger.info("[CLIENT] Connected successfully");
   }
 
@@ -272,5 +277,35 @@ public class Client {
       throw new IllegalArgumentException(
           "Response class does not match packet type: " + packetType);
     }
+  }
+
+  private void registerPaidNoticeListener() {
+    if (paidNoticeRegistered) {
+      return;
+    }
+    paidNoticeRegistered = true;
+    subscribe(
+        PacketType.AUCTION_PAID_NOTICE,
+        AuctionPaidNoticeResponse.class,
+        (response, success, message) -> {
+          if (!success || response == null) {
+            return;
+          }
+          String roleLabel = "WINNER".equalsIgnoreCase(response.role())
+              ? "Bạn đã thanh toán"
+              : "Bạn đã nhận thanh toán";
+          DecimalFormat formatter = new DecimalFormat("#,###");
+          String amountText = response.amount() == null
+              ? "0"
+              : formatter.format(response.amount());
+          String content =
+              roleLabel
+                  + "\nPhiên: "
+                  + response.auctionName()
+                  + "\nSố tiền: "
+                  + amountText
+                  + " đ";
+          Platform.runLater(() -> AlertUtils.showInfo("Thanh toán thành công", content));
+        });
   }
 }

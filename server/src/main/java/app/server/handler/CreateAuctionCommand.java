@@ -42,7 +42,8 @@ public class CreateAuctionCommand implements Command {
               request.type(),
               request.durationMinutes(),
               user.getId(),
-              user.getRole());
+              user.getRole(),
+              request.startTime());
       AuctionSummary summary =
           auctionService.getAuctions().stream()
               .filter(candidate -> candidate.auctionId() == auction.getId())

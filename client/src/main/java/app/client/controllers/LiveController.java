@@ -6,13 +6,17 @@ import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
+import app.common.dto.AuctionDetailRequest;
 import app.common.dto.AuctionDetailResponse;
 import app.common.dto.AuctionResultRequest;
 import app.common.dto.AuctionResultResponse;
+import app.common.dto.AuctionSummariesResponse;
+import app.common.dto.AuctionSummary;
 import app.common.dto.PlaceBidRequest;
 import app.common.dto.PlaceBidResponse;
 import app.common.dto.SettleWalletRequest;
 import app.common.dto.WalletUpdateResponse;
+import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.enums.View;
 import app.common.models.PacketReq;
@@ -45,12 +49,14 @@ public class LiveController implements Cleanable {
   private PacketListener<PlaceBidResponse> placeBidHandler;
   private PacketListener<AuctionDetailResponse> auctionDetailHandler;
   private PacketListener<AuctionResultResponse> auctionResultHandler;
+  private PacketListener<AuctionSummariesResponse> auctionSummariesHandler;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
   @FXML private Label currentPriceLabel;
   @FXML private Label depositLabel;
   @FXML private Label timeLabel;
+  @FXML private Label statusLabel;
   @FXML private TextField bidAmountField;
   @FXML private TextArea description;
   @FXML private Label availableBalanceLabel;
@@ -61,6 +67,7 @@ public class LiveController implements Cleanable {
   private PacketListener<WalletUpdateResponse> walletUpdateHandler;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private boolean settlementSent = false;
+  private AuctionStatus lastKnownStatus;
 
   /** Member. */
   @FXML
@@ -107,6 +114,12 @@ public class LiveController implements Cleanable {
             Platform.runLater(() -> handleWalletUpdate(response, success, message));
     Client.getInstance()
         .subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
+    auctionSummariesHandler =
+        (response, success, message) ->
+            Platform.runLater(() -> handleSummaryUpdate(response, success));
+    Client.getInstance()
+        .subscribe(
+            PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, auctionSummariesHandler);
     updateAvailableBalance();
   }
 
@@ -117,6 +130,7 @@ public class LiveController implements Cleanable {
     }
     auctionDetail = detail;
     auction = detail.auction();
+    lastKnownStatus = auction.status();
     currentPrice = auction.highestBid();
     applyDetail(detail);
   }
@@ -138,6 +152,8 @@ public class LiveController implements Cleanable {
     AuctionNavigator.getInstance().cacheDetail(detail);
     auctionDetail = detail;
     auction = detail.auction();
+    updateStatusLabel(auction.status());
+    handleStatusTransition(auction.status());
     applyDetail(auctionDetail);
   }
 
@@ -231,7 +247,62 @@ public class LiveController implements Cleanable {
     currentPriceLabel.setText(formatCurrency(currentPrice));
     depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
     description.setText(detail.description());
+    updateStatusLabel(detail.auction().status());
     startCountdownTimer(detail.endTime());
+  }
+
+  private void handleSummaryUpdate(AuctionSummariesResponse response, boolean success) {
+    if (!success || response == null || auction == null) {
+      return;
+    }
+    for (AuctionSummary summary : response.auctions()) {
+      if (summary.auctionId() == auction.id()) {
+        updateStatusLabel(summary.status());
+        handleStatusTransition(summary.status());
+        if (summary.status() == AuctionStatus.RUNNING && auctionDetail != null) {
+          requestAuctionDetail(summary.auctionId());
+        }
+        break;
+      }
+    }
+  }
+
+  private void requestAuctionDetail(int auctionId) {
+    try {
+      AuctionDetailRequest request = new AuctionDetailRequest(auctionId, -1);
+      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_DETAIL, request));
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private void updateStatusLabel(AuctionStatus status) {
+    if (statusLabel == null || status == null) {
+      return;
+    }
+    if (status == AuctionStatus.OPEN) {
+      statusLabel.setText("Sắp đấu giá");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#22c55e"));
+      return;
+    }
+    if (status == AuctionStatus.RUNNING || status == AuctionStatus.ENDING_SOON) {
+      statusLabel.setText("Đang đấu giá");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
+      return;
+    }
+    statusLabel.setText("Đã kết thúc");
+    statusLabel.setTextFill(javafx.scene.paint.Color.web("#ef4444"));
+  }
+
+  private void handleStatusTransition(AuctionStatus newStatus) {
+    if (newStatus == null) {
+      return;
+    }
+    AuctionStatus previous = lastKnownStatus;
+    lastKnownStatus = newStatus;
+    if (previous == AuctionStatus.OPEN && newStatus == AuctionStatus.RUNNING) {
+      AlertUtils.showInfo("Thông báo", "Phiên đấu giá đã bắt đầu");
+    }
   }
 
   /** onNewBidPlaced. */
@@ -275,6 +346,10 @@ public class LiveController implements Cleanable {
     }
     if (auction == null) {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
+      return;
+    }
+    if (auction.status() == app.common.enums.AuctionStatus.OPEN) {
+      AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
       return;
     }
     if (Client.getInstance().getCurrentUser() == null) {
@@ -377,11 +452,15 @@ public class LiveController implements Cleanable {
     if (walletUpdateHandler != null) {
       Client.getInstance().unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
     }
+    if (auctionSummariesHandler != null) {
+      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, auctionSummariesHandler);
+    }
     resultRequested = false;
     auctionClosedShown = false;
     settlementSent = false;
     auctionDetail = null;
     auction = null;
+    lastKnownStatus = null;
   }
 
   /** Member. */

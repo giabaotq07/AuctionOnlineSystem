@@ -1,5 +1,7 @@
 package app.server.handler;
 
+import app.common.dto.AuctionPaidNoticeResponse;
+import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.SettleWalletRequest;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
@@ -9,7 +11,10 @@ import app.common.models.PacketReq;
 import app.common.models.PacketRes;
 import app.common.models.User;
 import app.server.service.AuctionService;
+import app.server.service.AuctionSnapshot;
 import app.server.service.UserService;
+import java.math.BigDecimal;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +45,29 @@ public class SettleWalletCommand implements Command {
       int auctionId = request.auctionId();
       int userId = clientHandler.getUser().getId();
       auctionService.completeAndGetHighestBid(auctionId);
+      AuctionSnapshot snapshot = auctionService.getAuction(auctionId);
+      BigDecimal paidAmount = auctionService.settleAuctionPayment(auctionId);
+      if (paidAmount.signum() > 0 && snapshot.auction().getWinnerId() != null) {
+        String auctionName = snapshot.item() == null ? "Phiên #" + auctionId : snapshot.item().getName();
+        AuctionPaidNoticeResponse sellerNotice =
+            new AuctionPaidNoticeResponse(auctionId, auctionName, paidAmount, "SELLER");
+        AuctionPaidNoticeResponse winnerNotice =
+            new AuctionPaidNoticeResponse(auctionId, auctionName, paidAmount, "WINNER");
+        Server.sendToUser(
+            snapshot.auction().getSellerId(),
+            PacketRes.of(true, PacketType.AUCTION_PAID_NOTICE, sellerNotice));
+        Server.sendToUser(
+            snapshot.auction().getWinnerId(),
+            PacketRes.of(true, PacketType.AUCTION_PAID_NOTICE, winnerNotice));
+      }
+      List<AuctionSnapshot> snapshots = auctionService.getAuctions();
+      AuctionSummariesResponse summariesResponse =
+          new AuctionSummariesResponse(
+              snapshots.stream()
+                  .map(snapshotItem -> DtoMapper.toAuctionSummary(snapshotItem.auction(), snapshotItem.item()))
+                  .toList());
+      Server.broadcast(
+          PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, summariesResponse), -1);
       User updated = userService.getById(userId);
       WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(updated));
       clientHandler.sendPacket(
