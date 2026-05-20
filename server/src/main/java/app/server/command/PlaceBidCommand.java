@@ -68,17 +68,12 @@ public class PlaceBidCommand extends Command {
       PacketRes packetResponse =
           PacketRes.of(PacketType.PLACE_BID, "Đặt giá thành công.", response);
       clientHandler.sendPacket(packetResponse);
-      Server.broadcast(
-          PacketRes.of(PacketType.BID_PLACED, "Có lượt đặt giá mới.", response), bidderId);
+      Server.broadcastToAuctionViewers(
+          auctionId,
+          PacketRes.of(PacketType.BID_PLACED, "Có lượt đặt giá mới.", response),
+          bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
       broadcastAuctionSumList();
-      AuctionHistoryResponse historyResponse =
-          new AuctionHistoryResponse(
-              auctionService.getHistoryAuctions(clientHandler.getUser().getId()).stream()
-                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
-                  .toList());
-      clientHandler.sendPacket(
-          PacketRes.of(PacketType.FETCH_AUCTION_HISTORY, "OK", historyResponse));
       broadcastAuctionDetail(auctionId);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
@@ -98,10 +93,7 @@ public class PlaceBidCommand extends Command {
   private void broadcastAuctionSumList() {
     try {
       AuctionSummariesResponse response =
-          new AuctionSummariesResponse(
-              auctionService.getAuctions().stream()
-                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
-                  .toList());
+          new AuctionSummariesResponse(auctionService.getAuctionSummaries());
       Server.broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction list", e);
@@ -113,7 +105,8 @@ public class PlaceBidCommand extends Command {
       var auction = auctionService.getAuction(auctionId);
       AuctionDetailResponse response =
           new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction.auction(), auction.item()));
-      Server.broadcast(PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
+      Server.broadcastToAuctionViewers(
+          auctionId, PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction detail", e);
     }

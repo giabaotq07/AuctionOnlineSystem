@@ -61,13 +61,18 @@ public final class ClientRequestService {
   }
 
   /** fetchAuctionHistory. */
-  public void fetchAuctionHistory() throws IOException {
-    send(PacketType.FETCH_AUCTION_HISTORY, null);
+  public void fetchAuctionHistory(int sinceVersion) throws IOException {
+    send(PacketType.FETCH_AUCTION_HISTORY, new app.common.dto.AuctionHistoryRequest(sinceVersion));
   }
 
   /** fetchAuctionDetail. */
   public void fetchAuctionDetail(int auctionId, int knownVersion) throws IOException {
     send(PacketType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auctionId, knownVersion));
+  }
+
+  /** unwatchAuction. */
+  public void unwatchAuction() throws IOException {
+    send(PacketType.UNWATCH_AUCTION, null);
   }
 
   /** fetchAuctionResult. */

@@ -18,8 +18,4 @@ public abstract class Command {
   public void notifyUpdate() {
     ClientNotificationCenter.getInstance().notifyUpdate();
   }
-
-  public void notify(String msg) {
-    notifyMessage(msg);
-  }
 }

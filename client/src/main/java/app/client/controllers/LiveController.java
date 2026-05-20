@@ -2,6 +2,7 @@ package app.client.controllers;
 
 import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
+import app.client.manager.LiveAuctionSessionStore;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
@@ -28,6 +29,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
@@ -48,6 +50,7 @@ public class LiveController implements Cleanable {
   @FXML private TextField bidAmountField;
   @FXML private TextArea description;
   @FXML private Label availableBalanceLabel;
+  @FXML private ProgressIndicator detailLoadingIndicator;
   private ScheduledExecutorService scheduler;
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
@@ -58,6 +61,8 @@ public class LiveController implements Cleanable {
   private boolean bidLoading;
   private Button bidButton;
   private Runnable stopBidLoading = () -> {};
+  private boolean detailRequestInFlight;
+  private Integer requestedAuctionId;
   private final Runnable updateListener = () -> Platform.runLater(this::handleUpdateNotification);
   private final Consumer<String> messageListener =
       message -> Platform.runLater(() -> handleMessageNotification(message));
@@ -68,6 +73,8 @@ public class LiveController implements Cleanable {
     notifications.addUpdateListener(updateListener);
     notifications.addMessageListener(messageListener);
     updateAvailableBalance();
+    loadSessionAuction();
+    maybeRequestAuctionDetail();
   }
 
   /** setAuction. */
@@ -94,6 +101,10 @@ public class LiveController implements Cleanable {
       return;
     }
     Wallet wallet = user.getWallet();
+    if (wallet == null) {
+      availableBalanceLabel.setText("Số dư khả dụng: 0 đ");
+      return;
+    }
     BigDecimal available = wallet.getAvailableBalance();
     availableBalanceLabel.setText("Số dư khả dụng: " + formatCurrency(available) + " đ");
   }
@@ -110,8 +121,82 @@ public class LiveController implements Cleanable {
   }
 
   private void handleUpdateNotification() {
+    loadSessionAuction();
     refreshDetailFromStore();
+    maybeRequestAuctionDetail();
     updateAvailableBalance();
+  }
+
+  private void loadSessionAuction() {
+    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
+    if (sessionDetail != null && sessionDetail.auction() != null) {
+      setAuction(sessionDetail);
+      return;
+    }
+    Integer auctionId = LiveAuctionSessionStore.getInstance().getSelectedAuctionId();
+    if (auctionId == null) {
+      return;
+    }
+    AuctionDetail cached = AuctionStore.getInstance().getAuctionDetail(auctionId);
+    if (cached != null) {
+      LiveAuctionSessionStore.getInstance().setSelectedDetail(cached);
+      setAuction(cached);
+      return;
+    }
+    showAwaitingAuctionDetail();
+  }
+
+  private void maybeRequestAuctionDetail() {
+    Integer auctionId = LiveAuctionSessionStore.getInstance().getSelectedAuctionId();
+    if (auctionId == null) {
+      setDetailLoading(false);
+      return;
+    }
+    AuctionDetail cached = AuctionStore.getInstance().getAuctionDetail(auctionId);
+    if (cached != null) {
+      LiveAuctionSessionStore.getInstance().setSelectedDetail(cached);
+      setAuction(cached);
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      return;
+    }
+    if (detailRequestInFlight && auctionId.equals(requestedAuctionId)) {
+      setDetailLoading(true);
+      return;
+    }
+    if (!requests.isConnected()) {
+      setDetailLoading(false);
+      AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
+      return;
+    }
+    if (UserManager.getInstance().getCurrentUser() == null) {
+      setDetailLoading(false);
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
+      return;
+    }
+    try {
+      detailRequestInFlight = true;
+      requestedAuctionId = auctionId;
+      setDetailLoading(true);
+      requests.fetchAuctionDetail(auctionId, -1);
+    } catch (IOException e) {
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private void setDetailLoading(boolean loading) {
+    if (detailLoadingIndicator != null) {
+      detailLoadingIndicator.setVisible(loading);
+      detailLoadingIndicator.setManaged(loading);
+    }
+    if (loading) {
+      showAwaitingAuctionDetail();
+    }
   }
 
   private void handleMessageNotification(String message) {
@@ -120,6 +205,13 @@ public class LiveController implements Cleanable {
     }
     if (bidLoading) {
       handleBidResult(message);
+      return;
+    }
+    if (detailRequestInFlight && isFailureMessage(message)) {
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      AlertUtils.showError("Lỗi", message);
       return;
     }
     if (resultRequested) {
@@ -166,6 +258,9 @@ public class LiveController implements Cleanable {
       auctionDetail = cachedDetail;
       auction = cachedDetail.auction();
       applyDetail(cachedDetail);
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
       return;
     }
     Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
@@ -305,6 +400,7 @@ public class LiveController implements Cleanable {
                 if (now.isAfter(endTime)) {
                   if (!resultRequested) {
                     resultRequested = true;
+                    showAwaitingServerConfirmation();
                   }
                   scheduler.shutdownNow();
                 } else {
@@ -317,17 +413,6 @@ public class LiveController implements Cleanable {
         TimeUnit.SECONDS);
   }
 
-  private void requestAuctionResult() {
-    if (auction == null) {
-      return;
-    }
-    try {
-      requests.fetchAuctionResult(auction.id());
-    } catch (IOException e) {
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
-    }
-  }
-
   private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime) {
     long totalSeconds = ChronoUnit.SECONDS.between(now, endTime);
     long days = totalSeconds / 86400;
@@ -335,6 +420,20 @@ public class LiveController implements Cleanable {
     long minutes = (totalSeconds % 3600) / 60;
     long seconds = totalSeconds % 60;
     timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
+  }
+
+  private void showAwaitingServerConfirmation() {
+    timeLabel.setText("Đang chờ server xác nhận kết thúc phiên...");
+    timeLabel.setStyle(
+        "-fx-text-fill: #c77d00;" + "-fx-font-weight: bold;" + "-fx-font-size: 13px;");
+  }
+
+  private void showAwaitingAuctionDetail() {
+    if (timeLabel == null) {
+      return;
+    }
+    timeLabel.setText("Đang tải chi tiết phiên...");
+    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 13px;");
   }
 
   @Override
@@ -349,17 +448,28 @@ public class LiveController implements Cleanable {
     }
     notifications.removeUpdateListener(updateListener);
     notifications.removeMessageListener(messageListener);
+    if (requests.isConnected()) {
+      try {
+        requests.unwatchAuction();
+      } catch (IOException e) {
+        logger.debug("Failed to unwatch auction on cleanup", e);
+      }
+    }
     setBidLoading(false);
     resultRequested = false;
     auctionClosedShown = false;
     auctionDetail = null;
     auction = null;
+    detailRequestInFlight = false;
+    requestedAuctionId = null;
+    setDetailLoading(false);
   }
 
   /** Member. */
   @FXML
   public void switchToUi(ActionEvent event) {
     cleanup();
+    LiveAuctionSessionStore.getInstance().clear();
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }
