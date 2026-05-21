@@ -1,9 +1,18 @@
 package app.common.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** AuctionDetail. */
-public record AuctionDetail(AuctionData auction, ItemData item) {
+public record AuctionDetail(AuctionData auction, ItemData item, List<BidData> bidHistory) {
+  public AuctionDetail(AuctionData auction, ItemData item) {
+    this(auction, item, List.of());
+  }
+
+  public AuctionDetail {
+    bidHistory = bidHistory == null ? List.of() : List.copyOf(bidHistory);
+  }
+
   public int auctionId() {
     return auction.id();
   }

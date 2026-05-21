@@ -38,12 +38,11 @@ public class Client {
     registry.put(PacketType.LOGIN, new LoginCommand());
     registry.put(PacketType.REGISTER, new RegisterCommand());
     registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand());
+    registry.put(PacketType.UPDATE_AUCTION, new UpdateAuctionCommand());
     registry.put(PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand());
     registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand());
     registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand());
     registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand());
-    registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand());
-    registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand());
     registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand());
     registry.put(PacketType.PLACE_BID, new PlaceBidCommand());
     registry.put(PacketType.DEPOSIT, new DepositCommand());

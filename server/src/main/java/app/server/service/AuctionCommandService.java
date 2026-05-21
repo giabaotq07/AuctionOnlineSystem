@@ -87,22 +87,90 @@ public class AuctionCommandService {
         });
   }
 
-  public void cancelAuction(int auctionId, int requester, int expectedVersion) {
-    transactionManager.runWithoutResult(
+  public Set<Integer> cancelAuction(int auctionId, int requester, int expectedVersion) {
+    return transactionManager.runInTransaction(
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
-          ensureCancelPermission(conn, auction, requester);
           AuctionStatus status = auction.getStatus();
-          if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
-            throw new ServiceException("Không thể hủy phiên đã kết thúc hoặc đã thanh toán.");
+          if (status == AuctionStatus.FINISHED
+              || status == AuctionStatus.PAID
+              || status == AuctionStatus.CANCELED) {
+            throw new ServiceException("Không thể hủy phiên đã kết thúc hoặc đã hủy.");
           }
+          if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
+            throw new ServiceException("Không thể hủy phiên ở trạng thái hiện tại.");
+          }
+          User requesterUser = requireUser(conn, requester);
+          ensureCancelPermission(auction, requesterUser);
           auction.cancel();
-          settlementService.releaseWallets(conn, auction);
+          Set<Integer> releasedUserIds = Set.of();
+          if (status == AuctionStatus.RUNNING) {
+            releasedUserIds = settlementService.releaseWallets(conn, auction);
+          }
           boolean ok = auctionDAO.updateIfVersionMatches(conn, auction, expectedVersion);
           if (!ok) {
             throw new ServiceException(
                 "Dữ liệu phiên đã thay đổi, vui lòng tải lại trước khi duyệt.");
           }
+          return releasedUserIds;
+        });
+  }
+
+  public Auction updateAuctionWithItem(
+      int auctionId,
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      LocalDateTime startTime,
+      int requesterId,
+      UserRole requesterRole,
+      int expectedVersion) {
+    validateUpdateAuctionRequest(
+        auctionId,
+        name,
+        description,
+        startingPrice,
+        stepPrice,
+        type,
+        durationMinutes,
+        startTime,
+        requesterId,
+        requesterRole,
+        expectedVersion);
+    return transactionManager.runInTransaction(
+        conn -> {
+          Auction auction = requireAuction(conn, auctionId);
+          ensureUpdatePermission(auction, requesterId, requesterRole);
+          if (auction.getStatus() != AuctionStatus.OPEN) {
+            throw new ServiceException("Chỉ có thể sửa phiên chưa bắt đầu.");
+          }
+          LocalDateTime now = LocalDateTime.now(clock);
+          ensureEditableStartTime(auction.getStartTime(), now);
+          ensureEditableStartTime(startTime, now);
+          Item stored =
+              itemDAO
+                  .findById(conn, auction.getItemId())
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+          boolean startingPriceChanged = stored.getStartingPrice() != startingPrice;
+          stored.setName(name);
+          stored.setDescription(description);
+          stored.setStartingPrice(startingPrice);
+          stored.setStepPrice(stepPrice);
+          stored.setType(type);
+          itemDAO.update(conn, stored);
+          auction.setStartTime(startTime);
+          auction.setEndTime(startTime.plusMinutes(durationMinutes));
+          if (startingPriceChanged) {
+            auction.setHighestBid(startingPrice);
+          }
+          boolean ok = auctionDAO.updateIfVersionMatches(conn, auction, expectedVersion);
+          if (!ok) {
+            throw new ServiceException("Dữ liệu phiên đã thay đổi, vui lòng tải lại.");
+          }
+          return auction;
         });
   }
 
@@ -145,17 +213,32 @@ public class AuctionCommandService {
         .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
   }
 
-  private void ensureCancelPermission(java.sql.Connection conn, Auction auction, int requesterId) {
-    if (requesterId == auction.getSellerId()) {
+  private User requireUser(java.sql.Connection conn, int userId) {
+    return userDAO
+        .findById(conn, userId)
+        .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+  }
+
+  private void ensureCancelPermission(Auction auction, User requester) {
+    boolean isOwner = requester.getId() == auction.getSellerId();
+    boolean isAdmin = requester.getRole() == UserRole.ADMIN;
+    if (auction.getStatus() == AuctionStatus.OPEN && (isOwner || isAdmin)) {
       return;
     }
-    User user =
-        userDAO
-            .findById(conn, requesterId)
-            .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + requesterId));
-    if (user.getRole() != UserRole.ADMIN) {
-      throw new ServiceException("Bạn không có quyền hủy phiên đấu giá này.");
+    if (auction.getStatus() == AuctionStatus.RUNNING && isAdmin) {
+      return;
     }
+    throw new ServiceException("Bạn không có quyền hủy phiên đấu giá này.");
+  }
+
+  private void ensureUpdatePermission(Auction auction, int requesterId, UserRole requesterRole) {
+    if (requesterRole == UserRole.ADMIN) {
+      return;
+    }
+    if (requesterRole == UserRole.SELLER && auction.getSellerId() == requesterId) {
+      return;
+    }
+    throw new ServiceException("Bạn không có quyền sửa phiên đấu giá này.");
   }
 
   static void validateCreateAuctionRequest(
@@ -182,6 +265,38 @@ public class AuctionCommandService {
         || durationMinutes <= 0
         || type == null) {
       throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
+    }
+  }
+
+  private static void validateUpdateAuctionRequest(
+      int auctionId,
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      LocalDateTime startTime,
+      int requesterId,
+      UserRole requesterRole,
+      int expectedVersion) {
+    if (auctionId <= 0 || expectedVersion < 0 || startTime == null) {
+      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
+    }
+    validateCreateAuctionRequest(
+        name,
+        description,
+        startingPrice,
+        stepPrice,
+        type,
+        durationMinutes,
+        requesterId,
+        requesterRole);
+  }
+
+  private static void ensureEditableStartTime(LocalDateTime startTime, LocalDateTime now) {
+    if (startTime == null || !startTime.isAfter(now.plusMinutes(1))) {
+      throw new ServiceException("Chỉ có thể sửa phiên còn hơn 1 phút trước khi bắt đầu.");
     }
   }
 }

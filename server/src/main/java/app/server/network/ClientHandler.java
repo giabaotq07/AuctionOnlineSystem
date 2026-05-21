@@ -51,6 +51,7 @@ public class ClientHandler implements Runnable {
     registry.put(PacketType.LOGIN, new LoginCommand(userService));
     registry.put(PacketType.REGISTER, new RegisterCommand(userService));
     registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
+    registry.put(PacketType.UPDATE_AUCTION, new UpdateAuctionCommand(auctionService));
     registry.put(
         PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionService));
     registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionService));
@@ -60,10 +61,8 @@ public class ClientHandler implements Runnable {
         PacketType.FETCH_AUCTION_RESULT,
         new FetchAuctionResultCommand(auctionService, userService));
     registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
-    registry.put(PacketType.UPDATE_ITEM, new UpdateItemCommand(itemService));
-    registry.put(PacketType.DELETE_ITEM, new DeleteItemCommand(itemService));
     registry.put(PacketType.FETCH_USER_LIST, new FetchUserListCommand(userService));
-    registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService));
+    registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService, userService));
     registry.put(
         PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
@@ -136,10 +135,9 @@ public class ClientHandler implements Runnable {
     return switch (type) {
       case PLACE_BID,
           CREATE_AUCTION,
+          UPDATE_AUCTION,
           FETCH_AUCTION_HISTORY,
           FETCH_SELLER_ITEMS,
-          UPDATE_ITEM,
-          DELETE_ITEM,
           FETCH_USER_LIST,
           CANCEL_AUCTION,
           DEPOSIT,

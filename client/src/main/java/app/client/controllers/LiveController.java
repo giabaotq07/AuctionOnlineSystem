@@ -14,6 +14,7 @@ import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
+import app.common.dto.BidData;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import app.common.models.Auction;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,6 +56,7 @@ public class LiveController implements Cleanable {
   @FXML private Label statusLabel;
   @FXML private TextField bidAmountField;
   @FXML private TextArea description;
+  @FXML private TextArea bidHistoryArea;
   @FXML private Label availableBalanceLabel;
   @FXML private ProgressIndicator detailLoadingIndicator;
   private ScheduledExecutorService scheduler;
@@ -61,6 +64,7 @@ public class LiveController implements Cleanable {
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
+  private final DateTimeFormatter bidTimeFormat = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private boolean bidLoading;
@@ -153,7 +157,6 @@ public class LiveController implements Cleanable {
     }
     AuctionDetail cached = AuctionStore.getInstance().getAuctionDetail(auctionId);
     if (cached != null) {
-      LiveAuctionSessionStore.getInstance().setSelectedDetail(cached);
       setAuction(cached);
       return;
     }
@@ -166,10 +169,9 @@ public class LiveController implements Cleanable {
       setDetailLoading(false);
       return;
     }
-    AuctionDetail cached = AuctionStore.getInstance().getAuctionDetail(auctionId);
-    if (cached != null) {
-      LiveAuctionSessionStore.getInstance().setSelectedDetail(cached);
-      setAuction(cached);
+    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
+    if (sessionDetail != null && sessionDetail.auctionId() == auctionId) {
+      setAuction(sessionDetail);
       detailRequestInFlight = false;
       requestedAuctionId = null;
       setDetailLoading(false);
@@ -267,6 +269,16 @@ public class LiveController implements Cleanable {
     if (auction == null) {
       return;
     }
+    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
+    if (sessionDetail != null && sessionDetail.auctionId() == auction.id()) {
+      auctionDetail = sessionDetail;
+      auction = sessionDetail.auction();
+      applyDetail(sessionDetail);
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      return;
+    }
     AuctionDetail cachedDetail = AuctionStore.getInstance().getAuctionDetail(auction.id());
     if (cachedDetail != null) {
       auctionDetail = cachedDetail;
@@ -292,6 +304,7 @@ public class LiveController implements Cleanable {
     currentPriceLabel.setText(formatCurrency(currentPrice));
     depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
     description.setText(detail.description());
+    updateBidHistory(detail);
     updateStatusLabel(detail.auction().status());
     if (detail.auction().status() == OPEN && detail.startTime() != null) {
       startCountdownTimer(detail.startTime(), "Bắt đầu sau: ", false);
@@ -300,6 +313,34 @@ public class LiveController implements Cleanable {
     } else {
       updateTimer();
     }
+  }
+
+  private void updateBidHistory(AuctionDetail detail) {
+    if (bidHistoryArea == null) {
+      return;
+    }
+    if (detail == null || detail.bidHistory() == null || detail.bidHistory().isEmpty()) {
+      bidHistoryArea.setText("Chưa có lượt đặt giá.");
+      return;
+    }
+    StringBuilder builder = new StringBuilder();
+    for (BidData bid : detail.bidHistory()) {
+      if (bid == null) {
+        continue;
+      }
+      String timeText = bid.createAt() == null ? "" : bidTimeFormat.format(bid.createAt());
+      builder
+          .append(timeText)
+          .append(" - ")
+          .append(bid.bidderName() == null ? "Bidder #" + bid.bidderId() : bid.bidderName())
+          .append(": ")
+          .append(formatCurrency(bid.amount()));
+      if (bid.autoBid()) {
+        builder.append(" (auto)");
+      }
+      builder.append(System.lineSeparator());
+    }
+    bidHistoryArea.setText(builder.toString().stripTrailing());
   }
 
   /** onNewBidPlaced. */

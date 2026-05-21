@@ -11,6 +11,7 @@ import app.common.dto.PlaceBidRequest;
 import app.common.dto.RegisterRequest;
 import app.common.dto.Request;
 import app.common.dto.SettleWalletRequest;
+import app.common.dto.UpdateAuctionRequest;
 import app.common.enums.PacketType;
 import app.common.protocol.PacketReq;
 import java.io.IOException;
@@ -54,6 +55,11 @@ public final class ClientRequestService {
   /** createAuction. */
   public void createAuction(CreateAuctionRequest request) throws IOException {
     send(PacketType.CREATE_AUCTION, request);
+  }
+
+  /** updateAuction. */
+  public void updateAuction(UpdateAuctionRequest request) throws IOException {
+    send(PacketType.UPDATE_AUCTION, request);
   }
 
   /** fetchAuctionSummaries. */

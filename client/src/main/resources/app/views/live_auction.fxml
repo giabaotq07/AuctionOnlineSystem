@@ -91,6 +91,11 @@
                                 <Label text="Giá hiện tại" textFill="#94a3b8" />
                                 <Label fx:id="currentPriceLabel" style="-fx-font-size: 32px; -fx-font-weight: bold;" text="0 đ" textFill="#22c55e" />
                             </VBox>
+                            <Separator opacity="0.1" />
+                            <VBox spacing="8.0">
+                                <Label text="Lịch sử đặt giá" textFill="#94a3b8" />
+                                <TextArea fx:id="bidHistoryArea" editable="false" focusTraversable="false" prefRowCount="7" style="-fx-control-inner-background: #0f1424; -fx-text-fill: #cbd5e1; -fx-background-color: transparent; -fx-border-color: #2d3748; -fx-border-radius: 5; -fx-padding: 5;" text="Chưa có lượt đặt giá." wrapText="true" />
+                            </VBox>
                             <Region VBox.vgrow="ALWAYS" /> <!-- Đẩy phần nhập giá xuống dưới cùng cột -->
                             <VBox spacing="10.0">
                                 <Label text="Đặt giá của bạn" textFill="#94a3b8" />

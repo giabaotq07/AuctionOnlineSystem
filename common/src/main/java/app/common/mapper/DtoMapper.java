@@ -2,6 +2,7 @@ package app.common.mapper;
 
 import app.common.dto.*;
 import app.common.models.*;
+import java.util.List;
 import java.util.Optional;
 
 /** DtoMapper. */
@@ -64,6 +65,25 @@ public final class DtoMapper {
   /** toAuctionDetail. */
   public static AuctionDetail toAuctionDetail(Auction auction, Item item) {
     return new AuctionDetail(toAuctionData(auction), toItemData(item));
+  }
+
+  /** toAuctionDetail. */
+  public static AuctionDetail toAuctionDetail(Auction auction, Item item, List<Bid> bids) {
+    List<BidData> bidHistory =
+        bids == null ? List.of() : bids.stream().map(DtoMapper::toBidData).toList();
+    return new AuctionDetail(toAuctionData(auction), toItemData(item), bidHistory);
+  }
+
+  /** toBidData. */
+  public static BidData toBidData(Bid bid) {
+    return new BidData(
+        bid.getId(),
+        bid.getAuctionId(),
+        bid.getBidderId(),
+        bid.getBidderName(),
+        bid.getAmount(),
+        bid.getCreateAt(),
+        bid.isAutoBid());
   }
 
   /** toItem. */
