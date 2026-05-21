@@ -1,5 +1,9 @@
 package app.client.controllers;
 
+import static app.common.enums.AuctionStatus.FINISHED;
+import static app.common.enums.AuctionStatus.OPEN;
+import static app.common.enums.AuctionStatus.RUNNING;
+
 import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
 import app.client.manager.LiveAuctionSessionStore;
@@ -34,10 +38,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static app.common.enums.AuctionStatus.FINISHED;
-import static app.common.enums.AuctionStatus.OPEN;
-import static app.common.enums.AuctionStatus.RUNNING;
 
 /** LiveController. */
 public class LiveController implements Cleanable {
@@ -310,7 +310,6 @@ public class LiveController implements Cleanable {
           currentPrice = Math.max(currentPrice, newPrice);
           currentPriceLabel.setText(formatCurrency(currentPrice));
         });
-
   }
 
   /** onAuctionClosed. */
