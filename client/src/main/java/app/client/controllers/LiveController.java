@@ -35,6 +35,9 @@ import javafx.scene.control.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static app.common.enums.AuctionStatus.FINISHED;
+import static app.common.enums.AuctionStatus.RUNNING;
+
 /** LiveController. */
 public class LiveController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
@@ -129,6 +132,13 @@ public class LiveController implements Cleanable {
     refreshDetailFromStore();
     maybeRequestAuctionDetail();
     updateAvailableBalance();
+    updateTimer();
+  }
+
+  private void updateTimer(){
+    if (auction.status() == FINISHED){
+      timeLabel.setText("Da ket thuc");
+    }
   }
 
   private void loadSessionAuction() {
@@ -241,7 +251,7 @@ public class LiveController implements Cleanable {
       return;
     }
     Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
-    if (cachedAuction != null && cachedAuction.getStatus() == AuctionStatus.FINISHED) {
+    if (cachedAuction != null && cachedAuction.getStatus() == FINISHED) {
       showAuctionClosed(message);
       return;
     }
@@ -283,7 +293,12 @@ public class LiveController implements Cleanable {
     depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
     description.setText(detail.description());
     updateStatusLabel(detail.auction().status());
-    startCountdownTimer(detail.endTime());
+    if (auction.status() == RUNNING){
+      startCountdownTimer(detail.endTime());
+    }
+    else{
+      updateTimer();
+    }
   }
 
   /** onNewBidPlaced. */
@@ -293,6 +308,7 @@ public class LiveController implements Cleanable {
           currentPrice = Math.max(currentPrice, newPrice);
           currentPriceLabel.setText(formatCurrency(currentPrice));
         });
+
   }
 
   /** onAuctionClosed. */
@@ -422,6 +438,7 @@ public class LiveController implements Cleanable {
         0,
         1,
         TimeUnit.SECONDS);
+
   }
 
   private void updateStatusLabel(AuctionStatus status) {

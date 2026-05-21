@@ -46,7 +46,8 @@ public class CreateAuctionCommand extends Command {
               request.type(),
               request.durationMinutes(),
               user.getId(),
-              user.getRole());
+              user.getRole(),
+                  request.startTime());
       var createdSnapshot = auctionService.getAuction(auction.getId());
       CreateAuctionResponse response =
           new CreateAuctionResponse(

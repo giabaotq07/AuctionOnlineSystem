@@ -58,10 +58,10 @@ public class AuctionService {
       ItemType type,
       int durationMinutes,
       int requesterId,
-      UserRole requesterRole
-      //      LocalDateTime startTime
+      UserRole requesterRole,
+      LocalDateTime startTime
       ) {
-    LocalDateTime startTime = LocalDateTime.now(clock);
+    //LocalDateTime startTime = LocalDateTime.now(clock);
     validateCreateAuctionRequest(
         name,
         description,

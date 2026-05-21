@@ -55,7 +55,9 @@ class AuctionServiceTest extends BaseDAOTest {
             ItemType.ELECTRONICS,
             10,
             seller.getId(),
-            seller.getRole());
+            seller.getRole(),
+                LocalDateTime.now()
+        );
 
     Auction found = auctionDAO.findById(created.getId()).orElseThrow();
     Item item = itemDAO.findById(found.getItemId()).orElseThrow();
