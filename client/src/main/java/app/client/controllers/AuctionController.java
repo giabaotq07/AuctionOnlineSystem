@@ -27,6 +27,8 @@ public class AuctionController implements Cleanable {
   @FXML private TextField stepPriceField;
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
+  @FXML private DatePicker startDatePicker;
+  @FXML private TextField startTimeField;
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private boolean createLoading;
@@ -72,12 +74,25 @@ public class AuctionController implements Cleanable {
       long stepPrice = Long.parseLong(stepPriceField.getText());
       int durationMins = Integer.parseInt(durationField.getText());
       ItemType type = typeComboBox.getValue();
-      if (name.isEmpty() || desc.isEmpty()) {
+
+      LocalDate startDate = startDatePicker.getValue();
+      String timeStr = startTimeField.getText();
+      if (name.isEmpty() || desc.isEmpty() || startDate == null || timeStr == null || timeStr.isEmpty()) {
         AlertUtils.showError("Lỗi", "Thiếu thông tin.");
         return;
       }
+
+      LocalTime startTimePicker;
+      try {
+          startTimePicker = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
+      } catch (DateTimeParseException e) {
+          AlertUtils.showError("Sai định dạng", "Giờ bắt đầu phải có định dạng HH:mm");
+          return;
+      }
+      LocalDateTime startTime = LocalDateTime.of(startDate, startTimePicker);
+
       CreateAuctionRequest request =
-          new CreateAuctionRequest(name, desc, startPrice, stepPrice, type, durationMins);
+          new CreateAuctionRequest(name, desc, startPrice, stepPrice, type, durationMins, startTime);
       createButton = LoadingButton.fromEvent(event);
       setCreateLoading(true);
       requests.createAuction(request);

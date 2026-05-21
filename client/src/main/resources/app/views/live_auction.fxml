@@ -63,7 +63,7 @@
                                     <Label text="Tiền đặt trước:" textFill="#94a3b8" GridPane.rowIndex="2" />
                                     <Label fx:id="depositLabel" text="0 đ" textFill="WHITE" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                     <Label text="Tình trạng:" textFill="#94a3b8" GridPane.rowIndex="3" />
-                                    <Label text="Sắp đấu giá" textFill="#22c55e" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    <Label fx:id="statusLabel" text="Sắp đấu giá" textFill="#22c55e" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                     <rowConstraints>
                                         <RowConstraints />
                                         <RowConstraints />

@@ -77,6 +77,7 @@ public class Server {
         new BidService(
             bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
     auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
+    AuctionScheduler.getInstance().init(auctionService, userService);
     startAuctionMaintenance();
   }
 
@@ -86,6 +87,9 @@ public class Server {
           try {
             var completions = auctionService.completeExpiredAuctionCompletions();
             if (!completions.isEmpty()) {
+              for (Integer auctionId : completions) {
+                AuctionScheduler.getInstance().notifyPaymentIfNeeded(auctionId);
+              }
               logger.info(
                   "[SERVER] Completed expired auctions: {}",
                   completions.stream().map(completion -> completion.auctionId()).toList());
@@ -171,6 +175,7 @@ public class Server {
   public void shutdown() {
     logger.info("[SERVER] Shutting down...");
     running = false;
+    AuctionScheduler.getInstance().shutdown();
     try {
       if (serverSocket != null && !serverSocket.isClosed()) {
         serverSocket.close();
@@ -214,6 +219,25 @@ public class Server {
   /** removeClient. */
   public static void removeClient(int userId, ClientHandler handler) {
     authenticatedClients.remove(userId, handler);
+  }
+
+  /** sendToUser. */
+  public static void sendToUser(int userId, PacketRes packet) {
+    if (packet == null) {
+      return;
+    }
+    ClientHandler handler = authenticatedClients.get(userId);
+    if (handler == null || !handler.isAuthenticated()) {
+      return;
+    }
+    broadcastPool.execute(
+        () -> {
+          try {
+            handler.sendPacket(packet);
+          } catch (Exception e) {
+            logger.warn("[SERVER] Send failed to user {}", userId, e);
+          }
+        });
   }
 
   /** broadcast. */

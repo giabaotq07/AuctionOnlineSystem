@@ -21,14 +21,24 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   public MySqlItemDAO() {}
 
   private static final String TABLE = "items";
-  private static final String BASE_SELECT =
-      """
-          SELECT id, name, seller_id, description, category,
-                 starting_price, step_price, deleted
-          FROM items
-          """;
+  private static final String BASE_SELECT_WITH_DELETED =
+      "SELECT id, name, seller_id, description, category, starting_price, step_price, deleted "
+          + "FROM items";
+  private static final String BASE_SELECT_NO_DELETED =
+      "SELECT id, name, seller_id, description, category, starting_price, step_price "
+          + "FROM items";
+  private volatile Boolean deletedColumnExists;
 
-  private Item mapItem(ResultSet rs) throws SQLException {
+  private Item mapItem(ResultSet rs, boolean includeDeleted) throws SQLException {
+    String categoryString = rs.getString("category");
+    ItemType type = ItemType.ELECTRONICS; // Default
+    if (categoryString != null) {
+      try {
+        type = ItemType.valueOf(categoryString);
+      } catch (IllegalArgumentException e) {
+        // Fallback
+      }
+    }
     Item item =
         ItemFactory.createItem(
             rs.getInt("id"),
@@ -37,9 +47,32 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
             rs.getString("description"),
             rs.getLong("starting_price"),
             rs.getLong("step_price"),
-            ItemType.valueOf(rs.getString("category")));
-    item.setDeleted(rs.getBoolean("deleted"));
+            type);
+    if (includeDeleted) {
+      item.setDeleted(rs.getBoolean("deleted"));
+    } else {
+      item.setDeleted(false);
+    }
     return item;
+  }
+
+  private boolean hasDeletedColumn(Connection conn) {
+    Boolean cached = deletedColumnExists;
+    if (cached != null) {
+      return cached;
+    }
+    try (ResultSet rs = conn.getMetaData().getColumns(null, null, TABLE, "deleted")) {
+      boolean exists = rs.next();
+      deletedColumnExists = exists;
+      return exists;
+    } catch (SQLException e) {
+      deletedColumnExists = false;
+      return false;
+    }
+  }
+
+  private String baseSelect(Connection conn) {
+    return hasDeletedColumn(conn) ? BASE_SELECT_WITH_DELETED : BASE_SELECT_NO_DELETED;
   }
 
   @Override
@@ -49,13 +82,14 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
 
   @Override
   public Optional<Item> findById(Connection conn, int id) {
-    return findOne(conn, BASE_SELECT + " WHERE id = ?", id);
+    boolean includeDeleted = hasDeletedColumn(conn);
+    return findOne(conn, baseSelect(conn) + " WHERE id = ?", includeDeleted, id);
   }
 
   @Override
   public List<Item> findAll() {
     return withConnection(
-        conn -> findList(conn, BASE_SELECT + "ORDER BY id DESC"),
+        conn -> findList(conn, baseSelect(conn) + " ORDER BY id DESC", hasDeletedColumn(conn)),
         "Lỗi kết nối khi tải danh sách items.");
   }
 
@@ -67,20 +101,36 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
 
   @Override
   public List<Item> findBySeller(Connection conn, int sellerId) {
-    return findList(conn, BASE_SELECT + "WHERE seller_id = ? ORDER BY id DESC", sellerId);
+    boolean includeDeleted = hasDeletedColumn(conn);
+    return findList(
+        conn,
+        baseSelect(conn) + " WHERE seller_id = ? ORDER BY id DESC",
+        includeDeleted,
+        sellerId);
   }
 
   @Override
   public List<Item> findByCategory(ItemType type) {
     return withConnection(
-        conn -> findList(conn, BASE_SELECT + "WHERE category = ? ORDER BY id DESC", type.name()),
+        conn ->
+            findList(
+                conn,
+                baseSelect(conn) + " WHERE category = ? ORDER BY id DESC",
+                hasDeletedColumn(conn),
+                type.name()),
         "Lỗi kết nối khi tải danh sách item theo category.");
   }
 
   @Override
   public List<Item> findAvailable() {
     return withConnection(
-        conn -> findList(conn, BASE_SELECT + "WHERE deleted = FALSE ORDER BY id DESC"),
+        conn ->
+            findList(
+                conn,
+                baseSelect(conn)
+                    + (hasDeletedColumn(conn) ? " WHERE deleted = FALSE" : "")
+                    + " ORDER BY id DESC",
+                hasDeletedColumn(conn)),
         "Lỗi kết nối khi tải danh sách item khả dụng.");
   }
 
@@ -149,13 +199,13 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         item.getId());
   }
 
-  private List<Item> findList(Connection conn, String sql, Object... params) {
+  private List<Item> findList(Connection conn, String sql, boolean includeDeleted, Object... params) {
     List<Item> items = new ArrayList<>();
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
-          items.add(mapItem(rs));
+          items.add(mapItem(rs, includeDeleted));
         }
       }
       return items;
@@ -164,11 +214,12 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
     }
   }
 
-  private Optional<Item> findOne(Connection conn, String sql, Object... params) {
+  private Optional<Item> findOne(
+      Connection conn, String sql, boolean includeDeleted, Object... params) {
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);
       try (ResultSet rs = ps.executeQuery()) {
-        return rs.next() ? Optional.of(mapItem(rs)) : Optional.empty();
+        return rs.next() ? Optional.of(mapItem(rs, includeDeleted)) : Optional.empty();
       }
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi truy vấn bảng " + TABLE, e);

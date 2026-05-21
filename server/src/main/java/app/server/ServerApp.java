@@ -1,6 +1,8 @@
 package app.server;
 
 import app.server.network.Server;
+import app.server.service.AuctionService;
+import app.server.service.AuctionScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

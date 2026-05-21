@@ -45,6 +45,10 @@
   <TextField fx:id="stepPriceField" promptText="VD: 100000" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
   <Label text="Thời gian diễn ra (Phút) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="5" />
   <TextField fx:id="durationField" promptText="VD: 60" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+  <Label text="Ngày bắt đầu *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+  <DatePicker fx:id="startDatePicker" promptText="Chọn ngày" style="-fx-padding: 10; -fx-background-radius: 5; -fx-text-fill: white;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+  <Label text="Giờ bắt đầu (HH:mm) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+  <TextField fx:id="startTimeField" promptText="VD: 14:30" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="7" />
     </GridPane>
     <HBox alignment="CENTER_RIGHT" spacing="15.0" style="-fx-padding: 20 0 0 0;">
   <Button mnemonicParsing="false" onAction="#handleBack" text="Hủy bỏ" style="-fx-background-color: transparent; -fx-text-fill: #666; -fx-font-weight: bold; -fx-cursor: hand;" />
