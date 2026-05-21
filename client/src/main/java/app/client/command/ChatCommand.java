@@ -15,6 +15,6 @@ public class ChatCommand extends Command {
       notifyMessage(packet.getMessage());
       return;
     }
-    notifyMessage(response.sender() + ": " + response.content());
+    notifyChat(response);
   }
 }

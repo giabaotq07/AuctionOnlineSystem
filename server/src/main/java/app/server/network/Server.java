@@ -1,7 +1,9 @@
 package app.server.network;
 
+import app.common.dto.AuctionPaidNoticeResponse;
 import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.WalletUpdateResponse;
+import app.common.enums.AuctionStatus;
 import app.common.enums.PacketType;
 import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketRes;
@@ -10,6 +12,7 @@ import app.server.dao.impl.*;
 import app.server.database.TransactionManager;
 import app.server.service.*;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -75,9 +78,15 @@ public class Server {
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     bidService =
         new BidService(
-            bidDAO, auctionDAO, userDAO, transactionManager, bidValidator, antiSnipeService);
+            bidDAO,
+            auctionDAO,
+            itemDAO,
+            userDAO,
+            transactionManager,
+            bidValidator,
+            antiSnipeService);
     auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
-    AuctionScheduler.getInstance().init(auctionService, userService);
+    AuctionScheduler.getInstance().init(auctionService);
     startAuctionMaintenance();
   }
 
@@ -87,13 +96,11 @@ public class Server {
           try {
             var completions = auctionService.completeExpiredAuctionCompletions();
             if (!completions.isEmpty()) {
-              //              for (Integer auctionId : completions) {
-              //                AuctionScheduler.getInstance().notifyPaymentIfNeeded(auctionId);
-              //              }
               logger.info(
                   "[SERVER] Completed expired auctions: {}",
                   completions.stream().map(completion -> completion.auctionId()).toList());
               broadcastAuctionList();
+              sendPaymentNotices(completions);
               sendWalletUpdates(completions);
             }
           } catch (Exception e) {
@@ -111,6 +118,44 @@ public class Server {
       broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);
+    }
+  }
+
+  private void sendPaymentNotices(List<AuctionCompletion> completions) {
+    for (AuctionCompletion completion : completions) {
+      completion
+          .highestBid()
+          .ifPresent(
+              bid -> {
+                try {
+                  var snapshot = auctionService.getAuction(completion.auctionId());
+                  if (snapshot.auction().getStatus() != AuctionStatus.PAID) {
+                    return;
+                  }
+                  var amount = BigDecimal.valueOf(bid.getAmount());
+                  String auctionName =
+                      snapshot.item() == null
+                          ? "Phiên #" + completion.auctionId()
+                          : snapshot.item().getName();
+                  var sellerNotice =
+                      new AuctionPaidNoticeResponse(
+                          completion.auctionId(), auctionName, amount, "SELLER");
+                  var winnerNotice =
+                      new AuctionPaidNoticeResponse(
+                          completion.auctionId(), auctionName, amount, "WINNER");
+                  sendToUser(
+                      snapshot.auction().getSellerId(),
+                      PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
+                  sendToUser(
+                      bid.getBidderId(),
+                      PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
+                } catch (Exception e) {
+                  logger.warn(
+                      "[SERVER] Failed to send payment notice for auction {}",
+                      completion.auctionId(),
+                      e);
+                }
+              });
     }
   }
 

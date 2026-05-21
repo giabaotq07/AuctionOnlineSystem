@@ -14,6 +14,8 @@ import app.common.models.User;
 import app.common.models.Wallet;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.KeyFrame;
@@ -54,6 +56,7 @@ public class FirstScene implements Cleanable {
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
+  private final List<Timeline> countdownTimelines = new ArrayList<>();
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private boolean reloadLoading;
   private Button reloadButton;
@@ -149,6 +152,7 @@ public class FirstScene implements Cleanable {
   }
 
   private void rebuildUi() {
+    stopCountdownTimelines();
     upcomingBox.getChildren().clear();
     activeBox.getChildren().clear();
     completedBox.getChildren().clear();
@@ -254,8 +258,11 @@ public class FirstScene implements Cleanable {
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
     Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel = new Label("Kết thúc: " + summary.endTime());
+    Label timeLabel = new Label(timeText(summary));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
+    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
+      attachStartCountdown(summary.startTime(), timeLabel);
+    }
     Button btnDetail =
         new Button(
             summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
@@ -266,6 +273,45 @@ public class FirstScene implements Cleanable {
     btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(summary));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
+  }
+
+  private String timeText(AuctionSummary summary) {
+    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
+      return "Bắt đầu sau: " + countdownText(summary.startTime());
+    }
+    return "Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime());
+  }
+
+  private void attachStartCountdown(LocalDateTime startTime, Label label) {
+    Timeline timeline = new Timeline();
+    timeline
+        .getKeyFrames()
+        .add(
+            new KeyFrame(
+                Duration.seconds(1),
+                event -> {
+                  if (!LocalDateTime.now().isBefore(startTime)) {
+                    label.setText("Đang chờ bắt đầu...");
+                    timeline.stop();
+                    return;
+                  }
+                  label.setText("Bắt đầu sau: " + countdownText(startTime));
+                }));
+    timeline.setCycleCount(Timeline.INDEFINITE);
+    timeline.play();
+    countdownTimelines.add(timeline);
+  }
+
+  private String countdownText(LocalDateTime targetTime) {
+    long totalSeconds = Math.max(0, ChronoUnit.SECONDS.between(LocalDateTime.now(), targetTime));
+    long days = totalSeconds / 86400;
+    long hours = (totalSeconds % 86400) / 3600;
+    long minutes = (totalSeconds % 3600) / 60;
+    long seconds = totalSeconds % 60;
+    if (days > 0) {
+      return String.format("%d ngày %02d:%02d:%02d", days, hours, minutes, seconds);
+    }
+    return String.format("%02d:%02d:%02d", hours, minutes, seconds);
   }
 
   private void setupWalletSection() {
@@ -369,10 +415,18 @@ public class FirstScene implements Cleanable {
   public void cleanup() {
     notifications.removeUpdateListener(summariesListener);
     setReloadLoading(false);
+    stopCountdownTimelines();
     for (Timeline timeline : timelines) {
       timeline.stop();
     }
     timelines.clear();
     logger.debug("FirstScene cleaned up");
+  }
+
+  private void stopCountdownTimelines() {
+    for (Timeline timeline : countdownTimelines) {
+      timeline.stop();
+    }
+    countdownTimelines.clear();
   }
 }

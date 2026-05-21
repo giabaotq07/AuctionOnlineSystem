@@ -1,6 +1,7 @@
 package app.client.command;
 
 import app.client.manager.ClientNotificationCenter;
+import app.common.dto.ChatResponse;
 import app.common.protocol.PacketRes;
 
 /** Command. */
@@ -17,5 +18,9 @@ public abstract class Command {
 
   public void notifyUpdate() {
     ClientNotificationCenter.getInstance().notifyUpdate();
+  }
+
+  public void notifyChat(ChatResponse response) {
+    ClientNotificationCenter.getInstance().notifyChat(response);
   }
 }

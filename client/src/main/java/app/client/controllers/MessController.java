@@ -1,12 +1,16 @@
 package app.client.controllers;
 
+import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
 import app.common.dto.ChatRequest;
+import app.common.dto.ChatResponse;
 import app.common.enums.View;
 import java.io.IOException;
+import java.util.function.Consumer;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -22,20 +26,31 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 
 /** MessController. */
-public class MessController {
+public class MessController implements Cleanable {
   @FXML private TextArea myTextArea;
   @FXML private VBox chatBox;
   @FXML private ScrollPane scrollPane;
   private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
+  private final Consumer<ChatResponse> chatListener =
+      response ->
+          Platform.runLater(
+              () -> addBubble(response.sender(), response.content(), isMe(response.senderId())));
+  private final Consumer<String> messageListener =
+      message -> Platform.runLater(() -> handleMessage(message));
+  private boolean cleanedUp;
 
   /** Member. */
   @FXML
   public void initialize() {
     chatBox.heightProperty().addListener((obs, oldVal, newVal) -> scrollPane.setVvalue(1.0d));
+    notifications.addChatListener(chatListener);
+    notifications.addMessageListener(messageListener);
   }
 
   boolean isMe(int id) {
-    return UserManager.getInstance().getCurrentUser().getId() == id;
+    return UserManager.getInstance().getCurrentUser() != null
+        && UserManager.getInstance().getCurrentUser().getId() == id;
   }
 
   /** addBubble. */
@@ -89,6 +104,14 @@ public class MessController {
   public void send() {
     String text = myTextArea.getText();
     if (text != null && !text.trim().isEmpty()) {
+      if (!requests.isConnected()) {
+        AlertUtils.showError("Lỗi Kết nối", "Chưa kết nối tới server");
+        return;
+      }
+      if (UserManager.getInstance().getCurrentUser() == null) {
+        AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để chat");
+        return;
+      }
       ChatRequest chatRequest = new ChatRequest(text);
       try {
         requests.chat(chatRequest);
@@ -100,9 +123,27 @@ public class MessController {
     }
   }
 
+  private void handleMessage(String message) {
+    if (message == null || message.isBlank() || "OK".equalsIgnoreCase(message)) {
+      return;
+    }
+    AlertUtils.showError("Chat", message);
+  }
+
+  @Override
+  public void cleanup() {
+    if (cleanedUp) {
+      return;
+    }
+    cleanedUp = true;
+    notifications.removeChatListener(chatListener);
+    notifications.removeMessageListener(messageListener);
+  }
+
   /** Member. */
   @FXML
   public void switchToUi(ActionEvent event) {
+    cleanup();
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 }

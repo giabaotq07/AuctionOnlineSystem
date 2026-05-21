@@ -24,6 +24,10 @@ public record AuctionDetail(AuctionData auction, ItemData item) {
     return item.stepPrice();
   }
 
+  public LocalDateTime startTime() {
+    return auction.startTime();
+  }
+
   public LocalDateTime endTime() {
     return auction.endTime();
   }

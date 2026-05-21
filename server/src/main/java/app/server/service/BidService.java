@@ -2,9 +2,11 @@ package app.server.service;
 
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
+import app.common.models.Item;
 import app.common.models.User;
 import app.server.dao.AuctionDAO;
 import app.server.dao.BidDAO;
+import app.server.dao.ItemDAO;
 import app.server.dao.UserDAO;
 import app.server.database.TransactionManager;
 import java.math.BigDecimal;
@@ -13,6 +15,7 @@ import java.math.BigDecimal;
 public class BidService {
   private final BidDAO bidDAO;
   private final AuctionDAO auctionDAO;
+  private final ItemDAO itemDAO;
   private final UserDAO userDAO;
   private final TransactionManager transactionManager;
   private final BidValidator bidValidator;
@@ -22,12 +25,14 @@ public class BidService {
   public BidService(
       BidDAO bidDAO,
       AuctionDAO auctionDAO,
+      ItemDAO itemDAO,
       UserDAO userDAO,
       TransactionManager transactionManager,
       BidValidator bidValidator,
       AntiSnipeService antiSnipeService) {
     this.bidDAO = bidDAO;
     this.auctionDAO = auctionDAO;
+    this.itemDAO = itemDAO;
     this.userDAO = userDAO;
     this.transactionManager = transactionManager;
     this.bidValidator = bidValidator;
@@ -47,7 +52,11 @@ public class BidService {
             throw new ServiceException("Người bán không được tự đặt giá sản phẩm của mình.");
           }
           bidValidator.validateAuctionState(auction);
-          bidValidator.validateBidAmount(bidAmount, auction.getHighestBid());
+          Item item =
+              itemDAO
+                  .findById(conn, auction.getItemId())
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+          bidValidator.validateBidAmount(bidAmount, auction.getHighestBid(), item.getStepPrice());
           userDAO.lockRow(conn, userId);
           User bidder =
               userDAO

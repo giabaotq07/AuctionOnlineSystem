@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static app.common.enums.AuctionStatus.FINISHED;
+import static app.common.enums.AuctionStatus.OPEN;
 import static app.common.enums.AuctionStatus.RUNNING;
 
 /** LiveController. */
@@ -135,9 +136,9 @@ public class LiveController implements Cleanable {
     updateTimer();
   }
 
-  private void updateTimer(){
-    if (auction.status() == FINISHED){
-      timeLabel.setText("Da ket thuc");
+  private void updateTimer() {
+    if (auction != null && auction.status() == FINISHED) {
+      timeLabel.setText("Đã kết thúc");
     }
   }
 
@@ -221,7 +222,7 @@ public class LiveController implements Cleanable {
       handleBidResult(message);
       return;
     }
-    if (detailRequestInFlight && isFailureMessage(message)) {
+    if (detailRequestInFlight && !isSuccessMessage(message)) {
       detailRequestInFlight = false;
       requestedAuctionId = null;
       setDetailLoading(false);
@@ -237,7 +238,7 @@ public class LiveController implements Cleanable {
     setBidLoading(false);
     refreshDetailFromStore();
     bidAmountField.clear();
-    if (isFailureMessage(message)) {
+    if (!isSuccessMessage(message)) {
       AlertUtils.showError("Đặt giá", message);
       return;
     }
@@ -258,9 +259,9 @@ public class LiveController implements Cleanable {
     AlertUtils.showError("Kết thúc", message);
   }
 
-  private boolean isFailureMessage(String message) {
+  private boolean isSuccessMessage(String message) {
     String normalized = message == null ? "" : message.toLowerCase();
-    return normalized.contains("lỗi") || normalized.contains("thất bại");
+    return "ok".equals(normalized) || normalized.contains("thành công");
   }
 
   private void refreshDetailFromStore() {
@@ -293,10 +294,11 @@ public class LiveController implements Cleanable {
     depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
     description.setText(detail.description());
     updateStatusLabel(detail.auction().status());
-    if (auction.status() == RUNNING){
+    if (detail.auction().status() == OPEN && detail.startTime() != null) {
+      startCountdownTimer(detail.startTime(), "Bắt đầu sau: ", false);
+    } else if (detail.auction().status() == RUNNING && detail.endTime() != null) {
       startCountdownTimer(detail.endTime());
-    }
-    else{
+    } else {
       updateTimer();
     }
   }
@@ -361,41 +363,50 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
-    if (UserManager.getInstance().getCurrentUser() == null) {
-      if (auction.status() == app.common.enums.AuctionStatus.OPEN) {
-        AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
-        return;
-      }
-      if (UserManager.getInstance().getCurrentUser() == null) {
-        AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
-        return;
-      }
-      long bidAmount;
-      try {
-        bidAmount = Long.parseLong(bidAmountField.getText().trim());
-      } catch (NumberFormatException e) {
-        AlertUtils.showError("Lỗi", "Giá đấu không hợp lệ");
-        return;
-      }
-      if (bidAmount <= currentPrice) {
-        AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
-        return;
-      }
-      BigDecimal available =
-          UserManager.getInstance().getCurrentUser().getWallet().getAvailableBalance();
-      if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
-        AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
-        return;
-      }
-      try {
-        bidButton = LoadingButton.fromEvent(event);
-        setBidLoading(true);
-        requests.placeBid(auction.id(), bidAmount);
-      } catch (IOException e) {
-        setBidLoading(false);
-        AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
-      }
+    User currentUser = UserManager.getInstance().getCurrentUser();
+    if (currentUser == null) {
+      AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
+      return;
     }
+    if (auction.status() == AuctionStatus.OPEN) {
+      AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
+      return;
+    }
+    if (auction.status() != RUNNING) {
+      AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
+      return;
+    }
+    long bidAmount;
+    try {
+      bidAmount = Long.parseLong(bidAmountField.getText().trim());
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "Giá đấu không hợp lệ");
+      return;
+    }
+    long minimumBid = minimumBid();
+    if (bidAmount < minimumBid) {
+      AlertUtils.showError("Lỗi", "Giá đấu phải tối thiểu " + formatCurrency(minimumBid));
+      return;
+    }
+    Wallet wallet = currentUser.getWallet();
+    BigDecimal available = wallet == null ? BigDecimal.ZERO : wallet.getAvailableBalance();
+    if (available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
+      AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
+      return;
+    }
+    try {
+      bidButton = LoadingButton.fromEvent(event);
+      setBidLoading(true);
+      requests.placeBid(auction.id(), bidAmount);
+    } catch (IOException e) {
+      setBidLoading(false);
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private long minimumBid() {
+    long stepPrice = auctionDetail == null ? 1L : Math.max(auctionDetail.stepPrice(), 1L);
+    return currentPrice + stepPrice;
   }
 
   private void setBidLoading(boolean loading) {
@@ -409,6 +420,10 @@ public class LiveController implements Cleanable {
   }
 
   private void startCountdownTimer(LocalDateTime endTime) {
+    startCountdownTimer(endTime, "", true);
+  }
+
+  private void startCountdownTimer(LocalDateTime targetTime, String prefix, boolean requestResult) {
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
@@ -424,25 +439,26 @@ public class LiveController implements Cleanable {
           Platform.runLater(
               () -> {
                 LocalDateTime now = LocalDateTime.now();
-                if (now.isAfter(endTime)) {
-                  if (!resultRequested) {
+                if (!now.isBefore(targetTime)) {
+                  if (requestResult && !resultRequested) {
                     resultRequested = true;
                     showAwaitingServerConfirmation();
+                  } else if (!requestResult) {
+                    timeLabel.setText("Đang chờ bắt đầu...");
                   }
                   scheduler.shutdownNow();
                 } else {
-                  updateCountdownLabel(now, endTime);
+                  updateCountdownLabel(now, targetTime, prefix);
                 }
               });
         },
         0,
         1,
         TimeUnit.SECONDS);
-
   }
 
   private void updateStatusLabel(AuctionStatus status) {
-    handleStatusTransition(auction.status());
+    handleStatusTransition(status);
     if (statusLabel == null || status == null) {
       return;
     }
@@ -472,12 +488,17 @@ public class LiveController implements Cleanable {
   }
 
   private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime) {
+    updateCountdownLabel(now, endTime, "");
+  }
+
+  private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime, String prefix) {
     long totalSeconds = ChronoUnit.SECONDS.between(now, endTime);
     long days = totalSeconds / 86400;
     long hours = (totalSeconds % 86400) / 3600;
     long minutes = (totalSeconds % 3600) / 60;
     long seconds = totalSeconds % 60;
-    timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
+    timeLabel.setText(
+        String.format("%s%d Ngày %02d:%02d:%02d", prefix, days, hours, minutes, seconds));
   }
 
   private void showAwaitingServerConfirmation() {

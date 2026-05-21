@@ -47,7 +47,7 @@ public class CreateAuctionCommand extends Command {
               request.durationMinutes(),
               user.getId(),
               user.getRole(),
-                  request.startTime());
+              request.startTime());
       var createdSnapshot = auctionService.getAuction(auction.getId());
       CreateAuctionResponse response =
           new CreateAuctionResponse(
@@ -59,8 +59,6 @@ public class CreateAuctionCommand extends Command {
           PacketRes.of(PacketType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
           user.getId());
       broadcastAuctionList();
-
-      logger.info("Auction created successfully by user {}", user.getId());
 
       logger.info("Auction created successfully by user {}", user.getId());
     } catch (ServiceException e) {

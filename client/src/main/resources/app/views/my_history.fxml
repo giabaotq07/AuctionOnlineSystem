@@ -72,7 +72,7 @@
 
                         <HBox alignment="CENTER_LEFT" spacing="15">
 
-                            <Label style="-fx-font-weight: bold;                                           -fx-font-size: 22px;" text="ĐANG DIỄN RA" textFill="#673ab7" />
+                            <Label style="-fx-font-weight: bold;                                           -fx-font-size: 22px;" text="SẮP / ĐANG DIỄN RA" textFill="#673ab7" />
 
                         </HBox>
 

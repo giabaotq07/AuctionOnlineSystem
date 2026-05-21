@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
 
 public class AuctionService {
   private volatile List<AuctionSnapshot> snapshotCache;
+  private final Object snapshotCacheLock = new Object();
   private final AuctionDAO auctionDAO;
   private final BidDAO bidDAO;
   private final ItemDAO itemDAO;
-  private final UserDAO userDAO;
   private final TransactionManager transactionManager;
   private final AuctionSettlementService settlementService;
   private final AuctionQueryService queryService;
@@ -40,7 +40,6 @@ public class AuctionService {
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
     this.itemDAO = itemDAO;
-    this.userDAO = userDAO;
     this.transactionManager = transactionManager;
     this.settlementService = new AuctionSettlementService(bidDAO, userDAO);
     this.queryService = new AuctionQueryService();
@@ -59,10 +58,8 @@ public class AuctionService {
       int durationMinutes,
       int requesterId,
       UserRole requesterRole,
-      LocalDateTime startTime
-      ) {
-    //LocalDateTime startTime = LocalDateTime.now(clock);
-    validateCreateAuctionRequest(
+      LocalDateTime startTime) {
+    AuctionCommandService.validateCreateAuctionRequest(
         name,
         description,
         startingPrice,
@@ -96,13 +93,6 @@ public class AuctionService {
       AuctionScheduler.getInstance()
           .scheduleStart(createdAuction.getId(), createdAuction.getStartTime());
     }
-    if (createdAuction.getEndTime() != null
-        && createdAuction.getStatus() != AuctionStatus.FINISHED
-        && createdAuction.getStatus() != AuctionStatus.PAID
-        && createdAuction.getStatus() != AuctionStatus.CANCELED) {
-      AuctionScheduler.getInstance()
-          .scheduleFinish(createdAuction.getId(), createdAuction.getEndTime());
-    }
     invalidateCache();
     return createdAuction;
   }
@@ -112,8 +102,14 @@ public class AuctionService {
     if (cached != null) {
       return cached;
     }
-    snapshotCache = auctionDAO.findAll().stream().map(this::toSnapshot).toList();
-    return snapshotCache;
+    synchronized (snapshotCacheLock) {
+      cached = snapshotCache;
+      if (cached == null) {
+        cached = auctionDAO.findAll().stream().map(this::toSnapshot).toList();
+        snapshotCache = cached;
+      }
+      return cached;
+    }
   }
 
   public List<AuctionSnapshot> getHistoryAuctions(int userId) {
@@ -161,7 +157,7 @@ public class AuctionService {
   }
 
   public boolean completeAuctionIfExpired(int auctionId) {
-    return handleCompletion(auctionId);
+    return completeAuction(auctionId).completed();
   }
 
   public void cancelAuction(int auctionId, int requester, int expectedVersion) {
@@ -216,46 +212,10 @@ public class AuctionService {
     return completions;
   }
 
-  private boolean handleCompletion(int auctionId) {
-    boolean completed =
-        transactionManager.runInTransaction(
-            conn -> {
-              Auction auction = requireAuction(conn, auctionId);
-              if (!auction.isExpired()) {
-                return false;
-              }
-              AuctionStatus status = auction.getStatus();
-              if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-                return false;
-              }
-              auction.setStatus(AuctionStatus.FINISHED);
-              bidDAO
-                  .findHighestBid(conn, auctionId)
-                  .ifPresentOrElse(
-                      bid -> {
-                        auction.setWinnerId(bid.getBidderId());
-                        logger.info(
-                            "Phiên {} kết thúc. Winner: {}, Giá: {}",
-                            auctionId,
-                            bid.getBidderName(),
-                            bid.getAmount());
-                      },
-                      () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
-              BigDecimal winningAmount = settleWallets(conn, auction);
-              if (auction.getWinnerId() != null && winningAmount.signum() > 0) {
-                auction.setStatus(AuctionStatus.PAID);
-              }
-              auctionDAO.update(conn, auction);
-              return true;
-            });
-    if (completed) {
-      invalidateCache();
-    }
-    return completed;
-  }
-
   public void invalidateCache() {
-    snapshotCache = null;
+    synchronized (snapshotCacheLock) {
+      snapshotCache = null;
+    }
     logger.info("[CACHE] Auction cache invalidated");
   }
 
@@ -279,7 +239,6 @@ public class AuctionService {
         .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
   }
 
-  /////////////////////
   public BigDecimal settleAuctionPayment(int auctionId) {
     BigDecimal[] amountRef = new BigDecimal[] {BigDecimal.ZERO};
     transactionManager.runWithoutResult(
@@ -291,7 +250,9 @@ public class AuctionService {
           if (auction.getStatus() != AuctionStatus.FINISHED) {
             return;
           }
-          BigDecimal winningAmount = settleWallets(conn, auction);
+          AuctionSettlementResult settlement =
+              settlementService.settleWalletsWithResult(conn, auction);
+          BigDecimal winningAmount = settlement.winningAmount();
           if (auction.getWinnerId() != null && winningAmount.signum() > 0) {
             auction.setStatus(AuctionStatus.PAID);
             auctionDAO.update(conn, auction);
@@ -303,143 +264,4 @@ public class AuctionService {
     }
     return amountRef[0];
   }
-
-  private BigDecimal settleWallets(java.sql.Connection conn, Auction auction) {
-    List<Bid> bids = bidDAO.findByAuction(conn, auction.getId());
-    Set<Integer> bidderIds = new LinkedHashSet<>();
-    for (Bid bid : bids) {
-      bidderIds.add(bid.getBidderId());
-    }
-    BigDecimal winningAmount = BigDecimal.ZERO;
-    Integer winnerId = auction.getWinnerId();
-    for (Integer bidderId : bidderIds) {
-      userDAO.lockRow(conn, bidderId);
-      User user =
-          userDAO
-              .findById(conn, bidderId)
-              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + bidderId));
-      if (winnerId != null && winnerId.equals(bidderId)) {
-        winningAmount = user.getWallet().commitFrozen(String.valueOf(auction.getId()));
-      } else {
-        user.getWallet().releaseFrozen(String.valueOf(auction.getId()));
-      }
-      userDAO.update(conn, user);
-    }
-    if (winnerId != null && winningAmount.signum() > 0) {
-      userDAO.lockRow(conn, auction.getSellerId());
-      User seller =
-          userDAO
-              .findById(conn, auction.getSellerId())
-              .orElseThrow(
-                  () ->
-                      new ServiceException("Không tìm thấy user với id: " + auction.getSellerId()));
-      seller.getWallet().deposit(winningAmount);
-      userDAO.update(conn, seller);
-    }
-    return winningAmount;
-  }
-
-  private void releaseWallets(java.sql.Connection conn, Auction auction) {
-    List<Bid> bids = bidDAO.findByAuction(conn, auction.getId());
-    Set<Integer> bidderIds = new LinkedHashSet<>();
-    for (Bid bid : bids) {
-      bidderIds.add(bid.getBidderId());
-    }
-    for (Integer bidderId : bidderIds) {
-      userDAO.lockRow(conn, bidderId);
-      User user =
-          userDAO
-              .findById(conn, bidderId)
-              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + bidderId));
-      user.getWallet().releaseFrozen(String.valueOf(auction.getId()));
-      userDAO.update(conn, user);
-    }
-  }
-
-  private void ensureCancelPermission(java.sql.Connection conn, Auction auction, int requesterId) {
-    if (requesterId == auction.getSellerId()) {
-      return;
-    }
-    User user =
-        userDAO
-            .findById(conn, requesterId)
-            .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + requesterId));
-    if (user.getRole() != UserRole.ADMIN) {
-      throw new ServiceException("Bạn không có quyền hủy phiên đấu giá này.");
-    }
-  }
-
-  private void validateCreateAuctionRequest(
-      String name,
-      String description,
-      long startingPrice,
-      long stepPrice,
-      ItemType type,
-      int durationMinutes,
-      int requesterId,
-      UserRole requesterRole) {
-    if (requesterId <= 0 || requesterRole == null) {
-      throw new ServiceException("Dữ liệu người tạo phiên không hợp lệ.");
-    }
-    if (requesterRole != UserRole.SELLER && requesterRole != UserRole.ADMIN) {
-      throw new ServiceException("Chỉ Seller/Admin được tạo phiên.");
-    }
-    if (name == null
-        || name.isBlank()
-        || description == null
-        || description.isBlank()
-        || startingPrice <= 0
-        || stepPrice <= 0
-        || durationMinutes <= 0
-        || type == null) {
-      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
-    }
-  }
 }
-
-/**
- * public BigDecimal settleAuctionPayment(int auctionId) { BigDecimal[] amountRef = new BigDecimal[]
- * {BigDecimal.ZERO}; transactionManager.runWithoutResult( conn -> { Auction auction =
- * requireAuction(conn, auctionId); if (auction.getStatus() == AuctionStatus.PAID) { return; } if
- * (auction.getStatus() != AuctionStatus.FINISHED) { return; } BigDecimal winningAmount =
- * settleWallets(conn, auction); if (auction.getWinnerId() != null && winningAmount.signum() > 0) {
- * auction.setStatus(AuctionStatus.PAID); auctionDAO.update(conn, auction); } amountRef[0] =
- * winningAmount; }); if (amountRef[0].signum() > 0) { invalidateCache(); } return amountRef[0]; }
- *
- * <p>private BigDecimal settleWallets(java.sql.Connection conn, Auction auction) { List<Bid> bids =
- * bidDAO.findByAuction(conn, auction.getId()); Set<Integer> bidderIds = new LinkedHashSet<>(); for
- * (Bid bid : bids) { bidderIds.add(bid.getBidderId()); } BigDecimal winningAmount =
- * BigDecimal.ZERO; Integer winnerId = auction.getWinnerId(); for (Integer bidderId : bidderIds) {
- * userDAO.lockRow(conn, bidderId); User user = userDAO .findById(conn, bidderId) .orElseThrow(() ->
- * new ServiceException("Không tìm thấy user với id: " + bidderId)); if (winnerId != null &&
- * winnerId.equals(bidderId)) { winningAmount =
- * user.getWallet().commitFrozen(String.valueOf(auction.getId())); } else {
- * user.getWallet().releaseFrozen(String.valueOf(auction.getId())); } userDAO.update(conn, user); }
- * if (winnerId != null && winningAmount.signum() > 0) { userDAO.lockRow(conn,
- * auction.getSellerId()); User seller = userDAO .findById(conn, auction.getSellerId())
- * .orElseThrow( () -> new ServiceException("Không tìm thấy user với id: " +
- * auction.getSellerId())); seller.getWallet().deposit(winningAmount); userDAO.update(conn, seller);
- * } return winningAmount; }
- *
- * <p>private void releaseWallets(java.sql.Connection conn, Auction auction) { List<Bid> bids =
- * bidDAO.findByAuction(conn, auction.getId()); Set<Integer> bidderIds = new LinkedHashSet<>(); for
- * (Bid bid : bids) { bidderIds.add(bid.getBidderId()); } for (Integer bidderId : bidderIds) {
- * userDAO.lockRow(conn, bidderId); User user = userDAO .findById(conn, bidderId) .orElseThrow(() ->
- * new ServiceException("Không tìm thấy user với id: " + bidderId));
- * user.getWallet().releaseFrozen(String.valueOf(auction.getId())); userDAO.update(conn, user); } }
- *
- * <p>private void ensureCancelPermission(java.sql.Connection conn, Auction auction, int
- * requesterId) { if (requesterId == auction.getSellerId()) { return; } User user = userDAO
- * .findById(conn, requesterId) .orElseThrow(() -> new ServiceException("Không tìm thấy user với id:
- * " + requesterId)); if (user.getRole() != UserRole.ADMIN) { throw new ServiceException("Bạn không
- * có quyền hủy phiên đấu giá này."); } }
- *
- * <p>private void validateCreateAuctionRequest( String name, String description, long
- * startingPrice, long stepPrice, ItemType type, int durationMinutes, int requesterId, UserRole
- * requesterRole) { if (requesterId <= 0 || requesterRole == null) { throw new ServiceException("Dữ
- * liệu người tạo phiên không hợp lệ."); } if (requesterRole != UserRole.SELLER && requesterRole !=
- * UserRole.ADMIN) { throw new ServiceException("Chỉ Seller/Admin được tạo phiên."); } if (name ==
- * null || name.isBlank() || description == null || description.isBlank() || startingPrice <= 0 ||
- * stepPrice <= 0 || durationMinutes <= 0 || type == null) { throw new ServiceException("Dữ liệu
- * phiên đấu giá không hợp lệ."); } }
- */

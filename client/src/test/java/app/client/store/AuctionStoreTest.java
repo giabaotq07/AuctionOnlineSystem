@@ -54,6 +54,39 @@ class AuctionStoreTest {
   }
 
   @Test
+  void mergeAuction_updatesPriceFromNewerSummary() {
+    AuctionStore store = AuctionStore.getInstance();
+    int auctionId = 910002;
+    LocalDateTime endTime = LocalDateTime.now().plusHours(2);
+    Auction detailed =
+        new Auction(
+            auctionId,
+            101,
+            201,
+            null,
+            AuctionStatus.RUNNING,
+            LocalDateTime.now().minusHours(1),
+            endTime,
+            5000,
+            0,
+            5,
+            LocalDateTime.now().minusDays(1),
+            LocalDateTime.now());
+    Auction summaryUpdate =
+        new Auction(
+            auctionId, 0, 0, null, AuctionStatus.RUNNING, null, endTime, 6500, 0, 6, null, null);
+    summaryUpdate.setItemName("Laptop");
+
+    store.addAuction(detailed);
+    store.addAuction(summaryUpdate);
+
+    Auction cached = store.getAuction(auctionId);
+    assertEquals(6, cached.getVersion());
+    assertEquals(6500, cached.getHighestBid());
+    assertEquals(101, cached.getItemId());
+  }
+
+  @Test
   void setHistorySummaries_deduplicatesAndSkipsInvalidIds() {
     AuctionStore store = AuctionStore.getInstance();
     store.clearHistory();

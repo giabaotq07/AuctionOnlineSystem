@@ -1,5 +1,6 @@
 package app.client.manager;
 
+import app.common.dto.ChatResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -9,6 +10,7 @@ public final class ClientNotificationCenter {
   private static volatile ClientNotificationCenter instance;
 
   private final List<Consumer<String>> messageListeners = new ArrayList<>();
+  private final List<Consumer<ChatResponse>> chatListeners = new ArrayList<>();
   private final List<Runnable> updateListeners = new ArrayList<>();
 
   private ClientNotificationCenter() {}
@@ -35,6 +37,16 @@ public final class ClientNotificationCenter {
     messageListeners.remove(listener);
   }
 
+  /** addChatListener. */
+  public synchronized void addChatListener(Consumer<ChatResponse> listener) {
+    chatListeners.add(listener);
+  }
+
+  /** removeChatListener. */
+  public synchronized void removeChatListener(Consumer<ChatResponse> listener) {
+    chatListeners.remove(listener);
+  }
+
   /** addUpdateListener. */
   public synchronized void addUpdateListener(Runnable listener) {
     updateListeners.add(listener);
@@ -53,6 +65,20 @@ public final class ClientNotificationCenter {
     }
     for (Consumer<String> listener : snapshot) {
       listener.accept(message);
+    }
+  }
+
+  /** notifyChat. */
+  public void notifyChat(ChatResponse response) {
+    if (response == null) {
+      return;
+    }
+    List<Consumer<ChatResponse>> snapshot;
+    synchronized (this) {
+      snapshot = new ArrayList<>(chatListeners);
+    }
+    for (Consumer<ChatResponse> listener : snapshot) {
+      listener.accept(response);
     }
   }
 

@@ -195,6 +195,10 @@ public final class AuctionStore {
     boolean incomingHasDetail = incoming.getItemId() > 0 || incoming.getSellerId() > 0;
     boolean incomingHasFullState =
         incomingHasDetail || incoming.getCreatedAt() != null || incoming.getUpdatedAt() != null;
+    long highestBid =
+        incomingHasFullState
+            ? incoming.getHighestBid()
+            : Math.max(existing.getHighestBid(), incoming.getHighestBid());
     Auction merged =
         new Auction(
             existing.getId(),
@@ -204,7 +208,7 @@ public final class AuctionStore {
             incoming.getStatus() != null ? incoming.getStatus() : existing.getStatus(),
             incoming.getStartTime() != null ? incoming.getStartTime() : existing.getStartTime(),
             incoming.getEndTime() != null ? incoming.getEndTime() : existing.getEndTime(),
-            incomingHasFullState ? incoming.getHighestBid() : existing.getHighestBid(),
+            highestBid,
             incomingHasDetail ? incoming.getExtendedCount() : existing.getExtendedCount(),
             incoming.getVersion(),
             incoming.getCreatedAt() != null ? incoming.getCreatedAt() : existing.getCreatedAt(),

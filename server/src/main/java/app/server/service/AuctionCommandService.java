@@ -126,9 +126,13 @@ public class AuctionCommandService {
                       bid.getBidderName(),
                       bid.getAmount()),
               () -> logger.info("Phiên {} kết thúc. Không có bid."));
-          Set<Integer> settledUserIds = settlementService.settleWallets(conn, auction);
+          AuctionSettlementResult settlement =
+              settlementService.settleWalletsWithResult(conn, auction);
+          if (auction.getWinnerId() != null && settlement.winningAmount().signum() > 0) {
+            auction.markPaid();
+          }
           auctionDAO.update(conn, auction);
-          return new AuctionCompletion(auctionId, true, highestBid, settledUserIds);
+          return new AuctionCompletion(auctionId, true, highestBid, settlement.settledUserIds());
         });
   }
 
@@ -152,7 +156,7 @@ public class AuctionCommandService {
     }
   }
 
-  private void validateCreateAuctionRequest(
+  static void validateCreateAuctionRequest(
       String name,
       String description,
       long startingPrice,

@@ -8,6 +8,17 @@ public record AuctionSummary(
     int auctionId,
     String itemName,
     long currentPrice,
+    LocalDateTime startTime,
     LocalDateTime endTime,
     AuctionStatus status,
-    int version) {}
+    int version) {
+  public AuctionSummary(
+      int auctionId,
+      String itemName,
+      long currentPrice,
+      LocalDateTime endTime,
+      AuctionStatus status,
+      int version) {
+    this(auctionId, itemName, currentPrice, null, endTime, status, version);
+  }
+}

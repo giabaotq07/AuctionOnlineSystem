@@ -55,6 +55,7 @@ public final class DtoMapper {
         auction.getId(),
         item == null ? auction.getItemName() : item.getName(),
         currentPrice(auction, item),
+        auction.getStartTime(),
         auction.getEndTime(),
         auction.getStatus(),
         auction.getVersion());
@@ -115,7 +116,7 @@ public final class DtoMapper {
             0,
             null,
             summary.status(),
-            null,
+            summary.startTime(),
             summary.endTime(),
             summary.currentPrice(),
             0,

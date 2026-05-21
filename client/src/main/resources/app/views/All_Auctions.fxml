@@ -32,7 +32,7 @@
 
                 <Region HBox.hgrow="ALWAYS" />
 
-                <Label style="-fx-font-weight: bold;                               -fx-font-size: 20px;" text="LỊCH SỬ ĐẤU GIÁ CỦA TÔI" textFill="WHITE" />
+                <Label style="-fx-font-weight: bold;                               -fx-font-size: 20px;" text="TẤT CẢ PHIÊN ĐẤU GIÁ" textFill="WHITE" />
 
                 <Region HBox.hgrow="ALWAYS" />
 
@@ -77,7 +77,7 @@
 
                         <HBox alignment="CENTER_LEFT" spacing="15">
 
-                            <Label style="-fx-font-weight: bold;                                           -fx-font-size: 22px;" text="ĐANG DIỄN RA" textFill="#673ab7" />
+                            <Label style="-fx-font-weight: bold;                                           -fx-font-size: 22px;" text="SẮP / ĐANG DIỄN RA" textFill="#673ab7" />
 
                         </HBox>
 

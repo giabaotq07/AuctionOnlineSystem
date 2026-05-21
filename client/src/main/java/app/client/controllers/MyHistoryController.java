@@ -7,8 +7,12 @@ import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -18,6 +22,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 /** MyHistoryController. */
 public class MyHistoryController implements Cleanable {
@@ -30,6 +35,7 @@ public class MyHistoryController implements Cleanable {
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final List<Timeline> countdownTimelines = new ArrayList<>();
   private boolean reloadLoading;
   private Button reloadButton;
   private Runnable stopReloadLoading = () -> {};
@@ -121,6 +127,7 @@ public class MyHistoryController implements Cleanable {
     if (runningPane == null || finishedPane == null) {
       return;
     }
+    stopCountdownTimelines();
     runningPane.getChildren().clear();
     finishedPane.getChildren().clear();
     for (AuctionSummary summary : summaries) {
@@ -128,7 +135,7 @@ public class MyHistoryController implements Cleanable {
         continue;
       }
       VBox card = createAuctionCard(summary);
-      if (summary.status() == AuctionStatus.RUNNING) {
+      if (isActiveStatus(summary.status())) {
         runningPane.getChildren().add(card);
       } else {
         finishedPane.getChildren().add(card);
@@ -161,17 +168,67 @@ public class MyHistoryController implements Cleanable {
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
     Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel =
-        new Label("Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime()));
+    Label timeLabel = new Label(timeText(summary));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
+    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
+      attachStartCountdown(summary.startTime(), timeLabel);
+    }
     Button btnDetail =
-        new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+        new Button(
+            summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
+                ? "Xem kết quả"
+                : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle(
         "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
     btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(summary));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
+  }
+
+  private boolean isActiveStatus(AuctionStatus status) {
+    return status == AuctionStatus.OPEN
+        || status == AuctionStatus.RUNNING
+        || status == AuctionStatus.ENDING_SOON;
+  }
+
+  private String timeText(AuctionSummary summary) {
+    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
+      return "Bắt đầu sau: " + countdownText(summary.startTime());
+    }
+    return "Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime());
+  }
+
+  private void attachStartCountdown(LocalDateTime startTime, Label label) {
+    Timeline timeline = new Timeline();
+    timeline
+        .getKeyFrames()
+        .add(
+            new KeyFrame(
+                Duration.seconds(1),
+                event -> {
+                  if (!LocalDateTime.now().isBefore(startTime)) {
+                    label.setText("Đang chờ bắt đầu...");
+                    timeline.stop();
+                    return;
+                  }
+                  label.setText("Bắt đầu sau: " + countdownText(startTime));
+                }));
+    timeline.setCycleCount(Timeline.INDEFINITE);
+    timeline.play();
+    countdownTimelines.add(timeline);
+  }
+
+  private String countdownText(LocalDateTime targetTime) {
+    long totalSeconds = Math.max(0, ChronoUnit.SECONDS.between(LocalDateTime.now(), targetTime));
+    long days = totalSeconds / 86400;
+    long hours = (totalSeconds % 86400) / 3600;
+    long minutes = (totalSeconds % 3600) / 60;
+    long seconds = totalSeconds % 60;
+    if (days > 0) {
+      return String.format("%d ngày %02d:%02d:%02d", days, hours, minutes, seconds);
+    }
+    return String.format("%02d:%02d:%02d", hours, minutes, seconds);
   }
 
   /** Member. */
@@ -216,5 +273,13 @@ public class MyHistoryController implements Cleanable {
   public void cleanup() {
     notifications.removeUpdateListener(summariesListener);
     setReloadLoading(false);
+    stopCountdownTimelines();
+  }
+
+  private void stopCountdownTimelines() {
+    for (Timeline timeline : countdownTimelines) {
+      timeline.stop();
+    }
+    countdownTimelines.clear();
   }
 }

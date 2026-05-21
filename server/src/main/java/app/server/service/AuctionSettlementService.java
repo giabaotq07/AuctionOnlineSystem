@@ -6,6 +6,7 @@ import app.common.models.Bid;
 import app.common.models.User;
 import app.server.dao.BidDAO;
 import app.server.dao.UserDAO;
+import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,21 +22,42 @@ public class AuctionSettlementService {
   }
 
   public Set<Integer> settleWallets(java.sql.Connection conn, Auction auction) {
+    return settleWalletsWithResult(conn, auction).settledUserIds();
+  }
+
+  public AuctionSettlementResult settleWalletsWithResult(
+      java.sql.Connection conn, Auction auction) {
     Set<Integer> bidderIds = bidderIds(conn, auction.getId());
+    Set<Integer> settledUserIds = new LinkedHashSet<>();
+    BigDecimal winningAmount = BigDecimal.ZERO;
+    Integer winnerId = auction.getWinnerId();
     for (Integer bidderId : bidderIds) {
       userDAO.lockRow(conn, bidderId);
       User user =
           userDAO
               .findById(conn, bidderId)
               .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + bidderId));
-      if (auction.getWinnerId() != null && auction.getWinnerId() == bidderId) {
-        user.getWallet().commitFrozen(String.valueOf(auction.getId()));
+      if (winnerId != null && winnerId.equals(bidderId)) {
+        winningAmount = user.getWallet().commitFrozen(String.valueOf(auction.getId()));
       } else {
         user.getWallet().releaseFrozen(String.valueOf(auction.getId()));
       }
       userDAO.update(conn, user);
+      settledUserIds.add(bidderId);
     }
-    return bidderIds;
+    if (winnerId != null && winningAmount.signum() > 0) {
+      userDAO.lockRow(conn, auction.getSellerId());
+      User seller =
+          userDAO
+              .findById(conn, auction.getSellerId())
+              .orElseThrow(
+                  () ->
+                      new ServiceException("Không tìm thấy user với id: " + auction.getSellerId()));
+      seller.getWallet().deposit(winningAmount);
+      userDAO.update(conn, seller);
+      settledUserIds.add(auction.getSellerId());
+    }
+    return new AuctionSettlementResult(winningAmount, settledUserIds);
   }
 
   public void releaseWallets(java.sql.Connection conn, Auction auction) {

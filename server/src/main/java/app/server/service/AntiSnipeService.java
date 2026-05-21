@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class AntiSnipeService {
   private static final int THRESHOLD_SECONDS = 30;
   private static final int EXTENSION_SECONDS = 60;
+  private static final int MAX_EXTENSIONS = 5;
   private final Clock clock;
 
   /** AntiSnipeService. */
@@ -19,6 +20,9 @@ public class AntiSnipeService {
   /** apply. */
   public void apply(Auction auction) {
     if (auction.getEndTime() == null) {
+      return;
+    }
+    if (auction.getExtendedCount() >= MAX_EXTENSIONS) {
       return;
     }
     long secondsLeft =

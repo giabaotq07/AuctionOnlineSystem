@@ -13,6 +13,7 @@ import app.common.protocol.PacketRes;
 import app.server.command.Command;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
+import app.server.service.AuctionCompletion;
 import app.server.service.AuctionService;
 import app.server.service.AuctionSnapshot;
 import app.server.service.UserService;
@@ -47,9 +48,15 @@ public class SettleWalletCommand extends Command {
       }
       int auctionId = request.auctionId();
       int userId = clientHandler.getUser().getId();
-      auctionService.completeAndGetHighestBid(auctionId);
+      AuctionCompletion completion = auctionService.completeAuction(auctionId);
       AuctionSnapshot snapshot = auctionService.getAuction(auctionId);
-      BigDecimal paidAmount = auctionService.settleAuctionPayment(auctionId);
+      BigDecimal paidAmount =
+          completion.completed()
+              ? completion
+                  .highestBid()
+                  .map(bid -> BigDecimal.valueOf(bid.getAmount()))
+                  .orElse(BigDecimal.ZERO)
+              : auctionService.settleAuctionPayment(auctionId);
       if (paidAmount.signum() > 0 && snapshot.auction().getWinnerId() != null) {
         String auctionName =
             snapshot.item() == null ? "Phiên #" + auctionId : snapshot.item().getName();
@@ -59,10 +66,10 @@ public class SettleWalletCommand extends Command {
             new AuctionPaidNoticeResponse(auctionId, auctionName, paidAmount, "WINNER");
         Server.sendToUser(
             snapshot.auction().getSellerId(),
-            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "fello3", sellerNotice));
+            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
         Server.sendToUser(
             snapshot.auction().getWinnerId(),
-            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "hello1", winnerNotice));
+            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
       }
       List<AuctionSnapshot> snapshots = auctionService.getAuctions();
       AuctionSummariesResponse summariesResponse =
@@ -73,11 +80,11 @@ public class SettleWalletCommand extends Command {
                           DtoMapper.toAuctionSummary(snapshotItem.auction(), snapshotItem.item()))
                   .toList());
       Server.broadcast(
-          PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, "hello", summariesResponse), -1);
+          PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", summariesResponse), -1);
       User updated = userService.getById(userId);
       WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(updated));
       clientHandler.sendPacket(
-          PacketRes.of(PacketType.WALLET_UPDATE, "Cập nhật ví thành công.", response));
+          PacketRes.of(PacketType.WALLET_UPDATED, "Cập nhật ví thành công.", response));
     } catch (ServiceException e) {
       logger.warn("Settle wallet failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -88,6 +95,6 @@ public class SettleWalletCommand extends Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.WALLET_UPDATE, message));
+    clientHandler.sendPacket(PacketRes.error(PacketType.WALLET_UPDATED, message));
   }
 }
