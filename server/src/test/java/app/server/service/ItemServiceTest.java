@@ -60,6 +60,7 @@ class ItemServiceTest extends BaseDAOTest {
 
     assertThrows(
         ServiceException.class,
-        () -> itemService.getSellerItems(otherSeller.getId(), otherSeller.getRole(), seller.getId()));
+        () ->
+            itemService.getSellerItems(otherSeller.getId(), otherSeller.getRole(), seller.getId()));
   }
 }
