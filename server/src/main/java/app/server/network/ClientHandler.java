@@ -67,6 +67,7 @@ public class ClientHandler implements Runnable {
     registry.put(
         PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
+    registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
     return registry;
   }
 
@@ -141,7 +142,8 @@ public class ClientHandler implements Runnable {
           DELETE_ITEM,
           FETCH_USER_LIST,
           CANCEL_AUCTION,
-          DEPOSIT ->
+          DEPOSIT,
+          SETTLE_WALLET ->
           true;
       default -> false;
     };
@@ -238,13 +240,5 @@ public class ClientHandler implements Runnable {
 
   public Socket getSocket() {
     return socket;
-  }
-
-  public BufferedWriter getWriter() {
-    return writer;
-  }
-
-  public BufferedReader getReader() {
-    return reader;
   }
 }

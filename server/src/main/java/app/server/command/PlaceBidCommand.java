@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** PlaceBidCommand. */
-public class PlaceBidCommand extends Command {
+public class PlaceBidCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
   private final UserService userService;
@@ -36,10 +36,6 @@ public class PlaceBidCommand extends Command {
     int auctionId = 0;
     int bidderId = 0;
     try {
-      if (!clientHandler.isAuthenticated()) {
-        sendError(clientHandler, "Authentication required");
-        return;
-      }
       PlaceBidRequest request = packet.getData(PlaceBidRequest.class);
       if (request == null) {
         sendError(clientHandler, "Dữ liệu đặt giá không hợp lệ.");
@@ -73,7 +69,7 @@ public class PlaceBidCommand extends Command {
           PacketRes.of(PacketType.BID_PLACED, "Có lượt đặt giá mới.", response),
           bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      broadcastAuctionSumList();
+      Server.broadcastAuctionList(auctionService);
       broadcastAuctionDetail(auctionId);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
@@ -88,16 +84,6 @@ public class PlaceBidCommand extends Command {
   private void sendWalletUpdate(ClientHandler clientHandler, User user) {
     WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
     clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATED, "OK", response));
-  }
-
-  private void broadcastAuctionSumList() {
-    try {
-      AuctionSummariesResponse response =
-          new AuctionSummariesResponse(auctionService.getAuctionSummaries());
-      Server.broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
-    } catch (Exception e) {
-      logger.error("Failed to broadcast auction list", e);
-    }
   }
 
   private void broadcastAuctionDetail(int auctionId) {

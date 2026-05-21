@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** FetchUserListCommand. */
-public class FetchUserListCommand extends Command {
+public class FetchUserListCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchUserListCommand.class);
   private final UserService userService;
 

@@ -10,6 +10,7 @@ import app.common.dto.LoginRequest;
 import app.common.dto.PlaceBidRequest;
 import app.common.dto.RegisterRequest;
 import app.common.dto.Request;
+import app.common.dto.SettleWalletRequest;
 import app.common.enums.PacketType;
 import app.common.protocol.PacketReq;
 import java.io.IOException;
@@ -88,6 +89,11 @@ public final class ClientRequestService {
   /** deposit. */
   public void deposit(BigDecimal amount) throws IOException {
     send(PacketType.DEPOSIT, new DepositRequest(amount));
+  }
+
+  /** settleWallet. */
+  public void settleWallet(int auctionId) throws IOException {
+    send(PacketType.SETTLE_WALLET, new SettleWalletRequest(auctionId));
   }
 
   /** chat. */

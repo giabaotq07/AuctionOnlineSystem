@@ -37,13 +37,23 @@ public class AuctionService {
       ItemDAO itemDAO,
       UserDAO userDAO,
       TransactionManager transactionManager) {
+    this(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, Clock.systemDefaultZone());
+  }
+
+  public AuctionService(
+      AuctionDAO auctionDAO,
+      BidDAO bidDAO,
+      ItemDAO itemDAO,
+      UserDAO userDAO,
+      TransactionManager transactionManager,
+      Clock clock) {
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
     this.itemDAO = itemDAO;
     this.transactionManager = transactionManager;
     this.settlementService = new AuctionSettlementService(bidDAO, userDAO);
     this.queryService = new AuctionQueryService();
-    this.clock = Clock.systemDefaultZone();
+    this.clock = Objects.requireNonNull(clock, "clock");
     this.commandService =
         new AuctionCommandService(
             auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, settlementService, clock);
@@ -197,7 +207,7 @@ public class AuctionService {
   public List<AuctionCompletion> completeExpiredAuctionCompletions() {
     List<AuctionCompletion> completions = new ArrayList<>();
     for (Auction auction : auctionDAO.findAll()) {
-      if (!auction.isExpired()) {
+      if (!auction.isExpired(clock)) {
         continue;
       }
       AuctionStatus status = auction.getStatus();

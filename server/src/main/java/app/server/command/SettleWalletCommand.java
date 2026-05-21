@@ -1,7 +1,6 @@
-package app.server.handler;
+package app.server.command;
 
 import app.common.dto.AuctionPaidNoticeResponse;
-import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.SettleWalletRequest;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
@@ -10,7 +9,6 @@ import app.common.mapper.DtoMapper;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
-import app.server.command.Command;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
 import app.server.service.AuctionCompletion;
@@ -18,12 +16,11 @@ import app.server.service.AuctionService;
 import app.server.service.AuctionSnapshot;
 import app.server.service.UserService;
 import java.math.BigDecimal;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** SettleWalletCommand. */
-public class SettleWalletCommand extends Command {
+public class SettleWalletCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(SettleWalletCommand.class);
   private final AuctionService auctionService;
   private final UserService userService;
@@ -37,10 +34,6 @@ public class SettleWalletCommand extends Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
-      if (!clientHandler.isAuthenticated()) {
-        sendError(clientHandler, "Authentication required");
-        return;
-      }
       SettleWalletRequest request = packet.getData(SettleWalletRequest.class);
       if (request == null || request.auctionId() <= 0) {
         sendError(clientHandler, "Dữ liệu phiên đấu giá không hợp lệ.");
@@ -49,14 +42,11 @@ public class SettleWalletCommand extends Command {
       int auctionId = request.auctionId();
       int userId = clientHandler.getUser().getId();
       AuctionCompletion completion = auctionService.completeAuction(auctionId);
-      AuctionSnapshot snapshot = auctionService.getAuction(auctionId);
       BigDecimal paidAmount =
           completion.completed()
-              ? completion
-                  .highestBid()
-                  .map(bid -> BigDecimal.valueOf(bid.getAmount()))
-                  .orElse(BigDecimal.ZERO)
+              ? completion.winningAmount()
               : auctionService.settleAuctionPayment(auctionId);
+      AuctionSnapshot snapshot = auctionService.getAuction(auctionId);
       if (paidAmount.signum() > 0 && snapshot.auction().getWinnerId() != null) {
         String auctionName =
             snapshot.item() == null ? "Phiên #" + auctionId : snapshot.item().getName();
@@ -71,16 +61,7 @@ public class SettleWalletCommand extends Command {
             snapshot.auction().getWinnerId(),
             PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
       }
-      List<AuctionSnapshot> snapshots = auctionService.getAuctions();
-      AuctionSummariesResponse summariesResponse =
-          new AuctionSummariesResponse(
-              snapshots.stream()
-                  .map(
-                      snapshotItem ->
-                          DtoMapper.toAuctionSummary(snapshotItem.auction(), snapshotItem.item()))
-                  .toList());
-      Server.broadcast(
-          PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", summariesResponse), -1);
+      Server.broadcastAuctionList(auctionService);
       User updated = userService.getById(userId);
       WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(updated));
       clientHandler.sendPacket(

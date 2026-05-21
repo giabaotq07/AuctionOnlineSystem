@@ -4,6 +4,7 @@ import app.common.models.Auction;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /** AntiSnipeService. */
 public class AntiSnipeService {
@@ -14,7 +15,12 @@ public class AntiSnipeService {
 
   /** AntiSnipeService. */
   public AntiSnipeService() {
-    this.clock = Clock.systemDefaultZone();
+    this(Clock.systemDefaultZone());
+  }
+
+  /** AntiSnipeService. */
+  public AntiSnipeService(Clock clock) {
+    this.clock = Objects.requireNonNull(clock, "clock");
   }
 
   /** apply. */

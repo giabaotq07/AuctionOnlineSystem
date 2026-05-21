@@ -14,6 +14,7 @@ import app.server.dao.BidDAO;
 import app.server.dao.ItemDAO;
 import app.server.dao.UserDAO;
 import app.server.database.TransactionManager;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -110,12 +111,12 @@ public class AuctionCommandService {
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
           Optional<Bid> highestBid = bidDAO.findHighestBid(conn, auctionId);
-          if (!auction.isExpired()) {
-            return new AuctionCompletion(auctionId, false, highestBid, Set.of());
+          if (!auction.isExpired(clock)) {
+            return new AuctionCompletion(auctionId, false, highestBid, BigDecimal.ZERO, Set.of());
           }
           AuctionStatus status = auction.getStatus();
           if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-            return new AuctionCompletion(auctionId, false, highestBid, Set.of());
+            return new AuctionCompletion(auctionId, false, highestBid, BigDecimal.ZERO, Set.of());
           }
           auction.finish(highestBid.map(Bid::getBidderId).orElse(null));
           highestBid.ifPresentOrElse(
@@ -132,7 +133,8 @@ public class AuctionCommandService {
             auction.markPaid();
           }
           auctionDAO.update(conn, auction);
-          return new AuctionCompletion(auctionId, true, highestBid, settlement.settledUserIds());
+          return new AuctionCompletion(
+              auctionId, true, highestBid, settlement.winningAmount(), settlement.settledUserIds());
         });
   }
 

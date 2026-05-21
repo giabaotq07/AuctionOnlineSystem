@@ -7,7 +7,7 @@ import java.util.UUID;
 /** Session. */
 public class Session {
   private final String sessionId;
-  private User user;
+  private volatile User user;
   private final LocalDateTime createdAt;
   private volatile LocalDateTime lastAccessTime;
   private volatile boolean authenticated;

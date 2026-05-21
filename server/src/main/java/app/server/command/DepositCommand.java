@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** DepositCommand. */
-public class DepositCommand extends Command {
+public class DepositCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(DepositCommand.class);
   private final UserService userService;
 
@@ -27,10 +27,6 @@ public class DepositCommand extends Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
-      if (!clientHandler.isAuthenticated()) {
-        sendError(clientHandler, "Authentication required");
-        return;
-      }
       DepositRequest request = packet.getData(DepositRequest.class);
       if (request == null || request.amount() == null) {
         sendError(clientHandler, "Dữ liệu nạp tiền không hợp lệ.");

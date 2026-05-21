@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** ChatCommand. */
-public class ChatCommand extends Command {
+public class ChatCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(ChatCommand.class);
   private static final int MAX_MESSAGE_LENGTH = 500;
 

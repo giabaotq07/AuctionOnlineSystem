@@ -1,6 +1,7 @@
 package app.common.models;
 
 import app.common.enums.AuctionStatus;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -152,7 +153,11 @@ public class Auction {
   }
 
   public boolean isExpired() {
-    return endTime != null && LocalDateTime.now().isAfter(this.endTime);
+    return isExpired(Clock.systemDefaultZone());
+  }
+
+  public boolean isExpired(Clock clock) {
+    return endTime != null && LocalDateTime.now(clock).isAfter(this.endTime);
   }
 
   public boolean isRunning() {

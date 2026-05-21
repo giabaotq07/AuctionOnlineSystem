@@ -12,11 +12,11 @@ import app.server.dao.impl.*;
 import app.server.database.TransactionManager;
 import app.server.service.*;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.time.Clock;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +69,11 @@ public class Server {
     UserDAO userDAO = new MySqlUserDAO();
     ItemDAO itemDAO = new MySqlItemDAO();
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
-    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     BidDAO bidDAO = new MySqlBidDAO();
     TransactionManager transactionManager = new TransactionManager();
     BidValidator bidValidator = new BidValidator();
-    AntiSnipeService antiSnipeService = new AntiSnipeService();
+    Clock clock = Clock.systemDefaultZone();
+    AntiSnipeService antiSnipeService = new AntiSnipeService(clock);
     userService = new UserService(userDAO, transactionManager);
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     bidService =
@@ -85,7 +85,8 @@ public class Server {
             transactionManager,
             bidValidator,
             antiSnipeService);
-    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
+    auctionService =
+        new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, clock);
     AuctionScheduler.getInstance().init(auctionService);
     startAuctionMaintenance();
   }
@@ -99,7 +100,7 @@ public class Server {
               logger.info(
                   "[SERVER] Completed expired auctions: {}",
                   completions.stream().map(completion -> completion.auctionId()).toList());
-              broadcastAuctionList();
+              broadcastAuctionList(auctionService);
               sendPaymentNotices(completions);
               sendWalletUpdates(completions);
             }
@@ -112,7 +113,10 @@ public class Server {
         TimeUnit.SECONDS);
   }
 
-  private void broadcastAuctionList() {
+  public static void broadcastAuctionList(AuctionService auctionService) {
+    if (auctionService == null) {
+      return;
+    }
     try {
       var response = new AuctionSummariesResponse(auctionService.getAuctionSummaries());
       broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
@@ -132,7 +136,10 @@ public class Server {
                   if (snapshot.auction().getStatus() != AuctionStatus.PAID) {
                     return;
                   }
-                  var amount = BigDecimal.valueOf(bid.getAmount());
+                  var amount = completion.winningAmount();
+                  if (amount.signum() <= 0) {
+                    return;
+                  }
                   String auctionName =
                       snapshot.item() == null
                           ? "Phiên #" + completion.auctionId()

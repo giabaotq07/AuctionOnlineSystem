@@ -5,7 +5,7 @@ import app.server.network.ClientHandler;
 import app.server.network.Session;
 
 /** Clears current live-auction watcher context for a client session. */
-public class UnwatchAuctionCommand extends Command {
+public class UnwatchAuctionCommand implements Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     Session session = clientHandler.getSession();

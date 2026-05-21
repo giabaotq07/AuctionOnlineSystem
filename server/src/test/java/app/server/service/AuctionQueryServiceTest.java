@@ -3,6 +3,7 @@ package app.server.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import app.TestFixtures;
+import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
 import app.common.enums.UserRole;
 import app.common.models.Auction;
@@ -56,7 +57,30 @@ class AuctionQueryServiceTest extends BaseDAOTest {
   }
 
   @Test
-  void filterHistorySnapshots_shouldApplyPredicate() {
+  void filterHistorySnapshots_shouldApplyHistoryStatusAndPredicate() {
+    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Watch", ItemType.ART));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+    auction.setStatus(AuctionStatus.FINISHED);
+    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
+
+    List<AuctionSnapshot> snapshots = List.of(new AuctionSnapshot(auction, item));
+    var filtered =
+        queryService.filterHistorySnapshots(
+            snapshots,
+            snapshot ->
+                snapshot.auction().getSellerId() == bidder.getId()
+                    || bidDAO.existsByAuctionAndUser(snapshot.auctionId(), bidder.getId()));
+
+    assertEquals(1, filtered.size());
+    assertEquals(auction.getId(), filtered.get(0).auctionId());
+  }
+
+  @Test
+  void filterHistorySnapshots_shouldExcludeActiveAuctions() {
     User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
     Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Watch", ItemType.ART));
     Auction auction =
@@ -73,7 +97,6 @@ class AuctionQueryServiceTest extends BaseDAOTest {
                 snapshot.auction().getSellerId() == bidder.getId()
                     || bidDAO.existsByAuctionAndUser(snapshot.auctionId(), bidder.getId()));
 
-    assertEquals(1, filtered.size());
-    assertEquals(auction.getId(), filtered.get(0).auctionId());
+    assertEquals(0, filtered.size());
   }
 }

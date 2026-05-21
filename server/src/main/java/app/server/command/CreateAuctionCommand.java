@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** CreateAuctionCommand. */
-public class CreateAuctionCommand extends Command {
+public class CreateAuctionCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
 
@@ -26,11 +26,6 @@ public class CreateAuctionCommand extends Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
-      if (!clientHandler.isAuthenticated()) {
-        clientHandler.sendPacket(
-            PacketRes.error(PacketType.CREATE_AUCTION, "Authentication required"));
-        return;
-      }
       CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
       if (request == null) {
         sendError(clientHandler, "Invalid request");
@@ -58,7 +53,7 @@ public class CreateAuctionCommand extends Command {
       Server.broadcast(
           PacketRes.of(PacketType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
           user.getId());
-      broadcastAuctionList();
+      Server.broadcastAuctionList(auctionService);
 
       logger.info("Auction created successfully by user {}", user.getId());
     } catch (ServiceException e) {
@@ -72,16 +67,5 @@ public class CreateAuctionCommand extends Command {
 
   private void sendError(ClientHandler clientHandler, String message) {
     clientHandler.sendPacket(PacketRes.error(PacketType.CREATE_AUCTION, message));
-  }
-
-  private void broadcastAuctionList() {
-    try {
-      AuctionSummariesResponse summariesResponse =
-          new AuctionSummariesResponse(auctionService.getAuctionSummaries());
-      Server.broadcast(
-          PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", summariesResponse), -1);
-    } catch (Exception e) {
-      logger.error("Failed to broadcast auction list", e);
-    }
   }
 }

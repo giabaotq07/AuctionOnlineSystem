@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** UpdateItemCommand. */
-public class UpdateItemCommand extends Command {
+public class UpdateItemCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(UpdateItemCommand.class);
   private final ItemService itemService;
 

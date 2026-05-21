@@ -1,6 +1,7 @@
 package app.server.service;
 
 import app.common.dto.AuctionSummary;
+import app.common.enums.AuctionStatus;
 import app.common.mapper.DtoMapper;
 import java.util.List;
 import java.util.function.Predicate;
@@ -16,6 +17,15 @@ public class AuctionQueryService {
 
   public List<AuctionSnapshot> filterHistorySnapshots(
       List<AuctionSnapshot> snapshots, Predicate<AuctionSnapshot> filter) {
-    return snapshots.stream().filter(filter).toList();
+    return snapshots.stream()
+        .filter(snapshot -> isHistoryStatus(snapshot.auction().getStatus()))
+        .filter(filter)
+        .toList();
+  }
+
+  private boolean isHistoryStatus(AuctionStatus status) {
+    return status == AuctionStatus.FINISHED
+        || status == AuctionStatus.PAID
+        || status == AuctionStatus.CANCELED;
   }
 }

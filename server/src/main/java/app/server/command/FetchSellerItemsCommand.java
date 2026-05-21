@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** FetchSellerItemsCommand. */
-public class FetchSellerItemsCommand extends Command {
+public class FetchSellerItemsCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchSellerItemsCommand.class);
   private final ItemService itemService;
 

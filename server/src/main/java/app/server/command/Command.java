@@ -4,7 +4,7 @@ import app.common.protocol.PacketReq;
 import app.server.network.ClientHandler;
 
 /** Command. */
-public abstract class Command {
+public interface Command {
   /** execute. */
-  public abstract void execute(ClientHandler clientHandler, PacketReq packet);
+  void execute(ClientHandler clientHandler, PacketReq packet);
 }

@@ -1,11 +1,7 @@
 package app.server.service;
 
-import app.common.dto.AuctionSummariesResponse;
 import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
-import app.common.mapper.DtoMapper;
 import app.common.models.Auction;
-import app.common.protocol.PacketRes;
 import app.server.network.Server;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -18,12 +14,12 @@ import org.slf4j.LoggerFactory;
 
 public class AuctionScheduler {
   private static final Logger logger = LoggerFactory.getLogger(AuctionScheduler.class);
-  private static AuctionScheduler instance;
+  private static volatile AuctionScheduler instance;
   private final ScheduledExecutorService scheduler;
   private AuctionService auctionService;
 
   private AuctionScheduler() {
-    this.scheduler = Executors.newScheduledThreadPool(10);
+    this.scheduler = Executors.newScheduledThreadPool(2);
   }
 
   public static synchronized AuctionScheduler getInstance() {
@@ -62,7 +58,7 @@ public class AuctionScheduler {
               boolean updated = auctionService.startOpenAuction(auctionId);
               if (updated) {
                 logger.info("Auction {} started automatically.", auctionId);
-                broadcastAuctionList();
+                Server.broadcastAuctionList(auctionService);
               }
             }
           } catch (Exception e) {
@@ -71,20 +67,6 @@ public class AuctionScheduler {
         },
         delay,
         TimeUnit.MILLISECONDS);
-  }
-
-  private void broadcastAuctionList() {
-    try {
-      AuctionSummariesResponse summariesResponse =
-          new AuctionSummariesResponse(
-              auctionService.getAuctions().stream()
-                  .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
-                  .toList());
-      Server.broadcast(
-          PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", summariesResponse), -1);
-    } catch (Exception ex) {
-      logger.error("Failed to broadcast updated auction list", ex);
-    }
   }
 
   public void shutdown() {

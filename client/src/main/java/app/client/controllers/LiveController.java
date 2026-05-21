@@ -71,7 +71,6 @@ public class LiveController implements Cleanable {
   private final Runnable updateListener = () -> Platform.runLater(this::handleUpdateNotification);
   private final Consumer<String> messageListener =
       message -> Platform.runLater(() -> handleMessageNotification(message));
-  private boolean settlementSent = false;
   private AuctionStatus lastKnownStatus;
 
   /** Member. */

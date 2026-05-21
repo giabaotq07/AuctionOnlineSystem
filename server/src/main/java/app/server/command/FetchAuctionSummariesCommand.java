@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** FetchAuctionSummariesCommand. */
-public class FetchAuctionSummariesCommand extends Command {
+public class FetchAuctionSummariesCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionSummariesCommand.class);
   private final AuctionService auctionService;
 
