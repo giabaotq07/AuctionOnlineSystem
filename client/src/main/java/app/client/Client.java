@@ -6,14 +6,9 @@ import app.common.exception.ConnectException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.common.utils.JsonUtil;
-import app.client.utils.AlertUtils;
 import java.io.*;
 import java.net.Socket;
 import java.util.EnumMap;
-import java.net.SocketException;
-import java.text.DecimalFormat;
-import javafx.application.Platform;
-import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +25,6 @@ public class Client {
   private volatile boolean connected = false;
   private volatile boolean closed = true;
   private boolean paidNoticeRegistered = false;
-  private int retryCount = 0;
-  private final Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap =
-      new ConcurrentHashMap<>();
 
   private final Map<PacketType, Command> commands;
 
@@ -91,7 +83,7 @@ public class Client {
     reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     connected = true;
     startListener();
-    registerPaidNoticeListener();
+    //    registerPaidNoticeListener();
     logger.info("[CLIENT] Connected successfully");
   }
 
@@ -206,66 +198,33 @@ public class Client {
     return closed;
   }
 
-  public User getCurrentUser() {
-    return currentUser;
-  }
-
-  public void setCurrentUser(User currentUser) {
-    this.currentUser = currentUser;
-  }
-
-  /** updateCurrentUser. */
-  public void updateCurrentUser(UserData userData) {
-    if (userData == null) {
-      return;
-    }
-    currentUser = DtoMapper.toUser(userData);
-  }
-
-  private static <T extends Response> void validateSubscription(
-      PacketType packetType, Class<T> responseClass, PacketListener<T> listener) {
-    if (packetType == null) {
-      throw new IllegalArgumentException("Packet type cannot be null");
-    }
-    if (responseClass == null) {
-      throw new IllegalArgumentException("Response class cannot be null");
-    }
-    if (listener == null) {
-      throw new IllegalArgumentException("Listener cannot be null");
-    }
-    if (!packetType.resClass.equals(responseClass)) {
-      throw new IllegalArgumentException(
-          "Response class does not match packet type: " + packetType);
-    }
-  }
-
-  private void registerPaidNoticeListener() {
-    if (paidNoticeRegistered) {
-      return;
-    }
-    paidNoticeRegistered = true;
-    subscribe(
-        PacketType.AUCTION_PAID_NOTICE,
-        AuctionPaidNoticeResponse.class,
-        (response, success, message) -> {
-          if (!success || response == null) {
-            return;
-          }
-          String roleLabel = "WINNER".equalsIgnoreCase(response.role())
-              ? "Bạn đã thanh toán"
-              : "Bạn đã nhận thanh toán";
-          DecimalFormat formatter = new DecimalFormat("#,###");
-          String amountText = response.amount() == null
-              ? "0"
-              : formatter.format(response.amount());
-          String content =
-              roleLabel
-                  + "\nPhiên: "
-                  + response.auctionName()
-                  + "\nSố tiền: "
-                  + amountText
-                  + " đ";
-          Platform.runLater(() -> AlertUtils.showInfo("Thanh toán thành công", content));
-        });
-  }
+  //  private void registerPaidNoticeListener() {
+  //    if (paidNoticeRegistered) {
+  //      return;
+  //    }
+  //    paidNoticeRegistered = true;
+  //    ClientNotificationCenter.getInstance().addUpdateListener(
+  //        PacketType.AUCTION_PAID_NOTICE,
+  //        AuctionPaidNoticeResponse.class,
+  //        (response, success, message) -> {
+  //          if (!success || response == null) {
+  //            return;
+  //          }
+  //          String roleLabel = "WINNER".equalsIgnoreCase(response.role())
+  //              ? "Bạn đã thanh toán"
+  //              : "Bạn đã nhận thanh toán";
+  //          DecimalFormat formatter = new DecimalFormat("#,###");
+  //          String amountText = response.amount() == null
+  //              ? "0"
+  //              : formatter.format(response.amount());
+  //          String content =
+  //              roleLabel
+  //                  + "\nPhiên: "
+  //                  + response.auctionName()
+  //                  + "\nSố tiền: "
+  //                  + amountText
+  //                  + " đ";
+  //          Platform.runLater(() -> AlertUtils.showInfo("Thanh toán thành công", content));
+  //        });
+  //  }
 }

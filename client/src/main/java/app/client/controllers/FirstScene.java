@@ -164,7 +164,8 @@ public class FirstScene implements Cleanable {
       upcomingBox.getChildren().add(card);
       return;
     }
-    if (summary.status() == AuctionStatus.RUNNING || summary.status() == AuctionStatus.ENDING_SOON) {
+    if (summary.status() == AuctionStatus.RUNNING
+        || summary.status() == AuctionStatus.ENDING_SOON) {
       activeBox.getChildren().add(card);
       return;
     }

@@ -103,10 +103,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
   public List<Item> findBySeller(Connection conn, int sellerId) {
     boolean includeDeleted = hasDeletedColumn(conn);
     return findList(
-        conn,
-        baseSelect(conn) + " WHERE seller_id = ? ORDER BY id DESC",
-        includeDeleted,
-        sellerId);
+        conn, baseSelect(conn) + " WHERE seller_id = ? ORDER BY id DESC", includeDeleted, sellerId);
   }
 
   @Override
@@ -199,7 +196,8 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         item.getId());
   }
 
-  private List<Item> findList(Connection conn, String sql, boolean includeDeleted, Object... params) {
+  private List<Item> findList(
+      Connection conn, String sql, boolean includeDeleted, Object... params) {
     List<Item> items = new ArrayList<>();
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, params);

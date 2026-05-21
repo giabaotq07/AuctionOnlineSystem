@@ -7,9 +7,12 @@ import app.common.dto.WalletUpdateResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
 import app.common.models.User;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
+import app.server.command.Command;
+import app.server.network.ClientHandler;
+import app.server.network.Server;
 import app.server.service.AuctionService;
 import app.server.service.AuctionSnapshot;
 import app.server.service.UserService;
@@ -19,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** SettleWalletCommand. */
-public class SettleWalletCommand implements Command {
+public class SettleWalletCommand extends Command {
   private static final Logger logger = LoggerFactory.getLogger(SettleWalletCommand.class);
   private final AuctionService auctionService;
   private final UserService userService;
@@ -48,30 +51,33 @@ public class SettleWalletCommand implements Command {
       AuctionSnapshot snapshot = auctionService.getAuction(auctionId);
       BigDecimal paidAmount = auctionService.settleAuctionPayment(auctionId);
       if (paidAmount.signum() > 0 && snapshot.auction().getWinnerId() != null) {
-        String auctionName = snapshot.item() == null ? "Phiên #" + auctionId : snapshot.item().getName();
+        String auctionName =
+            snapshot.item() == null ? "Phiên #" + auctionId : snapshot.item().getName();
         AuctionPaidNoticeResponse sellerNotice =
             new AuctionPaidNoticeResponse(auctionId, auctionName, paidAmount, "SELLER");
         AuctionPaidNoticeResponse winnerNotice =
             new AuctionPaidNoticeResponse(auctionId, auctionName, paidAmount, "WINNER");
         Server.sendToUser(
             snapshot.auction().getSellerId(),
-            PacketRes.of(true, PacketType.AUCTION_PAID_NOTICE, sellerNotice));
+            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "fello3", sellerNotice));
         Server.sendToUser(
             snapshot.auction().getWinnerId(),
-            PacketRes.of(true, PacketType.AUCTION_PAID_NOTICE, winnerNotice));
+            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "hello1", winnerNotice));
       }
       List<AuctionSnapshot> snapshots = auctionService.getAuctions();
       AuctionSummariesResponse summariesResponse =
           new AuctionSummariesResponse(
               snapshots.stream()
-                  .map(snapshotItem -> DtoMapper.toAuctionSummary(snapshotItem.auction(), snapshotItem.item()))
+                  .map(
+                      snapshotItem ->
+                          DtoMapper.toAuctionSummary(snapshotItem.auction(), snapshotItem.item()))
                   .toList());
       Server.broadcast(
-          PacketRes.of(true, PacketType.FETCH_AUCTION_SUMMARIES, summariesResponse), -1);
+          PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, "hello", summariesResponse), -1);
       User updated = userService.getById(userId);
       WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(updated));
       clientHandler.sendPacket(
-          PacketRes.of(true, PacketType.WALLET_UPDATE, "Cập nhật ví thành công.", response));
+          PacketRes.of(PacketType.WALLET_UPDATE, "Cập nhật ví thành công.", response));
     } catch (ServiceException e) {
       logger.warn("Settle wallet failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

@@ -10,18 +10,6 @@ import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
-import app.common.dto.AuctionDetailRequest;
-import app.common.dto.AuctionDetailResponse;
-import app.common.dto.AuctionResultRequest;
-import app.common.dto.AuctionResultResponse;
-import app.common.dto.AuctionSummariesResponse;
-import app.common.dto.AuctionSummary;
-import app.common.dto.PlaceBidRequest;
-import app.common.dto.PlaceBidResponse;
-import app.common.dto.SettleWalletRequest;
-import app.common.dto.WalletUpdateResponse;
-import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import app.common.models.Auction;
@@ -358,38 +346,39 @@ public class LiveController implements Cleanable {
       return;
     }
     if (UserManager.getInstance().getCurrentUser() == null) {
-    if (auction.status() == app.common.enums.AuctionStatus.OPEN) {
-      AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
-      return;
-    }
-    if (Client.getInstance().getCurrentUser() == null) {
-      AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
-      return;
-    }
-    long bidAmount;
-    try {
-      bidAmount = Long.parseLong(bidAmountField.getText().trim());
-    } catch (NumberFormatException e) {
-      AlertUtils.showError("Lỗi", "Giá đấu không hợp lệ");
-      return;
-    }
-    if (bidAmount <= currentPrice) {
-      AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
-      return;
-    }
-    BigDecimal available =
-        UserManager.getInstance().getCurrentUser().getWallet().getAvailableBalance();
-    if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
-      AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
-      return;
-    }
-    try {
-      bidButton = LoadingButton.fromEvent(event);
-      setBidLoading(true);
-      requests.placeBid(auction.id(), bidAmount);
-    } catch (IOException e) {
-      setBidLoading(false);
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+      if (auction.status() == app.common.enums.AuctionStatus.OPEN) {
+        AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
+        return;
+      }
+      if (UserManager.getInstance().getCurrentUser() == null) {
+        AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
+        return;
+      }
+      long bidAmount;
+      try {
+        bidAmount = Long.parseLong(bidAmountField.getText().trim());
+      } catch (NumberFormatException e) {
+        AlertUtils.showError("Lỗi", "Giá đấu không hợp lệ");
+        return;
+      }
+      if (bidAmount <= currentPrice) {
+        AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
+        return;
+      }
+      BigDecimal available =
+          UserManager.getInstance().getCurrentUser().getWallet().getAvailableBalance();
+      if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
+        AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
+        return;
+      }
+      try {
+        bidButton = LoadingButton.fromEvent(event);
+        setBidLoading(true);
+        requests.placeBid(auction.id(), bidAmount);
+      } catch (IOException e) {
+        setBidLoading(false);
+        AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+      }
     }
   }
 
@@ -436,7 +425,7 @@ public class LiveController implements Cleanable {
   }
 
   private void updateStatusLabel(AuctionStatus status) {
-    handleStatusTransition(summary.status());
+    handleStatusTransition(auction.status());
     if (statusLabel == null || status == null) {
       return;
     }

@@ -87,9 +87,9 @@ public class Server {
           try {
             var completions = auctionService.completeExpiredAuctionCompletions();
             if (!completions.isEmpty()) {
-              for (Integer auctionId : completions) {
-                AuctionScheduler.getInstance().notifyPaymentIfNeeded(auctionId);
-              }
+              //              for (Integer auctionId : completions) {
+              //                AuctionScheduler.getInstance().notifyPaymentIfNeeded(auctionId);
+              //              }
               logger.info(
                   "[SERVER] Completed expired auctions: {}",
                   completions.stream().map(completion -> completion.auctionId()).toList());

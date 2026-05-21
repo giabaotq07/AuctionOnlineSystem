@@ -51,15 +51,6 @@ public class CreateAuctionCommand extends Command {
       CreateAuctionResponse response =
           new CreateAuctionResponse(
               DtoMapper.toAuctionDetail(createdSnapshot.auction(), createdSnapshot.item()));
-              user.getRole(),
-              request.startTime();
-      AuctionSummary summary =
-          auctionService.getAuctions().stream()
-              .filter(candidate -> candidate.auctionId() == auction.getId())
-              .findFirst()
-              .map(snapshot -> DtoMapper.toAuctionSummary(snapshot.auction(), snapshot.item()))
-              .orElseThrow(() -> new ServiceException("Không tìm thấy phiên vừa tạo."));
-      CreateAuctionResponse response = new CreateAuctionResponse(summary);
       PacketRes packetRes =
           PacketRes.of(PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);
@@ -67,6 +58,8 @@ public class CreateAuctionCommand extends Command {
           PacketRes.of(PacketType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
           user.getId());
       broadcastAuctionList();
+
+      logger.info("Auction created successfully by user {}", user.getId());
 
       logger.info("Auction created successfully by user {}", user.getId());
     } catch (ServiceException e) {

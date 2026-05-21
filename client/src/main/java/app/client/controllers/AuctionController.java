@@ -10,14 +10,16 @@ import app.common.dto.CreateAuctionRequest;
 import app.common.enums.ItemType;
 import app.common.enums.View;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 
 /** AuctionController. */
 public class AuctionController implements Cleanable {
@@ -77,22 +79,27 @@ public class AuctionController implements Cleanable {
 
       LocalDate startDate = startDatePicker.getValue();
       String timeStr = startTimeField.getText();
-      if (name.isEmpty() || desc.isEmpty() || startDate == null || timeStr == null || timeStr.isEmpty()) {
+      if (name.isEmpty()
+          || desc.isEmpty()
+          || startDate == null
+          || timeStr == null
+          || timeStr.isEmpty()) {
         AlertUtils.showError("Lỗi", "Thiếu thông tin.");
         return;
       }
 
       LocalTime startTimePicker;
       try {
-          startTimePicker = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
+        startTimePicker = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
       } catch (DateTimeParseException e) {
-          AlertUtils.showError("Sai định dạng", "Giờ bắt đầu phải có định dạng HH:mm");
-          return;
+        AlertUtils.showError("Sai định dạng", "Giờ bắt đầu phải có định dạng HH:mm");
+        return;
       }
       LocalDateTime startTime = LocalDateTime.of(startDate, startTimePicker);
 
       CreateAuctionRequest request =
-          new CreateAuctionRequest(name, desc, startPrice, stepPrice, type, durationMins, startTime);
+          new CreateAuctionRequest(
+              name, desc, startPrice, stepPrice, type, durationMins, startTime);
       createButton = LoadingButton.fromEvent(event);
       setCreateLoading(true);
       requests.createAuction(request);
