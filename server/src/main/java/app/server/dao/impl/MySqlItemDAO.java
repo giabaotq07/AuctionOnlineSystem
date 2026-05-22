@@ -22,11 +22,11 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
 
   private static final String TABLE = "items";
   private static final String BASE_SELECT_WITH_DELETED =
-      "SELECT id, name, seller_id, description, category, starting_price, step_price, deleted "
-          + "FROM items";
+      "SELECT id, name, seller_id, description, image_url, category, "
+          + "starting_price, step_price, deleted FROM items";
   private static final String BASE_SELECT_NO_DELETED =
-      "SELECT id, name, seller_id, description, category, starting_price, step_price "
-          + "FROM items";
+      "SELECT id, name, seller_id, description, image_url, category, "
+          + "starting_price, step_price FROM items";
   private volatile Boolean deletedColumnExists;
 
   private Item mapItem(ResultSet rs, boolean includeDeleted) throws SQLException {
@@ -52,6 +52,12 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
       item.setDeleted(rs.getBoolean("deleted"));
     } else {
       item.setDeleted(false);
+    }
+    try {
+      String imageUrl = rs.getString("image_url");
+      item.setImageUrl(imageUrl);
+    } catch (SQLException ignored) {
+      // Cột có thể chưa tồn tại ở DB cũ
     }
     return item;
   }
@@ -180,7 +186,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
     String sql =
         """
         UPDATE items
-        SET name = ?, description = ?, starting_price = ?, step_price = ?, category = ?,
+        SET name = ?, description = ?, image_url = ?, starting_price = ?, step_price = ?, category = ?,
             deleted = ?
         WHERE id = ?
         """;
@@ -189,6 +195,7 @@ public class MySqlItemDAO extends BaseDAO implements ItemDAO {
         sql,
         item.getName(),
         item.getDescription(),
+        item.getImageUrl(),
         item.getStartingPrice(),
         item.getStepPrice(),
         item.getType().name(),

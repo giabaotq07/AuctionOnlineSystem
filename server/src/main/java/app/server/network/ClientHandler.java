@@ -6,10 +6,7 @@ import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.common.utils.JsonUtil;
 import app.server.command.*;
-import app.server.service.AuctionService;
-import app.server.service.BidService;
-import app.server.service.ItemService;
-import app.server.service.UserService;
+import app.server.service.*;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -36,16 +33,19 @@ public class ClientHandler implements Runnable {
       AuctionService auctionService,
       BidService bidService,
       UserService userService,
-      ItemService itemService) {
+      ItemService itemService,
+      ImageStorageService imageStorageService) {
     this.socket = socket;
-    this.commands = createCommands(auctionService, bidService, userService, itemService);
+    this.commands =
+        createCommands(auctionService, bidService, userService, itemService, imageStorageService);
   }
 
   private Map<PacketType, Command> createCommands(
       AuctionService auctionService,
       BidService bidService,
       UserService userService,
-      ItemService itemService) {
+      ItemService itemService,
+      ImageStorageService imageStorageService) {
     Map<PacketType, Command> registry = new EnumMap<>(PacketType.class);
     registry.put(PacketType.CHAT, new ChatCommand());
     registry.put(PacketType.LOGIN, new LoginCommand(userService));
@@ -68,6 +68,10 @@ public class ClientHandler implements Runnable {
         PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
     registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
+    registry.put(
+        PacketType.UPLOAD_IMAGE,
+        new UploadImageCommand(itemService, imageStorageService, auctionService));
+    registry.put(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageCommand(imageStorageService));
     return registry;
   }
 
@@ -143,7 +147,9 @@ public class ClientHandler implements Runnable {
           FETCH_USER_LIST,
           CANCEL_AUCTION,
           DEPOSIT,
-          SETTLE_WALLET ->
+          SETTLE_WALLET,
+          UPLOAD_IMAGE,
+          FETCH_ITEM_IMAGE ->
           true;
       default -> false;
     };

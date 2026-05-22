@@ -26,6 +26,7 @@ public final class DtoMapper {
         item.getSellerId(),
         item.getName(),
         item.getDescription(),
+        item.getImageUrl(),
         item.getStartingPrice(),
         item.getStepPrice(),
         item.getType(),
@@ -81,6 +82,7 @@ public final class DtoMapper {
             itemData.stepPrice(),
             itemData.type());
     item.setDeleted(itemData.deleted());
+    item.setImageUrl(itemData.imageUrl());
     return item;
   }
 

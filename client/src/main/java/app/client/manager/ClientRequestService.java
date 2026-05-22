@@ -1,16 +1,7 @@
 package app.client.manager;
 
 import app.client.Client;
-import app.common.dto.AuctionDetailRequest;
-import app.common.dto.AuctionResultRequest;
-import app.common.dto.ChatRequest;
-import app.common.dto.CreateAuctionRequest;
-import app.common.dto.DepositRequest;
-import app.common.dto.LoginRequest;
-import app.common.dto.PlaceBidRequest;
-import app.common.dto.RegisterRequest;
-import app.common.dto.Request;
-import app.common.dto.SettleWalletRequest;
+import app.common.dto.*;
 import app.common.enums.PacketType;
 import app.common.protocol.PacketReq;
 import java.io.IOException;
@@ -103,5 +94,15 @@ public final class ClientRequestService {
 
   private void send(PacketType type, Request payload) throws IOException {
     client.sendRequest(PacketReq.of(type, payload));
+  }
+
+  public void fetchItemImage(int itemId, String imagePath) throws IOException {
+    send(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(itemId, imagePath));
+  }
+
+  public void uploadImage(int itemId, java.io.File imageFile) throws IOException {
+    byte[] fileBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+    String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
+    send(PacketType.UPLOAD_IMAGE, new UploadImageRequest(itemId, base64Data, imageFile.getName()));
   }
 }

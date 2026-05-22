@@ -54,6 +54,8 @@ public class Client {
     registry.put(PacketType.AUCTION_SUMMARIES_UPDATED, new FetchAuctionSummariesCommand());
     registry.put(PacketType.AUCTION_DETAIL_UPDATED, new FetchAuctionDetailCommand());
     registry.put(PacketType.WALLET_UPDATED, new WalletUpdateCommand());
+    registry.put(PacketType.UPLOAD_IMAGE, new UploadImageCommand());
+    registry.put(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageCommand());
     return registry;
   }
 
