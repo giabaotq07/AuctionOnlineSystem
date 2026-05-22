@@ -9,11 +9,14 @@ import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Item;
 import app.common.models.User;
+import app.server.dao.AuctionDAO;
 import app.server.dao.BaseDAOTest;
 import app.server.dao.ItemDAO;
 import app.server.dao.UserDAO;
+import app.server.dao.impl.MySqlAuctionDAO;
 import app.server.dao.impl.MySqlItemDAO;
 import app.server.dao.impl.MySqlUserDAO;
+import app.server.database.TransactionManager;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,13 +25,17 @@ class ItemServiceTest extends BaseDAOTest {
   private ItemDAO itemDAO;
   private UserDAO userDAO;
   private ItemService itemService;
+  private TransactionManager transaction;
+  private AuctionDAO auctionDAO;
   private User seller;
 
   @BeforeEach
   void setUp() {
     userDAO = new MySqlUserDAO();
     itemDAO = new MySqlItemDAO();
-    itemService = new ItemService(itemDAO);
+    auctionDAO = new MySqlAuctionDAO();
+    transaction = new TransactionManager();
+    itemService = new ItemService(itemDAO, auctionDAO, transaction);
     seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 
