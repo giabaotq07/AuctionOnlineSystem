@@ -4,7 +4,7 @@ import app.common.enums.UserRole;
 import java.util.Objects;
 
 /** User. */
-public abstract class User extends Entity {
+public class User extends Entity {
   protected String name;
   protected final Account account;
   protected final Wallet wallet;
@@ -48,5 +48,7 @@ public abstract class User extends Entity {
   }
 
   /** getRole. */
-  public abstract UserRole getRole();
+  public UserRole getRole() {
+    return account.getRole();
+  }
 }

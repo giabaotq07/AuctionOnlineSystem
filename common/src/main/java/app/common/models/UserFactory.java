@@ -6,20 +6,14 @@ import app.common.enums.UserRole;
 public class UserFactory {
   /** createUser. */
   public static User createUser(String name, Account account, Wallet wallet, UserRole role) {
-    return switch (role) {
-      case ADMIN -> new Admin(name, account, wallet);
-      case SELLER -> new Seller(name, account, wallet);
-      case BIDDER -> new Bidder(name, account, wallet);
-    };
+    account.setRole(role);
+    return new User(name, account, wallet);
   }
 
   /** createUser. */
   public static User createUser(
       int id, String name, Account account, Wallet wallet, UserRole role) {
-    return switch (role) {
-      case ADMIN -> new Admin(id, name, account, wallet);
-      case SELLER -> new Seller(id, name, account, wallet);
-      case BIDDER -> new Bidder(id, name, account, wallet);
-    };
+    account.setRole(role);
+    return new User(id, name, account, wallet);
   }
 }

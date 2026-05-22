@@ -16,7 +16,6 @@ public class App {
                 () -> {
                   logger.info("Received shutdown signal");
                   Client.getInstance().closeResources();
-                  //                  Client.getInstance().clearListeners();
                 }));
   }
 }
