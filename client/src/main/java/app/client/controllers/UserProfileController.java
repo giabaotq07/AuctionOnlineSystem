@@ -1,7 +1,8 @@
 package app.client.controllers;
 
-import app.client.Client;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserManager;
+import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
 import app.common.enums.View;
 import app.common.models.User;
@@ -24,7 +25,6 @@ public class UserProfileController {
   @FXML private Label walletLabel;
   @FXML private Label roleLabel;
   @FXML private Label idLabel;
-
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
 
   /** Member. */
@@ -34,7 +34,7 @@ public class UserProfileController {
   }
 
   private void loadUserProfile() {
-    User currentUser = Client.getInstance().getCurrentUser();
+    User currentUser = UserManager.getInstance().getCurrentUser();
     if (currentUser == null) {
       AlertUtils.showError("Lỗi", "Không tìm thấy thông tin user!");
       try {
@@ -79,7 +79,8 @@ public class UserProfileController {
   @FXML
   public void handleLogout(ActionEvent event) {
     try {
-      Client.getInstance().setCurrentUser(null);
+      UserManager.getInstance().setCurrentUser(null);
+      AuctionStore.getInstance().clearHistory();
       AlertUtils.showInfo("Thành công", "Đã đăng xuất!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
     } catch (Exception e) {

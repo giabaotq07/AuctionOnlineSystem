@@ -46,6 +46,7 @@ class BidServiceTest extends BaseDAOTest {
         new BidService(
             bidDAO,
             auctionDAO,
+            itemDAO,
             userDAO,
             new TransactionManager(),
             new BidValidator(),

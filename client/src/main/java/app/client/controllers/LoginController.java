@@ -1,16 +1,16 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserManager;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.LoginRequest;
-import app.common.dto.LoginResponse;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -24,14 +24,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** LoginController. */
-public class LoginController {
+public class LoginController implements Cleanable {
   @FXML private TextField account;
   @FXML private PasswordField password;
   @FXML private Button loginButton;
   @FXML private Label lblRegister;
   @FXML private AnchorPane rootPane;
-  private PacketListener<LoginResponse> loginHandler;
   private Logger logger = LoggerFactory.getLogger(LoginController.class);
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
+  private boolean loginLoading;
+  private Runnable stopLoginLoading = () -> {};
+  private final Consumer<String> loginListener =
+      message -> Platform.runLater(() -> handleLoginResult(message));
 
   @FXML
   private void initialize() {
@@ -45,54 +50,61 @@ public class LoginController {
             + "-fx-background-size: cover;"
             + "-fx-background-position: center center;"
             + "-fx-background-repeat: no-repeat;");
-    loginHandler =
-        (LoginResponse response, boolean success, String message) ->
-            Platform.runLater(
-                () -> {
-                  loginButton.setDisable(false);
-                  if (success && response != null && response.user() != null) {
-                    Client.getInstance().updateCurrentUser(response.user());
-                    switchToUi();
-                  } else {
-                    AlertUtils.showError("Đăng nhập thất bại", message);
-                  }
-                });
-    Client.getInstance().subscribe(PacketType.LOGIN, LoginResponse.class, loginHandler);
+    notifications.addMessageListener(loginListener);
   }
 
   /** Member. */
   @FXML
   public void handleLogin() {
-    loginButton.setDisable(true);
+    if (loginLoading) {
+      return;
+    }
     String userInput = account.getText();
     String passInput = password.getText();
     if (userInput.isEmpty() || passInput.isEmpty()) {
       showAlert();
-      loginButton.setDisable(false);
       return;
     }
     LoginRequest loginRequest = new LoginRequest(userInput, passInput);
     try {
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.LOGIN, loginRequest));
+      setLoginLoading(true);
+      requests.login(loginRequest);
     } catch (IOException e) {
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
-      loginButton.setDisable(false);
+      setLoginLoading(false);
+    }
+  }
+
+  private void handleLoginResult(String message) {
+    if (!loginLoading) {
+      return;
+    }
+    setLoginLoading(false);
+    if (UserManager.getInstance().getCurrentUser() == null) {
+      AlertUtils.showError("Đăng nhập thất bại", message);
+      return;
+    }
+    switchToUi();
+  }
+
+  private void setLoginLoading(boolean loading) {
+    loginLoading = loading;
+    if (loading) {
+      stopLoginLoading = LoadingButton.show(loginButton);
+    } else {
+      stopLoginLoading.run();
+      stopLoginLoading = () -> {};
     }
   }
 
   /** Member. */
   @FXML
   public void switchToUi() {
-    if (loginHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.LOGIN, loginHandler);
-    }
     try {
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_HISTORY));
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
+      requests.fetchAuctionSummaries();
     } catch (IOException e) {
       AlertUtils.showError("Lỗi", e.getMessage());
     }
-
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 
@@ -120,5 +132,11 @@ public class LoginController {
   @FXML
   public void switchToRegister(MouseEvent event) {
     NavigationManager.getInstance().navigateTo(View.REGISTER);
+  }
+
+  @Override
+  public void cleanup() {
+    notifications.removeMessageListener(loginListener);
+    setLoginLoading(false);
   }
 }

@@ -1,17 +1,16 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.RegisterRequest;
-import app.common.dto.RegisterResponse;
-import app.common.enums.PacketType;
 import app.common.enums.UserRole;
 import app.common.enums.View;
-import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -25,7 +24,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 
 /** RegisterController. */
-public class RegisterController {
+public class RegisterController implements Cleanable {
   @FXML private AnchorPane rootPane;
   @FXML private Label lblLogin;
   @FXML private TextField txtName;
@@ -33,16 +32,20 @@ public class RegisterController {
   @FXML private PasswordField txtPassword;
   @FXML private RadioButton rbSeller;
   @FXML private RadioButton rbBidder;
-
   private final ToggleGroup roleGroup = new ToggleGroup();
-  private PacketListener<RegisterResponse> registerHandler;
   @FXML private Button registerButton;
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
+  private boolean registerLoading;
+  private Runnable stopRegisterLoading = () -> {};
+  private final Consumer<String> registerListener =
+      message -> Platform.runLater(() -> handleRegisterResult(message));
 
   @FXML
   private void initialize() {
     rbSeller.setToggleGroup(roleGroup);
     rbBidder.setToggleGroup(roleGroup);
-
+    notifications.addMessageListener(registerListener);
     rbBidder.setSelected(true);
     try {
       String url =
@@ -61,27 +64,14 @@ public class RegisterController {
     } catch (Exception e) {
       System.err.println("Không load được background: " + e.getMessage());
     }
-    registerHandler =
-        (RegisterResponse response, boolean success, String message) -> {
-          Platform.runLater(
-              () -> {
-                if (success) {
-                  AlertUtils.showInfo("Thành công", message);
-                  if (registerHandler != null) {
-                    Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
-                  }
-                  NavigationManager.getInstance().navigateTo(View.LOGIN);
-                } else {
-                  AlertUtils.showError("Thất bại", message);
-                }
-              });
-        };
-    Client.getInstance().subscribe(PacketType.REGISTER, RegisterResponse.class, registerHandler);
   }
 
   /** Member. */
   @FXML
   public void handleRegister(ActionEvent event) {
+    if (registerLoading) {
+      return;
+    }
     String name = txtName.getText();
     String account = txtAccount.getText();
     String password = txtPassword.getText();
@@ -96,20 +86,51 @@ public class RegisterController {
     }
     UserRole role = rbSeller.isSelected() ? UserRole.SELLER : UserRole.BIDDER;
     RegisterRequest request = new RegisterRequest(name, account, password, role);
-
     try {
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.REGISTER, request));
+      setRegisterLoading(true);
+      requests.register(request);
     } catch (IOException e) {
+      setRegisterLoading(false);
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private void handleRegisterResult(String message) {
+    if (!registerLoading) {
+      return;
+    }
+    setRegisterLoading(false);
+    if (message == null || message.isBlank()) {
+      return;
+    }
+    String lower = message.toLowerCase();
+    if (lower.contains("lỗi") || lower.contains("thất bại")) {
+      AlertUtils.showError("Lỗi đăng ký", message);
+      return;
+    }
+    AlertUtils.showInfo("Đăng ký", message);
+    NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+
+  private void setRegisterLoading(boolean loading) {
+    registerLoading = loading;
+    if (loading) {
+      stopRegisterLoading = LoadingButton.show(registerButton);
+    } else {
+      stopRegisterLoading.run();
+      stopRegisterLoading = () -> {};
     }
   }
 
   /** Member. */
   @FXML
   public void backToLoginMouse(MouseEvent event) {
-    if (registerHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.REGISTER, registerHandler);
-    }
     NavigationManager.getInstance().navigateTo(View.LOGIN);
+  }
+
+  @Override
+  public void cleanup() {
+    notifications.removeMessageListener(registerListener);
+    setRegisterLoading(false);
   }
 }

@@ -1,9 +1,7 @@
 package app.server.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
 import app.common.enums.ItemType;
@@ -19,72 +17,57 @@ import app.server.dao.impl.MySqlAuctionDAO;
 import app.server.dao.impl.MySqlItemDAO;
 import app.server.dao.impl.MySqlUserDAO;
 import app.server.database.TransactionManager;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ItemServiceTest extends BaseDAOTest {
   private ItemDAO itemDAO;
+  private UserDAO userDAO;
   private ItemService itemService;
+  private TransactionManager transaction;
+  private AuctionDAO auctionDAO;
   private User seller;
 
   @BeforeEach
   void setUp() {
-    UserDAO userDAO = new MySqlUserDAO();
+    userDAO = new MySqlUserDAO();
     itemDAO = new MySqlItemDAO();
-    AuctionDAO auctionDAO = new MySqlAuctionDAO();
-    itemService = new ItemService(itemDAO, auctionDAO, new TransactionManager());
+    auctionDAO = new MySqlAuctionDAO();
+    transaction = new TransactionManager();
+    itemService = new ItemService(itemDAO, auctionDAO, transaction);
     seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
   }
 
   @Test
-  void add_shouldPersistItem() {
-    Item saved = itemService.add(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
+  void getSellerItems_shouldReturnOwnItems() {
+    itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
 
-    assertTrue(saved.getId() > 0);
-    Item found = itemService.getById(saved.getId()).orElseThrow();
-    assertEquals("Laptop", found.getName());
-    assertFalse(found.isDeleted());
+    List<Item> items = itemService.getSellerItems(seller.getId(), seller.getRole(), seller.getId());
+
+    assertEquals(1, items.size());
+    assertEquals("Laptop", items.getFirst().getName());
   }
 
   @Test
-  void update_shouldPersistItemChanges() {
-    Item saved = itemService.add(TestFixtures.item(seller.getId(), "Old name", ItemType.ART));
-    saved.setName("New name");
-    saved.setDescription("New description");
-    saved.setStartingPrice(2000L);
-    saved.setStepPrice(250L);
+  void getSellerItems_shouldAllowAdminToViewSellerItems() {
+    User admin = userDAO.save(TestFixtures.user(TestFixtures.unique("admin"), UserRole.ADMIN));
+    itemDAO.save(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
 
-    itemService.update(saved);
+    List<Item> items = itemService.getSellerItems(admin.getId(), admin.getRole(), seller.getId());
 
-    Item found = itemService.getById(saved.getId()).orElseThrow();
-    assertEquals("New name", found.getName());
-    assertEquals("New description", found.getDescription());
-    assertEquals(2000L, found.getStartingPrice());
-    assertEquals(250L, found.getStepPrice());
+    assertEquals(1, items.size());
+    assertEquals("Bike", items.getFirst().getName());
   }
 
   @Test
-  void updateManagedItem_shouldRejectNullItem() {
+  void getSellerItems_shouldRejectOtherSeller() {
+    User otherSeller =
+        userDAO.save(TestFixtures.user(TestFixtures.unique("other-seller"), UserRole.SELLER));
+
     assertThrows(
         ServiceException.class,
-        () -> itemService.updateManagedItem(null, seller.getId(), seller.getRole()));
-  }
-
-  @Test
-  void delete_shouldMarkItemAsDeleted() {
-    Item saved = itemService.add(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-
-    itemService.delete(saved.getId());
-
-    Item found = itemDAO.findById(saved.getId()).orElseThrow();
-    assertTrue(found.isDeleted());
-  }
-
-  @Test
-  void getAll_shouldReturnPersistedItems() {
-    itemService.add(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-    itemService.add(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
-
-    assertEquals(2, itemService.getAll().size());
+        () ->
+            itemService.getSellerItems(otherSeller.getId(), otherSeller.getRole(), seller.getId()));
   }
 }

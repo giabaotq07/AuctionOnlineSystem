@@ -55,7 +55,8 @@ class AuctionServiceTest extends BaseDAOTest {
             ItemType.ELECTRONICS,
             10,
             seller.getId(),
-            seller.getRole());
+            seller.getRole(),
+            LocalDateTime.now());
 
     Auction found = auctionDAO.findById(created.getId()).orElseThrow();
     Item item = itemDAO.findById(found.getItemId()).orElseThrow();
@@ -189,5 +190,54 @@ class AuctionServiceTest extends BaseDAOTest {
     var refreshed = auctionService.getAuctions();
 
     assertEquals(2, refreshed.size());
+  }
+
+  @Test
+  void getAuctionSummaries_shouldMapFromCachedSnapshots() {
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Camera", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+
+    var summaries = auctionService.getAuctionSummaries();
+
+    assertEquals(1, summaries.size());
+    assertEquals(auction.getId(), summaries.get(0).auctionId());
+  }
+
+  @Test
+  void getHistorySummaries_shouldFilterByHistoryStatusAndSellerOrBidder() {
+    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+    auction.setStatus(AuctionStatus.FINISHED);
+    auctionDAO.update(auction);
+    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
+
+    var sellerHistory = auctionService.getHistorySummaries(seller.getId());
+    var bidderHistory = auctionService.getHistorySummaries(bidder.getId());
+
+    assertEquals(1, sellerHistory.size());
+    assertEquals(1, bidderHistory.size());
+    assertEquals(auction.getId(), sellerHistory.get(0).auctionId());
+    assertEquals(auction.getId(), bidderHistory.get(0).auctionId());
+  }
+
+  @Test
+  void getHistorySummaries_shouldExcludeRunningAuctions() {
+    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
+    Auction auction =
+        auctionDAO.save(
+            TestFixtures.auction(
+                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
+
+    assertEquals(0, auctionService.getHistorySummaries(seller.getId()).size());
+    assertEquals(0, auctionService.getHistorySummaries(bidder.getId()).size());
   }
 }

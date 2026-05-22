@@ -1,7 +1,7 @@
 package app.server.dao.impl;
 
 import app.common.exception.DatabaseException;
-import app.common.models.BidTransaction;
+import app.common.models.Bid;
 import app.server.dao.BaseDAO;
 import app.server.dao.BidDAO;
 import java.sql.Connection;
@@ -32,8 +32,8 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
           WHERE b.session_id = ?
           """;
 
-  private BidTransaction mapBid(ResultSet rs) throws SQLException {
-    return new BidTransaction(
+  private Bid mapBid(ResultSet rs) throws SQLException {
+    return new Bid(
         rs.getInt("id"),
         rs.getInt("session_id"),
         rs.getInt("user_id"),
@@ -70,13 +70,13 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   @Override
-  public Optional<BidTransaction> findHighestBid(int auctionId) {
+  public Optional<Bid> findHighestBid(int auctionId) {
     return withConnection(
         conn -> findHighestBid(conn, auctionId), "Lỗi kết nối khi truy vấn bid cao nhất.");
   }
 
   @Override
-  public Optional<BidTransaction> findHighestBid(Connection conn, int auctionId) {
+  public Optional<Bid> findHighestBid(Connection conn, int auctionId) {
     String sql = BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC LIMIT 1";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, auctionId);
@@ -89,19 +89,19 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
   }
 
   @Override
-  public List<BidTransaction> findByAuction(int auctionId) {
+  public List<Bid> findByAuction(int auctionId) {
     return withConnection(conn -> findByAuction(conn, auctionId), "Lỗi kết nối khi truy vấn bids.");
   }
 
   @Override
-  public List<BidTransaction> findByAuction(Connection conn, int auctionId) {
+  public List<Bid> findByAuction(Connection conn, int auctionId) {
     return queryBids(conn, BID_SELECT + " ORDER BY b.bid_amount DESC, b.bid_time DESC", auctionId);
   }
 
   @Override
-  public List<BidTransaction> findByAuctionOrderByTime(int auctionId) {
+  public List<Bid> findByAuctionOrderByTime(int auctionId) {
     return withConnection(
-        conn -> queryBids(conn, BID_SELECT + " ORDER BY b.bid_time ASC", auctionId),
+        conn -> queryBids(conn, BID_SELECT + " ORDER BY b.bid_time DESC, b.id DESC", auctionId),
         "Lỗi kết nối khi truy vấn bids.");
   }
 
@@ -124,8 +124,8 @@ public class MySqlBidDAO extends BaseDAO implements BidDAO {
     }
   }
 
-  private List<BidTransaction> queryBids(Connection conn, String sql, int auctionId) {
-    List<BidTransaction> bids = new ArrayList<>();
+  private List<Bid> queryBids(Connection conn, String sql, int auctionId) {
+    List<Bid> bids = new ArrayList<>();
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, auctionId);
       try (ResultSet rs = ps.executeQuery()) {

@@ -17,11 +17,6 @@ public class ItemService {
   private final TransactionManager transactionManager;
 
   /** ItemService. */
-  public ItemService(ItemDAO itemDAO, TransactionManager transactionManager) {
-    this(itemDAO, null, transactionManager);
-  }
-
-  /** ItemService. */
   public ItemService(
       ItemDAO itemDAO, AuctionDAO auctionDAO, TransactionManager transactionManager) {
     this.itemDAO = itemDAO;
@@ -153,5 +148,26 @@ public class ItemService {
     if (running) {
       throw new ServiceException("Không thể sửa/xóa sản phẩm đang đấu giá.");
     }
+  }
+
+  /**
+   * Cập nhật đường dẫn ảnh cho item. Trả về relative path của ảnh cũ để caller có thể xoá file nếu
+   * cần.
+   */
+  public String updateImagePath(
+      int itemId, String imagePath, int requesterId, UserRole requesterRole) {
+    validateManageRequest(itemId, requesterId, requesterRole);
+    return transactionManager.runInTransaction(
+        conn -> {
+          Item stored =
+              itemDAO
+                  .findById(conn, itemId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
+          ensureManagePermission(stored, requesterId, requesterRole);
+          String oldImagePath = stored.getImageUrl();
+          stored.setImageUrl(imagePath);
+          itemDAO.update(conn, stored);
+          return oldImagePath;
+        });
   }
 }

@@ -1,38 +1,50 @@
 package app.client.controllers;
 
-import app.client.Client;
-import app.client.manager.AuctionNavigator;
+import static app.common.enums.AuctionStatus.FINISHED;
+import static app.common.enums.AuctionStatus.OPEN;
+import static app.common.enums.AuctionStatus.RUNNING;
+
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
+import app.client.manager.LiveAuctionSessionStore;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserManager;
+import app.client.store.AuctionStore;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.AuctionData;
 import app.common.dto.AuctionDetail;
-import app.common.dto.AuctionDetailResponse;
-import app.common.dto.AuctionResultRequest;
-import app.common.dto.AuctionResultResponse;
-import app.common.dto.PlaceBidRequest;
-import app.common.dto.PlaceBidResponse;
-import app.common.dto.SettleWalletRequest;
-import app.common.dto.WalletUpdateResponse;
-import app.common.enums.PacketType;
+import app.common.dto.BidData;
+import app.common.enums.AuctionStatus;
 import app.common.enums.View;
-import app.common.models.PacketReq;
+import app.common.models.Auction;
 import app.common.models.User;
 import app.common.models.Wallet;
-import app.common.observer.PacketListener;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,72 +54,47 @@ public class LiveController implements Cleanable {
   private AuctionData auction;
   private long currentPrice;
   private AuctionDetail auctionDetail;
-  private PacketListener<PlaceBidResponse> placeBidHandler;
-  private PacketListener<AuctionDetailResponse> auctionDetailHandler;
-  private PacketListener<AuctionResultResponse> auctionResultHandler;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
   @FXML private Label currentPriceLabel;
   @FXML private Label depositLabel;
   @FXML private Label timeLabel;
+  @FXML private Label statusLabel;
   @FXML private TextField bidAmountField;
   @FXML private TextArea description;
+  @FXML private TextArea bidHistoryArea;
   @FXML private Label availableBalanceLabel;
+  @FXML private ProgressIndicator detailLoadingIndicator;
+  @FXML private ImageView itemImageView;
+  @FXML private Label imagePlaceholderLabel;
+  private final Set<Integer> imageFetchInFlight = ConcurrentHashMap.newKeySet();
   private ScheduledExecutorService scheduler;
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
-  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
-  private boolean settlementSent = false;
+  private final DateTimeFormatter bidTimeFormat = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM");
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
+  private boolean bidLoading;
+  private Button bidButton;
+  private Runnable stopBidLoading = () -> {};
+  private boolean detailRequestInFlight;
+  private Integer requestedAuctionId;
+  private final Runnable updateListener = () -> Platform.runLater(this::handleUpdateNotification);
+  private final Consumer<String> messageListener =
+      message -> Platform.runLater(() -> handleMessageNotification(message));
+  private AuctionStatus lastKnownStatus;
 
   /** Member. */
   @FXML
   public void initialize() {
-    placeBidHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Đặt giá thất bại", message);
-                    return;
-                  }
-                  handleBidResponse(response, message);
-                });
-    Client.getInstance().subscribe(PacketType.PLACE_BID, PlaceBidResponse.class, placeBidHandler);
-    auctionDetailHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  handleDetailResponse(response);
-                });
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_DETAIL, AuctionDetailResponse.class, auctionDetailHandler);
-    auctionResultHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  handleAuctionResult(response);
-                });
-    Client.getInstance()
-        .subscribe(
-            PacketType.FETCH_AUCTION_RESULT, AuctionResultResponse.class, auctionResultHandler);
-    walletUpdateHandler =
-        (response, success, message) ->
-            Platform.runLater(() -> handleWalletUpdate(response, success, message));
-    Client.getInstance()
-        .subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
+    notifications.addUpdateListener(updateListener);
+    notifications.addMessageListener(messageListener);
     updateAvailableBalance();
+    loadSessionAuction();
+    maybeRequestAuctionDetail();
   }
 
   /** setAuction. */
@@ -117,56 +104,13 @@ public class LiveController implements Cleanable {
     }
     auctionDetail = detail;
     auction = detail.auction();
+    lastKnownStatus = auction.status();
     currentPrice = auction.highestBid();
     applyDetail(detail);
   }
 
-  private void handleDetailResponse(AuctionDetailResponse response) {
-    if (auction == null) {
-      return;
-    }
-    if (response == null) {
-      return;
-    }
-    AuctionDetail detail = response.detail();
-    if (detail == null && response.notModified()) {
-      detail = AuctionNavigator.getInstance().getCachedDetail(response.auctionId());
-    }
-    if (detail == null || detail.auctionId() != auction.id()) {
-      return;
-    }
-    AuctionNavigator.getInstance().cacheDetail(detail);
-    auctionDetail = detail;
-    auction = detail.auction();
-    applyDetail(auctionDetail);
-  }
-
-  private void handleBidResponse(PlaceBidResponse response, String message) {
-    if (response == null) {
-      return;
-    }
-    if (auction == null || response.auctionId() != auction.id()) {
-      return;
-    }
-    currentPrice = Math.max(currentPrice, response.highestBidAmount());
-    currentPriceLabel.setText(formatCurrency(currentPrice));
-    bidAmountField.clear();
-    if (Client.getInstance().getCurrentUser() != null
-        && response.bidderId() == Client.getInstance().getCurrentUser().getId()) {
-      AlertUtils.showInfo("Thành công", message);
-    }
-  }
-
-  private void handleWalletUpdate(WalletUpdateResponse response, boolean success, String message) {
-    if (!success) {
-      AlertUtils.showError("Ví", message);
-      return;
-    }
-    updateAvailableBalance();
-  }
-
   private void updateAvailableBalance() {
-    updateAvailableBalance(Client.getInstance().getCurrentUser());
+    updateAvailableBalance(UserManager.getInstance().getCurrentUser());
   }
 
   private void updateAvailableBalance(User user) {
@@ -178,6 +122,10 @@ public class LiveController implements Cleanable {
       return;
     }
     Wallet wallet = user.getWallet();
+    if (wallet == null) {
+      availableBalanceLabel.setText("Số dư khả dụng: 0 đ");
+      return;
+    }
     BigDecimal available = wallet.getAvailableBalance();
     availableBalanceLabel.setText("Số dư khả dụng: " + formatCurrency(available) + " đ");
   }
@@ -193,33 +141,168 @@ public class LiveController implements Cleanable {
     return String.format("%,d đ", amount);
   }
 
-  private void handleAuctionResult(AuctionResultResponse response) {
-    if (auction == null) {
-      return;
-    }
-    if (response == null || response.auctionId() != auction.id()) {
-      return;
-    }
-    onAuctionClosed(
-        auctionDetail != null ? auctionDetail.itemName() : "",
-        response.winner().name(),
-        response.finalPrice());
-    requestWalletSettlement();
+  private void handleUpdateNotification() {
+    loadSessionAuction();
+    refreshDetailFromStore();
+    maybeRequestAuctionDetail();
+    updateAvailableBalance();
+    updateTimer();
   }
 
-  private void requestWalletSettlement() {
-    if (settlementSent || auction == null) {
+  private void updateTimer() {
+    if (auction != null && auction.status() == FINISHED) {
+      timeLabel.setText("Đã kết thúc");
+    }
+  }
+
+  private void loadSessionAuction() {
+    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
+    if (sessionDetail != null && sessionDetail.auction() != null) {
+      setAuction(sessionDetail);
       return;
     }
-    if (Client.getInstance().getCurrentUser() == null) {
+    Integer auctionId = LiveAuctionSessionStore.getInstance().getSelectedAuctionId();
+    if (auctionId == null) {
+      return;
+    }
+    AuctionDetail cached = AuctionStore.getInstance().getAuctionDetail(auctionId);
+    if (cached != null) {
+      setAuction(cached);
+      return;
+    }
+    showAwaitingAuctionDetail();
+  }
+
+  private void maybeRequestAuctionDetail() {
+    Integer auctionId = LiveAuctionSessionStore.getInstance().getSelectedAuctionId();
+    if (auctionId == null) {
+      setDetailLoading(false);
+      return;
+    }
+    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
+    if (sessionDetail != null && sessionDetail.auctionId() == auctionId) {
+      setAuction(sessionDetail);
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      return;
+    }
+    if (detailRequestInFlight && auctionId.equals(requestedAuctionId)) {
+      setDetailLoading(true);
+      return;
+    }
+    if (!requests.isConnected()) {
+      setDetailLoading(false);
+      AlertUtils.showError("Mất kết nối", "Vui lòng kết nối lại!");
+      return;
+    }
+    if (UserManager.getInstance().getCurrentUser() == null) {
+      setDetailLoading(false);
+      AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
+      NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
     try {
-      settlementSent = true;
-      SettleWalletRequest request = new SettleWalletRequest(auction.id());
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.SETTLE_WALLET, request));
+      detailRequestInFlight = true;
+      requestedAuctionId = auctionId;
+      setDetailLoading(true);
+      requests.fetchAuctionDetail(auctionId, -1);
     } catch (IOException e) {
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private void setDetailLoading(boolean loading) {
+    if (detailLoadingIndicator != null) {
+      detailLoadingIndicator.setVisible(loading);
+      detailLoadingIndicator.setManaged(loading);
+    }
+    if (loading) {
+      showAwaitingAuctionDetail();
+    }
+  }
+
+  private void handleMessageNotification(String message) {
+    if (message == null || message.isBlank()) {
+      return;
+    }
+    if (bidLoading) {
+      handleBidResult(message);
+      return;
+    }
+    if (detailRequestInFlight && !isSuccessMessage(message)) {
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      AlertUtils.showError("Lỗi", message);
+      return;
+    }
+    if (resultRequested) {
+      handleAuctionResultMessage(message);
+    }
+  }
+
+  private void handleBidResult(String message) {
+    setBidLoading(false);
+    refreshDetailFromStore();
+    bidAmountField.clear();
+    if (!isSuccessMessage(message)) {
+      AlertUtils.showError("Đặt giá", message);
+      return;
+    }
+    AlertUtils.showInfo("Đặt giá", message);
+  }
+
+  private void handleAuctionResultMessage(String message) {
+    resultRequested = false;
+    refreshDetailFromStore();
+    if (auction == null) {
+      return;
+    }
+    Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
+    if (cachedAuction != null && cachedAuction.getStatus() == FINISHED) {
+      showAuctionClosed(message);
+      return;
+    }
+    AlertUtils.showInfo("Kết thúc", message);
+  }
+
+  private boolean isSuccessMessage(String message) {
+    String normalized = message == null ? "" : message.toLowerCase();
+    return "ok".equals(normalized) || normalized.contains("thành công");
+  }
+
+  private void refreshDetailFromStore() {
+    if (auction == null) {
+      return;
+    }
+    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
+    if (sessionDetail != null && sessionDetail.auctionId() == auction.id()) {
+      auctionDetail = sessionDetail;
+      auction = sessionDetail.auction();
+      applyDetail(sessionDetail);
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      return;
+    }
+    AuctionDetail cachedDetail = AuctionStore.getInstance().getAuctionDetail(auction.id());
+    if (cachedDetail != null) {
+      auctionDetail = cachedDetail;
+      auction = cachedDetail.auction();
+      applyDetail(cachedDetail);
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      return;
+    }
+    Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
+    if (cachedAuction != null) {
+      currentPrice = Math.max(currentPrice, cachedAuction.getHighestBid());
+      currentPriceLabel.setText(formatCurrency(currentPrice));
     }
   }
 
@@ -231,7 +314,44 @@ public class LiveController implements Cleanable {
     currentPriceLabel.setText(formatCurrency(currentPrice));
     depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
     description.setText(detail.description());
-    startCountdownTimer(detail.endTime());
+    updateBidHistory(detail);
+    updateStatusLabel(detail.auction().status());
+    if (detail.auction().status() == OPEN && detail.startTime() != null) {
+      startCountdownTimer(detail.startTime(), "Bắt đầu sau: ", false);
+    } else if (detail.auction().status() == RUNNING && detail.endTime() != null) {
+      startCountdownTimer(detail.endTime());
+    } else {
+      updateTimer();
+    }
+    handleItemImage(detail.item());
+  }
+
+  private void updateBidHistory(AuctionDetail detail) {
+    if (bidHistoryArea == null) {
+      return;
+    }
+    if (detail == null || detail.bidHistory() == null || detail.bidHistory().isEmpty()) {
+      bidHistoryArea.setText("Chưa có lượt đặt giá.");
+      return;
+    }
+    StringBuilder builder = new StringBuilder();
+    for (BidData bid : detail.bidHistory()) {
+      if (bid == null) {
+        continue;
+      }
+      String timeText = bid.createAt() == null ? "" : bidTimeFormat.format(bid.createAt());
+      builder
+          .append(timeText)
+          .append(" - ")
+          .append(bid.bidderName() == null ? "Bidder #" + bid.bidderId() : bid.bidderName())
+          .append(": ")
+          .append(formatCurrency(bid.amount()));
+      if (bid.autoBid()) {
+        builder.append(" (auto)");
+      }
+      builder.append(System.lineSeparator());
+    }
+    bidHistoryArea.setText(builder.toString().stripTrailing());
   }
 
   /** onNewBidPlaced. */
@@ -266,10 +386,26 @@ public class LiveController implements Cleanable {
         });
   }
 
+  private void showAuctionClosed(String message) {
+    if (auctionClosedShown) {
+      return;
+    }
+    auctionClosedShown = true;
+    AlertUtils.showInfo("Kết thúc", message);
+    timeLabel.setText("Phiên đấu giá đã kết thúc!");
+    timeLabel.setStyle("-fx-text-fill: red;" + "-fx-font-weight: bold;" + "-fx-font-size: 14px;");
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdownNow();
+    }
+  }
+
   /** Member. */
   @FXML
-  public void handlePlaceBid(ActionEvent event) throws IOException {
-    if (!Client.getInstance().isConnected()) {
+  public void handlePlaceBid(ActionEvent event) {
+    if (bidLoading) {
+      return;
+    }
+    if (!requests.isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
@@ -277,8 +413,17 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
-    if (Client.getInstance().getCurrentUser() == null) {
+    User currentUser = UserManager.getInstance().getCurrentUser();
+    if (currentUser == null) {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
+      return;
+    }
+    if (auction.status() == AuctionStatus.OPEN) {
+      AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
+      return;
+    }
+    if (auction.status() != RUNNING) {
+      AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
     long bidAmount;
@@ -288,24 +433,50 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Giá đấu không hợp lệ");
       return;
     }
-    if (bidAmount <= currentPrice) {
-      AlertUtils.showError("Lỗi", "Giá đấu phải lớn hơn giá hiện tại");
+    long minimumBid = minimumBid();
+    if (bidAmount < minimumBid) {
+      AlertUtils.showError("Lỗi", "Giá đấu phải tối thiểu " + formatCurrency(minimumBid));
       return;
     }
-    BigDecimal available = Client.getInstance().getCurrentUser().getWallet().getAvailableBalance();
-    if (available != null && available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
+    Wallet wallet = currentUser.getWallet();
+    BigDecimal available = wallet == null ? BigDecimal.ZERO : wallet.getAvailableBalance();
+    if (available.compareTo(BigDecimal.valueOf(bidAmount)) < 0) {
       AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để đặt giá");
       return;
     }
-    PlaceBidRequest request = new PlaceBidRequest(auction.id(), bidAmount);
-    Client.getInstance().sendRequest(PacketReq.of(PacketType.PLACE_BID, request));
+    try {
+      bidButton = LoadingButton.fromEvent(event);
+      setBidLoading(true);
+      requests.placeBid(auction.id(), bidAmount);
+    } catch (IOException e) {
+      setBidLoading(false);
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private long minimumBid() {
+    long stepPrice = auctionDetail == null ? 1L : Math.max(auctionDetail.stepPrice(), 1L);
+    return currentPrice + stepPrice;
+  }
+
+  private void setBidLoading(boolean loading) {
+    bidLoading = loading;
+    if (loading) {
+      stopBidLoading = LoadingButton.show(bidButton);
+    } else {
+      stopBidLoading.run();
+      stopBidLoading = () -> {};
+    }
   }
 
   private void startCountdownTimer(LocalDateTime endTime) {
+    startCountdownTimer(endTime, "", true);
+  }
+
+  private void startCountdownTimer(LocalDateTime targetTime, String prefix, boolean requestResult) {
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
-    // create a daemon thread so the JVM can exit when the UI is closed
     scheduler =
         Executors.newSingleThreadScheduledExecutor(
             r -> {
@@ -318,14 +489,16 @@ public class LiveController implements Cleanable {
           Platform.runLater(
               () -> {
                 LocalDateTime now = LocalDateTime.now();
-                if (now.isAfter(endTime)) {
-                  if (!resultRequested) {
+                if (!now.isBefore(targetTime)) {
+                  if (requestResult && !resultRequested) {
                     resultRequested = true;
-                    requestAuctionResult();
+                    showAwaitingServerConfirmation();
+                  } else if (!requestResult) {
+                    timeLabel.setText("Đang chờ bắt đầu...");
                   }
                   scheduler.shutdownNow();
                 } else {
-                  updateCountdownLabel(now, endTime);
+                  updateCountdownLabel(now, targetTime, prefix);
                 }
               });
         },
@@ -334,25 +507,62 @@ public class LiveController implements Cleanable {
         TimeUnit.SECONDS);
   }
 
-  private void requestAuctionResult() {
-    if (auction == null) {
+  private void updateStatusLabel(AuctionStatus status) {
+    handleStatusTransition(status);
+    if (statusLabel == null || status == null) {
       return;
     }
-    try {
-      AuctionResultRequest request = new AuctionResultRequest(auction.id());
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_RESULT, request));
-    } catch (IOException e) {
-      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    if (status == AuctionStatus.OPEN) {
+      statusLabel.setText("Sắp đấu giá");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#22c55e"));
+      return;
+    }
+    if (status == AuctionStatus.RUNNING) {
+      statusLabel.setText("Đang đấu giá");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
+      return;
+    }
+    statusLabel.setText("Đã kết thúc");
+    statusLabel.setTextFill(javafx.scene.paint.Color.web("#ef4444"));
+  }
+
+  private void handleStatusTransition(AuctionStatus newStatus) {
+    if (newStatus == null) {
+      return;
+    }
+    AuctionStatus previous = lastKnownStatus;
+    lastKnownStatus = newStatus;
+    if (previous == AuctionStatus.OPEN && newStatus == AuctionStatus.RUNNING) {
+      AlertUtils.showInfo("Thông báo", "Phiên đấu giá đã bắt đầu");
     }
   }
 
   private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime) {
+    updateCountdownLabel(now, endTime, "");
+  }
+
+  private void updateCountdownLabel(LocalDateTime now, LocalDateTime endTime, String prefix) {
     long totalSeconds = ChronoUnit.SECONDS.between(now, endTime);
     long days = totalSeconds / 86400;
     long hours = (totalSeconds % 86400) / 3600;
     long minutes = (totalSeconds % 3600) / 60;
     long seconds = totalSeconds % 60;
-    timeLabel.setText(String.format("%d Ngày %02d:%02d:%02d", days, hours, minutes, seconds));
+    timeLabel.setText(
+        String.format("%s%d Ngày %02d:%02d:%02d", prefix, days, hours, minutes, seconds));
+  }
+
+  private void showAwaitingServerConfirmation() {
+    timeLabel.setText("Đang chờ server xác nhận kết thúc phiên...");
+    timeLabel.setStyle(
+        "-fx-text-fill: #c77d00;" + "-fx-font-weight: bold;" + "-fx-font-size: 13px;");
+  }
+
+  private void showAwaitingAuctionDetail() {
+    if (timeLabel == null) {
+      return;
+    }
+    timeLabel.setText("Đang tải chi tiết phiên...");
+    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 13px;");
   }
 
   @Override
@@ -365,29 +575,94 @@ public class LiveController implements Cleanable {
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
-    if (placeBidHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.PLACE_BID, placeBidHandler);
+    notifications.removeUpdateListener(updateListener);
+    notifications.removeMessageListener(messageListener);
+    if (requests.isConnected()) {
+      try {
+        requests.unwatchAuction();
+      } catch (IOException e) {
+        logger.debug("Failed to unwatch auction on cleanup", e);
+      }
     }
-    if (auctionDetailHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_DETAIL, auctionDetailHandler);
-    }
-    if (auctionResultHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.FETCH_AUCTION_RESULT, auctionResultHandler);
-    }
-    if (walletUpdateHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
-    }
+    setBidLoading(false);
     resultRequested = false;
     auctionClosedShown = false;
-    settlementSent = false;
     auctionDetail = null;
     auction = null;
+    detailRequestInFlight = false;
+    requestedAuctionId = null;
+    setDetailLoading(false);
+    lastKnownStatus = null;
+    imageFetchInFlight.clear();
   }
 
   /** Member. */
   @FXML
   public void switchToUi(ActionEvent event) {
     cleanup();
+    LiveAuctionSessionStore.getInstance().clear();
     NavigationManager.getInstance().navigateTo(View.UI);
+  }
+
+  private void handleItemImage(app.common.dto.ItemData itemData) {
+    if (itemData == null) return;
+
+    String imageUrl = itemData.imageUrl();
+    int itemId = itemData.id();
+
+    if (imageUrl == null || imageUrl.isBlank()) {
+      clearItemImage();
+      return;
+    }
+
+    // Kiểm tra cache local trước — tránh fetch lại mỗi lần nhận update
+    ItemStore.getInstance()
+        .getItemImageBase64(itemId)
+        .ifPresentOrElse(
+            base64 -> displayBase64Image(itemId, base64),
+            () -> {
+              // Chưa có trong cache, gửi request nếu chưa có request đang bay
+              if (imageFetchInFlight.add(itemId)) { // add() trả về false nếu đã tồn tại
+                try {
+                  requests.fetchItemImage(itemId, imageUrl);
+                  logger.debug("Sent FETCH_ITEM_IMAGE for itemId={}", itemId);
+                } catch (java.io.IOException e) {
+                  imageFetchInFlight.remove(itemId);
+                  logger.warn("Cannot send FETCH_ITEM_IMAGE: {}", e.getMessage());
+                }
+              }
+            });
+  }
+
+  /** Decode Base64 → JavaFX Image → set lên ImageView. PHẢI chạy trên JavaFX Application Thread. */
+  private void displayBase64Image(int itemId, String base64Data) {
+    imageFetchInFlight.remove(itemId); // request đã hoàn thành, xóa khỏi in-flight
+    try {
+      byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+      Image image = new Image(new ByteArrayInputStream(imageBytes));
+      if (image.isError() || itemImageView == null) return;
+
+      // Đang trên FX thread — set trực tiếp, không cần Platform.runLater()
+      itemImageView.setImage(image);
+      itemImageView.setVisible(true);
+      itemImageView.setManaged(true);
+      if (imagePlaceholderLabel != null) {
+        imagePlaceholderLabel.setVisible(false);
+        imagePlaceholderLabel.setManaged(false);
+      }
+    } catch (IllegalArgumentException e) {
+      logger.warn("Invalid Base64 image data for itemId={}: {}", itemId, e.getMessage());
+    }
+  }
+
+  private void clearItemImage() {
+    if (itemImageView == null) return;
+    itemImageView.setImage(null);
+    itemImageView.setVisible(false);
+    itemImageView.setManaged(false);
+    if (imagePlaceholderLabel != null) {
+      imagePlaceholderLabel.setVisible(true);
+      imagePlaceholderLabel.setManaged(true);
+    }
   }
 }

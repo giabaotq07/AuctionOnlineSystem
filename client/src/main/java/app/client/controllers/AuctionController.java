@@ -1,37 +1,56 @@
 package app.client.controllers;
 
-import app.client.Client;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserManager;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
+import app.client.utils.LoadingButton;
 import app.common.dto.CreateAuctionRequest;
-import app.common.dto.CreateAuctionResponse;
 import app.common.enums.ItemType;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
-import app.common.observer.PacketListener;
+import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.stage.FileChooser;
 
 /** AuctionController. */
-public class AuctionController {
+public class AuctionController implements Cleanable {
   @FXML private TextField nameField;
   @FXML private TextArea descriptionField;
   @FXML private TextField startingPriceField;
   @FXML private TextField stepPriceField;
   @FXML private ComboBox<ItemType> typeComboBox;
   @FXML private TextField durationField;
-  private PacketListener<CreateAuctionResponse> createAuctionHandler;
+  @FXML private DatePicker startDatePicker;
+  @FXML private TextField startTimeField;
+  @FXML private Button chooseImageButton;
+  @FXML private Label imageFileNameLabel;
+  private File selectedImageFile;
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
+  private boolean createLoading;
+  private Button createButton;
+  private Runnable stopCreateLoading = () -> {};
+  private final Consumer<String> createAuctionListener =
+      message -> Platform.runLater(() -> handleCreateAuctionResult(message));
 
   /** Member. */
   @FXML
   public void initialize() {
-    if (Client.getInstance().getCurrentUser() == null) {
+    notifications.addMessageListener(createAuctionListener);
+    if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập để tổ chức phiên đấu giá!");
       Platform.runLater(() -> NavigationManager.getInstance().navigateTo(View.LOGIN));
       return;
@@ -40,33 +59,19 @@ public class AuctionController {
       typeComboBox.getItems().setAll(ItemType.values());
       typeComboBox.getSelectionModel().selectFirst();
     }
-    createAuctionHandler =
-        (CreateAuctionResponse response, boolean success, String message) ->
-            Platform.runLater(
-                () -> {
-                  if (success && response != null) {
-                    AlertUtils.showInfo("OK", message);
-                    if (createAuctionHandler != null) {
-                      Client.getInstance()
-                          .unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-                    }
-                    NavigationManager.getInstance().navigateTo(View.UI);
-                  } else {
-                    AlertUtils.showError("Lỗi", message);
-                  }
-                });
-    Client.getInstance()
-        .subscribe(PacketType.CREATE_AUCTION, CreateAuctionResponse.class, createAuctionHandler);
   }
 
   /** Member. */
   @FXML
   public void handleAdd(ActionEvent event) {
-    if (!Client.getInstance().isConnected()) {
+    if (createLoading) {
+      return;
+    }
+    if (!requests.isConnected()) {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server.");
       return;
     }
-    if (Client.getInstance().getCurrentUser() == null) {
+    if (UserManager.getInstance().getCurrentUser() == null) {
       AlertUtils.showError("Chưa đăng nhập", "Bạn phải đăng nhập!");
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
@@ -78,29 +83,125 @@ public class AuctionController {
       long stepPrice = Long.parseLong(stepPriceField.getText());
       int durationMins = Integer.parseInt(durationField.getText());
       ItemType type = typeComboBox.getValue();
-      if (name.isEmpty() || desc.isEmpty()) {
+
+      LocalDate startDate = startDatePicker.getValue();
+      String timeStr = startTimeField.getText();
+      if (name.isEmpty()
+          || desc.isEmpty()
+          || startDate == null
+          || timeStr == null
+          || timeStr.isEmpty()) {
         AlertUtils.showError("Lỗi", "Thiếu thông tin.");
         return;
       }
+
+      LocalTime startTimePicker;
+      try {
+        startTimePicker = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
+      } catch (DateTimeParseException e) {
+        AlertUtils.showError("Sai định dạng", "Giờ bắt đầu phải có định dạng HH:mm");
+        return;
+      }
+      LocalDateTime startTime = LocalDateTime.of(startDate, startTimePicker);
+
       CreateAuctionRequest request =
-          new CreateAuctionRequest(name, desc, startPrice, stepPrice, type, durationMins);
-      Client.getInstance().sendRequest(PacketReq.of(PacketType.CREATE_AUCTION, request));
+          new CreateAuctionRequest(
+              name, desc, startPrice, stepPrice, type, durationMins, startTime);
+      createButton = LoadingButton.fromEvent(event);
+      setCreateLoading(true);
+      requests.createAuction(request);
     } catch (NumberFormatException e) {
       AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");
     } catch (IOException e) {
+      setCreateLoading(false);
       AlertUtils.showError("Lỗi", "Server không phản hồi");
     } catch (Exception e) {
+      setCreateLoading(false);
       AlertUtils.showError("Lỗi", e.getMessage());
       e.printStackTrace();
+    }
+  }
+
+  private void handleCreateAuctionResult(String message) {
+    if (!createLoading) {
+      return;
+    }
+    setCreateLoading(false);
+    if (!isSuccessMessage(message)) {
+      AlertUtils.showError("Tạo phiên thất bại", message);
+      return;
+    }
+
+    // Nếu user có chọn ảnh, upload ngay sau khi tạo auction thành công
+    // itemId lấy từ ItemStore (item mới nhất của seller)
+    if (selectedImageFile != null) {
+      // Lấy item mới nhất từ store để có itemId
+      var user = UserManager.getInstance().getCurrentUser();
+      ItemStore.getInstance().getItemsBySeller(user.getId()).stream()
+          .max(java.util.Comparator.comparingInt(app.common.models.Item::getId))
+          .ifPresent(
+              item -> {
+                try {
+                  requests.uploadImage(item.getId(), selectedImageFile);
+                } catch (IOException e) {
+                  // Upload ảnh thất bại không block luồng chính
+                  AlertUtils.showError("Upload ảnh thất bại", e.getMessage());
+                }
+              });
+    }
+
+    AlertUtils.showInfo("Tạo phiên", message);
+    NavigationManager.getInstance().navigateTo(View.UI);
+  }
+
+  private boolean isSuccessMessage(String message) {
+    if (message == null) {
+      return false;
+    }
+    String normalized = message.toLowerCase();
+    return normalized.contains("ok") || normalized.contains("thành công");
+  }
+
+  private void setCreateLoading(boolean loading) {
+    createLoading = loading;
+    if (loading) {
+      stopCreateLoading = LoadingButton.show(createButton);
+    } else {
+      stopCreateLoading.run();
+      stopCreateLoading = () -> {};
     }
   }
 
   /** Member. */
   @FXML
   public void handleBack(ActionEvent event) {
-    if (createAuctionHandler != null) {
-      Client.getInstance().unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    }
     NavigationManager.getInstance().navigateTo(View.UI);
+  }
+
+  @Override
+  public void cleanup() {
+    notifications.removeMessageListener(createAuctionListener);
+    setCreateLoading(false);
+  }
+
+  @FXML
+  public void handleChooseImage(ActionEvent event) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Chọn ảnh vật phẩm");
+    fileChooser
+        .getExtensionFilters()
+        .add(
+            new FileChooser.ExtensionFilter(
+                "Image Files", "*.jpg", "*.jpeg", "*.png", "*.gif", "*.webp"));
+
+    // getWindow() lấy Stage hiện tại từ button
+    File file = fileChooser.showOpenDialog(chooseImageButton.getScene().getWindow());
+    if (file != null) {
+      selectedImageFile = file;
+      // Cắt ngắn tên file nếu quá dài để UI đẹp hơn
+      String displayName =
+          file.getName().length() > 30 ? file.getName().substring(0, 27) + "..." : file.getName();
+      imageFileNameLabel.setText(displayName);
+    }
   }
 }

@@ -129,26 +129,36 @@ public class MySqlAuctionDAO extends BaseDAO implements AuctionDAO {
     String sql =
         """
             INSERT INTO auction_sessions
-                (item_id, seller_id, status, end_time, highest_bid)
-            VALUES (?, ?, ?, ?, ?)
+                (item_id, seller_id, status, start_time, end_time, highest_bid)
+            VALUES (?, ?, ?, ?, ?, ?)
             """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      setParameters(
-          ps,
-          auction.getItemId(),
-          auction.getSellerId(),
-          auction.getStatus().name(),
-          Timestamp.valueOf(auction.getEndTime()),
-          auction.getHighestBid());
+      ps.setInt(1, auction.getItemId());
+      ps.setInt(2, auction.getSellerId());
+      ps.setString(3, auction.getStatus().name());
+      if (auction.getStartTime() != null) {
+        ps.setTimestamp(4, Timestamp.valueOf(auction.getStartTime()));
+      } else {
+        ps.setNull(4, Types.TIMESTAMP);
+      }
+      if (auction.getEndTime() != null) {
+        ps.setTimestamp(5, Timestamp.valueOf(auction.getEndTime()));
+      } else {
+        ps.setNull(5, Types.TIMESTAMP);
+      }
+      ps.setLong(6, auction.getHighestBid());
+
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể tạo auction.");
       }
       try (ResultSet rs = ps.getGeneratedKeys()) {
         if (rs.next()) {
-          auction.setId(rs.getInt(1));
+          int generatedId = rs.getInt(1);
+          return findById(conn, generatedId)
+              .orElseThrow(() -> new DatabaseException("Không thể tải auction vừa tạo."));
         }
       }
-      return auction;
+      throw new DatabaseException("Không lấy được id của auction vừa tạo.");
     } catch (SQLException e) {
       throw new DatabaseException("Lỗi khi tạo auction.", e);
     }

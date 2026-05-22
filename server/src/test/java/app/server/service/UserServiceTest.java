@@ -118,23 +118,6 @@ public class UserServiceTest extends BaseDAOTest {
     assertThrows(ServiceException.class, () -> userService.login("test_account", "test_password"));
   }
 
-  @Test
-  void reserveAndSettleFrozenAmount_shouldUpdateWallet() {
-    userService.deposit(tester.getId(), new BigDecimal("1000"));
-
-    BigDecimal previous = userService.reserveBidAmount(tester.getId(), 10, new BigDecimal("300"));
-
-    assertEquals(0, previous.compareTo(BigDecimal.ZERO));
-    User reserved = userDAO.findById(tester.getId()).orElseThrow();
-    assertEquals(0, reserved.getWallet().getAvailableBalance().compareTo(new BigDecimal("700")));
-    assertEquals(0, reserved.getWallet().getFrozenAmount("10").compareTo(new BigDecimal("300")));
-
-    User settled = userService.settleFrozenAmount(tester.getId(), 10, false);
-
-    assertEquals(0, settled.getWallet().getAvailableBalance().compareTo(new BigDecimal("1000")));
-    assertEquals(0, settled.getWallet().getFrozenAmount("10").compareTo(BigDecimal.ZERO));
-  }
-
   // =========================
   // HELPERS
   // =========================

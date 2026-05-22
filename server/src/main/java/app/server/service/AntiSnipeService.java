@@ -4,21 +4,31 @@ import app.common.models.Auction;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /** AntiSnipeService. */
 public class AntiSnipeService {
   private static final int THRESHOLD_SECONDS = 30;
   private static final int EXTENSION_SECONDS = 60;
+  private static final int MAX_EXTENSIONS = 5;
   private final Clock clock;
 
   /** AntiSnipeService. */
   public AntiSnipeService() {
-    this.clock = Clock.systemDefaultZone();
+    this(Clock.systemDefaultZone());
+  }
+
+  /** AntiSnipeService. */
+  public AntiSnipeService(Clock clock) {
+    this.clock = Objects.requireNonNull(clock, "clock");
   }
 
   /** apply. */
   public void apply(Auction auction) {
     if (auction.getEndTime() == null) {
+      return;
+    }
+    if (auction.getExtendedCount() >= MAX_EXTENSIONS) {
       return;
     }
     long secondsLeft =

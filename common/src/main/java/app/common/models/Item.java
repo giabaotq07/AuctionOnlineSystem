@@ -1,6 +1,7 @@
 package app.common.models;
 
 import app.common.enums.ItemType;
+import java.util.Objects;
 
 /** Item. */
 public abstract class Item extends Entity {
@@ -11,6 +12,7 @@ public abstract class Item extends Entity {
   protected long stepPrice;
   protected ItemType type;
   protected boolean deleted;
+  protected String imageUrl;
 
   /** Item. */
   public Item(
@@ -33,12 +35,24 @@ public abstract class Item extends Entity {
       long stepPrice,
       ItemType type) {
     super(id);
+    if (sellerId <= 0) {
+      throw new IllegalArgumentException("sellerId must be positive.");
+    }
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("name must not be blank.");
+    }
+    if (startingPrice < 0) {
+      throw new IllegalArgumentException("startingPrice must not be negative.");
+    }
+    if (stepPrice <= 0) {
+      throw new IllegalArgumentException("stepPrice must be positive.");
+    }
     this.sellerId = sellerId;
     this.name = name;
-    this.description = description;
+    this.description = Objects.requireNonNullElse(description, "");
     this.startingPrice = startingPrice;
     this.stepPrice = stepPrice;
-    this.type = type;
+    this.type = Objects.requireNonNull(type, "type");
   }
 
   public int getSellerId() {
@@ -97,6 +111,15 @@ public abstract class Item extends Entity {
     this.deleted = deleted;
   }
 
-  /** printInfo. */
-  public abstract void printInfo();
+  public int getId() {
+    return id;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
 }

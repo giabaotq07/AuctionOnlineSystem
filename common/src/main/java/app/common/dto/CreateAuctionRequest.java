@@ -1,6 +1,7 @@
 package app.common.dto;
 
 import app.common.enums.ItemType;
+import java.time.LocalDateTime;
 
 /** CreateAuctionRequest. */
 public record CreateAuctionRequest(
@@ -9,5 +10,6 @@ public record CreateAuctionRequest(
     long startingPrice,
     long stepPrice,
     ItemType type,
-    int durationMinutes)
+    int durationMinutes,
+    LocalDateTime startTime)
     implements Request {}

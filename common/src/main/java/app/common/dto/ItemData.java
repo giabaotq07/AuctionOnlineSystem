@@ -8,6 +8,7 @@ public record ItemData(
     int sellerId,
     String name,
     String description,
+    String imageUrl,
     long startingPrice,
     long stepPrice,
     ItemType type,

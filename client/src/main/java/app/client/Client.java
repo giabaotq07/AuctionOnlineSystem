@@ -1,22 +1,15 @@
 package app.client;
 
-import app.client.manager.DataStore;
-import app.common.dto.*;
-import app.common.enums.PacketType;
+import app.client.command.*;
+import app.common.enums.ResponseType;
 import app.common.exception.ConnectException;
-import app.common.mapper.DtoMapper;
-import app.common.models.PacketReq;
-import app.common.models.PacketRes;
-import app.common.models.User;
-import app.common.observer.PacketListener;
+import app.common.protocol.PacketReq;
+import app.common.protocol.PacketRes;
 import app.common.utils.JsonUtil;
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.List;
+import java.util.EnumMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +24,42 @@ public class Client {
   private BufferedReader reader;
   private volatile boolean connected = false;
   private volatile boolean closed = true;
-  private volatile User currentUser;
-  private final Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>> listenersMap =
-      new ConcurrentHashMap<>();
+  private boolean paidNoticeRegistered = false;
 
-  private Client() {}
+  private final Map<ResponseType, Command> commands;
+
+  private Client() {
+    this.commands = createCommands();
+  }
+
+  private Map<ResponseType, Command> createCommands() {
+    Map<ResponseType, Command> registry = new EnumMap<>(ResponseType.class);
+    registry.put(ResponseType.CHAT_RESULT, new ChatCommand());
+    registry.put(ResponseType.LOGIN_RESULT, new LoginCommand());
+    registry.put(ResponseType.REGISTER_RESULT, new RegisterCommand());
+    registry.put(ResponseType.CREATE_AUCTION_RESULT, new CreateAuctionCommand());
+    registry.put(ResponseType.UPDATE_AUCTION_RESULT, new UpdateAuctionCommand());
+    registry.put(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, new FetchAuctionSummariesCommand());
+    registry.put(ResponseType.FETCH_AUCTION_HISTORY_RESULT, new FetchAuctionHistoryCommand());
+    registry.put(ResponseType.FETCH_AUCTION_DETAIL_RESULT, new FetchAuctionDetailCommand());
+    registry.put(ResponseType.AUCTION_RESULT_FETCHED, new FetchAuctionResultCommand());
+    registry.put(ResponseType.CANCEL_AUCTION_RESULT, new CancelAuctionCommand());
+    registry.put(ResponseType.PLACE_BID_RESULT, new PlaceBidCommand());
+    registry.put(ResponseType.DEPOSIT_RESULT, new DepositCommand());
+    registry.put(ResponseType.CHAT_MESSAGE, new ChatCommand());
+    registry.put(ResponseType.AUCTION_CREATED, new CreateAuctionCommand());
+    registry.put(ResponseType.BID_PLACED, new PlaceBidCommand());
+    registry.put(ResponseType.AUCTION_CANCELLED, new CancelAuctionCommand());
+    registry.put(ResponseType.AUCTION_SUMMARIES_UPDATED, new FetchAuctionSummariesCommand());
+    registry.put(ResponseType.AUCTION_DETAIL_UPDATED, new FetchAuctionDetailCommand());
+    registry.put(ResponseType.WALLET_UPDATED, new WalletUpdateCommand());
+    registry.put(ResponseType.SETTLE_WALLET_RESULT, new WalletUpdateCommand());
+    registry.put(ResponseType.AUCTION_PAID_NOTICE, new AuctionPaidNoticeCommand());
+    registry.put(ResponseType.UPLOAD_IMAGE, new UploadImageCommand());
+    registry.put(ResponseType.FETCH_ITEM_IMAGE, new FetchItemImageCommand());
+    registry.put(ResponseType.ERROR, new ErrorCommand());
+    return registry;
+  }
 
   /** getInstance. */
   public static Client getInstance() {
@@ -80,63 +104,42 @@ public class Client {
           logger.warn("[CLIENT] Server disconnected");
           break;
         }
-        handlePacket(line);
-      }
-    } catch (SocketException e) {
-      if (!closed) {
-        logger.warn("[CLIENT] Socket closed");
+        handleIncoming(line);
       }
     } catch (IOException e) {
       if (!closed) {
-        logger.error("[CLIENT] Connection lost", e);
+        logger.warn("[CLIENT] Socket closed");
       }
     } finally {
       closeResources();
     }
   }
 
-  private void handlePacket(String json) {
+  private void handleIncoming(String line) {
     try {
-      PacketRes packet = JsonUtil.fromJson(json, PacketRes.class);
+      PacketRes packet = JsonUtil.fromJson(line, PacketRes.class);
       if (packet == null || packet.getType() == null) {
-        logger.warn("[CLIENT] Invalid packet received");
+        logger.error("[CLIENT] Packet type is required");
         return;
       }
-      logger.debug(
-          "[CLIENT] Received packet type: {}, data: {}", packet.getType(), packet.getRawData());
-      Response response = packet.getData();
-      if (!packet.isSuccess()) {
-        notifyListeners(packet.getType(), response, false, packet.getMessage());
-        return;
-      }
-      if (response == null && packet.getType().resClass != Void.class) {
-        logger.warn(
-            "[CLIENT] No response data for type: {} (data was: {})",
-            packet.getType(),
-            packet.getRawData());
-        notifyListeners(packet.getType(), response, true, packet.getMessage());
-        return;
-      }
-      updateSessionState(response);
-      if (response instanceof AuctionSummariesResponse) {
-        DataStore.getInstance()
-            .handleSummaryResponse(
-                (AuctionSummariesResponse) response, packet.isSuccess(), packet.getMessage());
-      }
-      if (response instanceof AuctionHistoryResponse) {
-        DataStore.getInstance()
-            .handleHistoryResponse(
-                (AuctionHistoryResponse) response, packet.isSuccess(), packet.getMessage());
-      }
-      notifyListeners(packet.getType(), response, true, packet.getMessage());
+      handlePacket(packet);
     } catch (Exception e) {
-      logger.error("[CLIENT] Failed to process packet", e);
+      logger.error("[CLIENT] Invalid packet received", e);
     }
   }
 
-  private void updateSessionState(Response response) {
-    if (response instanceof WalletUpdateResponse walletUpdate && walletUpdate.user() != null) {
-      updateCurrentUser(walletUpdate.user());
+  private void handlePacket(PacketRes packet) {
+    ResponseType type = packet.getType();
+    logger.info("Processing packet: {}", type);
+    Command command = commands.get(type);
+    if (command == null) {
+      logger.warn("Unrecognized packet type: {}", type);
+      return;
+    }
+    try {
+      command.execute(packet);
+    } catch (Exception e) {
+      logger.error("Error executing packet: {}", type, e);
     }
   }
 
@@ -154,48 +157,6 @@ public class Client {
     writer.flush();
   }
 
-  @SuppressWarnings("unchecked")
-  private void notifyListeners(
-      PacketType packetType, Response response, boolean success, String message) {
-    List<PacketListener<?>> listeners = listenersMap.get(packetType);
-    if (listeners == null || listeners.isEmpty()) {
-      return;
-    }
-    for (PacketListener<?> listener : listeners) {
-      try {
-        ((PacketListener<Response>) listener).handle(response, success, message);
-      } catch (Exception e) {
-        logger.error("[CLIENT] Listener error: {}", packetType, e);
-      }
-    }
-  }
-
-  /** subscribe. */
-  public <T extends Response> void subscribe(
-      PacketType packetType, Class<T> responseClass, PacketListener<T> listener) {
-    validateSubscription(packetType, responseClass, listener);
-    listenersMap
-        .computeIfAbsent(packetType, k -> new CopyOnWriteArrayList<>())
-        .addIfAbsent(listener);
-  }
-
-  /** unsubscribe. */
-  public <T extends Response> void unsubscribe(PacketType packetType, PacketListener<T> listener) {
-    List<PacketListener<?>> listeners = listenersMap.get(packetType);
-    if (listeners == null) {
-      return;
-    }
-    listeners.removeIf(registered -> registered == listener || registered.equals(listener));
-    if (listeners.isEmpty()) {
-      listenersMap.remove(packetType);
-    }
-  }
-
-  /** clearListeners. */
-  public void clearListeners() {
-    listenersMap.clear();
-  }
-
   /** closeResources. */
   public synchronized void closeResources() {
     if (closed) {
@@ -204,7 +165,6 @@ public class Client {
     logger.info("[CLIENT] Closing resources");
     closed = true;
     connected = false;
-    currentUser = null;
     try {
       if (socket != null && !socket.isClosed()) {
         socket.shutdownInput();
@@ -239,38 +199,5 @@ public class Client {
 
   public boolean isClosed() {
     return closed;
-  }
-
-  public User getCurrentUser() {
-    return currentUser;
-  }
-
-  public void setCurrentUser(User currentUser) {
-    this.currentUser = currentUser;
-  }
-
-  /** updateCurrentUser. */
-  public void updateCurrentUser(UserData userData) {
-    if (userData == null) {
-      return;
-    }
-    currentUser = DtoMapper.toUser(userData);
-  }
-
-  private static <T extends Response> void validateSubscription(
-      PacketType packetType, Class<T> responseClass, PacketListener<T> listener) {
-    if (packetType == null) {
-      throw new IllegalArgumentException("Packet type cannot be null");
-    }
-    if (responseClass == null) {
-      throw new IllegalArgumentException("Response class cannot be null");
-    }
-    if (listener == null) {
-      throw new IllegalArgumentException("Listener cannot be null");
-    }
-    if (!packetType.resClass.equals(responseClass)) {
-      throw new IllegalArgumentException(
-          "Response class does not match packet type: " + packetType);
-    }
   }
 }

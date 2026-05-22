@@ -1,25 +1,28 @@
 package app.client.controllers;
 
-import app.client.Client;
-import app.client.manager.AuctionNavigator;
-import app.client.manager.DataStore;
+import app.client.manager.ClientNotificationCenter;
+import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
+import app.client.manager.UserManager;
+import app.client.store.AuctionStore;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
-import app.common.dto.AuctionSummariesResponse;
+import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
-import app.common.dto.CreateAuctionResponse;
-import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
 import app.common.enums.View;
-import app.common.models.PacketReq;
 import app.common.models.User;
 import app.common.models.Wallet;
-import app.common.observer.PacketListener;
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -32,6 +35,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -49,29 +54,41 @@ public class FirstScene implements Cleanable {
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
+  @FXML private StackPane upcomingAuctionsPane;
   @FXML private Label balanceLabel;
-  private final Client client = Client.getInstance();
+  private final ClientRequestService requests = ClientRequestService.getInstance();
+  private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final HBox upcomingBox = new HBox();
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
-  private PacketListener<CreateAuctionResponse> createAuctionHandler;
-  private PacketListener<AuctionSummariesResponse> fetchAuctionsHandler;
-  private PacketListener<WalletUpdateResponse> walletUpdateHandler;
+  private final List<Timeline> countdownTimelines = new ArrayList<>();
+  private final Set<Integer> imageFetchInFlight = new HashSet<>();
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
+  private boolean reloadLoading;
+  private Button reloadButton;
+  private Runnable stopReloadLoading = () -> {};
+  private final Runnable summariesListener =
+      () ->
+          Platform.runLater(
+              () -> {
+                loadInitialData();
+                setReloadLoading(false);
+              });
 
   /** Member. */
   @FXML
   public void initialize() {
+    setupHbox(upcomingBox);
     setupHbox(activeBox);
     setupHbox(completedBox);
     setupListView();
     setupAuthButton();
     setupSearch();
     setupScrollPanes();
-    setupListeners();
     setupWalletSection();
-    setupWalletListener();
+    notifications.addUpdateListener(summariesListener);
     loadInitialData();
     logger.debug("FirstScene initialized");
   }
@@ -96,7 +113,7 @@ public class FirstScene implements Cleanable {
         .addListener(
             (obs, oldVal, newVal) -> {
               if (newVal != null) {
-                AuctionNavigator.getInstance().open(newVal);
+                NavigationManager.getInstance().openAuctionDetail(newVal);
               }
             });
   }
@@ -105,8 +122,8 @@ public class FirstScene implements Cleanable {
     if (btnAuth == null) {
       return;
     }
-    if (client.getCurrentUser() != null) {
-      btnAuth.setText("Thông tin User: " + client.getCurrentUser().getName());
+    if (UserManager.getInstance().getCurrentUser() != null) {
+      btnAuth.setText("Thông tin User: " + UserManager.getInstance().getCurrentUser().getName());
     } else {
       btnAuth.setText("Đăng nhập / Đăng ký");
     }
@@ -125,6 +142,9 @@ public class FirstScene implements Cleanable {
   }
 
   private void setupScrollPanes() {
+    if (upcomingAuctionsPane != null) {
+      upcomingAuctionsPane.getChildren().setAll(createScrollBox(upcomingBox));
+    }
     if (activeAuctionsPane != null) {
       activeAuctionsPane.getChildren().setAll(createScrollBox(activeBox));
     }
@@ -133,49 +153,15 @@ public class FirstScene implements Cleanable {
     }
   }
 
-  private void setupListeners() {
-    createAuctionHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  if (response == null || response.auction() == null) {
-                    return;
-                  }
-                  AuctionSummary summary = response.auction();
-                  upsertSummary(summary);
-                  rebuildUi();
-                });
-    fetchAuctionsHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Lỗi", message);
-                    return;
-                  }
-                  if (response == null || response.auctions() == null) {
-                    return;
-                  }
-                  summaries.clear();
-                  summaries.addAll(response.auctions());
-                  rebuildUi();
-                });
-    client.subscribe(PacketType.CREATE_AUCTION, CreateAuctionResponse.class, createAuctionHandler);
-    client.subscribe(
-        PacketType.FETCH_AUCTION_SUMMARIES, AuctionSummariesResponse.class, fetchAuctionsHandler);
-  }
-
   private void loadInitialData() {
     summaries.clear();
-    summaries.addAll(DataStore.getInstance().getAuctionSummaries());
+    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
     rebuildUi();
   }
 
   private void rebuildUi() {
+    stopCountdownTimelines();
+    upcomingBox.getChildren().clear();
     activeBox.getChildren().clear();
     completedBox.getChildren().clear();
     for (AuctionSummary summary : summaries) {
@@ -186,11 +172,15 @@ public class FirstScene implements Cleanable {
 
   private void addAuctionCard(AuctionSummary summary) {
     VBox card = createAuctionCard(summary);
+    if (summary.status() == AuctionStatus.OPEN) {
+      upcomingBox.getChildren().add(card);
+      return;
+    }
     if (summary.status() == AuctionStatus.RUNNING) {
       activeBox.getChildren().add(card);
-    } else {
-      completedBox.getChildren().add(card);
+      return;
     }
+    completedBox.getChildren().add(card);
   }
 
   private void updateListView() {
@@ -268,54 +258,103 @@ public class FirstScene implements Cleanable {
     imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
     Label imgLabel = new Label("Ảnh tài sản");
     imgLabel.setStyle("-fx-text-fill: #aaa;");
-    imagePane.getChildren().add(imgLabel);
+    ImageView imageView = new ImageView();
+    imageView.setFitWidth(CARD_WIDTH - 30);
+    imageView.setFitHeight(140);
+    imageView.setPreserveRatio(true);
+    imageView.setSmooth(true);
+    int itemId = summary.itemId();
+    String imageUrl = summary.imageUrl();
+    Optional<String> cachedBase64 = ItemStore.getInstance().getItemImageBase64(itemId);
+    if (cachedBase64.isPresent()) {
+      try {
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(cachedBase64.get());
+        Image image = new Image(new ByteArrayInputStream(imageBytes));
+        imageView.setImage(image);
+        imgLabel.setVisible(false);
+        imgLabel.setManaged(false);
+      } catch (Exception e) {
+        logger.warn("Failed to decode cached image for item {}", itemId, e);
+      }
+    } else if (imageUrl != null && !imageUrl.isBlank() && itemId > 0) {
+      if (imageFetchInFlight.add(itemId)) {
+        try {
+          requests.fetchItemImage(itemId, imageUrl);
+        } catch (Exception e) {
+          logger.warn("Failed to fetch image for item {}", itemId, e);
+          imageFetchInFlight.remove(itemId);
+        }
+      }
+    }
+    imagePane.getChildren().addAll(imgLabel, imageView);
     Label titleLabel = new Label(summary.itemName());
     titleLabel.setWrapText(true);
     titleLabel.setStyle(
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
     Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel = new Label("Kết thúc: " + summary.endTime());
+    Label timeLabel = new Label(timeText(summary));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
+    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
+      attachStartCountdown(summary.startTime(), timeLabel);
+    }
     Button btnDetail =
-        new Button(summary.status() == AuctionStatus.FINISHED ? "Xem kết quả" : "Chi tiết");
+        new Button(
+            summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
+                ? "Xem kết quả"
+                : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> AuctionNavigator.getInstance().open(summary));
+    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(summary));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
+  }
+
+  private String timeText(AuctionSummary summary) {
+    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
+      return "Bắt đầu sau: " + countdownText(summary.startTime());
+    }
+    return "Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime());
+  }
+
+  private void attachStartCountdown(LocalDateTime startTime, Label label) {
+    Timeline timeline = new Timeline();
+    timeline
+        .getKeyFrames()
+        .add(
+            new KeyFrame(
+                Duration.seconds(1),
+                event -> {
+                  if (!LocalDateTime.now().isBefore(startTime)) {
+                    label.setText("Đang chờ bắt đầu...");
+                    timeline.stop();
+                    return;
+                  }
+                  label.setText("Bắt đầu sau: " + countdownText(startTime));
+                }));
+    timeline.setCycleCount(Timeline.INDEFINITE);
+    timeline.play();
+    countdownTimelines.add(timeline);
+  }
+
+  private String countdownText(LocalDateTime targetTime) {
+    long totalSeconds = Math.max(0, ChronoUnit.SECONDS.between(LocalDateTime.now(), targetTime));
+    long days = totalSeconds / 86400;
+    long hours = (totalSeconds % 86400) / 3600;
+    long minutes = (totalSeconds % 3600) / 60;
+    long seconds = totalSeconds % 60;
+    if (days > 0) {
+      return String.format("%d ngày %02d:%02d:%02d", days, hours, minutes, seconds);
+    }
+    return String.format("%02d:%02d:%02d", hours, minutes, seconds);
   }
 
   private void setupWalletSection() {
     updateBalanceLabel();
   }
 
-  private void upsertSummary(AuctionSummary summary) {
-    for (int i = 0; i < summaries.size(); i++) {
-      if (summaries.get(i).auctionId() == summary.auctionId()) {
-        summaries.set(i, summary);
-        return;
-      }
-    }
-    summaries.add(summary);
-  }
-
-  private void setupWalletListener() {
-    walletUpdateHandler =
-        (response, success, message) ->
-            Platform.runLater(
-                () -> {
-                  if (!success) {
-                    AlertUtils.showError("Ví", message);
-                    return;
-                  }
-                  updateBalanceLabel();
-                });
-    client.subscribe(PacketType.WALLET_UPDATE, WalletUpdateResponse.class, walletUpdateHandler);
-  }
-
   private void updateBalanceLabel() {
-    updateBalanceLabel(Client.getInstance().getCurrentUser());
+    updateBalanceLabel(UserManager.getInstance().getCurrentUser());
   }
 
   private void updateBalanceLabel(User user) {
@@ -341,12 +380,28 @@ public class FirstScene implements Cleanable {
   /** Member. */
   @FXML
   public void handleReload(ActionEvent event) {
+    if (reloadLoading) {
+      return;
+    }
     try {
-      client.sendRequest(PacketReq.of(PacketType.FETCH_AUCTION_SUMMARIES));
+      reloadButton = LoadingButton.fromEvent(event);
+      setReloadLoading(true);
+      requests.fetchAuctionSummaries();
       logger.info("Reloading auctions...");
     } catch (Exception e) {
+      setReloadLoading(false);
       logger.error("Failed to reload auctions", e);
       AlertUtils.showError("Lỗi", e.getMessage());
+    }
+  }
+
+  private void setReloadLoading(boolean loading) {
+    reloadLoading = loading;
+    if (loading) {
+      stopReloadLoading = LoadingButton.show(reloadButton);
+    } else {
+      stopReloadLoading.run();
+      stopReloadLoading = () -> {};
     }
   }
 
@@ -393,15 +448,20 @@ public class FirstScene implements Cleanable {
 
   @Override
   public void cleanup() {
+    notifications.removeUpdateListener(summariesListener);
+    setReloadLoading(false);
+    stopCountdownTimelines();
     for (Timeline timeline : timelines) {
       timeline.stop();
     }
     timelines.clear();
-    client.unsubscribe(PacketType.CREATE_AUCTION, createAuctionHandler);
-    client.unsubscribe(PacketType.FETCH_AUCTION_SUMMARIES, fetchAuctionsHandler);
-    if (walletUpdateHandler != null) {
-      client.unsubscribe(PacketType.WALLET_UPDATE, walletUpdateHandler);
-    }
     logger.debug("FirstScene cleaned up");
+  }
+
+  private void stopCountdownTimelines() {
+    for (Timeline timeline : countdownTimelines) {
+      timeline.stop();
+    }
+    countdownTimelines.clear();
   }
 }

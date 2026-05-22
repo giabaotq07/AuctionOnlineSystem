@@ -1,7 +1,10 @@
 package app.client.manager;
 
 import app.client.controllers.Cleanable;
+import app.client.store.AuctionStore;
+import app.common.dto.AuctionSummary;
 import app.common.enums.View;
+import app.common.mapper.DtoMapper;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -27,6 +30,16 @@ public class NavigationManager {
 
   public void setPrimaryStage(Stage stage) {
     this.primaryStage = stage;
+  }
+
+  /** Opens an auction detail screen with a minimal navigation flow. */
+  public void openAuctionDetail(AuctionSummary summary) {
+    if (summary == null) {
+      return;
+    }
+    AuctionStore.getInstance().addAuction(DtoMapper.toAuction(summary));
+    LiveAuctionSessionStore.getInstance().selectAuction(summary.auctionId());
+    navigateTo(View.LIVE);
   }
 
   /** navigateTo. */

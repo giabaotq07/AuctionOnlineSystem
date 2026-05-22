@@ -1,7 +1,9 @@
 package app.common.models;
 
 import app.common.enums.AuctionStatus;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /** Auction. */
 public class Auction {
@@ -17,17 +19,26 @@ public class Auction {
   private int version;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  private String itemName;
+  private String imageUrl;
 
   /** Auction. */
   public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice) {
+    if (itemId <= 0) {
+      throw new IllegalArgumentException("Item id không hợp lệ.");
+    }
+    if (sellerId <= 0) {
+      throw new IllegalArgumentException("Seller id không hợp lệ.");
+    }
     this.itemId = itemId;
     this.sellerId = sellerId;
-    this.endTime = endTime;
+    this.endTime = Objects.requireNonNull(endTime, "endTime");
     this.status = AuctionStatus.OPEN;
-    this.highestBid = currentPrice;
+    this.highestBid = nonNegative(currentPrice, "highestBid");
     this.extendedCount = 0;
     this.version = 0;
     this.createdAt = LocalDateTime.now();
+    this.updatedAt = this.createdAt;
   }
 
   /** Auction. */
@@ -44,16 +55,16 @@ public class Auction {
       int version,
       LocalDateTime createdAt,
       LocalDateTime updatedAt) {
-    this.id = id;
-    this.itemId = itemId;
-    this.sellerId = sellerId;
-    this.winnerId = winnerId;
+    this.id = nonNegative(id, "id");
+    this.itemId = nonNegative(itemId, "itemId");
+    this.sellerId = nonNegative(sellerId, "sellerId");
+    this.winnerId = positiveOrNull(winnerId, "winnerId");
     this.status = status;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.highestBid = highestBid;
-    this.extendedCount = extendedCount;
-    this.version = version;
+    this.highestBid = nonNegative(highestBid, "highestBid");
+    this.extendedCount = nonNegative(extendedCount, "extendedCount");
+    this.version = nonNegative(version, "version");
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
   }
@@ -63,17 +74,33 @@ public class Auction {
     if (this.status != AuctionStatus.OPEN) {
       throw new IllegalStateException("Chỉ có thể bắt đầu phiên đang OPEN, hiện tại: " + status);
     }
+    if (this.endTime == null) {
+      throw new IllegalStateException("Không thể bắt đầu phiên chưa có thời gian kết thúc.");
+    }
     this.status = AuctionStatus.RUNNING;
     this.startTime = LocalDateTime.now();
+    touchUpdatedAt();
   }
 
   /** finish. */
   public void finish() {
-    if (this.status != AuctionStatus.RUNNING) {
+    if (this.status != AuctionStatus.OPEN && this.status != AuctionStatus.RUNNING) {
       throw new IllegalStateException(
-          "Chỉ có thể kết thúc phiên đang RUNNING, hiện tại: " + status);
+          "Chỉ có thể kết thúc phiên đang OPEN hoặc RUNNING, hiện tại: " + status);
     }
     this.status = AuctionStatus.FINISHED;
+    touchUpdatedAt();
+  }
+
+  /** finish. */
+  public void finish(Integer winnerId) {
+    if (winnerId != null && winnerId <= 0) {
+      throw new IllegalArgumentException("Winner id không hợp lệ.");
+    }
+    finish();
+    if (winnerId != null) {
+      this.winnerId = winnerId;
+    }
   }
 
   /** markPaid. */
@@ -82,6 +109,7 @@ public class Auction {
       throw new IllegalStateException("Chỉ có thể PAID khi FINISHED, hiện tại: " + status);
     }
     this.status = AuctionStatus.PAID;
+    touchUpdatedAt();
   }
 
   /** cancel. */
@@ -89,7 +117,11 @@ public class Auction {
     if (this.status == AuctionStatus.FINISHED || this.status == AuctionStatus.PAID) {
       throw new IllegalStateException("Không thể huỷ phiên đã " + status);
     }
+    if (this.status == null) {
+      throw new IllegalStateException("Không thể huỷ phiên chưa có trạng thái.");
+    }
     this.status = AuctionStatus.CANCELED;
+    touchUpdatedAt();
   }
 
   /** updateHighestBid. */
@@ -97,21 +129,36 @@ public class Auction {
     if (newBid <= this.highestBid) {
       throw new IllegalArgumentException("Giá mới phải cao hơn giá hiện tại: " + highestBid);
     }
+    if (bidderId <= 0) {
+      throw new IllegalArgumentException("Bidder id không hợp lệ.");
+    }
     this.highestBid = newBid;
     this.winnerId = bidderId;
+    touchUpdatedAt();
   }
 
   /** Anti-sniping: gia hạn thêm extraSeconds nếu bid trong X giây cuối. */
   public void extend(int extraSeconds) {
+    if (extraSeconds <= 0) {
+      throw new IllegalArgumentException("Thời gian gia hạn phải là số dương.");
+    }
     if (this.status != AuctionStatus.RUNNING) {
       throw new IllegalStateException("Chỉ gia hạn khi đang RUNNING");
     }
+    if (this.endTime == null) {
+      throw new IllegalStateException("Không thể gia hạn phiên chưa có thời gian kết thúc.");
+    }
     this.endTime = this.endTime.plusSeconds(extraSeconds);
     this.extendedCount++;
+    touchUpdatedAt();
   }
 
   public boolean isExpired() {
-    return LocalDateTime.now().isAfter(this.endTime);
+    return isExpired(Clock.systemDefaultZone());
+  }
+
+  public boolean isExpired(Clock clock) {
+    return endTime != null && LocalDateTime.now(clock).isAfter(this.endTime);
   }
 
   public boolean isRunning() {
@@ -123,7 +170,7 @@ public class Auction {
   }
 
   public void setId(int id) {
-    this.id = id;
+    this.id = nonNegative(id, "id");
   }
 
   public int getItemId() {
@@ -139,7 +186,8 @@ public class Auction {
   }
 
   public void setWinnerId(Integer winnerId) {
-    this.winnerId = winnerId;
+    this.winnerId = positiveOrNull(winnerId, "winnerId");
+    touchUpdatedAt();
   }
 
   public AuctionStatus getStatus() {
@@ -147,7 +195,8 @@ public class Auction {
   }
 
   public void setStatus(AuctionStatus status) {
-    this.status = status;
+    this.status = Objects.requireNonNull(status, "status");
+    touchUpdatedAt();
   }
 
   public LocalDateTime getStartTime() {
@@ -156,6 +205,7 @@ public class Auction {
 
   public void setStartTime(LocalDateTime startTime) {
     this.startTime = startTime;
+    touchUpdatedAt();
   }
 
   public LocalDateTime getEndTime() {
@@ -163,7 +213,8 @@ public class Auction {
   }
 
   public void setEndTime(LocalDateTime endTime) {
-    this.endTime = endTime;
+    this.endTime = Objects.requireNonNull(endTime, "endTime");
+    touchUpdatedAt();
   }
 
   public long getHighestBid() {
@@ -171,7 +222,8 @@ public class Auction {
   }
 
   public void setHighestBid(long highestBid) {
-    this.highestBid = highestBid;
+    this.highestBid = nonNegative(highestBid, "highestBid");
+    touchUpdatedAt();
   }
 
   public int getExtendedCount() {
@@ -179,7 +231,8 @@ public class Auction {
   }
 
   public void setExtendedCount(int extendedCount) {
-    this.extendedCount = extendedCount;
+    this.extendedCount = nonNegative(extendedCount, "extendedCount");
+    touchUpdatedAt();
   }
 
   public int getVersion() {
@@ -187,7 +240,7 @@ public class Auction {
   }
 
   public void setVersion(int version) {
-    this.version = version;
+    this.version = nonNegative(version, "version");
   }
 
   /** incrementVersion. */
@@ -205,6 +258,47 @@ public class Auction {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public String getItemName() {
+    return itemName;
+  }
+
+  public void setItemName(String itemName) {
+    this.itemName = itemName;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
+
+  private void touchUpdatedAt() {
+    this.updatedAt = LocalDateTime.now();
+  }
+
+  private static int nonNegative(int value, String field) {
+    if (value < 0) {
+      throw new IllegalArgumentException(field + " không được âm.");
+    }
+    return value;
+  }
+
+  private static long nonNegative(long value, String field) {
+    if (value < 0) {
+      throw new IllegalArgumentException(field + " không được âm.");
+    }
+    return value;
+  }
+
+  private static Integer positiveOrNull(Integer value, String field) {
+    if (value != null && value <= 0) {
+      throw new IllegalArgumentException(field + " không hợp lệ.");
+    }
+    return value;
   }
 
   @Override
