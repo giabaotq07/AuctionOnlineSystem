@@ -1,6 +1,7 @@
 package app.server.network;
 
-import app.common.enums.PacketType;
+import app.common.enums.RequestType;
+import app.common.enums.ResponseType;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -27,7 +28,7 @@ public class ClientHandler implements Runnable {
   private BufferedReader reader;
   private final Object writeLock = new Object();
   private final Session session = new Session();
-  private final Map<PacketType, Command> commands;
+  private final Map<RequestType, Command> commands;
   private volatile boolean closed = false;
 
   /** ClientHandler. */
@@ -41,32 +42,32 @@ public class ClientHandler implements Runnable {
     this.commands = createCommands(auctionService, bidService, userService, itemService);
   }
 
-  private Map<PacketType, Command> createCommands(
+  private Map<RequestType, Command> createCommands(
       AuctionService auctionService,
       BidService bidService,
       UserService userService,
       ItemService itemService) {
-    Map<PacketType, Command> registry = new EnumMap<>(PacketType.class);
-    registry.put(PacketType.CHAT, new ChatCommand());
-    registry.put(PacketType.LOGIN, new LoginCommand(userService));
-    registry.put(PacketType.REGISTER, new RegisterCommand(userService));
-    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
-    registry.put(PacketType.UPDATE_AUCTION, new UpdateAuctionCommand(auctionService));
+    Map<RequestType, Command> registry = new EnumMap<>(RequestType.class);
+    registry.put(RequestType.CHAT, new ChatCommand());
+    registry.put(RequestType.LOGIN, new LoginCommand(userService));
+    registry.put(RequestType.REGISTER, new RegisterCommand(userService));
+    registry.put(RequestType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
+    registry.put(RequestType.UPDATE_AUCTION, new UpdateAuctionCommand(auctionService));
     registry.put(
-        PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionService));
-    registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionService));
-    registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
-    registry.put(PacketType.UNWATCH_AUCTION, new UnwatchAuctionCommand());
+        RequestType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionService));
+    registry.put(RequestType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionService));
+    registry.put(RequestType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
+    registry.put(RequestType.UNWATCH_AUCTION, new UnwatchAuctionCommand());
     registry.put(
-        PacketType.FETCH_AUCTION_RESULT,
+        RequestType.FETCH_AUCTION_RESULT,
         new FetchAuctionResultCommand(auctionService, userService));
-    registry.put(PacketType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
-    registry.put(PacketType.FETCH_USER_LIST, new FetchUserListCommand(userService));
-    registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService, userService));
+    registry.put(RequestType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
+    registry.put(RequestType.FETCH_USER_LIST, new FetchUserListCommand(userService));
+    registry.put(RequestType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService, userService));
     registry.put(
-        PacketType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
-    registry.put(PacketType.DEPOSIT, new DepositCommand(userService));
-    registry.put(PacketType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
+        RequestType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
+    registry.put(RequestType.DEPOSIT, new DepositCommand(userService));
+    registry.put(RequestType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
     return registry;
   }
 
@@ -91,14 +92,14 @@ public class ClientHandler implements Runnable {
         try {
           PacketReq packet = JsonUtil.fromJson(line, PacketReq.class);
           if (packet == null || packet.getType() == null) {
-            sendPacket(PacketRes.error(PacketType.ERROR, "Packet type is required"));
+            sendPacket(PacketRes.error(ResponseType.ERROR, "Packet type is required"));
             continue;
           }
           session.touch();
           handlePacket(packet);
         } catch (Exception e) {
           logger.error("Invalid packet received", e);
-          sendPacket(PacketRes.error(PacketType.ERROR, "Invalid packet received"));
+          sendPacket(PacketRes.error(ResponseType.ERROR, "Invalid packet received"));
         }
       }
       logger.info("Client disconnected: {}", socket.getRemoteSocketAddress());
@@ -112,7 +113,7 @@ public class ClientHandler implements Runnable {
   }
 
   private void handlePacket(PacketReq packet) {
-    PacketType type = packet.getType();
+    RequestType type = packet.getType();
     logger.info("Processing network: {}", type);
     if (requiresAuthentication(type) && !requireLogin(type)) {
       return;
@@ -120,18 +121,18 @@ public class ClientHandler implements Runnable {
     Command command = commands.get(type);
     if (command == null) {
       logger.warn("Unrecognized network type: {}", type);
-      sendPacket(PacketRes.error(PacketType.ERROR, "Unrecognized network type"));
+      sendPacket(PacketRes.error(ResponseType.ERROR, "Unrecognized network type"));
       return;
     }
     try {
       command.execute(this, packet);
     } catch (Exception e) {
       logger.error("Error executing network: {}", type, e);
-      sendPacket(PacketRes.error(PacketType.ERROR, "Error executing network"));
+      sendPacket(PacketRes.error(ResponseType.ERROR, "Error executing network"));
     }
   }
 
-  private boolean requiresAuthentication(PacketType type) {
+  private boolean requiresAuthentication(RequestType type) {
     return switch (type) {
       case PLACE_BID,
           CREATE_AUCTION,
@@ -147,9 +148,9 @@ public class ClientHandler implements Runnable {
     };
   }
 
-  private boolean requireLogin(PacketType type) {
+  private boolean requireLogin(RequestType type) {
     if (!session.isAuthenticated()) {
-      sendPacket(PacketRes.error(type, "Authentication required"));
+      sendPacket(PacketRes.error(ResponseType.ERROR, "Authentication required"));
       return false;
     }
     return true;

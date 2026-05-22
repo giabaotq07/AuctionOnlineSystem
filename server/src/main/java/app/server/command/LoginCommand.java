@@ -2,7 +2,7 @@ package app.server.command;
 
 import app.common.dto.LoginRequest;
 import app.common.dto.LoginResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.User;
@@ -48,7 +48,8 @@ public class LoginCommand implements Command {
       Server.registerClient(user.getId(), clientHandler);
       logger.info("[SERVER] User {} logged in", username);
       LoginResponse response = new LoginResponse(DtoMapper.toUserData(user));
-      clientHandler.sendPacket(PacketRes.of(PacketType.LOGIN, "Đăng nhập thành công!", response));
+      clientHandler.sendPacket(
+          PacketRes.of(ResponseType.LOGIN_RESULT, "Đăng nhập thành công!", response));
     } catch (ServiceException e) {
       logger.warn("[SERVER] Login failed: {}", e.getMessage());
       sendError(clientHandler, "Sai tên tài khoản hoặc mật khẩu.");
@@ -59,6 +60,6 @@ public class LoginCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.LOGIN, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

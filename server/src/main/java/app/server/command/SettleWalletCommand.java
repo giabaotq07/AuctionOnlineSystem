@@ -3,7 +3,7 @@ package app.server.command;
 import app.common.dto.AuctionPaidNoticeResponse;
 import app.common.dto.SettleWalletRequest;
 import app.common.dto.WalletUpdateResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.User;
@@ -56,16 +56,16 @@ public class SettleWalletCommand implements Command {
             new AuctionPaidNoticeResponse(auctionId, auctionName, paidAmount, "WINNER");
         Server.sendToUser(
             snapshot.auction().getSellerId(),
-            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
+            PacketRes.of(ResponseType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
         Server.sendToUser(
             snapshot.auction().getWinnerId(),
-            PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
+            PacketRes.of(ResponseType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
       }
       Server.broadcastAuctionList(auctionService);
       User updated = userService.getById(userId);
       WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(updated));
       clientHandler.sendPacket(
-          PacketRes.of(PacketType.WALLET_UPDATED, "Cập nhật ví thành công.", response));
+          PacketRes.of(ResponseType.WALLET_UPDATED, "Cập nhật ví thành công.", response));
     } catch (ServiceException e) {
       logger.warn("Settle wallet failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -76,6 +76,6 @@ public class SettleWalletCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.WALLET_UPDATED, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

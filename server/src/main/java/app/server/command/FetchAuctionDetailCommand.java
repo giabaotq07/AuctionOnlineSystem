@@ -2,7 +2,7 @@ package app.server.command;
 
 import app.common.dto.AuctionDetailRequest;
 import app.common.dto.AuctionDetailResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -26,32 +26,31 @@ public class FetchAuctionDetailCommand implements Command {
     try {
       AuctionDetailRequest request = packet.getData(AuctionDetailRequest.class);
       if (request == null) {
-        clientHandler.sendPacket(
-            PacketRes.error(PacketType.FETCH_AUCTION_DETAIL, "Invalid request"));
+        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Invalid request"));
         return;
       }
       if (request.auctionId() <= 0) {
-        clientHandler.sendPacket(
-            PacketRes.error(PacketType.FETCH_AUCTION_DETAIL, "Invalid auction id"));
+        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Invalid auction id"));
         return;
       }
       clientHandler.getSession().setViewingAuctionId(request.auctionId());
       if (auctionService.isAuctionVersionCurrent(request.auctionId(), request.knownVersion())) {
         AuctionDetailResponse response =
             AuctionDetailResponse.notModified(request.auctionId(), request.knownVersion());
-        clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, "OK", response));
+        clientHandler.sendPacket(
+            PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "OK", response));
         return;
       }
       AuctionDetailResponse response =
           new AuctionDetailResponse(auctionService.getAuctionDetail(request.auctionId()));
-      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, "OK", response));
+      clientHandler.sendPacket(
+          PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "OK", response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction detail failed: {}", e.getMessage());
-      clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_AUCTION_DETAIL, e.getMessage()));
+      clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, e.getMessage()));
     } catch (Exception e) {
       logger.error("Unexpected error while fetching auction detail", e);
-      clientHandler.sendPacket(
-          PacketRes.error(PacketType.FETCH_AUCTION_DETAIL, "Internal server error"));
+      clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Internal server error"));
     }
   }
 }

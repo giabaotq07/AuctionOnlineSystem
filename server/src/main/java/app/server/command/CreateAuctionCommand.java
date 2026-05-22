@@ -1,7 +1,7 @@
 package app.server.command;
 
 import app.common.dto.*;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
@@ -45,10 +45,10 @@ public class CreateAuctionCommand implements Command {
       CreateAuctionResponse response =
           new CreateAuctionResponse(auctionService.getAuctionDetail(auction.getId()));
       PacketRes packetRes =
-          PacketRes.of(PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
+          PacketRes.of(ResponseType.CREATE_AUCTION_RESULT, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);
       Server.broadcast(
-          PacketRes.of(PacketType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
+          PacketRes.of(ResponseType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
           user.getId());
       Server.broadcastAuctionList(auctionService);
 
@@ -63,6 +63,6 @@ public class CreateAuctionCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.CREATE_AUCTION, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

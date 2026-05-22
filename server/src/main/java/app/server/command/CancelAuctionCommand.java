@@ -4,7 +4,7 @@ import app.common.dto.AuctionDetailResponse;
 import app.common.dto.CancelAuctionRequest;
 import app.common.dto.CancelAuctionResponse;
 import app.common.dto.WalletUpdateResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketReq;
@@ -44,12 +44,12 @@ public class CancelAuctionCommand implements Command {
               auctionId, clientHandler.getUser().getId(), request.expectedVersion());
       clientHandler.sendPacket(
           PacketRes.of(
-              PacketType.CANCEL_AUCTION,
+              ResponseType.CANCEL_AUCTION_RESULT,
               "Hủy phiên thành công.",
               new CancelAuctionResponse(auctionId)));
       Server.broadcast(
           PacketRes.of(
-              PacketType.AUCTION_CANCELLED,
+              ResponseType.AUCTION_CANCELLED,
               "Phiên đã bị hủy.",
               new CancelAuctionResponse(auctionId)),
           clientHandler.getUser().getId());
@@ -57,7 +57,7 @@ public class CancelAuctionCommand implements Command {
       Server.broadcastToAuctionViewers(
           auctionId,
           PacketRes.of(
-              PacketType.AUCTION_DETAIL_UPDATED,
+              ResponseType.AUCTION_DETAIL_UPDATED,
               "OK",
               new AuctionDetailResponse(auctionService.getAuctionDetail(auctionId))),
           -1);
@@ -72,7 +72,7 @@ public class CancelAuctionCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, int auctionId, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.CANCEL_AUCTION, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 
   private void sendWalletUpdates(Set<Integer> userIds) {
@@ -85,7 +85,7 @@ public class CancelAuctionCommand implements Command {
         Server.sendPacketToUser(
             userId,
             PacketRes.of(
-                PacketType.WALLET_UPDATED,
+                ResponseType.WALLET_UPDATED,
                 "OK",
                 new WalletUpdateResponse(DtoMapper.toUserData(user))));
       } catch (Exception e) {

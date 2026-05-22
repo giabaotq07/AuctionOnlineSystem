@@ -1,7 +1,7 @@
 package app.common.enums;
 
-/** PacketType. */
-public enum PacketType {
+/** RequestType. */
+public enum RequestType {
   LOGIN,
   REGISTER,
   PLACE_BID,
@@ -17,14 +17,5 @@ public enum PacketType {
   FETCH_USER_LIST,
   CANCEL_AUCTION,
   DEPOSIT,
-  SETTLE_WALLET,
-  CHAT_MESSAGE,
-  AUCTION_CREATED,
-  BID_PLACED,
-  AUCTION_CANCELLED,
-  AUCTION_SUMMARIES_UPDATED,
-  AUCTION_DETAIL_UPDATED,
-  WALLET_UPDATED,
-  AUCTION_PAID_NOTICE,
-  ERROR
+  SETTLE_WALLET
 }

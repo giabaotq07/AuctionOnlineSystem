@@ -1,7 +1,7 @@
 package app.server.command;
 
 import app.common.dto.*;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
@@ -62,11 +62,11 @@ public class PlaceBidCommand implements Command {
           new PlaceBidResponse(updatedAuction.getId(), updatedAuction.getHighestBid(), bidderId);
       auctionService.invalidateCache();
       PacketRes packetResponse =
-          PacketRes.of(PacketType.PLACE_BID, "Đặt giá thành công.", response);
+          PacketRes.of(ResponseType.PLACE_BID_RESULT, "Đặt giá thành công.", response);
       clientHandler.sendPacket(packetResponse);
       Server.broadcastToAuctionViewers(
           auctionId,
-          PacketRes.of(PacketType.BID_PLACED, "Có lượt đặt giá mới.", response),
+          PacketRes.of(ResponseType.BID_PLACED, "Có lượt đặt giá mới.", response),
           bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
       Server.broadcastAuctionList(auctionService);
@@ -83,7 +83,7 @@ public class PlaceBidCommand implements Command {
 
   private void sendWalletUpdate(ClientHandler clientHandler, User user) {
     WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
-    clientHandler.sendPacket(PacketRes.of(PacketType.WALLET_UPDATED, "OK", response));
+    clientHandler.sendPacket(PacketRes.of(ResponseType.WALLET_UPDATED, "OK", response));
   }
 
   private void broadcastAuctionDetail(int auctionId) {
@@ -91,13 +91,13 @@ public class PlaceBidCommand implements Command {
       AuctionDetailResponse response =
           new AuctionDetailResponse(auctionService.getAuctionDetail(auctionId));
       Server.broadcastToAuctionViewers(
-          auctionId, PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
+          auctionId, PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
     } catch (Exception e) {
       logger.error("Failed to broadcast auction detail", e);
     }
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.PLACE_BID, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

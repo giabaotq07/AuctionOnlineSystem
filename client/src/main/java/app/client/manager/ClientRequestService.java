@@ -12,7 +12,7 @@ import app.common.dto.RegisterRequest;
 import app.common.dto.Request;
 import app.common.dto.SettleWalletRequest;
 import app.common.dto.UpdateAuctionRequest;
-import app.common.enums.PacketType;
+import app.common.enums.RequestType;
 import app.common.protocol.PacketReq;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -44,70 +44,70 @@ public final class ClientRequestService {
 
   /** login. */
   public void login(LoginRequest request) throws IOException {
-    send(PacketType.LOGIN, request);
+    send(RequestType.LOGIN, request);
   }
 
   /** register. */
   public void register(RegisterRequest request) throws IOException {
-    send(PacketType.REGISTER, request);
+    send(RequestType.REGISTER, request);
   }
 
   /** createAuction. */
   public void createAuction(CreateAuctionRequest request) throws IOException {
-    send(PacketType.CREATE_AUCTION, request);
+    send(RequestType.CREATE_AUCTION, request);
   }
 
   /** updateAuction. */
   public void updateAuction(UpdateAuctionRequest request) throws IOException {
-    send(PacketType.UPDATE_AUCTION, request);
+    send(RequestType.UPDATE_AUCTION, request);
   }
 
   /** fetchAuctionSummaries. */
   public void fetchAuctionSummaries() throws IOException {
-    send(PacketType.FETCH_AUCTION_SUMMARIES, null);
+    send(RequestType.FETCH_AUCTION_SUMMARIES, null);
   }
 
   /** fetchAuctionHistory. */
   public void fetchAuctionHistory(int sinceVersion) throws IOException {
-    send(PacketType.FETCH_AUCTION_HISTORY, new app.common.dto.AuctionHistoryRequest(sinceVersion));
+    send(RequestType.FETCH_AUCTION_HISTORY, new app.common.dto.AuctionHistoryRequest(sinceVersion));
   }
 
   /** fetchAuctionDetail. */
   public void fetchAuctionDetail(int auctionId, int knownVersion) throws IOException {
-    send(PacketType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auctionId, knownVersion));
+    send(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auctionId, knownVersion));
   }
 
   /** unwatchAuction. */
   public void unwatchAuction() throws IOException {
-    send(PacketType.UNWATCH_AUCTION, null);
+    send(RequestType.UNWATCH_AUCTION, null);
   }
 
   /** fetchAuctionResult. */
   public void fetchAuctionResult(int auctionId) throws IOException {
-    send(PacketType.FETCH_AUCTION_RESULT, new AuctionResultRequest(auctionId));
+    send(RequestType.FETCH_AUCTION_RESULT, new AuctionResultRequest(auctionId));
   }
 
   /** placeBid. */
   public void placeBid(int auctionId, long bidAmount) throws IOException {
-    send(PacketType.PLACE_BID, new PlaceBidRequest(auctionId, bidAmount));
+    send(RequestType.PLACE_BID, new PlaceBidRequest(auctionId, bidAmount));
   }
 
   /** deposit. */
   public void deposit(BigDecimal amount) throws IOException {
-    send(PacketType.DEPOSIT, new DepositRequest(amount));
+    send(RequestType.DEPOSIT, new DepositRequest(amount));
   }
 
   /** settleWallet. */
   public void settleWallet(int auctionId) throws IOException {
-    send(PacketType.SETTLE_WALLET, new SettleWalletRequest(auctionId));
+    send(RequestType.SETTLE_WALLET, new SettleWalletRequest(auctionId));
   }
 
   /** chat. */
   public void chat(ChatRequest request) throws IOException {
-    send(PacketType.CHAT, request);
+    send(RequestType.CHAT, request);
   }
 
-  private void send(PacketType type, Request payload) throws IOException {
+  private void send(RequestType type, Request payload) throws IOException {
     client.sendRequest(PacketReq.of(type, payload));
   }
 }

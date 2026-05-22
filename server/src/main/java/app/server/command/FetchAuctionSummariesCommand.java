@@ -1,7 +1,7 @@
 package app.server.command;
 
 import app.common.dto.AuctionSummariesResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
@@ -24,11 +24,12 @@ public class FetchAuctionSummariesCommand implements Command {
     try {
       AuctionSummariesResponse response =
           new AuctionSummariesResponse(auctionService.getAuctionSummaries());
-      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_SUMMARIES, "OK", response));
+      clientHandler.sendPacket(
+          PacketRes.of(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, "OK", response));
     } catch (Exception e) {
       logger.error("Failed to fetch auctions", e);
       clientHandler.sendPacket(
-          PacketRes.error(PacketType.FETCH_AUCTION_SUMMARIES, "Không thể tải danh sách đấu giá"));
+          PacketRes.error(ResponseType.ERROR, "Không thể tải danh sách đấu giá"));
     }
   }
 }

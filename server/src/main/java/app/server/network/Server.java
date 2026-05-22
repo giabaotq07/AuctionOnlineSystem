@@ -4,7 +4,7 @@ import app.common.dto.AuctionPaidNoticeResponse;
 import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketRes;
 import app.server.dao.*;
@@ -119,7 +119,7 @@ public class Server {
     }
     try {
       var response = new AuctionSummariesResponse(auctionService.getAuctionSummaries());
-      broadcast(PacketRes.of(PacketType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
+      broadcast(PacketRes.of(ResponseType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);
     }
@@ -152,10 +152,10 @@ public class Server {
                           completion.auctionId(), auctionName, amount, "WINNER");
                   sendToUser(
                       snapshot.auction().getSellerId(),
-                      PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
+                      PacketRes.of(ResponseType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
                   sendToUser(
                       bid.getBidderId(),
-                      PacketRes.of(PacketType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
+                      PacketRes.of(ResponseType.AUCTION_PAID_NOTICE, "OK", winnerNotice));
                 } catch (Exception e) {
                   logger.warn(
                       "[SERVER] Failed to send payment notice for auction {}",
@@ -182,7 +182,7 @@ public class Server {
       sendPacketToUser(
           userId,
           PacketRes.of(
-              PacketType.WALLET_UPDATED,
+              ResponseType.WALLET_UPDATED,
               "OK",
               new WalletUpdateResponse(DtoMapper.toUserData(user))));
     } catch (Exception e) {

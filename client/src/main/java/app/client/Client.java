@@ -1,7 +1,7 @@
 package app.client;
 
 import app.client.command.*;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ConnectException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -26,33 +26,33 @@ public class Client {
   private volatile boolean closed = true;
   private boolean paidNoticeRegistered = false;
 
-  private final Map<PacketType, Command> commands;
+  private final Map<ResponseType, Command> commands;
 
   private Client() {
     this.commands = createCommands();
   }
 
-  private Map<PacketType, Command> createCommands() {
-    Map<PacketType, Command> registry = new EnumMap<>(PacketType.class);
-    registry.put(PacketType.CHAT, new ChatCommand());
-    registry.put(PacketType.LOGIN, new LoginCommand());
-    registry.put(PacketType.REGISTER, new RegisterCommand());
-    registry.put(PacketType.CREATE_AUCTION, new CreateAuctionCommand());
-    registry.put(PacketType.UPDATE_AUCTION, new UpdateAuctionCommand());
-    registry.put(PacketType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand());
-    registry.put(PacketType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand());
-    registry.put(PacketType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand());
-    registry.put(PacketType.FETCH_AUCTION_RESULT, new FetchAuctionResultCommand());
-    registry.put(PacketType.CANCEL_AUCTION, new CancelAuctionCommand());
-    registry.put(PacketType.PLACE_BID, new PlaceBidCommand());
-    registry.put(PacketType.DEPOSIT, new DepositCommand());
-    registry.put(PacketType.CHAT_MESSAGE, new ChatCommand());
-    registry.put(PacketType.AUCTION_CREATED, new CreateAuctionCommand());
-    registry.put(PacketType.BID_PLACED, new PlaceBidCommand());
-    registry.put(PacketType.AUCTION_CANCELLED, new CancelAuctionCommand());
-    registry.put(PacketType.AUCTION_SUMMARIES_UPDATED, new FetchAuctionSummariesCommand());
-    registry.put(PacketType.AUCTION_DETAIL_UPDATED, new FetchAuctionDetailCommand());
-    registry.put(PacketType.WALLET_UPDATED, new WalletUpdateCommand());
+  private Map<ResponseType, Command> createCommands() {
+    Map<ResponseType, Command> registry = new EnumMap<>(ResponseType.class);
+    registry.put(ResponseType.CHAT_RESULT, new ChatCommand());
+    registry.put(ResponseType.LOGIN_RESULT, new LoginCommand());
+    registry.put(ResponseType.REGISTER_RESULT, new RegisterCommand());
+    registry.put(ResponseType.CREATE_AUCTION_RESULT, new CreateAuctionCommand());
+    registry.put(ResponseType.UPDATE_AUCTION_RESULT, new UpdateAuctionCommand());
+    registry.put(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, new FetchAuctionSummariesCommand());
+    registry.put(ResponseType.FETCH_AUCTION_HISTORY_RESULT, new FetchAuctionHistoryCommand());
+    registry.put(ResponseType.FETCH_AUCTION_DETAIL_RESULT, new FetchAuctionDetailCommand());
+    registry.put(ResponseType.AUCTION_RESULT_FETCHED, new FetchAuctionResultCommand());
+    registry.put(ResponseType.CANCEL_AUCTION_RESULT, new CancelAuctionCommand());
+    registry.put(ResponseType.PLACE_BID_RESULT, new PlaceBidCommand());
+    registry.put(ResponseType.DEPOSIT_RESULT, new DepositCommand());
+    registry.put(ResponseType.CHAT_MESSAGE, new ChatCommand());
+    registry.put(ResponseType.AUCTION_CREATED, new CreateAuctionCommand());
+    registry.put(ResponseType.BID_PLACED, new PlaceBidCommand());
+    registry.put(ResponseType.AUCTION_CANCELLED, new CancelAuctionCommand());
+    registry.put(ResponseType.AUCTION_SUMMARIES_UPDATED, new FetchAuctionSummariesCommand());
+    registry.put(ResponseType.AUCTION_DETAIL_UPDATED, new FetchAuctionDetailCommand());
+    registry.put(ResponseType.WALLET_UPDATED, new WalletUpdateCommand());
     return registry;
   }
 
@@ -125,7 +125,7 @@ public class Client {
   }
 
   private void handlePacket(PacketRes packet) {
-    PacketType type = packet.getType();
+    ResponseType type = packet.getType();
     logger.info("Processing packet: {}", type);
     Command command = commands.get(type);
     if (command == null) {
@@ -203,7 +203,7 @@ public class Client {
   //    }
   //    paidNoticeRegistered = true;
   //    ClientNotificationCenter.getInstance().addUpdateListener(
-  //        PacketType.AUCTION_PAID_NOTICE,
+  //        ResponseType.AUCTION_PAID_NOTICE,
   //        AuctionPaidNoticeResponse.class,
   //        (response, success, message) -> {
   //          if (!success || response == null) {

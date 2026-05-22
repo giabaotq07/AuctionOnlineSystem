@@ -2,7 +2,7 @@ package app.server.command;
 
 import app.common.dto.AuctionHistoryRequest;
 import app.common.dto.AuctionHistoryResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
@@ -32,11 +32,12 @@ public class FetchAuctionHistoryCommand implements Command {
         summaries = summaries.stream().filter(summary -> summary.version() > sinceVersion).toList();
       }
       AuctionHistoryResponse response = new AuctionHistoryResponse(summaries, fullSnapshot);
-      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_HISTORY, "OK", response));
+      clientHandler.sendPacket(
+          PacketRes.of(ResponseType.FETCH_AUCTION_HISTORY_RESULT, "OK", response));
     } catch (Exception e) {
       logger.error("Failed to fetch auction history", e);
       clientHandler.sendPacket(
-          PacketRes.error(PacketType.FETCH_AUCTION_HISTORY, "Không thể tải lịch sử đấu giá"));
+          PacketRes.error(ResponseType.ERROR, "Không thể tải lịch sử đấu giá"));
     }
   }
 }

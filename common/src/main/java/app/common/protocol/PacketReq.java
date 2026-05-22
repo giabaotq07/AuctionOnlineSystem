@@ -1,18 +1,18 @@
 package app.common.protocol;
 
 import app.common.dto.Request;
-import app.common.enums.PacketType;
+import app.common.enums.RequestType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /** PacketReq. */
 public class PacketReq {
   private static final Gson GSON = new GsonBuilder().create();
-  private PacketType type;
+  private RequestType type;
   private String data;
 
   /** PacketReq. */
-  public PacketReq(PacketType type, String data) {
+  public PacketReq(RequestType type, String data) {
     this.type = type;
     this.data = data;
   }
@@ -26,11 +26,11 @@ public class PacketReq {
   }
 
   /** of. */
-  public static PacketReq of(PacketType type, Request payload) {
+  public static PacketReq of(RequestType type, Request payload) {
     return new PacketReq(type, payload == null ? null : GSON.toJson(payload));
   }
 
-  public PacketType getType() {
+  public RequestType getType() {
     return type;
   }
 }

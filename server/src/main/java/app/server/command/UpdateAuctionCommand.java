@@ -2,7 +2,7 @@ package app.server.command;
 
 import app.common.dto.AuctionDetailResponse;
 import app.common.dto.UpdateAuctionRequest;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -48,9 +48,9 @@ public class UpdateAuctionCommand implements Command {
               request.expectedVersion());
       AuctionDetailResponse response = new AuctionDetailResponse(detail);
       clientHandler.sendPacket(
-          PacketRes.of(PacketType.UPDATE_AUCTION, "Cập nhật phiên thành công.", response));
+          PacketRes.of(ResponseType.UPDATE_AUCTION_RESULT, "Cập nhật phiên thành công.", response));
       Server.broadcastToAuctionViewers(
-          auctionId, PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
+          auctionId, PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
       Server.broadcastAuctionList(auctionService);
     } catch (ServiceException e) {
       logger.warn("Update auction failed: {}", e.getMessage());
@@ -62,6 +62,6 @@ public class UpdateAuctionCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.UPDATE_AUCTION, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

@@ -2,7 +2,7 @@ package app.server.command;
 
 import app.common.dto.UserData;
 import app.common.dto.UserListResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketReq;
@@ -31,7 +31,7 @@ public class FetchUserListCommand implements Command {
               .map(DtoMapper::toUserData)
               .toList();
       clientHandler.sendPacket(
-          PacketRes.of(PacketType.FETCH_USER_LIST, "OK", new UserListResponse(users)));
+          PacketRes.of(ResponseType.FETCH_USER_LIST_RESULT, "OK", new UserListResponse(users)));
     } catch (ServiceException e) {
       logger.warn("Fetch users failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -42,6 +42,6 @@ public class FetchUserListCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_USER_LIST, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

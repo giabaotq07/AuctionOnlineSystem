@@ -1,7 +1,7 @@
 package app.common.protocol;
 
 import app.common.dto.Response;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -9,24 +9,24 @@ import com.google.gson.GsonBuilder;
 public class PacketRes {
   private static final Gson GSON = new GsonBuilder().create();
   private final boolean success;
-  private final PacketType type;
+  private final ResponseType type;
   private final String message;
   private final String data;
 
   /** PacketRes. */
-  public PacketRes(boolean success, PacketType type, String message, String data) {
+  public PacketRes(boolean success, ResponseType type, String message, String data) {
     this.success = success;
     this.type = type;
     this.message = message;
     this.data = data;
   }
 
-  public static PacketRes of(PacketType type, String message, Response payload) {
+  public static PacketRes of(ResponseType type, String message, Response payload) {
     return new PacketRes(true, type, message, toJson(payload));
   }
 
   /** error. */
-  public static PacketRes error(PacketType type, String message) {
+  public static PacketRes error(ResponseType type, String message) {
     return new PacketRes(false, type, message, null);
   }
 
@@ -49,7 +49,7 @@ public class PacketRes {
     return success;
   }
 
-  public PacketType getType() {
+  public ResponseType getType() {
     return type;
   }
 

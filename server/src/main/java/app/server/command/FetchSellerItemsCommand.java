@@ -3,7 +3,7 @@ package app.server.command;
 import app.common.dto.FetchSellerItemsRequest;
 import app.common.dto.ItemData;
 import app.common.dto.ItemListResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.User;
@@ -39,7 +39,7 @@ public class FetchSellerItemsCommand implements Command {
               .map(DtoMapper::toItemData)
               .toList();
       clientHandler.sendPacket(
-          PacketRes.of(PacketType.FETCH_SELLER_ITEMS, "OK", new ItemListResponse(items)));
+          PacketRes.of(ResponseType.FETCH_SELLER_ITEMS_RESULT, "OK", new ItemListResponse(items)));
     } catch (ServiceException e) {
       logger.warn("Fetch seller items failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
@@ -50,6 +50,6 @@ public class FetchSellerItemsCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_SELLER_ITEMS, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

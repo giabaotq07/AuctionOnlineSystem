@@ -2,7 +2,7 @@ package app.server.command;
 
 import app.common.dto.RegisterRequest;
 import app.common.dto.RegisterResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
@@ -56,7 +56,8 @@ public class RegisterCommand implements Command {
       User created = userService.register(newUser);
       logger.info("[SERVER] User {} registered successfully.", username);
       RegisterResponse response = new RegisterResponse(DtoMapper.toUserData(created));
-      clientHandler.sendPacket(PacketRes.of(PacketType.REGISTER, "Đăng ký thành công!", response));
+      clientHandler.sendPacket(
+          PacketRes.of(ResponseType.REGISTER_RESULT, "Đăng ký thành công!", response));
     } catch (ServiceException e) {
       logger.warn("[SERVER] Register failed for user {}", username);
       sendError(clientHandler, "Tài khoản đã tồn tại hoặc dữ liệu không hợp lệ.");
@@ -67,6 +68,6 @@ public class RegisterCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.REGISTER, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 }

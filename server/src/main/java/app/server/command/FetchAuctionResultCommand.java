@@ -3,7 +3,7 @@ package app.server.command;
 import app.common.dto.AuctionResultRequest;
 import app.common.dto.AuctionResultResponse;
 import app.common.dto.WalletUpdateResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
 import app.common.models.Bid;
@@ -47,7 +47,7 @@ public class FetchAuctionResultCommand implements Command {
       AuctionCompletion completion = auctionService.completeAuction(auctionId);
       Optional<Bid> highestBid = completion.highestBid();
       AuctionResultResponse response = DtoMapper.toAuctionResultResponse(auctionId, highestBid);
-      clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_RESULT, "OK", response));
+      clientHandler.sendPacket(PacketRes.of(ResponseType.AUCTION_RESULT_FETCHED, "OK", response));
       sendWalletUpdates(completion);
     } catch (ServiceException e) {
       logger.warn("Fetch auction result failed: {}", e.getMessage());
@@ -59,7 +59,7 @@ public class FetchAuctionResultCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_AUCTION_RESULT, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
   }
 
   private void sendWalletUpdates(AuctionCompletion completion) {
@@ -71,7 +71,7 @@ public class FetchAuctionResultCommand implements Command {
       Server.sendPacketToUser(
           userId,
           PacketRes.of(
-              PacketType.WALLET_UPDATED,
+              ResponseType.WALLET_UPDATED,
               "OK",
               new WalletUpdateResponse(DtoMapper.toUserData(user))));
     }
