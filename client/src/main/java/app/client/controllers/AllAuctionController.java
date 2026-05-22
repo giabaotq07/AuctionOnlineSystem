@@ -145,8 +145,7 @@ public class AllAuctionController implements Cleanable {
 
   private boolean isActiveStatus(AuctionStatus status) {
     return status == AuctionStatus.OPEN
-        || status == AuctionStatus.RUNNING
-        || status == AuctionStatus.ENDING_SOON;
+        || status == AuctionStatus.RUNNING;
   }
 
   private String timeText(AuctionSummary summary) {

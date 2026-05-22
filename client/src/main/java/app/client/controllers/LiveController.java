@@ -506,7 +506,7 @@ public class LiveController implements Cleanable {
       statusLabel.setTextFill(javafx.scene.paint.Color.web("#22c55e"));
       return;
     }
-    if (status == AuctionStatus.RUNNING || status == AuctionStatus.ENDING_SOON) {
+    if (status == AuctionStatus.RUNNING) {
       statusLabel.setText("Đang đấu giá");
       statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
       return;
