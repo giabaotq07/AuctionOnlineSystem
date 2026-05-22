@@ -2,7 +2,6 @@ package app.client.manager;
 
 import app.client.controllers.Cleanable;
 import app.client.store.AuctionStore;
-import app.common.dto.AuctionDetail;
 import app.common.dto.AuctionSummary;
 import app.common.enums.View;
 import app.common.mapper.DtoMapper;
@@ -40,10 +39,6 @@ public class NavigationManager {
     }
     AuctionStore.getInstance().addAuction(DtoMapper.toAuction(summary));
     LiveAuctionSessionStore.getInstance().selectAuction(summary.auctionId());
-    AuctionDetail cachedDetail = AuctionStore.getInstance().getAuctionDetail(summary.auctionId());
-    if (cachedDetail != null) {
-      LiveAuctionSessionStore.getInstance().setSelectedDetail(cachedDetail);
-    }
     navigateTo(View.LIVE);
   }
 

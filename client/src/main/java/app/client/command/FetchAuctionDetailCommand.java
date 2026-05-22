@@ -1,7 +1,9 @@
 package app.client.command;
 
+import app.client.manager.LiveAuctionSessionStore;
 import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
+import app.common.dto.AuctionDetail;
 import app.common.dto.AuctionDetailResponse;
 import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketRes;
@@ -13,8 +15,10 @@ public class FetchAuctionDetailCommand extends Command {
     if (packet.isSuccess()) {
       AuctionDetailResponse response = packet.getData(AuctionDetailResponse.class);
       if (response != null && response.detail() != null) {
-        AuctionStore.getInstance().addAuction(DtoMapper.toAuction(response.detail().auction()));
-        ItemStore.getInstance().addItem(DtoMapper.toItem(response.detail().item()));
+        AuctionDetail detail = response.detail();
+        AuctionStore.getInstance().addAuction(DtoMapper.toAuction(detail.auction()));
+        ItemStore.getInstance().addItem(DtoMapper.toItem(detail.item()));
+        LiveAuctionSessionStore.getInstance().setSelectedDetail(detail);
       }
       notifyUpdate();
     }

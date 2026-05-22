@@ -3,7 +3,6 @@ package app.server.command;
 import app.common.dto.*;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -43,10 +42,8 @@ public class CreateAuctionCommand implements Command {
               user.getId(),
               user.getRole(),
               request.startTime());
-      var createdSnapshot = auctionService.getAuction(auction.getId());
       CreateAuctionResponse response =
-          new CreateAuctionResponse(
-              DtoMapper.toAuctionDetail(createdSnapshot.auction(), createdSnapshot.item()));
+          new CreateAuctionResponse(auctionService.getAuctionDetail(auction.getId()));
       PacketRes packetRes =
           PacketRes.of(PacketType.CREATE_AUCTION, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);

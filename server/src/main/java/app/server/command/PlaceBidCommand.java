@@ -88,9 +88,8 @@ public class PlaceBidCommand implements Command {
 
   private void broadcastAuctionDetail(int auctionId) {
     try {
-      var auction = auctionService.getAuction(auctionId);
       AuctionDetailResponse response =
-          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction.auction(), auction.item()));
+          new AuctionDetailResponse(auctionService.getAuctionDetail(auctionId));
       Server.broadcastToAuctionViewers(
           auctionId, PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
     } catch (Exception e) {

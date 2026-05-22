@@ -4,12 +4,10 @@ import app.common.dto.AuctionDetailRequest;
 import app.common.dto.AuctionDetailResponse;
 import app.common.enums.PacketType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.AuctionService;
-import app.server.service.AuctionSnapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,9 +42,8 @@ public class FetchAuctionDetailCommand implements Command {
         clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, "OK", response));
         return;
       }
-      AuctionSnapshot auction = auctionService.getAuction(request.auctionId());
       AuctionDetailResponse response =
-          new AuctionDetailResponse(DtoMapper.toAuctionDetail(auction.auction(), auction.item()));
+          new AuctionDetailResponse(auctionService.getAuctionDetail(request.auctionId()));
       clientHandler.sendPacket(PacketRes.of(PacketType.FETCH_AUCTION_DETAIL, "OK", response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction detail failed: {}", e.getMessage());

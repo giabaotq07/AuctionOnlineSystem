@@ -1,10 +1,12 @@
 package app.server.service;
 
+import app.common.dto.AuctionDetail;
 import app.common.dto.AuctionSummary;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
+import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.server.dao.AuctionDAO;
 import app.server.dao.BidDAO;
@@ -151,6 +153,12 @@ public class AuctionService {
     return toSnapshot(auction);
   }
 
+  public AuctionDetail getAuctionDetail(int auctionId) {
+    AuctionSnapshot snapshot = getAuction(auctionId);
+    return DtoMapper.toAuctionDetail(
+        snapshot.auction(), snapshot.item(), bidDAO.findByAuctionOrderByTime(auctionId));
+  }
+
   public boolean isAuctionVersionCurrent(int auctionId, int knownVersion) {
     if (knownVersion < 0) {
       return false;
@@ -170,9 +178,43 @@ public class AuctionService {
     return completeAuction(auctionId).completed();
   }
 
-  public void cancelAuction(int auctionId, int requester, int expectedVersion) {
-    commandService.cancelAuction(auctionId, requester, expectedVersion);
+  public Set<Integer> cancelAuction(int auctionId, int requester, int expectedVersion) {
+    Set<Integer> releasedUserIds =
+        commandService.cancelAuction(auctionId, requester, expectedVersion);
     invalidateCache();
+    return releasedUserIds;
+  }
+
+  public AuctionDetail updateAuctionWithItem(
+      int auctionId,
+      String name,
+      String description,
+      long startingPrice,
+      long stepPrice,
+      ItemType type,
+      int durationMinutes,
+      LocalDateTime startTime,
+      int requesterId,
+      UserRole requesterRole,
+      int expectedVersion) {
+    Auction updated =
+        commandService.updateAuctionWithItem(
+            auctionId,
+            name,
+            description,
+            startingPrice,
+            stepPrice,
+            type,
+            durationMinutes,
+            startTime,
+            requesterId,
+            requesterRole,
+            expectedVersion);
+    invalidateCache();
+    if (updated.getStatus() == AuctionStatus.OPEN && updated.getStartTime() != null) {
+      AuctionScheduler.getInstance().scheduleStart(updated.getId(), updated.getStartTime());
+    }
+    return getAuctionDetail(updated.getId());
   }
 
   public boolean startOpenAuction(int auctionId) {
@@ -180,7 +222,9 @@ public class AuctionService {
     transactionManager.runWithoutResult(
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
-          if (auction.getStatus() == AuctionStatus.OPEN) {
+          if (auction.getStatus() == AuctionStatus.OPEN
+              && auction.getStartTime() != null
+              && !auction.getStartTime().isAfter(LocalDateTime.now(clock))) {
             auction.start();
             auctionDAO.update(conn, auction);
             updated[0] = true;

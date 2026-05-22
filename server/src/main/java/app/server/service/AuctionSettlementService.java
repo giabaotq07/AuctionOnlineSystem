@@ -60,8 +60,9 @@ public class AuctionSettlementService {
     return new AuctionSettlementResult(winningAmount, settledUserIds);
   }
 
-  public void releaseWallets(java.sql.Connection conn, Auction auction) {
+  public Set<Integer> releaseWallets(java.sql.Connection conn, Auction auction) {
     Set<Integer> bidderIds = bidderIds(conn, auction.getId());
+    Set<Integer> releasedUserIds = new LinkedHashSet<>();
     for (Integer bidderId : bidderIds) {
       userDAO.lockRow(conn, bidderId);
       User user =
@@ -70,7 +71,9 @@ public class AuctionSettlementService {
               .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + bidderId));
       user.getWallet().releaseFrozen(String.valueOf(auction.getId()));
       userDAO.update(conn, user);
+      releasedUserIds.add(bidderId);
     }
+    return releasedUserIds;
   }
 
   private Set<Integer> bidderIds(java.sql.Connection conn, int auctionId) {
