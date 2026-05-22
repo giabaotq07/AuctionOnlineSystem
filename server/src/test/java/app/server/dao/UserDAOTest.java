@@ -6,7 +6,6 @@ import app.common.enums.UserRole;
 import app.common.exception.DatabaseException;
 import app.common.models.Account;
 import app.common.models.User;
-import app.common.models.UserFactory;
 import app.common.models.Wallet;
 import app.server.dao.impl.MySqlUserDAO;
 import app.server.database.DatabaseConnection;
@@ -43,12 +42,11 @@ class UserDAOTest extends BaseDAOTest {
   }
 
   private User makeUser(String username) {
-    return UserFactory.createUser(
+    return new User(
         0,
         "Nguyen Van A",
-        new Account(username, "rawPassword"),
-        new Wallet(new BigDecimal("1000000")),
-        UserRole.BIDDER);
+        new Account(username, "rawPassword", UserRole.BIDDER),
+        new Wallet(new BigDecimal("1000000")));
   }
 
   // ───── save ─────

@@ -23,12 +23,11 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 
 **Nơi áp dụng:**
 * `app.common.models.ItemFactory`: Tạo subclass của `Item` theo `ItemType`, ví dụ `Electronics`, `Art`, `Vehicle`.
-* `app.common.models.UserFactory`: Tạo subclass của `User` theo `UserRole`, ví dụ `Admin`, `Seller`, `Bidder`.
 * `app.common.models.PacketReq` và `app.common.models.PacketRes`: Dùng static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response.
 
 **Lợi ích trong dự án:**
-* Giảm việc rải `new Electronics(...)`, `new Bidder(...)` ở nhiều nơi.
-* Khi thêm loại item hoặc role mới, logic tạo object tập trung tại factory.
+* Giảm việc rải `new Electronics(...)` ở nhiều nơi.
+* Khi thêm loại item mới, logic tạo object tập trung tại factory.
 
 ---
 

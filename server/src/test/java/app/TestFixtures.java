@@ -7,7 +7,6 @@ import app.common.models.Auction;
 import app.common.models.Item;
 import app.common.models.ItemFactory;
 import app.common.models.User;
-import app.common.models.UserFactory;
 import app.common.models.Wallet;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,8 +26,8 @@ public final class TestFixtures {
   }
 
   public static User user(String username, UserRole role, BigDecimal balance) {
-    return UserFactory.createUser(
-        "Test " + username, new Account(username, "password"), new Wallet(balance), role);
+    return new User(
+        "Test " + username, new Account(username, "password", role), new Wallet(balance));
   }
 
   public static Item item(int sellerId, String name, ItemType type) {

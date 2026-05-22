@@ -1029,11 +1029,6 @@ package app.models {
     +getWallet(): Wallet
     +setName(name: String): void
   }
-  class UserFactory {
-    +createUser(id: int, name: String, account: Account, wallet: Wallet, role: UserRole): User
-    +createUser(name: String, account: Account, wallet: Wallet, role: UserRole): User
-    +createUser(userData: UserData): User
-  }
   class Vehicle {
     ~Vehicle(id: int, name: String, sellerId: int, description: String, startingPrice: Long, stepPrice: Long): public
     ~Vehicle(name: String, sellerId: int, description: String, startingPrice: Long, stepPrice: Long): public

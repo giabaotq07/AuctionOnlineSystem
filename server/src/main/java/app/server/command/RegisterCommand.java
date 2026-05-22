@@ -51,8 +51,7 @@ public class RegisterCommand implements Command {
     }
     UserRole role = request.role() != null ? request.role() : UserRole.BIDDER;
     try {
-      User newUser =
-          UserFactory.createUser(name, new Account(username, password), new Wallet(), role);
+      User newUser = new User(name, new Account(username, password, role), new Wallet());
       User created = userService.register(newUser);
       logger.info("[SERVER] User {} registered successfully.", username);
       RegisterResponse response = new RegisterResponse(DtoMapper.toUserData(created));

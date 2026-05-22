@@ -166,12 +166,11 @@ public final class DtoMapper {
   /** toUser. */
   public static User toUser(UserData userData) {
     Wallet wallet = new Wallet(userData.availableBalance(), userData.frozenFunds());
-    return UserFactory.createUser(
+    return new User(
         userData.id(),
         userData.name(),
-        new Account(userData.username(), null),
-        wallet,
-        userData.role());
+        new Account(userData.username(), null, userData.role()),
+        wallet);
   }
 
   private static long currentPrice(Auction auction, Item item) {

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import app.common.enums.UserRole;
 import app.common.models.Account;
 import app.common.models.User;
-import app.common.models.UserFactory;
 import app.common.models.Wallet;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +22,10 @@ public class UserTest {
     logger.info("Setting up a new User for testing...");
     try {
       user =
-          UserFactory.createUser(
+          new User(
               "Tester",
-              new Account("test_account", "test_password"),
-              new Wallet(),
-              UserRole.BIDDER);
+              new Account("test_account", "test_password", UserRole.BIDDER),
+              new Wallet());
       logger.info("Test User created successfully.");
     } catch (Exception e) {
       logger.error("Failed to create Test User", e);

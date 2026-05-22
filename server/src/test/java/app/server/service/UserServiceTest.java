@@ -6,7 +6,6 @@ import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Account;
 import app.common.models.User;
-import app.common.models.UserFactory;
 import app.common.models.Wallet;
 import app.server.dao.BaseDAOTest;
 import app.server.dao.UserDAO;
@@ -68,11 +67,10 @@ public class UserServiceTest extends BaseDAOTest {
   @Test
   void register_shouldHashPasswordAndPersistUser() {
     User rawUser =
-        UserFactory.createUser(
+        new User(
             "Registered User",
-            new Account("registered_user", "plain_password"),
-            new Wallet(),
-            UserRole.BIDDER);
+            new Account("registered_user", "plain_password", UserRole.BIDDER),
+            new Wallet());
 
     User saved = userService.register(rawUser);
 
@@ -85,11 +83,10 @@ public class UserServiceTest extends BaseDAOTest {
   @Test
   void register_shouldFail_whenUsernameAlreadyExists() {
     User duplicate =
-        UserFactory.createUser(
+        new User(
             "Duplicate User",
-            new Account("test_account", "plain_password"),
-            new Wallet(),
-            UserRole.BIDDER);
+            new Account("test_account", "plain_password", UserRole.BIDDER),
+            new Wallet());
 
     assertThrows(ServiceException.class, () -> userService.register(duplicate));
   }
@@ -122,11 +119,10 @@ public class UserServiceTest extends BaseDAOTest {
   // HELPERS
   // =========================
   private User createTestUser() {
-    return UserFactory.createUser(
+    return new User(
         "Test User",
-        new Account("test_account", PasswordUtils.hashPassword("test_password")),
-        new Wallet(),
-        UserRole.BIDDER);
+        new Account("test_account", PasswordUtils.hashPassword("test_password"), UserRole.BIDDER),
+        new Wallet());
   }
 
   /**

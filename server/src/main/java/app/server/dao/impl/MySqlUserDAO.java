@@ -4,7 +4,6 @@ import app.common.enums.UserRole;
 import app.common.exception.DatabaseException;
 import app.common.models.Account;
 import app.common.models.User;
-import app.common.models.UserFactory;
 import app.common.models.Wallet;
 import app.server.dao.BaseDAO;
 import app.server.dao.UserDAO;
@@ -30,12 +29,14 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   private User mapUser(ResultSet rs) throws SQLException {
     BigDecimal available = rs.getBigDecimal("available_balance");
     String frozenJson = rs.getString("frozen_funds");
-    return UserFactory.createUser(
+    return new User(
         rs.getInt("id"),
         rs.getString("full_name"),
-        new Account(rs.getString("username"), rs.getString("password")),
-        new Wallet(available, Wallet.parseFrozenFunds(frozenJson)),
-        UserRole.valueOf(rs.getString("role")));
+        new Account(
+            rs.getString("username"),
+            rs.getString("password"),
+            UserRole.valueOf(rs.getString("role"))),
+        new Wallet(available, Wallet.parseFrozenFunds(frozenJson)));
   }
 
   @Override
