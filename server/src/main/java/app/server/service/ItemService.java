@@ -17,7 +17,8 @@ public class ItemService {
   private final TransactionManager transactionManager;
 
   /** ItemService. */
-  public ItemService(ItemDAO itemDAO) {
+  public ItemService(
+      ItemDAO itemDAO, AuctionDAO auctionDAO, TransactionManager transactionManager) {
     this.itemDAO = itemDAO;
     this.auctionDAO = auctionDAO;
     this.transactionManager = transactionManager;

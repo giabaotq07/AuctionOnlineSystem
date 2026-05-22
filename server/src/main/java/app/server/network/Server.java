@@ -76,7 +76,7 @@ public class Server {
     Clock clock = Clock.systemDefaultZone();
     AntiSnipeService antiSnipeService = new AntiSnipeService(clock);
     userService = new UserService(userDAO, transactionManager);
-    itemService = new ItemService(itemDAO);
+    itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     bidService =
         new BidService(
             bidDAO,

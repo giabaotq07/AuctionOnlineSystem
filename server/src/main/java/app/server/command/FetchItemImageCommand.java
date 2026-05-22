@@ -3,7 +3,7 @@ package app.server.command;
 
 import app.common.dto.FetchItemImageRequest;
 import app.common.dto.FetchItemImageResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
@@ -27,7 +27,7 @@ public class FetchItemImageCommand implements Command {
       FetchItemImageRequest request = packet.getData(FetchItemImageRequest.class);
       if (request == null || request.imagePath() == null || request.imagePath().isBlank()) {
         clientHandler.sendPacket(
-            PacketRes.error(PacketType.FETCH_ITEM_IMAGE, "Đường dẫn ảnh không hợp lệ."));
+            PacketRes.error(ResponseType.FETCH_ITEM_IMAGE, "Đường dẫn ảnh không hợp lệ."));
         return;
       }
       // Server đọc file ảnh và encode sang Base64 — không để client tự đọc filesystem
@@ -35,7 +35,7 @@ public class FetchItemImageCommand implements Command {
 
       clientHandler.sendPacket(
           PacketRes.of(
-              PacketType.FETCH_ITEM_IMAGE,
+              ResponseType.FETCH_ITEM_IMAGE,
               "OK",
               new FetchItemImageResponse(request.itemId(), base64Data)));
 
@@ -43,11 +43,11 @@ public class FetchItemImageCommand implements Command {
 
     } catch (IllegalArgumentException e) {
       logger.warn("Invalid image request: {}", e.getMessage());
-      clientHandler.sendPacket(PacketRes.error(PacketType.FETCH_ITEM_IMAGE, e.getMessage()));
+      clientHandler.sendPacket(PacketRes.error(ResponseType.FETCH_ITEM_IMAGE, e.getMessage()));
     } catch (java.io.IOException e) {
       logger.error("Cannot read image file", e);
       clientHandler.sendPacket(
-          PacketRes.error(PacketType.FETCH_ITEM_IMAGE, "Không thể đọc file ảnh trên server."));
+          PacketRes.error(ResponseType.FETCH_ITEM_IMAGE, "Không thể đọc file ảnh trên server."));
     }
   }
 }

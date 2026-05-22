@@ -3,7 +3,7 @@ package app.server.command;
 import app.common.dto.AuctionDetailResponse;
 import app.common.dto.UploadImageRequest;
 import app.common.dto.UploadImageResponse;
-import app.common.enums.PacketType;
+import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.mapper.DtoMapper;
@@ -64,7 +64,7 @@ public class UploadImageCommand implements Command {
 
       clientHandler.sendPacket(
           PacketRes.of(
-              PacketType.UPLOAD_IMAGE,
+              ResponseType.UPLOAD_IMAGE,
               "Tải ảnh thành công.",
               new UploadImageResponse(request.itemId(), newImagePath)));
 
@@ -79,7 +79,7 @@ public class UploadImageCommand implements Command {
               new AuctionDetailResponse(
                   DtoMapper.toAuctionDetail(snapshot.auction(), snapshot.item()));
           Server.broadcast(
-              PacketRes.of(PacketType.AUCTION_DETAIL_UPDATED, "OK", detailResponse), -1);
+              PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", detailResponse), -1);
         }
       }
 
@@ -101,6 +101,6 @@ public class UploadImageCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(PacketType.UPLOAD_IMAGE, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.UPLOAD_IMAGE, message));
   }
 }

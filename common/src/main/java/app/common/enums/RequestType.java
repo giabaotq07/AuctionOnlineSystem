@@ -20,7 +20,9 @@ public enum RequestType {
   FETCH_USER_LIST(UserRole.ADMIN),
   CANCEL_AUCTION(UserRole.SELLER, UserRole.ADMIN),
   DEPOSIT(Access.AUTHENTICATED),
-  SETTLE_WALLET(UserRole.ADMIN);
+  SETTLE_WALLET(UserRole.ADMIN),
+  UPLOAD_IMAGE(UserRole.SELLER, UserRole.ADMIN),
+  FETCH_ITEM_IMAGE(Access.PUBLIC);
 
   private final Access access;
   private final Set<UserRole> allowedRoles;
