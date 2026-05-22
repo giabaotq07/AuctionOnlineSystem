@@ -18,18 +18,11 @@ public class AuctionPaidNoticeCommand extends Command {
       return;
     }
     String roleLabel =
-        "WINNER".equalsIgnoreCase(response.role())
-            ? "Bạn đã thanh toán"
-            : "Bạn đã nhận thanh toán";
+        "WINNER".equalsIgnoreCase(response.role()) ? "Bạn đã thanh toán" : "Bạn đã nhận thanh toán";
     DecimalFormat formatter = new DecimalFormat("#,###");
     String amountText = response.amount() == null ? "0" : formatter.format(response.amount());
     String content =
-        roleLabel
-            + "\nPhiên: "
-            + response.auctionName()
-            + "\nSố tiền: "
-            + amountText
-            + " đ";
+        roleLabel + "\nPhiên: " + response.auctionName() + "\nSố tiền: " + amountText + " đ";
     Platform.runLater(() -> AlertUtils.showInfo("Thanh toán thành công", content));
   }
 }
