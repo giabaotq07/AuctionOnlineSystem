@@ -4,7 +4,6 @@ import app.common.dto.LoginRequest;
 import app.common.dto.LoginResponse;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -47,7 +46,7 @@ public class LoginCommand implements Command {
       clientHandler.getSession().authenticate(user);
       Server.registerClient(user.getId(), clientHandler);
       logger.info("[SERVER] User {} logged in", username);
-      LoginResponse response = new LoginResponse(DtoMapper.toUserData(user));
+      LoginResponse response = new LoginResponse(app.common.mapper.ModelMapper.toUserDto(user));
       clientHandler.sendPacket(
           PacketRes.of(ResponseType.LOGIN_RESULT, "Đăng nhập thành công!", response));
     } catch (ServiceException e) {

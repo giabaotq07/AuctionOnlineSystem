@@ -80,30 +80,30 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói dữ liệu để truyền qua mạng hoặc giữa các tầng mà không kéo theo behavior nghiệp vụ.
 
 **Nơi áp dụng:**
-* Package `app.data` chứa các record làm request/response DTO, ví dụ `LoginRequest`, `LoginResponse`, `CreateAuctionRequest`, `AuctionDetailResponse`, `PlaceBidRequest`, `PlaceBidResponse`, `ChatRequest`, `ChatResponse`.
+* Package `app.common.dto` chứa các record làm request/response DTO, ví dụ `LoginRequest`, `LoginResponse`, `CreateAuctionRequest`, `AuctionDetailResponse`, `PlaceBidRequest`, `PlaceBidResponse`, `ChatRequest`, `ChatResponse`.
+* `AuctionPreview`, `ItemPreview`, `UserPreview` là DTO projection nhẹ cho màn danh sách/lịch sử, không kéo theo bid history hoặc dữ liệu nhạy cảm.
 * Marker interfaces `Request` và `Response` phân biệt dữ liệu vào/ra.
-* `PacketType` ánh xạ mỗi packet type với class request/response tương ứng.
+* `RequestType` và `ResponseType` ánh xạ mỗi packet type với class request/response tương ứng.
 * `PacketReq` và `PacketRes` serialize/deserialize payload bằng Gson.
 
 **Lợi ích trong dự án:**
 * Client-server trao đổi JSON nhất quán.
-* Domain model không bị gửi nguyên trạng qua socket.
-* Response trả về client chỉ gồm dữ liệu cần thiết.
+* Màn danh sách nhận payload nhẹ, còn màn chi tiết có thể nhận domain aggregate đầy đủ khi cần.
+* Response trả về client đúng theo nhu cầu từng luồng, tránh gửi thừa dữ liệu.
 
 ---
 
-## 7. Mapper Pattern
-**Ý nghĩa:** Chuyển đổi giữa domain model và DTO/view model để giảm phụ thuộc trực tiếp giữa tầng nghiệp vụ và dữ liệu trả về client.
+## 7. Proxy Pattern
+**Ý nghĩa:** Cung cấp một object đại diện cho object thật, kiểm soát lúc nào cần tải hoặc truy cập object thật.
 
 **Nơi áp dụng:**
-* `app.server.service.AuctionMapper`: Chuyển `Auction` thành `AuctionSummary` và `AuctionDetail`.
-* `app.data.UserData`: Tạo DTO từ `User`.
-* `app.data.ItemData`: Tạo DTO từ `Item`.
+* `app.client.manager.AuctionDetailProxy`: Giữ `auctionId`, trả preview đã có trong cache và chỉ fetch `Auction` detail đầy đủ khi màn live cần.
+* `LiveAuctionSessionStore`: Lưu proxy của phiên đang xem để `LiveController` không phải tự quản lý chi tiết lazy loading.
 
 **Lợi ích trong dự án:**
-* Màn hình danh sách không cần nhận toàn bộ dữ liệu chi tiết.
-* Response không expose trực tiếp mọi field nội bộ của domain object.
-* Logic tính/chọn dữ liệu hiển thị được tập trung tại mapper.
+* First scene, all auctions và history chỉ nhận `AuctionPreview` nhẹ.
+* Live screen vẫn hiển thị được preview trước, sau đó proxy tải full `Auction` có item, seller, winner và bid history.
+* Refresh danh sách không ghi đè mất detail đã cache.
 
 ---
 

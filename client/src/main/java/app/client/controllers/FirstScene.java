@@ -8,7 +8,7 @@ import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
-import app.common.dto.AuctionSummary;
+import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import app.common.models.User;
@@ -50,7 +50,7 @@ public class FirstScene implements Cleanable {
   private static final double CARD_WIDTH = 280;
   private static final double SPACING = 30;
   @FXML private TextField searchField;
-  @FXML private ListView<AuctionSummary> auctionListView;
+  @FXML private ListView<AuctionPreview> auctionListView;
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
@@ -58,7 +58,7 @@ public class FirstScene implements Cleanable {
   @FXML private Label balanceLabel;
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
-  private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final List<AuctionPreview> auctions = new ArrayList<>();
   private final HBox upcomingBox = new HBox();
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
@@ -98,12 +98,12 @@ public class FirstScene implements Cleanable {
         lv ->
             new ListCell<>() {
               @Override
-              protected void updateItem(AuctionSummary item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
+              protected void updateItem(AuctionPreview auction, boolean empty) {
+                super.updateItem(auction, empty);
+                if (empty || auction == null) {
                   setText(null);
                 } else {
-                  setText(item.itemName());
+                  setText(itemName(auction));
                 }
               }
             });
@@ -154,8 +154,8 @@ public class FirstScene implements Cleanable {
   }
 
   private void loadInitialData() {
-    summaries.clear();
-    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
+    auctions.clear();
+    auctions.addAll(AuctionStore.getInstance().getAuctionPreviews());
     rebuildUi();
   }
 
@@ -164,19 +164,19 @@ public class FirstScene implements Cleanable {
     upcomingBox.getChildren().clear();
     activeBox.getChildren().clear();
     completedBox.getChildren().clear();
-    for (AuctionSummary summary : summaries) {
-      addAuctionCard(summary);
+    for (AuctionPreview auction : auctions) {
+      addAuctionCard(auction);
     }
     updateListView();
   }
 
-  private void addAuctionCard(AuctionSummary summary) {
-    VBox card = createAuctionCard(summary);
-    if (summary.status() == AuctionStatus.OPEN) {
+  private void addAuctionCard(AuctionPreview auction) {
+    VBox card = createAuctionCard(auction);
+    if (auction.status() == AuctionStatus.OPEN) {
       upcomingBox.getChildren().add(card);
       return;
     }
-    if (summary.status() == AuctionStatus.RUNNING) {
+    if (auction.status() == AuctionStatus.RUNNING) {
       activeBox.getChildren().add(card);
       return;
     }
@@ -192,10 +192,10 @@ public class FirstScene implements Cleanable {
     if (searchField != null && searchField.getText() != null) {
       keyword = searchField.getText().toLowerCase().trim();
     }
-    for (AuctionSummary summary : summaries) {
-      String itemName = summary.itemName() == null ? "" : summary.itemName().toLowerCase();
-      if (keyword.isBlank() || itemName.contains(keyword)) {
-        auctionListView.getItems().add(summary);
+    for (AuctionPreview auction : auctions) {
+      String name = itemName(auction).toLowerCase();
+      if (keyword.isBlank() || name.contains(keyword)) {
+        auctionListView.getItems().add(auction);
       }
     }
   }
@@ -242,7 +242,7 @@ public class FirstScene implements Cleanable {
     return viewport;
   }
 
-  private VBox createAuctionCard(AuctionSummary summary) {
+  private VBox createAuctionCard(AuctionPreview auction) {
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -263,8 +263,8 @@ public class FirstScene implements Cleanable {
     imageView.setFitHeight(140);
     imageView.setPreserveRatio(true);
     imageView.setSmooth(true);
-    int itemId = summary.itemId();
-    String imageUrl = summary.imageUrl();
+    int itemId = auction.itemId();
+    String imageUrl = auction.imageUrl();
     Optional<String> cachedBase64 = ItemStore.getInstance().getItemImageBase64(itemId);
     if (cachedBase64.isPresent()) {
       try {
@@ -287,34 +287,34 @@ public class FirstScene implements Cleanable {
       }
     }
     imagePane.getChildren().addAll(imgLabel, imageView);
-    Label titleLabel = new Label(summary.itemName());
+    Label titleLabel = new Label(itemName(auction));
     titleLabel.setWrapText(true);
     titleLabel.setStyle(
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
-    Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
+    Label priceLabel = new Label("Giá hiện tại: " + auction.highestBid() + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel = new Label(timeText(summary));
+    Label timeLabel = new Label(timeText(auction));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
-    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
-      attachStartCountdown(summary.startTime(), timeLabel);
+    if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
+      attachStartCountdown(auction.startTime(), timeLabel);
     }
     Button btnDetail =
         new Button(
-            summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
+            auction.status() == AuctionStatus.FINISHED || auction.status() == AuctionStatus.PAID
                 ? "Xem kết quả"
                 : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(summary));
+    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(auction));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
 
-  private String timeText(AuctionSummary summary) {
-    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
-      return "Bắt đầu sau: " + countdownText(summary.startTime());
+  private String timeText(AuctionPreview auction) {
+    if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
+      return "Bắt đầu sau: " + countdownText(auction.startTime());
     }
-    return "Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime());
+    return "Kết thúc: " + (auction.endTime() == null ? "--" : auction.endTime());
   }
 
   private void attachStartCountdown(LocalDateTime startTime, Label label) {
@@ -347,6 +347,12 @@ public class FirstScene implements Cleanable {
       return String.format("%d ngày %02d:%02d:%02d", days, hours, minutes, seconds);
     }
     return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+  }
+
+  private String itemName(AuctionPreview auction) {
+    return auction == null || auction.itemName() == null
+        ? "(Không có tên tài sản)"
+        : auction.itemName();
   }
 
   private void setupWalletSection() {

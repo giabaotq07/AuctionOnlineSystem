@@ -4,7 +4,6 @@ import app.common.dto.DepositRequest;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -34,7 +33,8 @@ public class DepositCommand implements Command {
       }
       BigDecimal amount = request.amount();
       User user = userService.deposit(clientHandler.getUser().getId(), amount);
-      WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
+      WalletUpdateResponse response =
+          new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(user));
       clientHandler.sendPacket(PacketRes.of(ResponseType.DEPOSIT_RESULT, "OK", response));
     } catch (ServiceException e) {
       logger.warn("Deposit failed: {}", e.getMessage());

@@ -1,7 +1,6 @@
 package app.server.service;
 
 import app.common.enums.AuctionStatus;
-import app.common.models.Auction;
 import app.server.network.Server;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -17,6 +16,7 @@ public class AuctionScheduler {
   private static volatile AuctionScheduler instance;
   private final ScheduledExecutorService scheduler;
   private AuctionService auctionService;
+  private AuctionQueryService auctionQueryService;
 
   private AuctionScheduler() {
     this.scheduler = Executors.newScheduledThreadPool(2);
@@ -29,18 +29,18 @@ public class AuctionScheduler {
     return instance;
   }
 
-  public void init(AuctionService auctionService) {
+  public void init(AuctionService auctionService, AuctionQueryService auctionQueryService) {
     this.auctionService = auctionService;
+    this.auctionQueryService = auctionQueryService;
     scheduleExistingOpenAuctions();
   }
 
   private void scheduleExistingOpenAuctions() {
-    if (auctionService == null) {
+    if (auctionQueryService == null) {
       return;
     }
-    List<AuctionSnapshot> snapshots = auctionService.getAuctions();
-    for (AuctionSnapshot snapshot : snapshots) {
-      Auction auction = snapshot.auction();
+    List<app.common.models.Auction> auctions = auctionQueryService.getAuctions();
+    for (app.common.models.Auction auction : auctions) {
       if (auction.getStatus() == AuctionStatus.OPEN && auction.getStartTime() != null) {
         scheduleStart(auction.getId(), auction.getStartTime());
       }
@@ -58,7 +58,7 @@ public class AuctionScheduler {
               boolean updated = auctionService.startOpenAuction(auctionId);
               if (updated) {
                 logger.info("Auction {} started automatically.", auctionId);
-                Server.broadcastAuctionList(auctionService);
+                Server.broadcastAuctionList(auctionQueryService);
               }
             }
           } catch (Exception e) {

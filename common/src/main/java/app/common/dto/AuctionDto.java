@@ -2,9 +2,9 @@ package app.common.dto;
 
 import app.common.enums.AuctionStatus;
 import java.time.LocalDateTime;
+import java.util.List;
 
-/** AuctionData. */
-public record AuctionData(
+public record AuctionDto(
     int id,
     int itemId,
     int sellerId,
@@ -16,4 +16,8 @@ public record AuctionData(
     int extendedCount,
     int version,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt) {}
+    LocalDateTime updatedAt,
+    ItemDto item,
+    UserDto seller,
+    UserDto winner,
+    List<BidDto> bids) {}

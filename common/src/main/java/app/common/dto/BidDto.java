@@ -2,12 +2,12 @@ package app.common.dto;
 
 import java.time.LocalDateTime;
 
-/** BidData. */
-public record BidData(
+public record BidDto(
     int id,
     int auctionId,
     int bidderId,
     String bidderName,
     long amount,
     LocalDateTime createAt,
-    boolean autoBid) {}
+    boolean isAutoBid,
+    UserDto bidder) {}

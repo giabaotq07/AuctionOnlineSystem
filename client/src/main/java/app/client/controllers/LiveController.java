@@ -4,6 +4,7 @@ import static app.common.enums.AuctionStatus.FINISHED;
 import static app.common.enums.AuctionStatus.OPEN;
 import static app.common.enums.AuctionStatus.RUNNING;
 
+import app.client.manager.AuctionDetailProxy;
 import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
 import app.client.manager.LiveAuctionSessionStore;
@@ -13,12 +14,12 @@ import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
-import app.common.dto.AuctionData;
-import app.common.dto.AuctionDetail;
-import app.common.dto.BidData;
+import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import app.common.models.Auction;
+import app.common.models.Bid;
+import app.common.models.Item;
 import app.common.models.User;
 import app.common.models.Wallet;
 import java.io.ByteArrayInputStream;
@@ -51,9 +52,10 @@ import org.slf4j.LoggerFactory;
 /** LiveController. */
 public class LiveController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
-  private AuctionData auction;
+  private AuctionDetailProxy auctionProxy;
+  private AuctionPreview preview;
+  private Auction auction;
   private long currentPrice;
-  private AuctionDetail auctionDetail;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
@@ -98,15 +100,25 @@ public class LiveController implements Cleanable {
   }
 
   /** setAuction. */
-  public void setAuction(AuctionDetail detail) {
-    if (detail == null || detail.auction() == null) {
+  public void setAuction(Auction detail) {
+    if (detail == null) {
       return;
     }
-    auctionDetail = detail;
-    auction = detail.auction();
-    lastKnownStatus = auction.status();
-    currentPrice = auction.highestBid();
+    auction = detail;
+    preview = AuctionStore.getInstance().getPreview(detail.getId());
+    lastKnownStatus = auction.getStatus();
+    currentPrice = auction.getHighestBid();
     applyDetail(detail);
+  }
+
+  private void setPreview(AuctionPreview nextPreview) {
+    if (nextPreview == null) {
+      return;
+    }
+    preview = nextPreview;
+    if (auction == null || auction.getId() != nextPreview.auctionId()) {
+      applyPreview(nextPreview);
+    }
   }
 
   private void updateAvailableBalance() {
@@ -150,44 +162,49 @@ public class LiveController implements Cleanable {
   }
 
   private void updateTimer() {
-    if (auction != null && auction.status() == FINISHED) {
+    if (selectedStatus() == FINISHED) {
       timeLabel.setText("Đã kết thúc");
     }
   }
 
   private void loadSessionAuction() {
-    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
-    if (sessionDetail != null && sessionDetail.auction() != null) {
-      setAuction(sessionDetail);
+    auctionProxy = LiveAuctionSessionStore.getInstance().getSelectedProxy();
+    if (auctionProxy == null) {
+      showAwaitingAuctionDetail();
       return;
     }
-    Integer auctionId = LiveAuctionSessionStore.getInstance().getSelectedAuctionId();
-    if (auctionId == null) {
-      return;
-    }
-    AuctionDetail cached = AuctionStore.getInstance().getAuctionDetail(auctionId);
+    setPreview(auctionProxy.getPreview());
+    Auction cached = auctionProxy.getDetailIfLoaded();
     if (cached != null) {
       setAuction(cached);
-      return;
-    }
-    showAwaitingAuctionDetail();
-  }
-
-  private void maybeRequestAuctionDetail() {
-    Integer auctionId = LiveAuctionSessionStore.getInstance().getSelectedAuctionId();
-    if (auctionId == null) {
-      setDetailLoading(false);
-      return;
-    }
-    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
-    if (sessionDetail != null && sessionDetail.auctionId() == auctionId) {
-      setAuction(sessionDetail);
       detailRequestInFlight = false;
       requestedAuctionId = null;
       setDetailLoading(false);
       return;
     }
-    if (detailRequestInFlight && auctionId.equals(requestedAuctionId)) {
+    showAwaitingBidHistory();
+  }
+
+  private void maybeRequestAuctionDetail() {
+    auctionProxy = LiveAuctionSessionStore.getInstance().getSelectedProxy();
+    if (auctionProxy == null) {
+      setDetailLoading(false);
+      return;
+    }
+    int auctionId = auctionProxy.getAuctionId();
+    if (!auctionProxy.needsDetailRefresh()) {
+      Auction detail = auctionProxy.getDetailIfLoaded();
+      if (detail != null) {
+        setAuction(detail);
+      }
+      detailRequestInFlight = false;
+      requestedAuctionId = null;
+      setDetailLoading(false);
+      return;
+    }
+    if (auctionProxy.isRequestInFlight()) {
+      detailRequestInFlight = true;
+      requestedAuctionId = auctionId;
       setDetailLoading(true);
       return;
     }
@@ -203,10 +220,10 @@ public class LiveController implements Cleanable {
       return;
     }
     try {
-      detailRequestInFlight = true;
+      auctionProxy.requestDetail();
+      detailRequestInFlight = auctionProxy.isRequestInFlight();
       requestedAuctionId = auctionId;
-      setDetailLoading(true);
-      requests.fetchAuctionDetail(auctionId, -1);
+      setDetailLoading(detailRequestInFlight);
     } catch (IOException e) {
       detailRequestInFlight = false;
       requestedAuctionId = null;
@@ -220,7 +237,7 @@ public class LiveController implements Cleanable {
       detailLoadingIndicator.setVisible(loading);
       detailLoadingIndicator.setManaged(loading);
     }
-    if (loading) {
+    if (loading && auction == null && preview == null) {
       showAwaitingAuctionDetail();
     }
   }
@@ -259,11 +276,7 @@ public class LiveController implements Cleanable {
   private void handleAuctionResultMessage(String message) {
     resultRequested = false;
     refreshDetailFromStore();
-    if (auction == null) {
-      return;
-    }
-    Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
-    if (cachedAuction != null && cachedAuction.getStatus() == FINISHED) {
+    if (selectedStatus() == FINISHED) {
       showAuctionClosed(message);
       return;
     }
@@ -276,77 +289,105 @@ public class LiveController implements Cleanable {
   }
 
   private void refreshDetailFromStore() {
+    AuctionDetailProxy selectedProxy = LiveAuctionSessionStore.getInstance().getSelectedProxy();
+    if (selectedProxy != null) {
+      auctionProxy = selectedProxy;
+      setPreview(selectedProxy.getPreview());
+      Auction detail = selectedProxy.getDetailIfLoaded();
+      if (detail != null) {
+        auction = detail;
+        applyDetail(detail);
+        detailRequestInFlight = false;
+        requestedAuctionId = null;
+        setDetailLoading(false);
+        return;
+      }
+    }
     if (auction == null) {
       return;
     }
-    AuctionDetail sessionDetail = LiveAuctionSessionStore.getInstance().getSelectedDetail();
-    if (sessionDetail != null && sessionDetail.auctionId() == auction.id()) {
-      auctionDetail = sessionDetail;
-      auction = sessionDetail.auction();
-      applyDetail(sessionDetail);
-      detailRequestInFlight = false;
-      requestedAuctionId = null;
-      setDetailLoading(false);
-      return;
-    }
-    AuctionDetail cachedDetail = AuctionStore.getInstance().getAuctionDetail(auction.id());
+    Auction cachedDetail = AuctionStore.getInstance().getDetailIfLoaded(auction.getId());
     if (cachedDetail != null) {
-      auctionDetail = cachedDetail;
-      auction = cachedDetail.auction();
+      auction = cachedDetail;
       applyDetail(cachedDetail);
       detailRequestInFlight = false;
       requestedAuctionId = null;
       setDetailLoading(false);
       return;
     }
-    Auction cachedAuction = AuctionStore.getInstance().getAuction(auction.id());
-    if (cachedAuction != null) {
-      currentPrice = Math.max(currentPrice, cachedAuction.getHighestBid());
+    AuctionPreview cachedPreview = AuctionStore.getInstance().getPreview(auction.getId());
+    if (cachedPreview != null) {
+      currentPrice = Math.max(currentPrice, cachedPreview.highestBid());
       currentPriceLabel.setText(formatCurrency(currentPrice));
     }
   }
 
-  private void applyDetail(AuctionDetail detail) {
-    itemNameLabel.setText(detail.itemName());
-    startPriceLabel.setText(formatCurrency(detail.startingPrice()));
-    stepPriceLabel.setText(formatCurrency(detail.stepPrice()));
-    currentPrice = Math.max(currentPrice, detail.auction().highestBid());
+  private void applyPreview(AuctionPreview preview) {
+    itemNameLabel.setText(
+        preview.itemName() == null ? "(Không có tên tài sản)" : preview.itemName());
+    startPriceLabel.setText(formatCurrency(preview.startingPrice()));
+    stepPriceLabel.setText(formatCurrency(Math.max(preview.stepPrice(), 1L)));
+    currentPrice = Math.max(currentPrice, preview.highestBid());
     currentPriceLabel.setText(formatCurrency(currentPrice));
-    depositLabel.setText(formatCurrency((long) (detail.startingPrice() * 0.2)));
-    description.setText(detail.description());
-    updateBidHistory(detail);
-    updateStatusLabel(detail.auction().status());
-    if (detail.auction().status() == OPEN && detail.startTime() != null) {
-      startCountdownTimer(detail.startTime(), "Bắt đầu sau: ", false);
-    } else if (detail.auction().status() == RUNNING && detail.endTime() != null) {
-      startCountdownTimer(detail.endTime());
+    depositLabel.setText(formatCurrency((long) (preview.startingPrice() * 0.2)));
+    description.setText("Đang tải mô tả chi tiết...");
+    showAwaitingBidHistory();
+    updateStatusLabel(preview.status());
+    if (preview.status() == OPEN && preview.startTime() != null) {
+      startCountdownTimer(preview.startTime(), "Bắt đầu sau: ", false);
+    } else if (preview.status() == RUNNING && preview.endTime() != null) {
+      startCountdownTimer(preview.endTime());
     } else {
       updateTimer();
     }
-    handleItemImage(detail.item());
+    handleItemImage(preview.itemId(), preview.imageUrl());
   }
 
-  private void updateBidHistory(AuctionDetail detail) {
+  private void applyDetail(Auction detail) {
+    Item item = detail.getItem();
+    long startingPrice = item == null ? detail.getHighestBid() : item.getStartingPrice();
+    long stepPrice = item == null ? 1L : item.getStepPrice();
+    itemNameLabel.setText(item == null ? "(Không có tên tài sản)" : item.getName());
+    startPriceLabel.setText(formatCurrency(startingPrice));
+    stepPriceLabel.setText(formatCurrency(stepPrice));
+    currentPrice = Math.max(currentPrice, detail.getHighestBid());
+    currentPriceLabel.setText(formatCurrency(currentPrice));
+    depositLabel.setText(formatCurrency((long) (startingPrice * 0.2)));
+    description.setText(item == null ? "" : item.getDescription());
+    updateBidHistory(detail);
+    updateStatusLabel(detail.getStatus());
+    if (detail.getStatus() == OPEN && detail.getStartTime() != null) {
+      startCountdownTimer(detail.getStartTime(), "Bắt đầu sau: ", false);
+    } else if (detail.getStatus() == RUNNING && detail.getEndTime() != null) {
+      startCountdownTimer(detail.getEndTime());
+    } else {
+      updateTimer();
+    }
+    handleItemImage(item);
+  }
+
+  private void updateBidHistory(Auction detail) {
     if (bidHistoryArea == null) {
       return;
     }
-    if (detail == null || detail.bidHistory() == null || detail.bidHistory().isEmpty()) {
+    if (detail == null || detail.getBids().isEmpty()) {
       bidHistoryArea.setText("Chưa có lượt đặt giá.");
       return;
     }
     StringBuilder builder = new StringBuilder();
-    for (BidData bid : detail.bidHistory()) {
+    for (Bid bid : detail.getBids()) {
       if (bid == null) {
         continue;
       }
-      String timeText = bid.createAt() == null ? "" : bidTimeFormat.format(bid.createAt());
+      String timeText = bid.getCreateAt() == null ? "" : bidTimeFormat.format(bid.getCreateAt());
       builder
           .append(timeText)
           .append(" - ")
-          .append(bid.bidderName() == null ? "Bidder #" + bid.bidderId() : bid.bidderName())
+          .append(
+              bid.getBidderName() == null ? "Bidder #" + bid.getBidderId() : bid.getBidderName())
           .append(": ")
-          .append(formatCurrency(bid.amount()));
-      if (bid.autoBid()) {
+          .append(formatCurrency(bid.getAmount()));
+      if (bid.isAutoBid()) {
         builder.append(" (auto)");
       }
       builder.append(System.lineSeparator());
@@ -409,7 +450,8 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
       return;
     }
-    if (auction == null) {
+    int selectedAuctionId = selectedAuctionId();
+    if (selectedAuctionId <= 0) {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
@@ -418,11 +460,12 @@ public class LiveController implements Cleanable {
       AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để trả giá!");
       return;
     }
-    if (auction.status() == AuctionStatus.OPEN) {
+    AuctionStatus selectedStatus = selectedStatus();
+    if (selectedStatus == AuctionStatus.OPEN) {
       AlertUtils.showError("Thông báo", "Chưa đến thời gian đấu giá");
       return;
     }
-    if (auction.status() != RUNNING) {
+    if (selectedStatus != RUNNING) {
       AlertUtils.showError("Lỗi", "Phiên không trong thời gian đặt giá");
       return;
     }
@@ -447,7 +490,7 @@ public class LiveController implements Cleanable {
     try {
       bidButton = LoadingButton.fromEvent(event);
       setBidLoading(true);
-      requests.placeBid(auction.id(), bidAmount);
+      requests.placeBid(selectedAuctionId, bidAmount);
     } catch (IOException e) {
       setBidLoading(false);
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
@@ -455,8 +498,27 @@ public class LiveController implements Cleanable {
   }
 
   private long minimumBid() {
-    long stepPrice = auctionDetail == null ? 1L : Math.max(auctionDetail.stepPrice(), 1L);
+    Item item = auction == null ? null : auction.getItem();
+    long previewStepPrice = preview == null ? 1L : Math.max(preview.stepPrice(), 1L);
+    long stepPrice = item == null ? previewStepPrice : Math.max(item.getStepPrice(), 1L);
     return currentPrice + stepPrice;
+  }
+
+  private int selectedAuctionId() {
+    if (auction != null) {
+      return auction.getId();
+    }
+    if (preview != null) {
+      return preview.auctionId();
+    }
+    return auctionProxy == null ? 0 : auctionProxy.getAuctionId();
+  }
+
+  private AuctionStatus selectedStatus() {
+    if (auction != null) {
+      return auction.getStatus();
+    }
+    return preview == null ? null : preview.status();
   }
 
   private void setBidLoading(boolean loading) {
@@ -565,6 +627,12 @@ public class LiveController implements Cleanable {
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 13px;");
   }
 
+  private void showAwaitingBidHistory() {
+    if (bidHistoryArea != null) {
+      bidHistoryArea.setText("Đang tải lịch sử đặt giá...");
+    }
+  }
+
   @Override
   public void cleanup() {
     if (cleanedUp) {
@@ -587,7 +655,8 @@ public class LiveController implements Cleanable {
     setBidLoading(false);
     resultRequested = false;
     auctionClosedShown = false;
-    auctionDetail = null;
+    auctionProxy = null;
+    preview = null;
     auction = null;
     detailRequestInFlight = false;
     requestedAuctionId = null;
@@ -604,12 +673,12 @@ public class LiveController implements Cleanable {
     NavigationManager.getInstance().navigateTo(View.UI);
   }
 
-  private void handleItemImage(app.common.dto.ItemData itemData) {
-    if (itemData == null) return;
+  private void handleItemImage(Item item) {
+    if (item == null) return;
+    handleItemImage(item.getId(), item.getImageUrl());
+  }
 
-    String imageUrl = itemData.imageUrl();
-    int itemId = itemData.id();
-
+  private void handleItemImage(int itemId, String imageUrl) {
     if (imageUrl == null || imageUrl.isBlank()) {
       clearItemImage();
       return;

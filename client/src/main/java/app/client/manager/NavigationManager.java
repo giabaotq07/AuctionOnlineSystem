@@ -1,10 +1,8 @@
 package app.client.manager;
 
 import app.client.controllers.Cleanable;
-import app.client.store.AuctionStore;
-import app.common.dto.AuctionSummary;
+import app.common.dto.AuctionPreview;
 import app.common.enums.View;
-import app.common.mapper.DtoMapper;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -33,12 +31,11 @@ public class NavigationManager {
   }
 
   /** Opens an auction detail screen with a minimal navigation flow. */
-  public void openAuctionDetail(AuctionSummary summary) {
-    if (summary == null) {
+  public void openAuctionDetail(AuctionPreview preview) {
+    if (preview == null) {
       return;
     }
-    AuctionStore.getInstance().addAuction(DtoMapper.toAuction(summary));
-    LiveAuctionSessionStore.getInstance().selectAuction(summary.auctionId());
+    LiveAuctionSessionStore.getInstance().selectAuction(preview);
     navigateTo(View.LIVE);
   }
 

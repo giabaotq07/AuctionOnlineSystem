@@ -2,15 +2,13 @@ package app.server.command;
 
 import app.common.dto.*;
 import app.common.enums.ResponseType;
-import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
-import app.server.service.AuctionService;
+import app.server.service.AuctionQueryService;
 import app.server.service.BidService;
 import app.server.service.UserService;
 import org.slf4j.Logger;
@@ -21,14 +19,14 @@ public class PlaceBidCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
   private final BidService bidService;
   private final UserService userService;
-  private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** PlaceBidCommand. */
   public PlaceBidCommand(
-      BidService bidService, UserService userService, AuctionService auctionService) {
+      BidService bidService, UserService userService, AuctionQueryService auctionQueryService) {
     this.bidService = bidService;
     this.userService = userService;
-    this.auctionService = auctionService;
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
@@ -52,15 +50,10 @@ public class PlaceBidCommand implements Command {
         return;
       }
       User user = clientHandler.getUser();
-      if (user.getRole() != UserRole.BIDDER) {
-        sendError(clientHandler, "Chỉ Bidder được đặt giá.");
-        return;
-      }
       bidderId = user.getId();
-      Auction updatedAuction = bidService.placeBid(auctionId, bidderId, bidAmount);
+      Auction updatedAuction = bidService.placeBid(auctionId, user, bidAmount);
       PlaceBidResponse response =
           new PlaceBidResponse(updatedAuction.getId(), updatedAuction.getHighestBid(), bidderId);
-      auctionService.invalidateCache();
       PacketRes packetResponse =
           PacketRes.of(ResponseType.PLACE_BID_RESULT, "Đặt giá thành công.", response);
       clientHandler.sendPacket(packetResponse);
@@ -69,7 +62,7 @@ public class PlaceBidCommand implements Command {
           PacketRes.of(ResponseType.BID_PLACED, "Có lượt đặt giá mới.", response),
           bidderId);
       sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      Server.broadcastAuctionList(auctionService);
+      Server.broadcastAuctionList(auctionQueryService);
       broadcastAuctionDetail(auctionId);
       logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
     } catch (ServiceException e) {
@@ -82,14 +75,17 @@ public class PlaceBidCommand implements Command {
   }
 
   private void sendWalletUpdate(ClientHandler clientHandler, User user) {
-    WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
+    WalletUpdateResponse response =
+        new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(user));
     clientHandler.sendPacket(PacketRes.of(ResponseType.WALLET_UPDATED, "OK", response));
   }
 
   private void broadcastAuctionDetail(int auctionId) {
     try {
       AuctionDetailResponse response =
-          new AuctionDetailResponse(auctionService.getAuctionDetail(auctionId));
+          new AuctionDetailResponse(
+              app.common.mapper.ModelMapper.toAuctionDto(
+                  auctionQueryService.getAuctionDetail(auctionId)));
       Server.broadcastToAuctionViewers(
           auctionId, PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
     } catch (Exception e) {

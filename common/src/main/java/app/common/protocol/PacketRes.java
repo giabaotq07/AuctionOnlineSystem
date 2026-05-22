@@ -1,13 +1,12 @@
 package app.common.protocol;
 
-import app.common.dto.Response;
 import app.common.enums.ResponseType;
+import app.common.utils.JsonUtil;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /** PacketRes. */
 public class PacketRes {
-  private static final Gson GSON = new GsonBuilder().create();
+  private static final Gson GSON = JsonUtil.gson();
   private final boolean success;
   private final ResponseType type;
   private final String message;
@@ -21,7 +20,7 @@ public class PacketRes {
     this.data = data;
   }
 
-  public static PacketRes of(ResponseType type, String message, Response payload) {
+  public static PacketRes of(ResponseType type, String message, Object payload) {
     return new PacketRes(true, type, message, toJson(payload));
   }
 
@@ -30,7 +29,7 @@ public class PacketRes {
     return new PacketRes(false, type, message, null);
   }
 
-  private static String toJson(Response payload) {
+  private static String toJson(Object payload) {
     if (payload == null) {
       return null;
     }
@@ -38,7 +37,7 @@ public class PacketRes {
   }
 
   /** getData. */
-  public <T extends Response> T getData(Class<T> clazz) {
+  public <T> T getData(Class<T> clazz) {
     if (clazz == null || data == null) {
       return null;
     }

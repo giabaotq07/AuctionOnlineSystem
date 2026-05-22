@@ -2,12 +2,12 @@ package app.common.protocol;
 
 import app.common.dto.Request;
 import app.common.enums.RequestType;
+import app.common.utils.JsonUtil;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /** PacketReq. */
 public class PacketReq {
-  private static final Gson GSON = new GsonBuilder().create();
+  private static final Gson GSON = JsonUtil.gson();
   private RequestType type;
   private String data;
 

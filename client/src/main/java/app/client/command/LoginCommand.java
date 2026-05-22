@@ -3,7 +3,6 @@ package app.client.command;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
 import app.common.dto.LoginResponse;
-import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketRes;
 
 /** LoginCommand. */
@@ -14,7 +13,8 @@ public class LoginCommand extends Command {
       LoginResponse response = packet.getData(LoginResponse.class);
       if (response != null && response.user() != null) {
         AuctionStore.getInstance().clearHistory();
-        UserManager.getInstance().setCurrentUser(DtoMapper.toUser(response.user()));
+        UserManager.getInstance()
+            .setCurrentUser(app.common.mapper.ModelMapper.toUserModel(response.user()));
       }
       notifyUpdate();
     }

@@ -13,6 +13,7 @@ public abstract class Item extends Entity {
   protected ItemType type;
   protected boolean deleted;
   protected String imageUrl;
+  protected User seller;
 
   /** Item. */
   public Item(
@@ -56,11 +57,19 @@ public abstract class Item extends Entity {
   }
 
   public int getSellerId() {
-    return sellerId;
+    return seller == null ? sellerId : seller.getId();
   }
 
   public void setSellerId(int sellerId) {
     this.sellerId = sellerId;
+  }
+
+  public User getSeller() {
+    return seller;
+  }
+
+  public void setSeller(User seller) {
+    this.seller = seller == null ? null : seller.publicView();
   }
 
   public String getName() {

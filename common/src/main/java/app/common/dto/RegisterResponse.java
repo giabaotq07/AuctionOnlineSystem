@@ -1,4 +1,4 @@
 package app.common.dto;
 
 /** RegisterResponse. */
-public record RegisterResponse(UserData user) implements Response {}
+public record RegisterResponse(UserDto user) implements Response {}

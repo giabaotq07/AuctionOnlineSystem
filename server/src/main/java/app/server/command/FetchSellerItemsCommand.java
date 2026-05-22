@@ -1,11 +1,11 @@
 package app.server.command;
 
 import app.common.dto.FetchSellerItemsRequest;
-import app.common.dto.ItemData;
 import app.common.dto.ItemListResponse;
+import app.common.dto.ItemPreview;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
+import app.common.models.Item;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -34,12 +34,13 @@ public class FetchSellerItemsCommand implements Command {
         return;
       }
       User user = clientHandler.getUser();
-      List<ItemData> items =
-          itemService.getSellerItems(user.getId(), user.getRole(), request.sellerId()).stream()
-              .map(DtoMapper::toItemData)
-              .toList();
+      List<Item> items =
+          itemService.getSellerItems(user.getId(), user.getRole(), request.sellerId());
       clientHandler.sendPacket(
-          PacketRes.of(ResponseType.FETCH_SELLER_ITEMS_RESULT, "OK", new ItemListResponse(items)));
+          PacketRes.of(
+              ResponseType.FETCH_SELLER_ITEMS_RESULT,
+              "OK",
+              new ItemListResponse(items.stream().map(ItemPreview::from).toList())));
     } catch (ServiceException e) {
       logger.warn("Fetch seller items failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

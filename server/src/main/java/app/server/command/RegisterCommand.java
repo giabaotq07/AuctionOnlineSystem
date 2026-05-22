@@ -5,7 +5,6 @@ import app.common.dto.RegisterResponse;
 import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -54,7 +53,8 @@ public class RegisterCommand implements Command {
       User newUser = new User(name, new Account(username, password, role), new Wallet());
       User created = userService.register(newUser);
       logger.info("[SERVER] User {} registered successfully.", username);
-      RegisterResponse response = new RegisterResponse(DtoMapper.toUserData(created));
+      RegisterResponse response =
+          new RegisterResponse(app.common.mapper.ModelMapper.toUserDto(created));
       clientHandler.sendPacket(
           PacketRes.of(ResponseType.REGISTER_RESULT, "Đăng ký thành công!", response));
     } catch (ServiceException e) {

@@ -6,18 +6,18 @@ import app.common.enums.ResponseType;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
-import app.server.service.AuctionService;
+import app.server.service.AuctionQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** FetchAuctionHistoryCommand. */
 public class FetchAuctionHistoryCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionHistoryCommand.class);
-  private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** FetchAuctionHistoryCommand. */
-  public FetchAuctionHistoryCommand(AuctionService auctionService) {
-    this.auctionService = auctionService;
+  public FetchAuctionHistoryCommand(AuctionQueryService auctionQueryService) {
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
@@ -26,12 +26,12 @@ public class FetchAuctionHistoryCommand implements Command {
       int userId = clientHandler.getUser().getId();
       AuctionHistoryRequest request = packet.getData(AuctionHistoryRequest.class);
       int sinceVersion = request == null ? -1 : request.sinceVersion();
-      var summaries = auctionService.getHistorySummaries(userId);
+      var auctions = auctionQueryService.getHistoryAuctionPreviews(userId);
       boolean fullSnapshot = sinceVersion < 0;
       if (!fullSnapshot) {
-        summaries = summaries.stream().filter(summary -> summary.version() > sinceVersion).toList();
+        auctions = auctions.stream().filter(auction -> auction.version() > sinceVersion).toList();
       }
-      AuctionHistoryResponse response = new AuctionHistoryResponse(summaries, fullSnapshot);
+      AuctionHistoryResponse response = new AuctionHistoryResponse(auctions, fullSnapshot);
       clientHandler.sendPacket(
           PacketRes.of(ResponseType.FETCH_AUCTION_HISTORY_RESULT, "OK", response));
     } catch (Exception e) {

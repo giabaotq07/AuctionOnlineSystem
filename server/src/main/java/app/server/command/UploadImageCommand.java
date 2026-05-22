@@ -6,13 +6,12 @@ import app.common.dto.UploadImageResponse;
 import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
+import app.common.models.Auction;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
-import app.server.service.AuctionService;
-import app.server.service.AuctionSnapshot;
+import app.server.service.AuctionQueryService;
 import app.server.service.ImageStorageService;
 import app.server.service.ItemService;
 import java.io.IOException;
@@ -25,16 +24,16 @@ public class UploadImageCommand implements Command {
 
   private final ItemService itemService;
   private final ImageStorageService imageStorageService;
-  private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** Constructor. */
   public UploadImageCommand(
       ItemService itemService,
       ImageStorageService imageStorageService,
-      AuctionService auctionService) {
+      AuctionQueryService auctionQueryService) {
     this.itemService = itemService;
     this.imageStorageService = imageStorageService;
-    this.auctionService = auctionService;
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
@@ -68,19 +67,17 @@ public class UploadImageCommand implements Command {
               "Tải ảnh thành công.",
               new UploadImageResponse(request.itemId(), newImagePath)));
 
-      // 4. Invalidate cache & broadcast để tất cả client khác biết ảnh đã cập nhật
-      auctionService.invalidateCache();
-      Server.broadcastAuctionList(auctionService);
+      // 4. Broadcast để tất cả client khác biết ảnh đã cập nhật
+      Server.broadcastAuctionList(auctionQueryService);
 
       // Broadcast AUCTION_DETAIL_UPDATED cho các client để đồng bộ chi tiết và tải ảnh mới
-      for (AuctionSnapshot snapshot : auctionService.getAuctions()) {
-        if (snapshot.item() != null && snapshot.item().getId() == request.itemId()) {
-          AuctionDetailResponse detailResponse =
-              new AuctionDetailResponse(
-                  DtoMapper.toAuctionDetail(snapshot.auction(), snapshot.item()));
-          Server.broadcast(
-              PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", detailResponse), -1);
-        }
+      for (Auction auction : auctionQueryService.getAuctionsByItem(request.itemId())) {
+        AuctionDetailResponse detailResponse =
+            new AuctionDetailResponse(
+                app.common.mapper.ModelMapper.toAuctionDto(
+                    auctionQueryService.getAuctionDetail(auction.getId())));
+        Server.broadcast(
+            PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", detailResponse), -1);
       }
 
       logger.info("Image uploaded for item {} by user {}", request.itemId(), user.getId());

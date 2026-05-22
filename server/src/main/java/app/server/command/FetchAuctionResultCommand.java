@@ -5,7 +5,6 @@ import app.common.dto.AuctionResultResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.Bid;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
@@ -46,7 +45,14 @@ public class FetchAuctionResultCommand implements Command {
       }
       AuctionCompletion completion = auctionService.completeAuction(auctionId);
       Optional<Bid> highestBid = completion.highestBid();
-      AuctionResultResponse response = DtoMapper.toAuctionResultResponse(auctionId, highestBid);
+      AuctionResultResponse response =
+          new AuctionResultResponse(
+              auctionId,
+              highestBid
+                  .map(Bid::getBidder)
+                  .map(app.common.mapper.ModelMapper::toUserDto)
+                  .orElse(null),
+              highestBid.map(Bid::getAmount).orElse(0L));
       clientHandler.sendPacket(PacketRes.of(ResponseType.AUCTION_RESULT_FETCHED, "OK", response));
       sendWalletUpdates(completion);
     } catch (ServiceException e) {
@@ -73,7 +79,7 @@ public class FetchAuctionResultCommand implements Command {
           PacketRes.of(
               ResponseType.WALLET_UPDATED,
               "OK",
-              new WalletUpdateResponse(DtoMapper.toUserData(user))));
+              new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(user))));
     }
   }
 }

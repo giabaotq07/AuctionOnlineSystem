@@ -32,17 +32,25 @@ public class ClientHandler implements Runnable {
   public ClientHandler(
       Socket socket,
       AuctionService auctionService,
+      AuctionQueryService auctionQueryService,
       BidService bidService,
       UserService userService,
       ItemService itemService,
       ImageStorageService imageStorageService) {
     this.socket = socket;
     this.commands =
-        createCommands(auctionService, bidService, userService, itemService, imageStorageService);
+        createCommands(
+            auctionService,
+            auctionQueryService,
+            bidService,
+            userService,
+            itemService,
+            imageStorageService);
   }
 
   private Map<RequestType, Command> createCommands(
       AuctionService auctionService,
+      AuctionQueryService auctionQueryService,
       BidService bidService,
       UserService userService,
       ItemService itemService,
@@ -51,26 +59,34 @@ public class ClientHandler implements Runnable {
     registry.put(RequestType.CHAT, new ChatCommand());
     registry.put(RequestType.LOGIN, new LoginCommand(userService));
     registry.put(RequestType.REGISTER, new RegisterCommand(userService));
-    registry.put(RequestType.CREATE_AUCTION, new CreateAuctionCommand(auctionService));
-    registry.put(RequestType.UPDATE_AUCTION, new UpdateAuctionCommand(auctionService));
     registry.put(
-        RequestType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionService));
-    registry.put(RequestType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionService));
-    registry.put(RequestType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionService));
+        RequestType.CREATE_AUCTION, new CreateAuctionCommand(auctionService, auctionQueryService));
+    registry.put(
+        RequestType.UPDATE_AUCTION, new UpdateAuctionCommand(auctionService, auctionQueryService));
+    registry.put(
+        RequestType.FETCH_AUCTION_SUMMARIES, new FetchAuctionSummariesCommand(auctionQueryService));
+    registry.put(
+        RequestType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionQueryService));
+    registry.put(
+        RequestType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionQueryService));
     registry.put(RequestType.UNWATCH_AUCTION, new UnwatchAuctionCommand());
     registry.put(
         RequestType.FETCH_AUCTION_RESULT,
         new FetchAuctionResultCommand(auctionService, userService));
     registry.put(RequestType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
     registry.put(RequestType.FETCH_USER_LIST, new FetchUserListCommand(userService));
-    registry.put(RequestType.CANCEL_AUCTION, new CancelAuctionCommand(auctionService, userService));
     registry.put(
-        RequestType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
+        RequestType.CANCEL_AUCTION,
+        new CancelAuctionCommand(auctionService, auctionQueryService, userService));
+    registry.put(
+        RequestType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionQueryService));
     registry.put(RequestType.DEPOSIT, new DepositCommand(userService));
-    registry.put(RequestType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
+    registry.put(
+        RequestType.SETTLE_WALLET,
+        new SettleWalletCommand(auctionService, auctionQueryService, userService));
     registry.put(
         RequestType.UPLOAD_IMAGE,
-        new UploadImageCommand(itemService, imageStorageService, auctionService));
+        new UploadImageCommand(itemService, imageStorageService, auctionQueryService));
     registry.put(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageCommand(imageStorageService));
 
     return registry;

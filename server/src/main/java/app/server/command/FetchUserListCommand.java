@@ -1,15 +1,14 @@
 package app.server.command;
 
-import app.common.dto.UserData;
 import app.common.dto.UserListResponse;
+import app.common.dto.UserPreview;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
+import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.UserService;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +25,12 @@ public class FetchUserListCommand implements Command {
   @Override
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
-      List<UserData> users =
-          userService.getAllUsers(clientHandler.getUser().getId()).stream()
-              .map(DtoMapper::toUserData)
-              .toList();
+      java.util.List<User> users = userService.getAllUsers(clientHandler.getUser().getId());
       clientHandler.sendPacket(
-          PacketRes.of(ResponseType.FETCH_USER_LIST_RESULT, "OK", new UserListResponse(users)));
+          PacketRes.of(
+              ResponseType.FETCH_USER_LIST_RESULT,
+              "OK",
+              new UserListResponse(users.stream().map(UserPreview::from).toList())));
     } catch (ServiceException e) {
       logger.warn("Fetch users failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

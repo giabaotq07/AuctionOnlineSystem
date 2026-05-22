@@ -7,18 +7,18 @@ import app.common.exception.ServiceException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
-import app.server.service.AuctionService;
+import app.server.service.AuctionQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** FetchAuctionDetailCommand. */
 public class FetchAuctionDetailCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(FetchAuctionDetailCommand.class);
-  private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** FetchAuctionDetailCommand. */
-  public FetchAuctionDetailCommand(AuctionService auctionService) {
-    this.auctionService = auctionService;
+  public FetchAuctionDetailCommand(AuctionQueryService auctionQueryService) {
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
@@ -36,7 +36,8 @@ public class FetchAuctionDetailCommand implements Command {
         return;
       }
       clientHandler.getSession().setViewingAuctionId(request.auctionId());
-      if (auctionService.isAuctionVersionCurrent(request.auctionId(), request.knownVersion())) {
+      if (auctionQueryService.isAuctionVersionCurrent(
+          request.auctionId(), request.knownVersion())) {
         AuctionDetailResponse response =
             AuctionDetailResponse.notModified(request.auctionId(), request.knownVersion());
         clientHandler.sendPacket(
@@ -44,7 +45,9 @@ public class FetchAuctionDetailCommand implements Command {
         return;
       }
       AuctionDetailResponse response =
-          new AuctionDetailResponse(auctionService.getAuctionDetail(request.auctionId()));
+          new AuctionDetailResponse(
+              app.common.mapper.ModelMapper.toAuctionDto(
+                  auctionQueryService.getAuctionDetail(request.auctionId())));
       clientHandler.sendPacket(
           PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "OK", response));
     } catch (ServiceException e) {

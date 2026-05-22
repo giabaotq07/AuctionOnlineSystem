@@ -4,7 +4,7 @@ import app.client.manager.*;
 import app.client.store.AuctionStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
-import app.common.dto.AuctionSummary;
+import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import java.time.LocalDateTime;
@@ -34,7 +34,7 @@ public class MyHistoryController implements Cleanable {
   @FXML private FlowPane finishedPane;
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
-  private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final List<AuctionPreview> auctions = new ArrayList<>();
   private final List<Timeline> countdownTimelines = new ArrayList<>();
   private boolean reloadLoading;
   private Button reloadButton;
@@ -93,9 +93,9 @@ public class MyHistoryController implements Cleanable {
   }
 
   private void loadCachedHistory() {
-    summaries.clear();
-    summaries.addAll(AuctionStore.getInstance().getHistorySummaries());
-    summaries.sort(
+    auctions.clear();
+    auctions.addAll(AuctionStore.getInstance().getHistoryAuctionPreviews());
+    auctions.sort(
         (left, right) -> {
           if (left == null && right == null) {
             return 0;
@@ -130,12 +130,12 @@ public class MyHistoryController implements Cleanable {
     stopCountdownTimelines();
     runningPane.getChildren().clear();
     finishedPane.getChildren().clear();
-    for (AuctionSummary summary : summaries) {
-      if (summary == null) {
+    for (AuctionPreview auction : auctions) {
+      if (auction == null) {
         continue;
       }
-      VBox card = createAuctionCard(summary);
-      if (isActiveStatus(summary.status())) {
+      VBox card = createAuctionCard(auction);
+      if (isActiveStatus(auction.status())) {
         runningPane.getChildren().add(card);
       } else {
         finishedPane.getChildren().add(card);
@@ -143,7 +143,7 @@ public class MyHistoryController implements Cleanable {
     }
   }
 
-  private VBox createAuctionCard(AuctionSummary summary) {
+  private VBox createAuctionCard(AuctionPreview auction) {
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
@@ -161,27 +161,26 @@ public class MyHistoryController implements Cleanable {
     Label imgLabel = new Label("Ảnh tài sản");
     imgLabel.setStyle("-fx-text-fill: #aaa;");
     imagePane.getChildren().add(imgLabel);
-    Label titleLabel =
-        new Label(summary.itemName() == null ? "(Không có tên tài sản)" : summary.itemName());
+    Label titleLabel = new Label(itemName(auction));
     titleLabel.setWrapText(true);
     titleLabel.setStyle(
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
-    Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
+    Label priceLabel = new Label("Giá hiện tại: " + auction.highestBid() + " đ");
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel = new Label(timeText(summary));
+    Label timeLabel = new Label(timeText(auction));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
-    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
-      attachStartCountdown(summary.startTime(), timeLabel);
+    if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
+      attachStartCountdown(auction.startTime(), timeLabel);
     }
     Button btnDetail =
         new Button(
-            summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
+            auction.status() == AuctionStatus.FINISHED || auction.status() == AuctionStatus.PAID
                 ? "Xem kết quả"
                 : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
     btnDetail.setStyle(
         "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
-    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(summary));
+    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(auction));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
@@ -190,11 +189,11 @@ public class MyHistoryController implements Cleanable {
     return status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING;
   }
 
-  private String timeText(AuctionSummary summary) {
-    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
-      return "Bắt đầu sau: " + countdownText(summary.startTime());
+  private String timeText(AuctionPreview auction) {
+    if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
+      return "Bắt đầu sau: " + countdownText(auction.startTime());
     }
-    return "Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime());
+    return "Kết thúc: " + (auction.endTime() == null ? "--" : auction.endTime());
   }
 
   private void attachStartCountdown(LocalDateTime startTime, Label label) {
@@ -227,6 +226,12 @@ public class MyHistoryController implements Cleanable {
       return String.format("%d ngày %02d:%02d:%02d", days, hours, minutes, seconds);
     }
     return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+  }
+
+  private String itemName(AuctionPreview auction) {
+    return auction == null || auction.itemName() == null
+        ? "(Không có tên tài sản)"
+        : auction.itemName();
   }
 
   /** Member. */

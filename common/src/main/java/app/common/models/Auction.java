@@ -3,6 +3,8 @@ package app.common.models;
 import app.common.enums.AuctionStatus;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /** Auction. */
@@ -19,8 +21,10 @@ public class Auction {
   private int version;
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
-  private String itemName;
-  private String imageUrl;
+  private Item item;
+  private User seller;
+  private User winner;
+  private List<Bid> bids = new ArrayList<>();
 
   /** Auction. */
   public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice) {
@@ -174,15 +178,18 @@ public class Auction {
   }
 
   public int getItemId() {
-    return itemId;
+    return item == null ? itemId : item.getId();
   }
 
   public int getSellerId() {
-    return sellerId;
+    return seller == null ? sellerId : seller.getId();
   }
 
   public Integer getWinnerId() {
-    return winnerId;
+    if (winner == null) {
+      return winnerId;
+    }
+    return winner.getId();
   }
 
   public void setWinnerId(Integer winnerId) {
@@ -260,20 +267,53 @@ public class Auction {
     this.updatedAt = updatedAt;
   }
 
-  public String getItemName() {
-    return itemName;
+  public Item getItem() {
+    return item;
   }
 
-  public void setItemName(String itemName) {
-    this.itemName = itemName;
+  public void setItem(Item item) {
+    this.item = item;
+  }
+
+  public User getSeller() {
+    return seller;
+  }
+
+  public void setSeller(User seller) {
+    this.seller = seller == null ? null : seller.publicView();
+  }
+
+  public User getWinner() {
+    return winner;
+  }
+
+  public void setWinner(User winner) {
+    this.winner = winner == null ? null : winner.publicView();
+    if (winner != null) {
+      this.winnerId = winner.getId();
+    }
+  }
+
+  public List<Bid> getBids() {
+    return List.copyOf(bids);
+  }
+
+  public void setBids(List<Bid> bids) {
+    this.bids = bids == null ? new ArrayList<>() : new ArrayList<>(bids);
+  }
+
+  public void addBid(Bid bid) {
+    if (bid != null) {
+      this.bids.add(bid);
+    }
+  }
+
+  public String getItemName() {
+    return item == null ? null : item.getName();
   }
 
   public String getImageUrl() {
-    return imageUrl;
-  }
-
-  public void setImageUrl(String imageUrl) {
-    this.imageUrl = imageUrl;
+    return item == null ? null : item.getImageUrl();
   }
 
   private void touchUpdatedAt() {

@@ -2,14 +2,14 @@ package app.common.dto;
 
 import app.common.enums.ItemType;
 
-/** ItemData. */
-public record ItemData(
+public record ItemDto(
     int id,
     int sellerId,
     String name,
     String description,
-    String imageUrl,
     long startingPrice,
     long stepPrice,
     ItemType type,
-    boolean deleted) {}
+    boolean deleted,
+    String imageUrl,
+    UserDto seller) {}

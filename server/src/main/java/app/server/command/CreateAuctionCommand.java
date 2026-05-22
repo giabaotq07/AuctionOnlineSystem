@@ -1,6 +1,7 @@
 package app.server.command;
 
 import app.common.dto.*;
+import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.models.*;
@@ -8,6 +9,8 @@ import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
+import app.server.service.AuctionQueryService;
+import app.server.service.AuctionScheduler;
 import app.server.service.AuctionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +19,13 @@ import org.slf4j.LoggerFactory;
 public class CreateAuctionCommand implements Command {
   private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
   private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** CreateAuctionCommand. */
-  public CreateAuctionCommand(AuctionService auctionService) {
+  public CreateAuctionCommand(
+      AuctionService auctionService, AuctionQueryService auctionQueryService) {
     this.auctionService = auctionService;
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
@@ -32,25 +38,27 @@ public class CreateAuctionCommand implements Command {
       }
       User user = clientHandler.getUser();
       Auction auction =
-          auctionService.createAndStartAuctionWithItem(
+          auctionService.createAuction(
               request.name(),
               request.description(),
               request.startingPrice(),
               request.stepPrice(),
               request.type(),
               request.durationMinutes(),
-              user.getId(),
-              user.getRole(),
-              request.startTime());
+              request.startTime(),
+              user);
+      scheduleStartIfNeeded(auction);
       CreateAuctionResponse response =
-          new CreateAuctionResponse(auctionService.getAuctionDetail(auction.getId()));
+          new CreateAuctionResponse(
+              app.common.mapper.ModelMapper.toAuctionDto(
+                  auctionQueryService.getAuctionDetail(auction.getId())));
       PacketRes packetRes =
           PacketRes.of(ResponseType.CREATE_AUCTION_RESULT, "Tạo phiên thành công", response);
       clientHandler.sendPacket(packetRes);
       Server.broadcast(
           PacketRes.of(ResponseType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
           user.getId());
-      Server.broadcastAuctionList(auctionService);
+      Server.broadcastAuctionList(auctionQueryService);
 
       logger.info("Auction created successfully by user {}", user.getId());
     } catch (ServiceException e) {
@@ -64,5 +72,11 @@ public class CreateAuctionCommand implements Command {
 
   private void sendError(ClientHandler clientHandler, String message) {
     clientHandler.sendPacket(PacketRes.error(ResponseType.CREATE_AUCTION_RESULT, message));
+  }
+
+  private void scheduleStartIfNeeded(Auction auction) {
+    if (auction.getStatus() == AuctionStatus.OPEN && auction.getStartTime() != null) {
+      AuctionScheduler.getInstance().scheduleStart(auction.getId(), auction.getStartTime());
+    }
   }
 }

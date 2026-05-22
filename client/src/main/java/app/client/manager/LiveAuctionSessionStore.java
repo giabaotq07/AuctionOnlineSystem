@@ -1,13 +1,14 @@
 package app.client.manager;
 
-import app.common.dto.AuctionDetail;
+import app.client.store.AuctionStore;
+import app.common.dto.AuctionPreview;
 
 /** Session-scoped state for the currently opened live auction screen. */
 public final class LiveAuctionSessionStore {
   private static volatile LiveAuctionSessionStore instance;
 
   private Integer selectedAuctionId;
-  private AuctionDetail selectedDetail;
+  private AuctionDetailProxy selectedProxy;
 
   private LiveAuctionSessionStore() {}
 
@@ -23,28 +24,41 @@ public final class LiveAuctionSessionStore {
     return instance;
   }
 
+  public synchronized void selectAuction(AuctionPreview preview) {
+    if (preview == null || preview.auctionId() <= 0) {
+      return;
+    }
+    AuctionStore.getInstance().addPreview(preview);
+    selectAuction(preview.auctionId());
+  }
+
   public synchronized void selectAuction(int auctionId) {
+    if (auctionId <= 0) {
+      return;
+    }
     selectedAuctionId = auctionId;
-    selectedDetail = null;
+    selectedProxy = new AuctionDetailProxy(auctionId);
   }
 
   public synchronized Integer getSelectedAuctionId() {
     return selectedAuctionId;
   }
 
-  public synchronized AuctionDetail getSelectedDetail() {
-    return selectedDetail;
+  public synchronized AuctionDetailProxy getSelectedProxy() {
+    if (selectedProxy == null && selectedAuctionId != null) {
+      selectedProxy = new AuctionDetailProxy(selectedAuctionId);
+    }
+    return selectedProxy;
   }
 
-  public synchronized void setSelectedDetail(AuctionDetail detail) {
-    selectedDetail = detail;
-    if (detail != null && detail.auction() != null) {
-      selectedAuctionId = detail.auction().id();
+  public synchronized void finishDetailRequest(int auctionId) {
+    if (selectedProxy != null && selectedProxy.getAuctionId() == auctionId) {
+      selectedProxy.finishRequest();
     }
   }
 
   public synchronized void clear() {
     selectedAuctionId = null;
-    selectedDetail = null;
+    selectedProxy = null;
   }
 }
