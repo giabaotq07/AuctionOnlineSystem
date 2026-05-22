@@ -4,11 +4,13 @@ import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.CreateAuctionRequest;
 import app.common.enums.ItemType;
 import app.common.enums.View;
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,6 +22,8 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.stage.FileChooser;
 
 /** AuctionController. */
 public class AuctionController implements Cleanable {
@@ -31,6 +35,9 @@ public class AuctionController implements Cleanable {
   @FXML private TextField durationField;
   @FXML private DatePicker startDatePicker;
   @FXML private TextField startTimeField;
+  @FXML private Button chooseImageButton;
+  @FXML private Label imageFileNameLabel;
+  private File selectedImageFile;
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
   private boolean createLoading;
@@ -124,6 +131,25 @@ public class AuctionController implements Cleanable {
       AlertUtils.showError("Tạo phiên thất bại", message);
       return;
     }
+
+    // Nếu user có chọn ảnh, upload ngay sau khi tạo auction thành công
+    // itemId lấy từ ItemStore (item mới nhất của seller)
+    if (selectedImageFile != null) {
+      // Lấy item mới nhất từ store để có itemId
+      var user = UserManager.getInstance().getCurrentUser();
+      ItemStore.getInstance().getItemsBySeller(user.getId()).stream()
+          .max(java.util.Comparator.comparingInt(app.common.models.Item::getId))
+          .ifPresent(
+              item -> {
+                try {
+                  requests.uploadImage(item.getId(), selectedImageFile);
+                } catch (IOException e) {
+                  // Upload ảnh thất bại không block luồng chính
+                  AlertUtils.showError("Upload ảnh thất bại", e.getMessage());
+                }
+              });
+    }
+
     AlertUtils.showInfo("Tạo phiên", message);
     NavigationManager.getInstance().navigateTo(View.UI);
   }
@@ -156,5 +182,26 @@ public class AuctionController implements Cleanable {
   public void cleanup() {
     notifications.removeMessageListener(createAuctionListener);
     setCreateLoading(false);
+  }
+
+  @FXML
+  public void handleChooseImage(ActionEvent event) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Chọn ảnh vật phẩm");
+    fileChooser
+        .getExtensionFilters()
+        .add(
+            new FileChooser.ExtensionFilter(
+                "Image Files", "*.jpg", "*.jpeg", "*.png", "*.gif", "*.webp"));
+
+    // getWindow() lấy Stage hiện tại từ button
+    File file = fileChooser.showOpenDialog(chooseImageButton.getScene().getWindow());
+    if (file != null) {
+      selectedImageFile = file;
+      // Cắt ngắn tên file nếu quá dài để UI đẹp hơn
+      String displayName =
+          file.getName().length() > 30 ? file.getName().substring(0, 27) + "..." : file.getName();
+      imageFileNameLabel.setText(displayName);
+    }
   }
 }

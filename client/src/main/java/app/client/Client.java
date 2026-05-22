@@ -1,7 +1,7 @@
 package app.client;
 
 import app.client.command.*;
-import app.common.enums.ResponseType;
+import app.common.enums.PacketType;
 import app.common.exception.ConnectException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -24,8 +24,9 @@ public class Client {
   private BufferedReader reader;
   private volatile boolean connected = false;
   private volatile boolean closed = true;
+  private boolean paidNoticeRegistered = false;
 
-  private final Map<ResponseType, Command> commands;
+  private final Map<PacketType, Command> commands;
 
   private Client() {
     this.commands = createCommands();
@@ -54,6 +55,8 @@ public class Client {
     registry.put(ResponseType.WALLET_UPDATED, new WalletUpdateCommand());
     registry.put(ResponseType.SETTLE_WALLET_RESULT, new WalletUpdateCommand());
     registry.put(ResponseType.AUCTION_PAID_NOTICE, new AuctionPaidNoticeCommand());
+    registry.put(PacketType.UPLOAD_IMAGE, new UploadImageCommand());
+    registry.put(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageCommand());
     registry.put(ResponseType.ERROR, new ErrorCommand());
     return registry;
   }

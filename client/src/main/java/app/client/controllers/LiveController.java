@@ -10,6 +10,7 @@ import app.client.manager.LiveAuctionSessionStore;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionData;
@@ -20,12 +21,16 @@ import app.common.enums.View;
 import app.common.models.Auction;
 import app.common.models.User;
 import app.common.models.Wallet;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +43,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +66,9 @@ public class LiveController implements Cleanable {
   @FXML private TextArea bidHistoryArea;
   @FXML private Label availableBalanceLabel;
   @FXML private ProgressIndicator detailLoadingIndicator;
+  @FXML private ImageView itemImageView;
+  @FXML private Label imagePlaceholderLabel;
+  private final Set<Integer> imageFetchInFlight = ConcurrentHashMap.newKeySet();
   private ScheduledExecutorService scheduler;
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
@@ -257,7 +267,7 @@ public class LiveController implements Cleanable {
       showAuctionClosed(message);
       return;
     }
-    AlertUtils.showError("Kết thúc", message);
+    AlertUtils.showInfo("Kết thúc", message);
   }
 
   private boolean isSuccessMessage(String message) {
@@ -313,6 +323,7 @@ public class LiveController implements Cleanable {
     } else {
       updateTimer();
     }
+    handleItemImage(detail.item());
   }
 
   private void updateBidHistory(AuctionDetail detail) {
@@ -582,6 +593,7 @@ public class LiveController implements Cleanable {
     requestedAuctionId = null;
     setDetailLoading(false);
     lastKnownStatus = null;
+    imageFetchInFlight.clear();
   }
 
   /** Member. */
@@ -590,5 +602,67 @@ public class LiveController implements Cleanable {
     cleanup();
     LiveAuctionSessionStore.getInstance().clear();
     NavigationManager.getInstance().navigateTo(View.UI);
+  }
+
+  private void handleItemImage(app.common.dto.ItemData itemData) {
+    if (itemData == null) return;
+
+    String imageUrl = itemData.imageUrl();
+    int itemId = itemData.id();
+
+    if (imageUrl == null || imageUrl.isBlank()) {
+      clearItemImage();
+      return;
+    }
+
+    // Kiểm tra cache local trước — tránh fetch lại mỗi lần nhận update
+    ItemStore.getInstance()
+        .getItemImageBase64(itemId)
+        .ifPresentOrElse(
+            base64 -> displayBase64Image(itemId, base64),
+            () -> {
+              // Chưa có trong cache, gửi request nếu chưa có request đang bay
+              if (imageFetchInFlight.add(itemId)) { // add() trả về false nếu đã tồn tại
+                try {
+                  requests.fetchItemImage(itemId, imageUrl);
+                  logger.debug("Sent FETCH_ITEM_IMAGE for itemId={}", itemId);
+                } catch (java.io.IOException e) {
+                  imageFetchInFlight.remove(itemId);
+                  logger.warn("Cannot send FETCH_ITEM_IMAGE: {}", e.getMessage());
+                }
+              }
+            });
+  }
+
+  /** Decode Base64 → JavaFX Image → set lên ImageView. PHẢI chạy trên JavaFX Application Thread. */
+  private void displayBase64Image(int itemId, String base64Data) {
+    imageFetchInFlight.remove(itemId); // request đã hoàn thành, xóa khỏi in-flight
+    try {
+      byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+      Image image = new Image(new ByteArrayInputStream(imageBytes));
+      if (image.isError() || itemImageView == null) return;
+
+      // Đang trên FX thread — set trực tiếp, không cần Platform.runLater()
+      itemImageView.setImage(image);
+      itemImageView.setVisible(true);
+      itemImageView.setManaged(true);
+      if (imagePlaceholderLabel != null) {
+        imagePlaceholderLabel.setVisible(false);
+        imagePlaceholderLabel.setManaged(false);
+      }
+    } catch (IllegalArgumentException e) {
+      logger.warn("Invalid Base64 image data for itemId={}: {}", itemId, e.getMessage());
+    }
+  }
+
+  private void clearItemImage() {
+    if (itemImageView == null) return;
+    itemImageView.setImage(null);
+    itemImageView.setVisible(false);
+    itemImageView.setManaged(false);
+    if (imagePlaceholderLabel != null) {
+      imagePlaceholderLabel.setVisible(true);
+      imagePlaceholderLabel.setManaged(true);
+    }
   }
 }

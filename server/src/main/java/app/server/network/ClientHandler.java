@@ -68,6 +68,11 @@ public class ClientHandler implements Runnable {
         RequestType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionService));
     registry.put(RequestType.DEPOSIT, new DepositCommand(userService));
     registry.put(RequestType.SETTLE_WALLET, new SettleWalletCommand(auctionService, userService));
+    registry.put(
+        PacketType.UPLOAD_IMAGE,
+        new UploadImageCommand(itemService, imageStorageService, auctionService));
+    registry.put(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageCommand(imageStorageService));
+
     return registry;
   }
 
@@ -149,6 +154,8 @@ public class ClientHandler implements Runnable {
       case DEPOSIT -> ResponseType.DEPOSIT_RESULT;
       case SETTLE_WALLET -> ResponseType.SETTLE_WALLET_RESULT;
       case CHAT -> ResponseType.CHAT_RESULT;
+      case UPLOAD_IMAGE -> ResponseType.UPLOAD_IMAGE;
+      case FETCH_ITEM_IMAGE -> ResponseType.FETCH_ITEM_IMAGE;
       default -> ResponseType.ERROR;
     };
   }

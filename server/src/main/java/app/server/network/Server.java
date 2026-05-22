@@ -42,6 +42,7 @@ public class Server {
   private BidService bidService;
   private UserService userService;
   private ItemService itemService;
+  private ImageStorageService imageStorageService;
 
   private Server() {
     try {
@@ -87,6 +88,7 @@ public class Server {
             antiSnipeService);
     auctionService =
         new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, clock);
+    imageStorageService = new ImageStorageService();
     AuctionScheduler.getInstance().init(auctionService);
     startAuctionMaintenance();
   }
@@ -206,7 +208,13 @@ public class Server {
           socket.setSoTimeout(0);
           logger.info("[SERVER] Client connected: {}", socket.getRemoteSocketAddress());
           ClientHandler clientHandler =
-              new ClientHandler(socket, auctionService, bidService, userService, itemService);
+              new ClientHandler(
+                  socket,
+                  auctionService,
+                  bidService,
+                  userService,
+                  itemService,
+                  imageStorageService);
           clientPool.execute(clientHandler);
         } catch (SocketException e) {
           if (serverSocket.isClosed()) {

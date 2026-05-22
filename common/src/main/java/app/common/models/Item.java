@@ -12,6 +12,7 @@ public abstract class Item extends Entity {
   protected long stepPrice;
   protected ItemType type;
   protected boolean deleted;
+  protected String imageUrl;
 
   /** Item. */
   public Item(
@@ -108,5 +109,17 @@ public abstract class Item extends Entity {
 
   public void setDeleted(boolean deleted) {
     this.deleted = deleted;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
   }
 }

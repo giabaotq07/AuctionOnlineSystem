@@ -27,6 +27,7 @@ public final class DtoMapper {
         item.getSellerId(),
         item.getName(),
         item.getDescription(),
+        item.getImageUrl(),
         item.getStartingPrice(),
         item.getStepPrice(),
         item.getType(),
@@ -54,7 +55,9 @@ public final class DtoMapper {
   public static AuctionSummary toAuctionSummary(Auction auction, Item item) {
     return new AuctionSummary(
         auction.getId(),
+        item == null ? auction.getItemId() : item.getId(),
         item == null ? auction.getItemName() : item.getName(),
+        item == null ? auction.getImageUrl() : item.getImageUrl(),
         currentPrice(auction, item),
         auction.getStartTime(),
         auction.getEndTime(),
@@ -101,6 +104,7 @@ public final class DtoMapper {
             itemData.stepPrice(),
             itemData.type());
     item.setDeleted(itemData.deleted());
+    item.setImageUrl(itemData.imageUrl());
     return item;
   }
 
@@ -132,7 +136,7 @@ public final class DtoMapper {
     Auction auction =
         new Auction(
             summary.auctionId(),
-            0,
+            summary.itemId(),
             0,
             null,
             summary.status(),
@@ -144,6 +148,7 @@ public final class DtoMapper {
             null,
             null);
     auction.setItemName(summary.itemName());
+    auction.setImageUrl(summary.imageUrl());
     return auction;
   }
 

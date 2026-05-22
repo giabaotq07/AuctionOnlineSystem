@@ -94,12 +94,20 @@ class AuctionStoreTest {
     int validId = 910101;
     AuctionSummary summary =
         new AuctionSummary(
-            validId, "Laptop", 10000, LocalDateTime.now().plusDays(1), AuctionStatus.RUNNING, 1);
+            validId,
+            1,
+            "Laptop",
+            null,
+            10000,
+            LocalDateTime.now().plusDays(1),
+            AuctionStatus.RUNNING,
+            1);
 
     store.setHistorySummaries(
         List.of(
             summary,
-            new AuctionSummary(0, "Invalid", 1, LocalDateTime.now(), AuctionStatus.RUNNING, 1),
+            new AuctionSummary(
+                0, 0, "Invalid", null, 1, LocalDateTime.now(), AuctionStatus.RUNNING, 1),
             summary));
 
     List<AuctionSummary> history = store.getHistorySummaries();

@@ -110,4 +110,14 @@ public final class ClientRequestService {
   private void send(RequestType type, Request payload) throws IOException {
     client.sendRequest(PacketReq.of(type, payload));
   }
+
+  public void fetchItemImage(int itemId, String imagePath) throws IOException {
+    send(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(itemId, imagePath));
+  }
+
+  public void uploadImage(int itemId, java.io.File imageFile) throws IOException {
+    byte[] fileBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+    String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
+    send(PacketType.UPLOAD_IMAGE, new UploadImageRequest(itemId, base64Data, imageFile.getName()));
+  }
 }
