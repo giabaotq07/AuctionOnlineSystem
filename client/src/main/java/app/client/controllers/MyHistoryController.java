@@ -187,7 +187,8 @@ public class MyHistoryController implements Cleanable {
   }
 
   private boolean isActiveStatus(AuctionStatus status) {
-    return status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING;
+    return status == AuctionStatus.OPEN
+        || status == AuctionStatus.RUNNING;
   }
 
   private String timeText(AuctionSummary summary) {
