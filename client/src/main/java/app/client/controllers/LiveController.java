@@ -265,7 +265,7 @@ public class LiveController implements Cleanable {
       showAuctionClosed(message);
       return;
     }
-    AlertUtils.showError("Kết thúc", message);
+    AlertUtils.showInfo("Kết thúc", message);
   }
 
   private boolean isSuccessMessage(String message) {

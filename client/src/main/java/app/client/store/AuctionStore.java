@@ -215,6 +215,8 @@ public final class AuctionStore {
             incoming.getUpdatedAt() != null ? incoming.getUpdatedAt() : existing.getUpdatedAt());
     merged.setItemName(
         incoming.getItemName() != null ? incoming.getItemName() : existing.getItemName());
+    merged.setImageUrl(
+        incoming.getImageUrl() != null ? incoming.getImageUrl() : existing.getImageUrl());
     return merged;
   }
 

@@ -20,6 +20,7 @@ public class Auction {
   private final LocalDateTime createdAt;
   private LocalDateTime updatedAt;
   private String itemName;
+  private String imageUrl;
 
   /** Auction. */
   public Auction(int itemId, int sellerId, LocalDateTime endTime, long currentPrice) {
@@ -265,6 +266,14 @@ public class Auction {
 
   public void setItemName(String itemName) {
     this.itemName = itemName;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
   }
 
   private void touchUpdatedAt() {

@@ -5,6 +5,7 @@ import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionSummary;
@@ -12,12 +13,16 @@ import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import app.common.models.User;
 import app.common.models.Wallet;
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -30,6 +35,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -57,6 +64,7 @@ public class FirstScene implements Cleanable {
   private final HBox completedBox = new HBox();
   private final List<Timeline> timelines = new ArrayList<>();
   private final List<Timeline> countdownTimelines = new ArrayList<>();
+  private final Set<Integer> imageFetchInFlight = new HashSet<>();
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private boolean reloadLoading;
   private Button reloadButton;
@@ -251,7 +259,35 @@ public class FirstScene implements Cleanable {
     imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
     Label imgLabel = new Label("Ảnh tài sản");
     imgLabel.setStyle("-fx-text-fill: #aaa;");
-    imagePane.getChildren().add(imgLabel);
+    ImageView imageView = new ImageView();
+    imageView.setFitWidth(CARD_WIDTH - 30);
+    imageView.setFitHeight(140);
+    imageView.setPreserveRatio(true);
+    imageView.setSmooth(true);
+    int itemId = summary.itemId();
+    String imageUrl = summary.imageUrl();
+    Optional<String> cachedBase64 = ItemStore.getInstance().getItemImageBase64(itemId);
+    if (cachedBase64.isPresent()) {
+      try {
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(cachedBase64.get());
+        Image image = new Image(new ByteArrayInputStream(imageBytes));
+        imageView.setImage(image);
+        imgLabel.setVisible(false);
+        imgLabel.setManaged(false);
+      } catch (Exception e) {
+        logger.warn("Failed to decode cached image for item {}", itemId, e);
+      }
+    } else if (imageUrl != null && !imageUrl.isBlank() && itemId > 0) {
+      if (imageFetchInFlight.add(itemId)) {
+        try {
+          requests.fetchItemImage(itemId, imageUrl);
+        } catch (Exception e) {
+          logger.warn("Failed to fetch image for item {}", itemId, e);
+          imageFetchInFlight.remove(itemId);
+        }
+      }
+    }
+    imagePane.getChildren().addAll(imgLabel, imageView);
     Label titleLabel = new Label(summary.itemName());
     titleLabel.setWrapText(true);
     titleLabel.setStyle(

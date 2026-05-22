@@ -24,7 +24,6 @@ public class Client {
   private BufferedReader reader;
   private volatile boolean connected = false;
   private volatile boolean closed = true;
-  private boolean paidNoticeRegistered = false;
 
   private final Map<PacketType, Command> commands;
 
@@ -56,6 +55,7 @@ public class Client {
     registry.put(PacketType.WALLET_UPDATED, new WalletUpdateCommand());
     registry.put(PacketType.UPLOAD_IMAGE, new UploadImageCommand());
     registry.put(PacketType.FETCH_ITEM_IMAGE, new FetchItemImageCommand());
+    registry.put(PacketType.AUCTION_PAID_NOTICE, new AuctionPaidNoticeCommand());
     return registry;
   }
 
@@ -85,7 +85,6 @@ public class Client {
     reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     connected = true;
     startListener();
-    //    registerPaidNoticeListener();
     logger.info("[CLIENT] Connected successfully");
   }
 
@@ -199,34 +198,4 @@ public class Client {
   public boolean isClosed() {
     return closed;
   }
-
-  //  private void registerPaidNoticeListener() {
-  //    if (paidNoticeRegistered) {
-  //      return;
-  //    }
-  //    paidNoticeRegistered = true;
-  //    ClientNotificationCenter.getInstance().addUpdateListener(
-  //        PacketType.AUCTION_PAID_NOTICE,
-  //        AuctionPaidNoticeResponse.class,
-  //        (response, success, message) -> {
-  //          if (!success || response == null) {
-  //            return;
-  //          }
-  //          String roleLabel = "WINNER".equalsIgnoreCase(response.role())
-  //              ? "Bạn đã thanh toán"
-  //              : "Bạn đã nhận thanh toán";
-  //          DecimalFormat formatter = new DecimalFormat("#,###");
-  //          String amountText = response.amount() == null
-  //              ? "0"
-  //              : formatter.format(response.amount());
-  //          String content =
-  //              roleLabel
-  //                  + "\nPhiên: "
-  //                  + response.auctionName()
-  //                  + "\nSố tiền: "
-  //                  + amountText
-  //                  + " đ";
-  //          Platform.runLater(() -> AlertUtils.showInfo("Thanh toán thành công", content));
-  //        });
-  //  }
 }
