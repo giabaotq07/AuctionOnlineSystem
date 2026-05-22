@@ -37,7 +37,8 @@ public class FetchAuctionHistoryCommand implements Command {
     } catch (Exception e) {
       logger.error("Failed to fetch auction history", e);
       clientHandler.sendPacket(
-          PacketRes.error(ResponseType.ERROR, "Không thể tải lịch sử đấu giá"));
+          PacketRes.error(
+              ResponseType.FETCH_AUCTION_HISTORY_RESULT, "Không thể tải lịch sử đấu giá"));
     }
   }
 }

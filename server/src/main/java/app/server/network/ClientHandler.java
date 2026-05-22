@@ -128,8 +128,29 @@ public class ClientHandler implements Runnable {
       command.execute(this, packet);
     } catch (Exception e) {
       logger.error("Error executing network: {}", type, e);
-      sendPacket(PacketRes.error(ResponseType.ERROR, "Error executing network"));
+      sendPacket(PacketRes.error(toResponseType(type), "Error executing network"));
     }
+  }
+
+  private ResponseType toResponseType(RequestType type) {
+    return switch (type) {
+      case LOGIN -> ResponseType.LOGIN_RESULT;
+      case REGISTER -> ResponseType.REGISTER_RESULT;
+      case CREATE_AUCTION -> ResponseType.CREATE_AUCTION_RESULT;
+      case UPDATE_AUCTION -> ResponseType.UPDATE_AUCTION_RESULT;
+      case FETCH_AUCTION_SUMMARIES -> ResponseType.FETCH_AUCTION_SUMMARIES_RESULT;
+      case FETCH_AUCTION_HISTORY -> ResponseType.FETCH_AUCTION_HISTORY_RESULT;
+      case FETCH_AUCTION_DETAIL -> ResponseType.FETCH_AUCTION_DETAIL_RESULT;
+      case FETCH_AUCTION_RESULT -> ResponseType.AUCTION_RESULT_FETCHED;
+      case FETCH_SELLER_ITEMS -> ResponseType.FETCH_SELLER_ITEMS_RESULT;
+      case FETCH_USER_LIST -> ResponseType.FETCH_USER_LIST_RESULT;
+      case CANCEL_AUCTION -> ResponseType.CANCEL_AUCTION_RESULT;
+      case PLACE_BID -> ResponseType.PLACE_BID_RESULT;
+      case DEPOSIT -> ResponseType.DEPOSIT_RESULT;
+      case SETTLE_WALLET -> ResponseType.SETTLE_WALLET_RESULT;
+      case CHAT -> ResponseType.CHAT_RESULT;
+      default -> ResponseType.ERROR;
+    };
   }
 
   private boolean requiresAuthentication(RequestType type) {
@@ -150,7 +171,7 @@ public class ClientHandler implements Runnable {
 
   private boolean requireLogin(RequestType type) {
     if (!session.isAuthenticated()) {
-      sendPacket(PacketRes.error(ResponseType.ERROR, "Authentication required"));
+      sendPacket(PacketRes.error(toResponseType(type), "Authentication required"));
       return false;
     }
     return true;

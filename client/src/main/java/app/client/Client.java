@@ -53,6 +53,7 @@ public class Client {
     registry.put(ResponseType.AUCTION_SUMMARIES_UPDATED, new FetchAuctionSummariesCommand());
     registry.put(ResponseType.AUCTION_DETAIL_UPDATED, new FetchAuctionDetailCommand());
     registry.put(ResponseType.WALLET_UPDATED, new WalletUpdateCommand());
+    registry.put(ResponseType.SETTLE_WALLET_RESULT, new WalletUpdateCommand());
     return registry;
   }
 

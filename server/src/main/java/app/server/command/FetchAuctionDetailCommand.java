@@ -26,11 +26,13 @@ public class FetchAuctionDetailCommand implements Command {
     try {
       AuctionDetailRequest request = packet.getData(AuctionDetailRequest.class);
       if (request == null) {
-        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Invalid request"));
+        clientHandler.sendPacket(
+            PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Invalid request"));
         return;
       }
       if (request.auctionId() <= 0) {
-        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Invalid auction id"));
+        clientHandler.sendPacket(
+            PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Invalid auction id"));
         return;
       }
       clientHandler.getSession().setViewingAuctionId(request.auctionId());
@@ -47,10 +49,12 @@ public class FetchAuctionDetailCommand implements Command {
           PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "OK", response));
     } catch (ServiceException e) {
       logger.warn("Fetch auction detail failed: {}", e.getMessage());
-      clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, e.getMessage()));
+      clientHandler.sendPacket(
+          PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, e.getMessage()));
     } catch (Exception e) {
       logger.error("Unexpected error while fetching auction detail", e);
-      clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Internal server error"));
+      clientHandler.sendPacket(
+          PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Internal server error"));
     }
   }
 }

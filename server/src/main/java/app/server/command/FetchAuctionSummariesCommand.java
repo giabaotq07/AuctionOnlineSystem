@@ -29,7 +29,8 @@ public class FetchAuctionSummariesCommand implements Command {
     } catch (Exception e) {
       logger.error("Failed to fetch auctions", e);
       clientHandler.sendPacket(
-          PacketRes.error(ResponseType.ERROR, "Không thể tải danh sách đấu giá"));
+          PacketRes.error(
+              ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, "Không thể tải danh sách đấu giá"));
     }
   }
 }

@@ -21,22 +21,24 @@ public class ChatCommand implements Command {
   public void execute(ClientHandler clientHandler, PacketReq packet) {
     try {
       if (!clientHandler.isAuthenticated()) {
-        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Authentication required"));
+        clientHandler.sendPacket(
+            PacketRes.error(ResponseType.CHAT_RESULT, "Authentication required"));
         return;
       }
       ChatRequest request = packet.getData(ChatRequest.class);
       if (request == null) {
-        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Invalid request"));
+        clientHandler.sendPacket(PacketRes.error(ResponseType.CHAT_RESULT, "Invalid request"));
         return;
       }
       String content = request.content();
       if (content == null || content.isBlank()) {
-        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Message cannot be empty"));
+        clientHandler.sendPacket(
+            PacketRes.error(ResponseType.CHAT_RESULT, "Message cannot be empty"));
         return;
       }
       content = content.trim();
       if (content.length() > MAX_MESSAGE_LENGTH) {
-        clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Message too long"));
+        clientHandler.sendPacket(PacketRes.error(ResponseType.CHAT_RESULT, "Message too long"));
         return;
       }
       User user = clientHandler.getUser();
@@ -49,7 +51,7 @@ public class ChatCommand implements Command {
       logger.info("User {} sent chat message", user.getId());
     } catch (Exception e) {
       logger.error("Chat network failed", e);
-      clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, "Failed to send message"));
+      clientHandler.sendPacket(PacketRes.error(ResponseType.CHAT_RESULT, "Failed to send message"));
     }
   }
 }

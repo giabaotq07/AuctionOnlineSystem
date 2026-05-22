@@ -46,6 +46,6 @@ public class DepositCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.DEPOSIT_RESULT, message));
   }
 }

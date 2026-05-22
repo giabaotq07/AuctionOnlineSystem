@@ -60,6 +60,6 @@ public class LoginCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.LOGIN_RESULT, message));
   }
 }

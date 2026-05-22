@@ -50,6 +50,6 @@ public class FetchSellerItemsCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.FETCH_SELLER_ITEMS_RESULT, message));
   }
 }

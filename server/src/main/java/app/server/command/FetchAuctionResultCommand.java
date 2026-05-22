@@ -59,7 +59,7 @@ public class FetchAuctionResultCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.AUCTION_RESULT_FETCHED, message));
   }
 
   private void sendWalletUpdates(AuctionCompletion completion) {

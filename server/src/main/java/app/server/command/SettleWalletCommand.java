@@ -76,6 +76,6 @@ public class SettleWalletCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.SETTLE_WALLET_RESULT, message));
   }
 }

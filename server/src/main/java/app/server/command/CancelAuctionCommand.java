@@ -72,7 +72,7 @@ public class CancelAuctionCommand implements Command {
   }
 
   private void sendError(ClientHandler clientHandler, int auctionId, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.ERROR, message));
+    clientHandler.sendPacket(PacketRes.error(ResponseType.CANCEL_AUCTION_RESULT, message));
   }
 
   private void sendWalletUpdates(Set<Integer> userIds) {
