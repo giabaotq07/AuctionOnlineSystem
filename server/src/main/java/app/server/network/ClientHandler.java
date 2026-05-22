@@ -115,7 +115,7 @@ public class ClientHandler implements Runnable {
   private void handlePacket(PacketReq packet) {
     RequestType type = packet.getType();
     logger.info("Processing network: {}", type);
-    if (requiresAuthentication(type) && !requireLogin(type)) {
+    if (!authorize(type)) {
       return;
     }
     Command command = commands.get(type);
@@ -153,25 +153,15 @@ public class ClientHandler implements Runnable {
     };
   }
 
-  private boolean requiresAuthentication(RequestType type) {
-    return switch (type) {
-      case PLACE_BID,
-          CREATE_AUCTION,
-          UPDATE_AUCTION,
-          FETCH_AUCTION_HISTORY,
-          FETCH_SELLER_ITEMS,
-          FETCH_USER_LIST,
-          CANCEL_AUCTION,
-          DEPOSIT,
-          SETTLE_WALLET ->
-          true;
-      default -> false;
-    };
-  }
-
-  private boolean requireLogin(RequestType type) {
-    if (!session.isAuthenticated()) {
+  private boolean authorize(RequestType type) {
+    if (type.requiresAuthentication() && !session.isAuthenticated()) {
       sendPacket(PacketRes.error(toResponseType(type), "Authentication required"));
+      return false;
+    }
+    User user = session.getUser();
+    if (!type.isAllowed(user == null ? null : user.getRole())) {
+      sendPacket(
+          PacketRes.error(toResponseType(type), "Bạn không có quyền thực hiện yêu cầu này."));
       return false;
     }
     return true;
