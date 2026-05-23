@@ -56,6 +56,7 @@ public class LiveController implements Cleanable {
   private AuctionPreview preview;
   private Auction auction;
   private long currentPrice;
+  @FXML private Label titerTimer;
   @FXML private Label itemNameLabel;
   @FXML private Label startPriceLabel;
   @FXML private Label stepPriceLabel;
@@ -162,6 +163,12 @@ public class LiveController implements Cleanable {
   }
 
   private void updateTimer() {
+    if (selectedStatus() == OPEN) {
+      titerTimer.setText("Bắt đầu sau:");
+    }
+    if (selectedStatus() == RUNNING) {
+      titerTimer.setText("Thời gian còn lại:");
+    }
     if (selectedStatus() == FINISHED) {
       timeLabel.setText("Đã kết thúc");
     }
@@ -334,9 +341,11 @@ public class LiveController implements Cleanable {
     showAwaitingBidHistory();
     updateStatusLabel(preview.status());
     if (preview.status() == OPEN && preview.startTime() != null) {
-      startCountdownTimer(preview.startTime(), "Bắt đầu sau: ", false);
+      startCountdownTimer(preview.startTime(), false);
+      titerTimer.setText("Bắt đầu sau:");
     } else if (preview.status() == RUNNING && preview.endTime() != null) {
       startCountdownTimer(preview.endTime());
+      titerTimer.setText("Thời gian còn lại:");
     } else {
       updateTimer();
     }
@@ -357,9 +366,11 @@ public class LiveController implements Cleanable {
     updateBidHistory(detail);
     updateStatusLabel(detail.getStatus());
     if (detail.getStatus() == OPEN && detail.getStartTime() != null) {
-      startCountdownTimer(detail.getStartTime(), "Bắt đầu sau: ", false);
+      startCountdownTimer(detail.getStartTime(), false);
+      titerTimer.setText("Bắt đầu sau");
     } else if (detail.getStatus() == RUNNING && detail.getEndTime() != null) {
       startCountdownTimer(detail.getEndTime());
+      titerTimer.setText("Thời gian còn lại:");
     } else {
       updateTimer();
     }
@@ -393,38 +404,6 @@ public class LiveController implements Cleanable {
       builder.append(System.lineSeparator());
     }
     bidHistoryArea.setText(builder.toString().stripTrailing());
-  }
-
-  /** onNewBidPlaced. */
-  public void onNewBidPlaced(String itemName, long newPrice, String bidderName) {
-    Platform.runLater(
-        () -> {
-          currentPrice = Math.max(currentPrice, newPrice);
-          currentPriceLabel.setText(formatCurrency(currentPrice));
-        });
-  }
-
-  /** onAuctionClosed. */
-  public void onAuctionClosed(String itemName, String winnerName, long finalPrice) {
-    Platform.runLater(
-        () -> {
-          if (auctionClosedShown) {
-            return;
-          }
-          auctionClosedShown = true;
-          AlertUtils.showInfo(
-              "Kết thúc",
-              "Phiên đấu giá đã kết thúc. Người thắng: "
-                  + winnerName
-                  + " với giá: "
-                  + formatCurrency(finalPrice));
-          timeLabel.setText("Phiên đấu giá đã kết thúc!");
-          timeLabel.setStyle(
-              "-fx-text-fill: red;" + "-fx-font-weight: bold;" + "-fx-font-size: 14px;");
-          if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdownNow();
-          }
-        });
   }
 
   private void showAuctionClosed(String message) {
@@ -532,10 +511,10 @@ public class LiveController implements Cleanable {
   }
 
   private void startCountdownTimer(LocalDateTime endTime) {
-    startCountdownTimer(endTime, "", true);
+    startCountdownTimer(endTime, true);
   }
 
-  private void startCountdownTimer(LocalDateTime targetTime, String prefix, boolean requestResult) {
+  private void startCountdownTimer(LocalDateTime targetTime, boolean requestResult) {
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
@@ -560,7 +539,7 @@ public class LiveController implements Cleanable {
                   }
                   scheduler.shutdownNow();
                 } else {
-                  updateCountdownLabel(now, targetTime, prefix);
+                  updateCountdownLabel(now, targetTime);
                 }
               });
         },
