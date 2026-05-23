@@ -66,24 +66,27 @@ public class AuctionService {
       User actor) {
     validateCreateInput(
         name, description, startingPrice, stepPrice, type, durationMinutes, startTime, actor);
-    Auction auction = transactionManager.runInTransaction(
-        conn -> {
-          Item item = ItemFactory.createItem(
-              name, actor.getId(), description, startingPrice, stepPrice, type);
-          Item savedItem = itemDAO.save(conn, item);
-          Auction created = new Auction(
-              savedItem.getId(),
-              actor.getId(),
-              startTime.plusMinutes(durationMinutes),
-              savedItem.getStartingPrice());
-          created.setStartTime(startTime);
-          Auction savedAuction = auctionDAO.save(conn, created);
-          if (!startTime.isAfter(now())) {
-            savedAuction.start();
-            auctionDAO.update(conn, savedAuction);
-          }
-          return savedAuction;
-        });
+    Auction auction =
+        transactionManager.runInTransaction(
+            conn -> {
+              Item item =
+                  ItemFactory.createItem(
+                      name, actor.getId(), description, startingPrice, stepPrice, type);
+              Item savedItem = itemDAO.save(conn, item);
+              Auction created =
+                  new Auction(
+                      savedItem.getId(),
+                      actor.getId(),
+                      startTime.plusMinutes(durationMinutes),
+                      savedItem.getStartingPrice());
+              created.setStartTime(startTime);
+              Auction savedAuction = auctionDAO.save(conn, created);
+              if (!startTime.isAfter(now())) {
+                savedAuction.start();
+                auctionDAO.update(conn, savedAuction);
+              }
+              return savedAuction;
+            });
     return auction;
   }
 
@@ -109,39 +112,42 @@ public class AuctionService {
         startTime,
         expectedVersion,
         actor);
-    Auction auction = transactionManager.runInTransaction(
-        conn -> {
-          Auction storedAuction = requireAuction(conn, auctionId);
-          ensureUpdatePermission(storedAuction, actor);
-          if (storedAuction.getStatus() != AuctionStatus.OPEN) {
-            throw new ServiceException("Chỉ có thể sửa phiên chưa bắt đầu.");
-          }
-          LocalDateTime now = now();
-          ensureEditableStartTime(storedAuction.getStartTime(), now);
-          ensureEditableStartTime(startTime, now);
+    Auction auction =
+        transactionManager.runInTransaction(
+            conn -> {
+              Auction storedAuction = requireAuction(conn, auctionId);
+              ensureUpdatePermission(storedAuction, actor);
+              if (storedAuction.getStatus() != AuctionStatus.OPEN) {
+                throw new ServiceException("Chỉ có thể sửa phiên chưa bắt đầu.");
+              }
+              LocalDateTime now = now();
+              ensureEditableStartTime(storedAuction.getStartTime(), now);
+              ensureEditableStartTime(startTime, now);
 
-          Item storedItem = itemDAO
-              .findById(conn, storedAuction.getItemId())
-              .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
-          boolean startingPriceChanged = storedItem.getStartingPrice() != startingPrice;
-          storedItem.setName(name);
-          storedItem.setDescription(description);
-          storedItem.setStartingPrice(startingPrice);
-          storedItem.setStepPrice(stepPrice);
-          storedItem.setType(type);
-          itemDAO.update(conn, storedItem);
+              Item storedItem =
+                  itemDAO
+                      .findById(conn, storedAuction.getItemId())
+                      .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
+              boolean startingPriceChanged = storedItem.getStartingPrice() != startingPrice;
+              storedItem.setName(name);
+              storedItem.setDescription(description);
+              storedItem.setStartingPrice(startingPrice);
+              storedItem.setStepPrice(stepPrice);
+              storedItem.setType(type);
+              itemDAO.update(conn, storedItem);
 
-          storedAuction.setStartTime(startTime);
-          storedAuction.setEndTime(startTime.plusMinutes(durationMinutes));
-          if (startingPriceChanged) {
-            storedAuction.setHighestBid(startingPrice);
-          }
-          boolean updated = auctionDAO.updateIfVersionMatches(conn, storedAuction, expectedVersion);
-          if (!updated) {
-            throw new ServiceException("Dữ liệu phiên đã thay đổi, vui lòng tải lại.");
-          }
-          return storedAuction;
-        });
+              storedAuction.setStartTime(startTime);
+              storedAuction.setEndTime(startTime.plusMinutes(durationMinutes));
+              if (startingPriceChanged) {
+                storedAuction.setHighestBid(startingPrice);
+              }
+              boolean updated =
+                  auctionDAO.updateIfVersionMatches(conn, storedAuction, expectedVersion);
+              if (!updated) {
+                throw new ServiceException("Dữ liệu phiên đã thay đổi, vui lòng tải lại.");
+              }
+              return storedAuction;
+            });
     return auction;
   }
 
@@ -173,7 +179,7 @@ public class AuctionService {
   }
 
   public boolean startOpenAuction(int auctionId) {
-    boolean[] updated = { false };
+    boolean[] updated = {false};
     transactionManager.runWithoutResult(
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
@@ -202,7 +208,8 @@ public class AuctionService {
           }
           auction.finish(highestBid.map(Bid::getBidderId).orElse(null));
           logCompletion(auctionId, highestBid);
-          AuctionSettlementResult settlement = settlementService.settleWalletsWithResult(conn, auction);
+          AuctionSettlementResult settlement =
+              settlementService.settleWalletsWithResult(conn, auction);
           if (auction.getWinnerId() != null && settlement.winningAmount().signum() > 0) {
             auction.markPaid();
           }
@@ -231,7 +238,7 @@ public class AuctionService {
   }
 
   public BigDecimal settleAuctionPayment(int auctionId) {
-    BigDecimal[] amountRef = { BigDecimal.ZERO };
+    BigDecimal[] amountRef = {BigDecimal.ZERO};
     transactionManager.runWithoutResult(
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
@@ -241,7 +248,8 @@ public class AuctionService {
           if (auction.getStatus() != AuctionStatus.FINISHED) {
             return;
           }
-          AuctionSettlementResult settlement = settlementService.settleWalletsWithResult(conn, auction);
+          AuctionSettlementResult settlement =
+              settlementService.settleWalletsWithResult(conn, auction);
           BigDecimal winningAmount = settlement.winningAmount();
           if (auction.getWinnerId() != null && winningAmount.signum() > 0) {
             auction.markPaid();
@@ -360,11 +368,12 @@ public class AuctionService {
 
   private void logCompletion(int auctionId, Optional<Bid> highestBid) {
     highestBid.ifPresentOrElse(
-        bid -> logger.info(
-            "Phiên {} kết thúc. Winner: {}, Giá: {}",
-            auctionId,
-            bid.getBidderName(),
-            bid.getAmount()),
+        bid ->
+            logger.info(
+                "Phiên {} kết thúc. Winner: {}, Giá: {}",
+                auctionId,
+                bid.getBidderName(),
+                bid.getAmount()),
         () -> logger.info("Phiên {} kết thúc. Không có bid.", auctionId));
   }
 }
