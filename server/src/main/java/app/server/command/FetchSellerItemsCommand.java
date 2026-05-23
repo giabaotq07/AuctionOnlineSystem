@@ -2,9 +2,9 @@ package app.server.command;
 
 import app.common.dto.FetchSellerItemsRequest;
 import app.common.dto.ItemListResponse;
-import app.common.dto.ItemPreview;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
+import app.common.mapper.ModelMapper;
 import app.common.models.Item;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
@@ -40,7 +40,7 @@ public class FetchSellerItemsCommand implements Command {
           PacketRes.of(
               ResponseType.FETCH_SELLER_ITEMS_RESULT,
               "OK",
-              new ItemListResponse(items.stream().map(ItemPreview::from).toList())));
+              new ItemListResponse(items.stream().map(ModelMapper::toItemPreview).toList())));
     } catch (ServiceException e) {
       logger.warn("Fetch seller items failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

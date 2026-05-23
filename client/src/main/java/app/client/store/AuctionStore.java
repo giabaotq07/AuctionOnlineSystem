@@ -2,6 +2,7 @@ package app.client.store;
 
 import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
+import app.common.mapper.ModelMapper;
 import app.common.models.Auction;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -48,7 +49,7 @@ public final class AuctionStore {
       ItemStore.getInstance().addItem(auction.getItem());
     }
     detailMap.merge(auction.getId(), auction, this::mergeDetail);
-    addPreview(AuctionPreview.from(auction));
+    addPreview(ModelMapper.toAuctionPreview(auction));
   }
 
   public void addAuction(Auction auction) {
@@ -146,7 +147,8 @@ public final class AuctionStore {
 
   public void updateBid(long auctionId, long highestBid, long bidderId) {
     int id = toIntId(auctionId);
-    previewMap.computeIfPresent(id, (ignored, preview) -> preview.withHighestBid(highestBid));
+    previewMap.computeIfPresent(
+        id, (ignored, preview) -> withStatusAndHighestBid(preview, preview.status(), highestBid));
     Auction detail = detailMap.get(id);
     if (detail != null) {
       detail.setHighestBid(highestBid);
@@ -158,7 +160,9 @@ public final class AuctionStore {
 
   public void markCanceled(int auctionId) {
     previewMap.computeIfPresent(
-        auctionId, (ignored, preview) -> preview.withStatus(AuctionStatus.CANCELED));
+        auctionId,
+        (ignored, preview) ->
+            withStatusAndHighestBid(preview, AuctionStatus.CANCELED, preview.highestBid()));
     Auction detail = detailMap.get(auctionId);
     if (detail != null) {
       detail.setStatus(AuctionStatus.CANCELED);
@@ -173,7 +177,7 @@ public final class AuctionStore {
     int id = toIntId(auctionId);
     previewMap.computeIfPresent(
         id,
-        (ignored, preview) -> preview.withStatusAndHighestBid(AuctionStatus.FINISHED, finalPrice));
+        (ignored, preview) -> withStatusAndHighestBid(preview, AuctionStatus.FINISHED, finalPrice));
     Auction detail = detailMap.get(id);
     if (detail != null) {
       detail.setStatus(AuctionStatus.FINISHED);
@@ -208,6 +212,24 @@ public final class AuctionStore {
       incoming.setBids(existing.getBids());
     }
     return incoming;
+  }
+
+  private AuctionPreview withStatusAndHighestBid(
+      AuctionPreview preview, AuctionStatus status, long highestBid) {
+    return new AuctionPreview(
+        preview.auctionId(),
+        preview.itemId(),
+        preview.itemName(),
+        preview.imageUrl(),
+        preview.itemType(),
+        status,
+        preview.startTime(),
+        preview.endTime(),
+        highestBid,
+        preview.startingPrice(),
+        preview.stepPrice(),
+        preview.version(),
+        preview.seller());
   }
 
   private int toIntId(long id) {

@@ -3,7 +3,6 @@ package app.common.dto;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.common.enums.*;
-import app.common.models.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -55,62 +54,6 @@ public class DtoAndEnumTest {
       assertNotNull(it);
       assertEquals(it, ItemType.valueOf(it.name()));
     }
-  }
-
-  @Test
-  public void testCustomPreviewMethods() {
-    LocalDateTime now = LocalDateTime.now();
-    // Test can thiep null
-    assertNull(AuctionPreview.from(null));
-    assertNull(UserPreview.from(null));
-    assertNull(ItemPreview.from(null));
-
-    // Test convert tu model thuc te
-    Account account = new Account("username", "password", UserRole.BIDDER);
-    Wallet wallet = new Wallet(BigDecimal.TEN);
-    User user = new User(1, "User Name", account, wallet);
-    UserPreview userPreview = UserPreview.from(user);
-    assertNotNull(userPreview);
-    assertEquals(1, userPreview.userId());
-    assertEquals("User Name", userPreview.name());
-    assertEquals("username", userPreview.username());
-    assertEquals(UserRole.BIDDER, userPreview.role());
-
-    Item item = ItemFactory.createItem("Item Name", 1, "Desc", 100L, 10L, ItemType.ART);
-    item.setId(1); // Dat Id cho item de preview hop le
-    ItemPreview itemPreview = ItemPreview.from(item);
-    assertNotNull(itemPreview);
-    assertEquals("Item Name", itemPreview.name());
-
-    Auction auction = new Auction(1, 1, now.plusDays(1), 100L);
-    auction.setId(10);
-    auction.setItem(item);
-    auction.setSeller(user);
-    auction.setWinner(user);
-    auction.setVersion(2);
-
-    AuctionPreview preview = AuctionPreview.from(auction);
-    assertNotNull(preview);
-    assertEquals(10, preview.auctionId());
-    assertEquals(1, preview.itemId());
-    assertEquals("Item Name", preview.itemName());
-    assertEquals(ItemType.ART, preview.itemType());
-    assertEquals(AuctionStatus.OPEN, preview.status());
-    assertEquals(100L, preview.startingPrice());
-    assertEquals(10L, preview.stepPrice());
-    assertEquals(2, preview.version());
-    assertEquals("User Name", preview.seller().name());
-
-    // Kiem tra cac ham voi with
-    AuctionPreview previewWithHighestBid = preview.withHighestBid(200L);
-    assertEquals(200L, previewWithHighestBid.highestBid());
-
-    AuctionPreview previewWithStatus = preview.withStatus(AuctionStatus.RUNNING);
-    assertEquals(AuctionStatus.RUNNING, previewWithStatus.status());
-
-    AuctionPreview previewBoth = preview.withStatusAndHighestBid(AuctionStatus.FINISHED, 300L);
-    assertEquals(AuctionStatus.FINISHED, previewBoth.status());
-    assertEquals(300L, previewBoth.highestBid());
   }
 
   @Test

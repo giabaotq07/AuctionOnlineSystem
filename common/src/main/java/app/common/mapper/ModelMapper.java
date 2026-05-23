@@ -36,6 +36,16 @@ public class ModelMapper {
         toWalletDto(user.getWallet()));
   }
 
+  public static UserPreview toUserPreview(User user) {
+    if (user == null) return null;
+    var account = user.getAccount();
+    return new UserPreview(
+        user.getId(),
+        user.getName(),
+        account == null ? null : account.getUsername(),
+        account == null ? null : account.getRole());
+  }
+
   public static User toUserModel(UserDto dto) {
     if (dto == null) return null;
     if (dto.wallet() == null) {
@@ -90,6 +100,17 @@ public class ModelMapper {
         toUserDto(item.getSeller()));
   }
 
+  public static ItemPreview toItemPreview(Item item) {
+    if (item == null) return null;
+    return new ItemPreview(
+        item.getId(),
+        item.getName(),
+        item.getImageUrl(),
+        item.getType(),
+        item.getStartingPrice(),
+        item.getStepPrice());
+  }
+
   public static Item toItemModel(ItemDto dto) {
     if (dto == null) return null;
     Item item =
@@ -132,6 +153,25 @@ public class ModelMapper {
         toUserDto(auction.getSeller()),
         toUserDto(auction.getWinner()),
         bids);
+  }
+
+  public static AuctionPreview toAuctionPreview(Auction auction) {
+    if (auction == null) return null;
+    Item item = auction.getItem();
+    return new AuctionPreview(
+        auction.getId(),
+        item == null ? auction.getItemId() : item.getId(),
+        item == null ? null : item.getName(),
+        item == null ? null : item.getImageUrl(),
+        item == null ? null : item.getType(),
+        auction.getStatus(),
+        auction.getStartTime(),
+        auction.getEndTime(),
+        auction.getHighestBid(),
+        item == null ? 0 : item.getStartingPrice(),
+        item == null ? 1 : item.getStepPrice(),
+        auction.getVersion(),
+        toUserPreview(auction.getSeller()));
   }
 
   public static Auction toAuctionModel(AuctionDto dto) {

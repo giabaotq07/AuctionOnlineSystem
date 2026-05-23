@@ -1,9 +1,9 @@
 package app.server.command;
 
 import app.common.dto.UserListResponse;
-import app.common.dto.UserPreview;
 import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
+import app.common.mapper.ModelMapper;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -30,7 +30,7 @@ public class FetchUserListCommand implements Command {
           PacketRes.of(
               ResponseType.FETCH_USER_LIST_RESULT,
               "OK",
-              new UserListResponse(users.stream().map(UserPreview::from).toList())));
+              new UserListResponse(users.stream().map(ModelMapper::toUserPreview).toList())));
     } catch (ServiceException e) {
       logger.warn("Fetch users failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());

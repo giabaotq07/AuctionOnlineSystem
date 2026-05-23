@@ -3,6 +3,7 @@ package app.server.service;
 import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
 import app.common.exception.ServiceException;
+import app.common.mapper.ModelMapper;
 import app.common.models.Auction;
 import app.common.models.Bid;
 import app.common.models.Item;
@@ -34,7 +35,7 @@ public class AuctionQueryService {
   }
 
   public List<AuctionPreview> getAuctionPreviews() {
-    return getAuctions().stream().map(AuctionPreview::from).toList();
+    return getAuctions().stream().map(ModelMapper::toAuctionPreview).toList();
   }
 
   public Auction getAuction(int auctionId) {
@@ -68,7 +69,7 @@ public class AuctionQueryService {
   }
 
   public List<AuctionPreview> getHistoryAuctionPreviews(int userId) {
-    return getHistoryAuctions(userId).stream().map(AuctionPreview::from).toList();
+    return getHistoryAuctions(userId).stream().map(ModelMapper::toAuctionPreview).toList();
   }
 
   public List<Auction> getAuctionsByItem(int itemId) {

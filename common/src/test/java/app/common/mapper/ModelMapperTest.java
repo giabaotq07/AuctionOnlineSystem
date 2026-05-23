@@ -244,4 +244,46 @@ public class ModelMapperTest {
     assertNotNull(model.getBids());
     assertEquals(1, model.getBids().size());
   }
+
+  /** Test anh xa preview. */
+  @Test
+  public void testPreviewMapping() {
+    assertNull(ModelMapper.toUserPreview(null));
+    assertNull(ModelMapper.toItemPreview(null));
+    assertNull(ModelMapper.toAuctionPreview(null));
+
+    LocalDateTime now = LocalDateTime.now();
+    User user =
+        new User(
+            1, "User Name", new Account("username", "password", UserRole.BIDDER), new Wallet());
+    Item item = ItemFactory.createItem("Item Name", 1, "Desc", 100L, 10L, ItemType.ART);
+    item.setId(1);
+
+    UserPreview userPreview = ModelMapper.toUserPreview(user);
+    assertEquals(1, userPreview.userId());
+    assertEquals("User Name", userPreview.name());
+    assertEquals("username", userPreview.username());
+    assertEquals(UserRole.BIDDER, userPreview.role());
+
+    ItemPreview itemPreview = ModelMapper.toItemPreview(item);
+    assertEquals("Item Name", itemPreview.name());
+    assertEquals(ItemType.ART, itemPreview.itemType());
+
+    Auction auction = new Auction(1, 1, now.plusDays(1), 100L);
+    auction.setId(10);
+    auction.setItem(item);
+    auction.setSeller(user);
+    auction.setVersion(2);
+
+    AuctionPreview auctionPreview = ModelMapper.toAuctionPreview(auction);
+    assertEquals(10, auctionPreview.auctionId());
+    assertEquals(1, auctionPreview.itemId());
+    assertEquals("Item Name", auctionPreview.itemName());
+    assertEquals(ItemType.ART, auctionPreview.itemType());
+    assertEquals(AuctionStatus.OPEN, auctionPreview.status());
+    assertEquals(100L, auctionPreview.startingPrice());
+    assertEquals(10L, auctionPreview.stepPrice());
+    assertEquals(2, auctionPreview.version());
+    assertEquals("User Name", auctionPreview.seller().name());
+  }
 }
