@@ -1,4 +1,4 @@
-package app.server.service;
+package app.server.service.result;
 
 import java.math.BigDecimal;
 import java.util.Set;

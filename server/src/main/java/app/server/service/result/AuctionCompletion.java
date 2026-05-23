@@ -1,4 +1,4 @@
-package app.server.service;
+package app.server.service.result;
 
 import app.common.models.Bid;
 import java.math.BigDecimal;

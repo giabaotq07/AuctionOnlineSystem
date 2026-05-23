@@ -10,6 +10,7 @@ import app.server.dao.*;
 import app.server.dao.impl.*;
 import app.server.database.TransactionManager;
 import app.server.service.*;
+import app.server.service.result.AuctionCompletion;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;

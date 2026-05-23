@@ -6,6 +6,7 @@ import app.common.models.Bid;
 import app.common.models.User;
 import app.server.dao.BidDAO;
 import app.server.dao.UserDAO;
+import app.server.service.result.AuctionSettlementResult;
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;

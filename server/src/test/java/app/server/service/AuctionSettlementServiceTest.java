@@ -8,6 +8,7 @@ import app.common.models.*;
 import app.server.dao.*;
 import app.server.dao.impl.*;
 import app.server.database.DatabaseConnection;
+import app.server.service.result.AuctionSettlementResult;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.LocalDateTime;
