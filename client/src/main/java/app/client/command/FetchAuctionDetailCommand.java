@@ -20,6 +20,6 @@ public class FetchAuctionDetailCommand extends Command {
       }
       notifyUpdate();
     }
-//    notifyMessage(packet == null ? "" : packet.getMessage());
+    //    notifyMessage(packet == null ? "" : packet.getMessage());
   }
 }
