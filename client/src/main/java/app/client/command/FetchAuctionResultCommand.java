@@ -21,7 +21,7 @@ public class FetchAuctionResultCommand extends Command {
             "Phiên đấu giá đã kết thúc. Người thắng: "
                 + winnerName
                 + " với giá: "
-                + String.format("%,d đ", response.finalPrice());
+                + String.format("$%,d", response.finalPrice());
       }
       notifyUpdate();
     }

@@ -23,7 +23,9 @@ public enum RequestType {
   DEPOSIT(Access.AUTHENTICATED),
   SETTLE_WALLET(UserRole.ADMIN),
   UPLOAD_IMAGE(UserRole.SELLER, UserRole.ADMIN),
-  FETCH_ITEM_IMAGE(Access.PUBLIC);
+  FETCH_ITEM_IMAGE(Access.PUBLIC),
+  UPLOAD_AVATAR(Access.AUTHENTICATED),
+  FETCH_AVATAR(Access.PUBLIC);
 
   private final Access access;
   private final Set<UserRole> allowedRoles;

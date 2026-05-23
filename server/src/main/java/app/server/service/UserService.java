@@ -79,8 +79,6 @@ public class UserService {
 
   /** getAllUsers. */
   public List<User> getAllUsers(int requesterId) {
-    User requester = getById(requesterId);
-
     return userDAO.findAll();
   }
 
@@ -101,6 +99,21 @@ public class UserService {
           }
           userDAO.update(conn, user);
           return user;
+        });
+  }
+
+  /** updateAvatarUrl. */
+  public String updateAvatarUrl(int userId, String avatarUrl) {
+    return transactionManager.runInTransaction(
+        conn -> {
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          String oldAvatarUrl = user.getAvatarUrl();
+          user.setAvatarUrl(avatarUrl);
+          userDAO.update(conn, user);
+          return oldAvatarUrl;
         });
   }
 }

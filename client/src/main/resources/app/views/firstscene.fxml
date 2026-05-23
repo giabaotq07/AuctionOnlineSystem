@@ -78,7 +78,7 @@
                     style="-fx-background-color: transparent; -fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
             <Region VBox.vgrow="ALWAYS" />
             <Label fx:id="balanceLabel"
-                   text="Số dư: 0 đ"
+                   text="Số dư: ---"
                    style="-fx-text-fill: #cdd6f4; -fx-font-weight: bold;" />
         </VBox>
     </left>

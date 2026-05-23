@@ -124,7 +124,7 @@ public class AllAuctionController implements Cleanable {
     titleLabel.setWrapText(true);
     titleLabel.setStyle(
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
-    Label priceLabel = new Label("Giá hiện tại: " + auction.highestBid() + " đ");
+    Label priceLabel = new Label("Giá hiện tại: $" + auction.highestBid());
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
     Label timeLabel = new Label(timeText(auction));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");

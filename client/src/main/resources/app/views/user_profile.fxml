@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
 
@@ -13,11 +14,15 @@
 
             <!-- SECTION 1: AVATAR + NAME + INFO -->
             <HBox alignment="CENTER_LEFT" spacing="40.0" style="-fx-padding: 20; -fx-background-color: rgba(13, 22, 33, 0.5); -fx-background-radius: 15;">
-                <!-- Avatar Circle with Initials -->
-                <StackPane prefHeight="140.0" prefWidth="140.0">
-                    <Circle fx:id="avatarCircle" fill="#673ab7" radius="70.0" />
-                    <Label fx:id="avatarLabel" style="-fx-font-size: 54px; -fx-font-weight: bold; -fx-text-fill: white;" text="A" />
-                </StackPane>
+                <!-- Avatar area with change button -->
+                <VBox alignment="CENTER" spacing="10.0">
+                    <StackPane prefHeight="140.0" prefWidth="140.0">
+                        <Circle fx:id="avatarCircle" fill="#673ab7" radius="70.0" />
+                        <Label fx:id="avatarLabel" style="-fx-font-size: 54px; -fx-font-weight: bold; -fx-text-fill: white;" text="A" />
+                        <ImageView fx:id="avatarImageView" fitHeight="140.0" fitWidth="140.0" managed="false" preserveRatio="false" smooth="true" visible="false" />
+                    </StackPane>
+                    <Button onAction="#handleChangeAvatar" prefWidth="140.0" style="-fx-background-color: rgba(103, 58, 183, 0.6); -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand; -fx-padding: 6 16;" text="📷 Đổi Avatar" />
+                </VBox>
 
                 <!-- Name + Info -->
                 <VBox spacing="12.0">
@@ -43,7 +48,7 @@
                 <!-- Wallet Balance -->
                 <VBox spacing="10.0">
                     <Label style="-fx-font-size: 13px; -fx-text-fill: #95a5a6; -fx-font-weight: bold;" text="SỐ DƯ" />
-                    <Label fx:id="walletLabel" style="-fx-font-size: 18px; -fx-text-fill: #4caf50; -fx-font-weight: bold;" text="💰 5,000,000 đ" />
+                    <Label fx:id="walletLabel" style="-fx-font-size: 18px; -fx-text-fill: #4caf50; -fx-font-weight: bold;" text="💰 ---" />
                 </VBox>
             </HBox>
 

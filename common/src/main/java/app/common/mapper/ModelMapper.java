@@ -33,7 +33,8 @@ public class ModelMapper {
         user.getId(),
         user.getName(),
         toAccountDto(user.getAccount()),
-        toWalletDto(user.getWallet()));
+        toWalletDto(user.getWallet()),
+        user.getAvatarUrl());
   }
 
   public static UserPreview toUserPreview(User user) {
@@ -43,16 +44,22 @@ public class ModelMapper {
         user.getId(),
         user.getName(),
         account == null ? null : account.getUsername(),
-        account == null ? null : account.getRole());
+        account == null ? null : account.getRole(),
+        user.getAvatarUrl());
   }
 
   public static User toUserModel(UserDto dto) {
     if (dto == null) return null;
     if (dto.wallet() == null) {
-      return User.createPublicUser(dto.id(), dto.name(), toAccountModel(dto.account()));
+      return User.createPublicUser(
+          dto.id(), dto.name(), toAccountModel(dto.account()), dto.avatarUrl());
     }
     return new User(
-        dto.id(), dto.name(), toAccountModel(dto.account()), toWalletModel(dto.wallet()));
+        dto.id(),
+        dto.name(),
+        toAccountModel(dto.account()),
+        toWalletModel(dto.wallet()),
+        dto.avatarUrl());
   }
 
   public static BidDto toBidDto(Bid bid) {
