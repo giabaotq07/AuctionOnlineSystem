@@ -75,10 +75,6 @@
                             </StackPane>
                             <!-- Thumbnail row (placeholder for future thumbnails) -->
                             <HBox fx:id="thumbnailRow" alignment="CENTER_LEFT" spacing="8.0" styleClass="live-thumbnail-row">
-                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
-                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
-                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
-                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
                             </HBox>
                         </VBox>
 
