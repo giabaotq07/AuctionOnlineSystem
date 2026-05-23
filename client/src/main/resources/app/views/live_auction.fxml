@@ -1,122 +1,217 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
 
-<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.LiveController">
-    <!-- Header -->
+<BorderPane prefHeight="780.0" prefWidth="1280.0" styleClass="live-root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.LiveController">
     <top>
-        <VBox style="-fx-background-color:#161b26;">
-            <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0" style="-fx-border-color: #2d3748; -fx-border-width: 0 0 1 0;">
-                <padding>
-                    <Insets left="40.0" right="40.0" />
-                </padding>
-                <Button mnemonicParsing="false" onAction="#switchToUi" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold; -fx-font-size: 16px;" text="&lt; TRỞ VỀ TRANG CHỦ" />
-                <Region HBox.hgrow="ALWAYS" />
-                <Label alignment="CENTER" contentDisplay="CENTER" style="-fx-font-weight: bold; -fx-font-size: 24px;" text="CHI TIẾT TÀI SẢN ĐẤU GIÁ" textFill="WHITE" />
-            </HBox>
-        </VBox>
+        <!-- Minimal header with back button -->
+        <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="15.0" styleClass="live-header">
+            <padding>
+                <Insets left="30.0" right="30.0" />
+            </padding>
+            <Button mnemonicParsing="false" onAction="#switchToUi" styleClass="live-back-btn" text="‹ TRỞ VỀ TRANG CHỦ" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="availableBalanceLabel" styleClass="live-balance-label" text="Available: ---" />
+        </HBox>
     </top>
     <center>
-        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-background: transparent;">
+        <ScrollPane fitToWidth="true" styleClass="live-scroll">
             <content>
-                <VBox spacing="25.0">
+                <VBox spacing="15.0">
                     <padding>
-                        <Insets bottom="30.0" left="40.0" right="40.0" top="30.0" />
+                        <Insets bottom="25.0" left="25.0" right="25.0" top="15.0" />
                     </padding>
-                    <!-- HÀNG CHÍNH: CĂN CHỈNH CHIỀU CAO NGANG NHAU (fillHeight="true") -->
-                    <HBox fillHeight="true" spacing="20.0">
-                        <!-- CỘT 1: ẢNH -->
-                        <VBox prefWidth="380.0" style="-fx-background-color: #161b26; -fx-background-radius: 12; -fx-border-color: #2d3748; -fx-border-radius: 12; -fx-padding: 10;">
-                            <StackPane alignment="CENTER" VBox.vgrow="ALWAYS">
-                                <!-- Placeholder hiện khi chưa có ảnh hoặc đang tải -->
-                                <Label fx:id="imagePlaceholderLabel" style="-fx-text-fill: #4a5568; -fx-font-size: 13px;" text="[ HÌNH ẢNH TÀI SẢN ]" />
-                                <!-- ImageView hiển thị ảnh thực, ẩn theo mặc định -->
-                                <ImageView fx:id="itemImageView" fitHeight="340.0" fitWidth="360.0" managed="false" preserveRatio="true" smooth="true" visible="false" />
+                    <!-- ======================== MAIN GRID: 3 columns x 2 rows ======================== -->
+                    <GridPane hgap="15.0" vgap="15.0">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" percentWidth="38.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" percentWidth="30.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" percentWidth="32.0" />
+                        </columnConstraints>
+                        <rowConstraints>
+                            <RowConstraints vgrow="SOMETIMES" />
+                            <RowConstraints vgrow="SOMETIMES" />
+                        </rowConstraints>
+
+                        <!-- ============ TOP-LEFT: Product Info + Image ============ -->
+                        <VBox spacing="12.0" styleClass="live-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                            <padding>
+                                <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
+                            </padding>
+                            <!-- Status badge + title -->
+                            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                <Label fx:id="statusBadge" styleClass="live-status-badge" text="ĐANG DIỄN RA" />
+                            </HBox>
+                            <Label fx:id="itemNameLabel" styleClass="live-item-name" text="Tên tài sản..." wrapText="true" />
+                            <Label fx:id="descriptionLabel" styleClass="live-item-desc" text="Mô tả sản phẩm..." wrapText="true" />
+                            <!-- Seller info -->
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label styleClass="live-seller-prefix" text="Người bán:" />
+                                <Label fx:id="sellerNameLabel" styleClass="live-seller-name" text="Đang tải..." />
+                                <Label styleClass="live-verified-icon" text="✓" />
+                            </HBox>
+                            <!-- Main image -->
+                            <StackPane alignment="CENTER" styleClass="live-image-container" VBox.vgrow="ALWAYS">
+                                <Label fx:id="imagePlaceholderLabel" styleClass="live-image-placeholder" text="[ HÌNH ẢNH TÀI SẢN ]" />
+                                <ImageView fx:id="itemImageView" fitHeight="260.0" fitWidth="400.0" managed="false" preserveRatio="true" smooth="true" visible="false" />
+                                <ProgressIndicator fx:id="detailLoadingIndicator" managed="false" prefHeight="40.0" prefWidth="40.0" visible="false" />
+                            </StackPane>
+                            <!-- Thumbnail row (placeholder for future thumbnails) -->
+                            <HBox fx:id="thumbnailRow" alignment="CENTER_LEFT" spacing="8.0" styleClass="live-thumbnail-row">
+                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
+                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
+                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
+                                <StackPane prefHeight="55.0" prefWidth="55.0" styleClass="live-thumbnail-slot" />
+                            </HBox>
+                        </VBox>
+
+                        <!-- ============ TOP-CENTER: Timer + Price + Bid Form ============ -->
+                        <VBox spacing="0.0" styleClass="live-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <!-- Timer section -->
+                            <VBox alignment="CENTER" spacing="3.0" styleClass="live-timer-section">
+                                <padding>
+                                    <Insets bottom="12.0" left="20.0" right="20.0" top="15.0" />
+                                </padding>
+                                <Label fx:id="titerTimer" styleClass="live-timer-title" text="THỜI GIAN CÒN LẠI" />
+                                <Label fx:id="timeLabel" styleClass="live-timer-value" text="00:00:00" />
+                            </VBox>
+                            <!-- Current price section -->
+                            <VBox alignment="CENTER" spacing="5.0" styleClass="live-price-section">
+                                <padding>
+                                    <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+                                </padding>
+                                <Label styleClass="live-price-title" text="Giá hiện tại" />
+                                <Label fx:id="currentPriceLabel" styleClass="live-price-value" text="---" />
+                            </VBox>
+                            <!-- Price details grid -->
+                            <GridPane hgap="10.0" styleClass="live-price-details" vgap="6.0">
+                                <padding>
+                                    <Insets bottom="10.0" left="20.0" right="20.0" top="5.0" />
+                                </padding>
+                                <columnConstraints>
+                                    <ColumnConstraints hgrow="SOMETIMES" />
+                                    <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" />
+                                </columnConstraints>
+                                <Label styleClass="live-detail-key" text="Giá khởi điểm:" GridPane.rowIndex="0" />
+                                <Label fx:id="startPriceLabel" styleClass="live-detail-val" text="---" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                <Label styleClass="live-detail-key" text="Bước giá tối thiểu:" GridPane.rowIndex="1" />
+                                <Label fx:id="stepPriceLabel" styleClass="live-detail-val" text="---" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                <Label styleClass="live-detail-key" text="Số lượt đặt giá:" GridPane.rowIndex="2" />
+                                <Label fx:id="bidCountLabel" styleClass="live-detail-val" text="0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                </rowConstraints>
+                            </GridPane>
+                            <!-- Separator -->
+                            <Region prefHeight="1.0" styleClass="live-separator" />
+                            <!-- Bid form -->
+                            <VBox spacing="10.0" styleClass="live-bid-form" VBox.vgrow="ALWAYS">
+                                <padding>
+                                    <Insets bottom="18.0" left="20.0" right="20.0" top="12.0" />
+                                </padding>
+                                <Label styleClass="live-bid-form-title" text="Đặt giá của bạn" />
+                                <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                    <TextField fx:id="bidAmountField" promptText="Nhập số tiền..." styleClass="live-bid-input" HBox.hgrow="ALWAYS" />
+                                    <Label styleClass="live-bid-currency" text="USD" />
+                                </HBox>
+                                <!-- Quick add buttons -->
+                                <FlowPane fx:id="quickBidPane" hgap="8.0" vgap="6.0">
+                                    <Button mnemonicParsing="false" onAction="#handleQuickBid" styleClass="live-quick-btn" text="+50" userData="50" />
+                                    <Button mnemonicParsing="false" onAction="#handleQuickBid" styleClass="live-quick-btn" text="+100" userData="100" />
+                                    <Button mnemonicParsing="false" onAction="#handleQuickBid" styleClass="live-quick-btn" text="+500" userData="500" />
+                                    <Button mnemonicParsing="false" onAction="#handleQuickBid" styleClass="live-quick-btn" text="+1,000" userData="1000" />
+                                </FlowPane>
+                                <Region VBox.vgrow="ALWAYS" />
+                                <Button maxWidth="1.7976931348623157E308" onAction="#handlePlaceBid" prefHeight="48.0" styleClass="live-bid-btn" text="ĐẶT GIÁ NGAY  →" />
+                                <Label fx:id="bidHintLabel" alignment="CENTER" maxWidth="1.7976931348623157E308" styleClass="live-bid-hint" text="" />
+                            </VBox>
+                        </VBox>
+
+                        <!-- ============ TOP-RIGHT: Leading Bidder + Bid History ============ -->
+                        <VBox spacing="0.0" styleClass="live-card" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                            <!-- Leading bidder highlight -->
+                            <VBox alignment="CENTER" spacing="8.0" styleClass="live-leader-section">
+                                <padding>
+                                    <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
+                                </padding>
+                                <HBox alignment="CENTER" spacing="8.0">
+                                    <Label styleClass="live-leader-icon" text="👑" />
+                                    <Label styleClass="live-leader-title" text="NGƯỜI DẪN ĐẦU" />
+                                </HBox>
+                                <HBox alignment="CENTER" spacing="12.0">
+                                    <VBox alignment="CENTER_LEFT">
+                                        <Circle fx:id="leaderAvatar" fill="#4f46e5" radius="22.0" stroke="#6366f1" strokeWidth="2.0" />
+                                    </VBox>
+                                    <VBox alignment="CENTER_LEFT" spacing="2.0">
+                                        <Label fx:id="leaderNameLabel" styleClass="live-leader-name" text="---" />
+                                        <Label fx:id="leaderPriceLabel" styleClass="live-leader-price" text="---" />
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                            <!-- Separator -->
+                            <Region prefHeight="1.0" styleClass="live-separator" />
+                            <!-- Bid history -->
+                            <VBox spacing="6.0" styleClass="live-history-section" VBox.vgrow="ALWAYS">
+                                <padding>
+                                    <Insets bottom="10.0" left="20.0" right="20.0" top="12.0" />
+                                </padding>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                    <Label styleClass="live-section-title" text="LỊCH SỬ ĐẶT GIÁ" />
+                                </HBox>
+                                <!-- Bid history list (VBox populated programmatically) -->
+                                <ScrollPane fitToWidth="true" styleClass="live-history-scroll" VBox.vgrow="ALWAYS">
+                                    <content>
+                                        <VBox fx:id="bidHistoryList" spacing="4.0" />
+                                    </content>
+                                </ScrollPane>
+                                <!-- View all button -->
+                                <Button alignment="CENTER" maxWidth="1.7976931348623157E308" mnemonicParsing="false" styleClass="live-view-all-btn" text="Xem tất cả" />
+                            </VBox>
+                        </VBox>
+
+                        <!-- ============ BOTTOM-LEFT: Price Chart ============ -->
+                        <VBox spacing="10.0" styleClass="live-card" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="1">
+                            <padding>
+                                <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
+                            </padding>
+                            <Label styleClass="live-section-title" text="BIỂU ĐỒ GIÁ THEO THỜI GIAN" />
+                            <StackPane styleClass="live-chart-container" VBox.vgrow="ALWAYS" minHeight="200.0">
+                                <Canvas fx:id="priceChartCanvas" height="200.0" width="580.0" />
                             </StackPane>
                         </VBox>
-                        <!-- CỘT 2: THÔNG TIN & MÔ TẢ (Ở GIỮA) -->
-                        <VBox spacing="20.0" style="-fx-background-color: #161b26; -fx-background-radius: 12; -fx-border-color: #2d3748; -fx-border-radius: 12; -fx-padding: 20;" HBox.hgrow="ALWAYS">
-                            <VBox spacing="10.0">
-                                <Label fx:id="itemNameLabel" style="-fx-font-size: 24px; -fx-font-weight: bold;" text="Tên tài sản..." textFill="WHITE" wrapText="true" />
-                                <GridPane hgap="15.0" vgap="10.0">
-                                    <columnConstraints>
-                                        <ColumnConstraints minWidth="120.0" />
-                                        <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" />
-                                    </columnConstraints>
-                                    <Label text="Giá khởi điểm:" textFill="#94a3b8" GridPane.rowIndex="0" />
-                                    <Label fx:id="startPriceLabel" text="0 đ" textFill="WHITE" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                    <Label text="Bước giá:" textFill="#94a3b8" GridPane.rowIndex="1" />
-                                    <Label fx:id="stepPriceLabel" text="0 đ" textFill="WHITE" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    <Label text="Tiền đặt trước:" textFill="#94a3b8" GridPane.rowIndex="2" />
-                                    <Label fx:id="depositLabel" text="0 đ" textFill="WHITE" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                    <Label text="Tình trạng:" textFill="#94a3b8" GridPane.rowIndex="3" />
-                                    <Label fx:id="statusLabel" text="Sắp đấu giá" textFill="#22c55e" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                    <rowConstraints>
-                                        <RowConstraints />
-                                        <RowConstraints />
-                                        <RowConstraints />
-                                        <RowConstraints />
-                                    </rowConstraints>
-                                </GridPane>
-                            </VBox>
-                            <Separator opacity="0.1" />
-                            <!-- PHẦN MÔ TẢ ĐÃ ĐƯỢC CHUYỂN VÀO ĐÂY -->
-                            <VBox spacing="8.0" VBox.vgrow="ALWAYS">
-                                <Label style="-fx-font-weight: bold;" text="Mô tả sản phẩm:" textFill="#94a3b8" />
-                                <TextArea fx:id="description" editable="false" focusTraversable="false" style="-fx-control-inner-background: #161b26; -fx-text-fill: #cbd5e1; -fx-background-color: transparent; -fx-border-color: #2d3748; -fx-border-radius: 5; -fx-padding: 5;" wrapText="true" VBox.vgrow="ALWAYS" />
-                            </VBox>
+
+                        <!-- ============ BOTTOM-RIGHT: Auto Bid Placeholder ============ -->
+                        <VBox alignment="TOP_LEFT" spacing="10.0" styleClass="live-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                            <padding>
+                                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                            </padding>
+                            <Label styleClass="live-section-title" text="AUTO BID" />
+                            <Label styleClass="live-auto-bid-desc" text="Tự động đấu giá thay bạn" wrapText="true" />
+                            <Region VBox.vgrow="ALWAYS" />
+                            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" styleClass="live-auto-bid-placeholder" text="Chức năng đang phát triển..." />
                         </VBox>
-                        <!-- CỘT 3: BẢNG ĐẤU GIÁ -->
-                        <VBox prefWidth="320.0" spacing="25.0" style="-fx-background-color: #161b26; -fx-background-radius: 12; -fx-padding: 25; -fx-border-color: #2d3748; -fx-border-radius: 12;">
-                            <ProgressIndicator fx:id="detailLoadingIndicator" managed="false" visible="false" />
-                            <VBox alignment="CENTER" spacing="5.0">
-                                <Label fx:id="titerTimer" text="Thời gian còn lại" textFill="#94a3b8" />
-                                <Label fx:id="timeLabel" style="-fx-font-size: 26px; -fx-font-weight: bold;" text="00:00:00" textFill="#ef4444" />
-                            </VBox>
-                            <Separator opacity="0.1" />
-                            <VBox alignment="CENTER" spacing="5.0">
-                                <Label text="Giá hiện tại" textFill="#94a3b8" />
-                                <Label fx:id="currentPriceLabel" style="-fx-font-size: 32px; -fx-font-weight: bold;" text="0 đ" textFill="#22c55e" />
-                            </VBox>
-                            <Separator opacity="0.1" />
-                            <VBox spacing="8.0">
-                                <Label text="Lịch sử đặt giá" textFill="#94a3b8" />
-                                <TextArea fx:id="bidHistoryArea" editable="false" focusTraversable="false" prefRowCount="7" style="-fx-control-inner-background: #0f1424; -fx-text-fill: #cbd5e1; -fx-background-color: transparent; -fx-border-color: #2d3748; -fx-border-radius: 5; -fx-padding: 5;" text="Chưa có lượt đặt giá." wrapText="true" />
-                            </VBox>
-                            <Region VBox.vgrow="ALWAYS" /> <!-- Đẩy phần nhập giá xuống dưới cùng cột -->
-                            <VBox spacing="10.0">
-                                <Label text="Đặt giá của bạn" textFill="#94a3b8" />
-                                <TextField fx:id="bidAmountField" prefHeight="45.0" promptText="Nhập số tiền..." style="-fx-background-color: #0f1424; -fx-text-fill: white; -fx-border-color: #2d3748; -fx-border-radius: 8;" />
-                                <Button maxWidth="1.7976931348623157E308" onAction="#handlePlaceBid" prefHeight="50.0" style="-fx-background-color: #4f46e5; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-font-size: 16;" text="ĐẶT GIÁ NGAY →" />
-                            </VBox>
-                        </VBox>
-                    </HBox>
+                    </GridPane>
                 </VBox>
             </content>
         </ScrollPane>
     </center>
-    <bottom>
-        <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color:#161b26; -fx-border-color: #2d3748; -fx-border-width: 1 0 0 0;">
-            <padding>
-                <Insets bottom="10.0" left="40.0" right="40.0" top="10.0" />
-            </padding>
-            <Label fx:id="availableBalanceLabel" text="Số dư khả dụng: 0 đ" textFill="#cbd5e1" />
-        </HBox>
-    </bottom>
 </BorderPane>

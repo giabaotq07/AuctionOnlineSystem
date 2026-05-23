@@ -100,7 +100,8 @@ public class ClientCommandsTest {
             1,
             "John Doe",
             new AccountDto("john", UserRole.BIDDER),
-            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()));
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
     WalletUpdateResponse payload = new WalletUpdateResponse(user);
     PacketRes successPacket = PacketRes.of(ResponseType.DEPOSIT_RESULT, "Success", payload);
     cmd.execute(successPacket);
@@ -119,7 +120,8 @@ public class ClientCommandsTest {
             1,
             "John Doe",
             new AccountDto("john", UserRole.BIDDER),
-            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()));
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
     WalletUpdateResponse payload = new WalletUpdateResponse(user);
     PacketRes successPacket = PacketRes.of(ResponseType.WALLET_UPDATED, "Success", payload);
     cmd.execute(successPacket);
@@ -149,7 +151,8 @@ public class ClientCommandsTest {
             1,
             "John Doe",
             new AccountDto("john", UserRole.SELLER),
-            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()));
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
     ItemDto item =
         new ItemDto(10, 1, "Vase", "Old Vase", 500L, 50L, ItemType.ART, false, "url", sellerDto);
     AuctionDto auction =
@@ -196,7 +199,7 @@ public class ClientCommandsTest {
             500L,
             50L,
             1,
-            new UserPreview(1, "John Doe", "john", UserRole.SELLER)));
+            new UserPreview(1, "John Doe", "john", UserRole.SELLER, "avatar_url")));
     AuctionHistoryResponse payload = new AuctionHistoryResponse(auctions, true);
     PacketRes packet = PacketRes.of(ResponseType.FETCH_AUCTION_HISTORY_RESULT, "Success", payload);
     cmd.execute(packet);
@@ -213,7 +216,8 @@ public class ClientCommandsTest {
             2,
             "Bidder A",
             new AccountDto("bidder", UserRole.BIDDER),
-            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()));
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
     AuctionResultResponse payload = new AuctionResultResponse(123L, winner, 1500L);
     PacketRes packet = PacketRes.of(ResponseType.AUCTION_RESULT_FETCHED, "Success", payload);
     cmd.execute(packet);
@@ -240,7 +244,7 @@ public class ClientCommandsTest {
             500L,
             50L,
             1,
-            new UserPreview(1, "John Doe", "john", UserRole.SELLER)));
+            new UserPreview(1, "John Doe", "john", UserRole.SELLER, "avatar_url")));
     AuctionSummariesResponse payload = new AuctionSummariesResponse(auctions);
     PacketRes packet =
         PacketRes.of(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, "Success", payload);
@@ -280,7 +284,8 @@ public class ClientCommandsTest {
             1,
             "John Doe",
             new AccountDto("john", UserRole.BIDDER),
-            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()));
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
     RegisterResponse payload = new RegisterResponse(user);
     PacketRes packet = PacketRes.of(ResponseType.REGISTER_RESULT, "Success", payload);
     cmd.execute(packet);

@@ -36,7 +36,7 @@ public class PacketTest {
   /** Test khoi tao va trich xuat du lieu tu PacketRes. */
   @Test
   public void testPacketRes() {
-    UserDto userDto = new UserDto(1, "Test A", null, null);
+    UserDto userDto = new UserDto(1, "Test A", null, null, null);
     LoginResponse resPayload = new LoginResponse(userDto);
     PacketRes res = PacketRes.of(ResponseType.LOGIN_RESULT, "Success", resPayload);
 

@@ -88,6 +88,9 @@ public class ClientHandler implements Runnable {
         RequestType.UPLOAD_IMAGE,
         new UploadImageCommand(itemService, imageStorageService, auctionQueryService));
     registry.put(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageCommand(imageStorageService));
+    registry.put(
+        RequestType.UPLOAD_AVATAR, new UploadAvatarCommand(userService, imageStorageService));
+    registry.put(RequestType.FETCH_AVATAR, new FetchAvatarCommand(imageStorageService));
 
     return registry;
   }
@@ -172,6 +175,8 @@ public class ClientHandler implements Runnable {
       case CHAT -> ResponseType.CHAT_RESULT;
       case UPLOAD_IMAGE -> ResponseType.UPLOAD_IMAGE;
       case FETCH_ITEM_IMAGE -> ResponseType.FETCH_ITEM_IMAGE;
+      case UPLOAD_AVATAR -> ResponseType.UPLOAD_AVATAR;
+      case FETCH_AVATAR -> ResponseType.FETCH_AVATAR;
       default -> ResponseType.ERROR;
     };
   }

@@ -95,6 +95,10 @@ public class DtoAndEnumTest {
           UpdateAuctionRequest.class,
           UploadImageRequest.class,
           UploadImageResponse.class,
+          UploadAvatarRequest.class,
+          UploadAvatarResponse.class,
+          FetchAvatarRequest.class,
+          FetchAvatarResponse.class,
           UserDto.class,
           UserListResponse.class,
           UserPreview.class,
@@ -168,7 +172,7 @@ public class DtoAndEnumTest {
     } else if (type == ItemType.class) {
       return ItemType.values()[offset % ItemType.values().length];
     } else if (type == UserPreview.class) {
-      return new UserPreview(1, "Name", "Username", UserRole.BIDDER);
+      return new UserPreview(1, "Name", "Username", UserRole.BIDDER, "avatar_url");
     } else if (type == ItemPreview.class) {
       return new ItemPreview(1, "Item", "Desc", ItemType.ART, 100L, 10L);
     } else if (type == WalletDto.class) {
@@ -178,7 +182,8 @@ public class DtoAndEnumTest {
           1,
           "Name",
           new AccountDto("user", UserRole.BIDDER),
-          new WalletDto(BigDecimal.TEN, new HashMap<>()));
+          new WalletDto(BigDecimal.TEN, new HashMap<>()),
+          "avatar_url");
     } else if (type == ItemDto.class) {
       return new ItemDto(
           1,
@@ -194,7 +199,8 @@ public class DtoAndEnumTest {
               1,
               "Name",
               new AccountDto("user", UserRole.BIDDER),
-              new WalletDto(BigDecimal.TEN, new HashMap<>())));
+              new WalletDto(BigDecimal.TEN, new HashMap<>()),
+              "avatar_url"));
     } else if (type == AuctionDto.class) {
       return new AuctionDto(
           1,
@@ -223,17 +229,20 @@ public class DtoAndEnumTest {
                   1,
                   "Name",
                   new AccountDto("user", UserRole.BIDDER),
-                  new WalletDto(BigDecimal.TEN, new HashMap<>()))),
+                  new WalletDto(BigDecimal.TEN, new HashMap<>()),
+                  "avatar_url")),
           new UserDto(
               1,
               "Name",
               new AccountDto("user", UserRole.BIDDER),
-              new WalletDto(BigDecimal.TEN, new HashMap<>())),
+              new WalletDto(BigDecimal.TEN, new HashMap<>()),
+              "avatar_url"),
           new UserDto(
               1,
               "Name",
               new AccountDto("user", UserRole.BIDDER),
-              new WalletDto(BigDecimal.TEN, new HashMap<>())),
+              new WalletDto(BigDecimal.TEN, new HashMap<>()),
+              "avatar_url"),
           new ArrayList<>());
     } else if (type == BidDto.class) {
       return new BidDto(
@@ -248,7 +257,8 @@ public class DtoAndEnumTest {
               1,
               "Name",
               new AccountDto("user", UserRole.BIDDER),
-              new WalletDto(BigDecimal.TEN, new HashMap<>())));
+              new WalletDto(BigDecimal.TEN, new HashMap<>()),
+              "avatar_url"));
     } else if (type == AccountDto.class) {
       return new AccountDto("user", UserRole.BIDDER);
     } else {

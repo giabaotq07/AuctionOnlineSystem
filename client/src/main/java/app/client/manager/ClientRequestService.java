@@ -107,6 +107,16 @@ public final class ClientRequestService {
     send(RequestType.UPLOAD_IMAGE, new UploadImageRequest(itemId, base64Data, imageFile.getName()));
   }
 
+  public void uploadAvatar(java.io.File imageFile) throws IOException {
+    byte[] fileBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+    String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
+    send(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest(base64Data, imageFile.getName()));
+  }
+
+  public void fetchAvatar(int userId, String avatarUrl) throws IOException {
+    send(RequestType.FETCH_AVATAR, new FetchAvatarRequest(userId, avatarUrl));
+  }
+
   private void send(RequestType type, Request payload) throws IOException {
     client.sendRequest(PacketReq.of(type, payload));
   }

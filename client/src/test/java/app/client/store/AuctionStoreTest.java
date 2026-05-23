@@ -35,7 +35,7 @@ public class AuctionStoreTest {
 
     // 1. Test addPreview & getPreview
     LocalDateTime now = LocalDateTime.now();
-    UserPreview mockSeller = new UserPreview(2, "seller_a", "seller_a", UserRole.SELLER);
+    UserPreview mockSeller = new UserPreview(2, "seller_a", "seller_a", UserRole.SELLER, null);
     AuctionPreview preview1 =
         new AuctionPreview(
             1,
@@ -135,7 +135,7 @@ public class AuctionStoreTest {
 
     // 7. Test History Auctions
     List<AuctionPreview> history = new ArrayList<>();
-    UserPreview mockSellerB = new UserPreview(2, "seller_b", "seller_b", UserRole.SELLER);
+    UserPreview mockSellerB = new UserPreview(2, "seller_b", "seller_b", UserRole.SELLER, null);
     AuctionPreview preview2 =
         new AuctionPreview(
             2,
@@ -160,7 +160,7 @@ public class AuctionStoreTest {
     assertEquals(3, store.getMaxHistoryVersion());
 
     // Append history
-    UserPreview mockSellerC = new UserPreview(2, "seller_c", "seller_c", UserRole.SELLER);
+    UserPreview mockSellerC = new UserPreview(2, "seller_c", "seller_c", UserRole.SELLER, null);
     AuctionPreview preview3 =
         new AuctionPreview(
             3,

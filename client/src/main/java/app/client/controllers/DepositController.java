@@ -49,14 +49,13 @@ public class DepositController implements Cleanable {
       return;
     }
     if (user == null) {
-      totalBalanceLabel.setText("Tổng số dư: 0 đ");
-      availableBalanceLabel.setText("Số dư khả dụng: 0 đ");
+      totalBalanceLabel.setText("Tổng số dư: $0");
+      availableBalanceLabel.setText("Khả dụng: $0");
       return;
     }
     Wallet wallet = user.getWallet();
-    totalBalanceLabel.setText("Tổng số dư: " + formatCurrency(wallet.getTotalBalance()) + " đ");
-    availableBalanceLabel.setText(
-        "Số dư khả dụng: " + formatCurrency(wallet.getAvailableBalance()) + " đ");
+    totalBalanceLabel.setText("Tổng số dư: $" + formatCurrency(wallet.getTotalBalance()));
+    availableBalanceLabel.setText("Khả dụng: $" + formatCurrency(wallet.getAvailableBalance()));
   }
 
   private String formatCurrency(BigDecimal amount) {

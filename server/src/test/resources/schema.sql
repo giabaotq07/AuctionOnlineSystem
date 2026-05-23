@@ -17,6 +17,7 @@ CREATE TABLE users
     available_balance DECIMAL(18, 2) DEFAULT 0,
     frozen_funds      TEXT,
     role              VARCHAR(20)    DEFAULT 'BIDDER',
+    avatar_url        VARCHAR(255)   DEFAULT NULL,
     created_at        TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP      DEFAULT CURRENT_TIMESTAMP
 );

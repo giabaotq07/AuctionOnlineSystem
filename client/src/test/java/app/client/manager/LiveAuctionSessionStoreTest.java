@@ -33,7 +33,7 @@ public class LiveAuctionSessionStoreTest {
 
     // 1. Chon phien bang Preview
     LocalDateTime now = LocalDateTime.now();
-    UserPreview mockSeller = new UserPreview(2, "seller", "seller", UserRole.SELLER);
+    UserPreview mockSeller = new UserPreview(2, "seller", "seller", UserRole.SELLER, null);
     AuctionPreview preview =
         new AuctionPreview(
             15,

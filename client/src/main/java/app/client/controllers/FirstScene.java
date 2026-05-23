@@ -291,7 +291,7 @@ public class FirstScene implements Cleanable {
     titleLabel.setWrapText(true);
     titleLabel.setStyle(
         "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
-    Label priceLabel = new Label("Giá hiện tại: " + auction.highestBid() + " đ");
+    Label priceLabel = new Label("Giá hiện tại: $" + auction.highestBid());
     priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
     Label timeLabel = new Label(timeText(auction));
     timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
@@ -368,12 +368,12 @@ public class FirstScene implements Cleanable {
       return;
     }
     if (user == null) {
-      balanceLabel.setText("Số dư: 0 đ");
+      balanceLabel.setText("Số dư: $0");
       return;
     }
     Wallet wallet = user.getWallet();
     BigDecimal total = wallet.getTotalBalance();
-    balanceLabel.setText("Số dư: " + formatCurrency(total) + " đ");
+    balanceLabel.setText("Số dư: $" + formatCurrency(total));
   }
 
   private String formatCurrency(BigDecimal amount) {

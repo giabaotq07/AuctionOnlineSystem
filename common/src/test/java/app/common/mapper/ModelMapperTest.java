@@ -94,7 +94,7 @@ public class ModelMapperTest {
 
     // Convert DTO without wallet -> Model
     UserDto dtoNoWallet =
-        new UserDto(2, "Nguyen Van B", new AccountDto("nvb", UserRole.SELLER), null);
+        new UserDto(2, "Nguyen Van B", new AccountDto("nvb", UserRole.SELLER), null, null);
     User modelNoWallet = ModelMapper.toUserModel(dtoNoWallet);
     assertNotNull(modelNoWallet);
     assertEquals(2, modelNoWallet.getId());

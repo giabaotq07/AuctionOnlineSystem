@@ -39,9 +39,9 @@
   <ComboBox fx:id="typeComboBox" prefWidth="300.0"
   style="-fx-background-color: #0a0b10; -fx-border-color: #1a2236; -fx-border-radius: 5; -fx-background-radius: 5; -fx-text-fill: white;"
   GridPane.columnIndex="1" GridPane.rowIndex="2" />
-  <Label text="Giá khởi điểm (VNĐ) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+  <Label text="Giá khởi điểm (USD) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3" />
   <TextField fx:id="startingPriceField" promptText="VD: 5000000" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-  <Label text="Bước giá tối thiểu (VNĐ) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+  <Label text="Bước giá tối thiểu (USD) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="4" />
   <TextField fx:id="stepPriceField" promptText="VD: 100000" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
   <Label text="Thời gian diễn ra (Phút) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="5" />
   <TextField fx:id="durationField" promptText="VD: 60" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="5" />

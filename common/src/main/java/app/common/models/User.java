@@ -8,9 +8,10 @@ public class User extends Entity {
   protected String name;
   protected Account account;
   protected Wallet wallet;
+  protected String avatarUrl;
 
   /** User. */
-  public User(int id, String name, Account account, Wallet wallet) {
+  public User(int id, String name, Account account, Wallet wallet, String avatarUrl) {
     super(id);
     if (name == null || name.isBlank()) {
       throw new IllegalArgumentException("name must not be blank.");
@@ -18,20 +19,26 @@ public class User extends Entity {
     this.name = name;
     this.account = Objects.requireNonNull(account, "account");
     this.wallet = Objects.requireNonNull(wallet, "wallet");
+    this.avatarUrl = avatarUrl;
+  }
+
+  /** User. */
+  public User(int id, String name, Account account, Wallet wallet) {
+    this(id, name, account, wallet, null);
   }
 
   /** User. */
   public User(String name, Account account, Wallet wallet) {
-    super();
-    if (name == null || name.isBlank()) {
-      throw new IllegalArgumentException("name must not be blank.");
-    }
-    this.name = name;
-    this.account = Objects.requireNonNull(account, "account");
-    this.wallet = Objects.requireNonNull(wallet, "wallet");
+    this(0, name, account, wallet, null);
   }
 
-  private User(int id, String name, Account account, Wallet wallet, boolean allowPublicView) {
+  private User(
+      int id,
+      String name,
+      Account account,
+      Wallet wallet,
+      String avatarUrl,
+      boolean allowPublicView) {
     super(id);
     if (name == null || name.isBlank()) {
       throw new IllegalArgumentException("name must not be blank.");
@@ -39,16 +46,26 @@ public class User extends Entity {
     this.name = name;
     this.account = Objects.requireNonNull(account, "account");
     this.wallet = allowPublicView ? wallet : Objects.requireNonNull(wallet, "wallet");
+    this.avatarUrl = avatarUrl;
   }
 
   /** Returns a user object safe to embed inside public auction data. */
   public User publicView() {
     return new User(
-        getId(), name, new Account(account.getUsername(), null, account.getRole()), null, true);
+        getId(),
+        name,
+        new Account(account.getUsername(), null, account.getRole()),
+        null,
+        avatarUrl,
+        true);
+  }
+
+  public static User createPublicUser(int id, String name, Account account, String avatarUrl) {
+    return new User(id, name, account, null, avatarUrl, true);
   }
 
   public static User createPublicUser(int id, String name, Account account) {
-    return new User(id, name, account, null, true);
+    return createPublicUser(id, name, account, null);
   }
 
   public String getName() {
@@ -70,5 +87,13 @@ public class User extends Entity {
   /** getRole. */
   public UserRole getRole() {
     return account.getRole();
+  }
+
+  public String getAvatarUrl() {
+    return avatarUrl;
+  }
+
+  public void setAvatarUrl(String avatarUrl) {
+    this.avatarUrl = avatarUrl;
   }
 }

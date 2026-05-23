@@ -111,6 +111,21 @@ public class UserService {
         });
   }
 
+  /** updateAvatarUrl. */
+  public String updateAvatarUrl(int userId, String avatarUrl) {
+    return transactionManager.runInTransaction(
+        conn -> {
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          String oldAvatarUrl = user.getAvatarUrl();
+          user.setAvatarUrl(avatarUrl);
+          userDAO.update(conn, user);
+          return oldAvatarUrl;
+        });
+  }
+
   private void validateNotBlank(String value, String fieldName) {
     if (value == null || value.isBlank()) {
       throw new ServiceException(fieldName + " không được để trống.");

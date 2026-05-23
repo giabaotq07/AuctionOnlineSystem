@@ -57,6 +57,8 @@ public class Client {
     registry.put(ResponseType.AUCTION_PAID_NOTICE, new AuctionPaidNoticeCommand());
     registry.put(ResponseType.UPLOAD_IMAGE, new UploadImageCommand());
     registry.put(ResponseType.FETCH_ITEM_IMAGE, new FetchItemImageCommand());
+    registry.put(ResponseType.UPLOAD_AVATAR, new UploadAvatarCommand());
+    registry.put(ResponseType.FETCH_AVATAR, new FetchAvatarCommand());
     registry.put(ResponseType.ERROR, new ErrorCommand());
     return registry;
   }

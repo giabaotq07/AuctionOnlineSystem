@@ -44,7 +44,7 @@ public class AuctionDetailProxyTest {
 
     // 4. Test logic needsDetailRefresh khi da co preview va detail
     LocalDateTime now = LocalDateTime.now();
-    UserPreview mockSeller = new UserPreview(2, "seller", "seller", UserRole.SELLER);
+    UserPreview mockSeller = new UserPreview(2, "seller", "seller", UserRole.SELLER, null);
     AuctionPreview preview =
         new AuctionPreview(
             99,
