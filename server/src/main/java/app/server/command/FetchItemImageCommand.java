@@ -18,7 +18,8 @@ public class FetchItemImageCommand extends SafeCommand {
   }
 
   @Override
-  protected void doExecute(ClientHandler clientHandler, PacketReq packet) throws java.io.IOException {
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet)
+      throws java.io.IOException {
     FetchItemImageRequest request =
         requirePayload(packet, FetchItemImageRequest.class, "Đường dẫn ảnh không hợp lệ.");
     if (request.imagePath() == null || request.imagePath().isBlank()) {

@@ -1,6 +1,5 @@
 package app.server.service;
 
-import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
 import app.common.models.Item;
@@ -60,9 +59,8 @@ public class BidService {
               itemDAO
                   .findById(conn, auction.getItemId())
                   .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
-          if (auction.getSellerId() == bidderId) {
-            throw new ServiceException("Người bán không được đặt giá phiên của mình.");
-          }
+          OwnershipGuard.requireNotAuctionSeller(
+              auction, actor, "Người bán không được đặt giá phiên của mình.");
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid(), item.getStepPrice());
           userDAO.lockRow(conn, bidderId);
           User bidder =
@@ -93,11 +91,6 @@ public class BidService {
     if (auctionId <= 0) {
       throw new ServiceException("Phiên đấu giá không hợp lệ.");
     }
-    if (actor == null || actor.getId() <= 0) {
-      throw new ServiceException("Người đặt giá không hợp lệ.");
-    }
-    if (actor.getRole() != UserRole.BIDDER) {
-      throw new ServiceException("Chỉ bidder được đặt giá.");
-    }
+    OwnershipGuard.requireValidActor(actor);
   }
 }

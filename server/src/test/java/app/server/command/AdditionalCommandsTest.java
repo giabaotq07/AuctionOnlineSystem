@@ -179,7 +179,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertTrue(res.isSuccess());
-    assertEquals(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, res.getType());
+    assertEquals(ResponseType.AUCTION_SUMMARIES_RESULT, res.getType());
   }
 
   @Test
@@ -193,7 +193,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertTrue(res.isSuccess());
-    assertEquals(ResponseType.FETCH_AUCTION_HISTORY_RESULT, res.getType());
+    assertEquals(ResponseType.AUCTION_HISTORY_RESULT, res.getType());
   }
 
   @Test
@@ -207,7 +207,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertTrue(res.isSuccess());
-    assertEquals(ResponseType.FETCH_AUCTION_DETAIL_RESULT, res.getType());
+    assertEquals(ResponseType.AUCTION_RESULT, res.getType());
   }
 
   @Test
@@ -252,7 +252,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertTrue(res.isSuccess());
-    assertEquals(ResponseType.FETCH_SELLER_ITEMS_RESULT, res.getType());
+    assertEquals(ResponseType.SELLER_ITEMS_RESULT, res.getType());
   }
 
   @Test
@@ -266,7 +266,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertTrue(res.isSuccess());
-    assertEquals(ResponseType.FETCH_USER_LIST_RESULT, res.getType());
+    assertEquals(ResponseType.USER_LIST_RESULT, res.getType());
   }
 
   @Test

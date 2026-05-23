@@ -43,7 +43,8 @@ public class RegisterCommand extends SafeCommand {
     User newUser = new User(name, new Account(username, password, role), new Wallet());
     User created = userService.register(newUser);
     logger.info("[SERVER] User {} registered successfully.", username);
-    RegisterResponse response = new RegisterResponse(app.common.mapper.ModelMapper.toUserDto(created));
+    RegisterResponse response =
+        new RegisterResponse(app.common.mapper.ModelMapper.toUserDto(created));
     sendSuccess(clientHandler, "Đăng ký thành công!", response);
   }
 

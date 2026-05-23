@@ -21,7 +21,8 @@ public class LoginCommand extends SafeCommand {
 
   @Override
   protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
-    LoginRequest request = requirePayload(packet, LoginRequest.class, "Dữ liệu đăng nhập không hợp lệ.");
+    LoginRequest request =
+        requirePayload(packet, LoginRequest.class, "Dữ liệu đăng nhập không hợp lệ.");
     String username = request.username();
     String password = request.password();
     if (username == null || username.isBlank() || password == null || password.isBlank()) {

@@ -27,7 +27,8 @@ public class ChatCommand extends SafeCommand {
       throw new ValidationException("Message too long");
     }
     User user = requireUser(clientHandler);
-    ChatResponse response = new ChatResponse(user.getId(), user.getName(), content, LocalDateTime.now());
+    ChatResponse response =
+        new ChatResponse(user.getId(), user.getName(), content, LocalDateTime.now());
     PacketRes chatPacket = PacketRes.of(ResponseType.CHAT_MESSAGE, "OK", response);
     clientHandler.sendPacket(chatPacket);
     try {

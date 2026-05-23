@@ -39,12 +39,12 @@ public class Client {
     registry.put(ResponseType.REGISTER_RESULT, new RegisterCommand());
     registry.put(ResponseType.CREATE_AUCTION_RESULT, new CreateAuctionCommand());
     registry.put(ResponseType.UPDATE_AUCTION_RESULT, new UpdateAuctionCommand());
-    registry.put(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, new FetchAuctionSummariesCommand());
-    registry.put(ResponseType.FETCH_AUCTION_HISTORY_RESULT, new FetchAuctionHistoryCommand());
-    registry.put(ResponseType.FETCH_AUCTION_DETAIL_RESULT, new FetchAuctionDetailCommand());
+    registry.put(ResponseType.AUCTION_SUMMARIES_RESULT, new FetchAuctionSummariesCommand());
+    registry.put(ResponseType.AUCTION_HISTORY_RESULT, new FetchAuctionHistoryCommand());
+    registry.put(ResponseType.AUCTION_RESULT, new FetchAuctionDetailCommand());
     registry.put(ResponseType.AUCTION_RESULT_FETCHED, new FetchAuctionResultCommand());
-    registry.put(ResponseType.FETCH_SELLER_ITEMS_RESULT, new FetchSellerItemsCommand());
-    registry.put(ResponseType.FETCH_USER_LIST_RESULT, new FetchUserListCommand());
+    registry.put(ResponseType.SELLER_ITEMS_RESULT, new FetchSellerItemsCommand());
+    registry.put(ResponseType.USER_LIST_RESULT, new FetchUserListCommand());
     registry.put(ResponseType.CANCEL_AUCTION_RESULT, new CancelAuctionCommand());
     registry.put(ResponseType.PLACE_BID_RESULT, new PlaceBidCommand());
     registry.put(ResponseType.SET_AUTO_BID_RESULT, new SetAutoBidCommand());

@@ -38,7 +38,7 @@ public class FetchSellerItemsCommand extends SafeCommand {
 
   @Override
   protected ResponseType responseType() {
-    return ResponseType.FETCH_SELLER_ITEMS_RESULT;
+    return ResponseType.SELLER_ITEMS_RESULT;
   }
 
   @Override

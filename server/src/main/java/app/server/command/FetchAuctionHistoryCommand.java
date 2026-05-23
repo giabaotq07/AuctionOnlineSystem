@@ -19,7 +19,8 @@ public class FetchAuctionHistoryCommand extends SafeCommand {
   @Override
   protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
     int userId = requireUser(clientHandler).getId();
-    AuctionHistoryRequest request = packet == null ? null : packet.getData(AuctionHistoryRequest.class);
+    AuctionHistoryRequest request =
+        packet == null ? null : packet.getData(AuctionHistoryRequest.class);
     int sinceVersion = request == null ? -1 : request.sinceVersion();
     var auctions = auctionQueryService.getHistoryAuctionPreviews(userId);
     boolean fullSnapshot = sinceVersion < 0;
@@ -32,7 +33,7 @@ public class FetchAuctionHistoryCommand extends SafeCommand {
 
   @Override
   protected ResponseType responseType() {
-    return ResponseType.FETCH_AUCTION_HISTORY_RESULT;
+    return ResponseType.AUCTION_HISTORY_RESULT;
   }
 
   @Override

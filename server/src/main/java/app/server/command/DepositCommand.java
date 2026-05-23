@@ -20,7 +20,8 @@ public class DepositCommand extends SafeCommand {
 
   @Override
   protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
-    DepositRequest request = requirePayload(packet, DepositRequest.class, "Dữ liệu nạp tiền không hợp lệ.");
+    DepositRequest request =
+        requirePayload(packet, DepositRequest.class, "Dữ liệu nạp tiền không hợp lệ.");
     if (request.amount() == null) {
       throw new app.common.exception.ValidationException("Dữ liệu nạp tiền không hợp lệ.");
     }

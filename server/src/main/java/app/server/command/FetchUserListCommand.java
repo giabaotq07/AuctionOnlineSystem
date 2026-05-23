@@ -28,7 +28,7 @@ public class FetchUserListCommand extends SafeCommand {
 
   @Override
   protected ResponseType responseType() {
-    return ResponseType.FETCH_USER_LIST_RESULT;
+    return ResponseType.USER_LIST_RESULT;
   }
 
   @Override

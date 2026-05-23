@@ -92,5 +92,4 @@ public class PlaceBidCommand extends SafeCommand {
       logger.error("Failed to broadcast auction detail", e);
     }
   }
-
 }

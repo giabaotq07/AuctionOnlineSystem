@@ -1,6 +1,5 @@
 package app.server.service;
 
-import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
 import app.common.models.AutoBid;
@@ -112,9 +111,8 @@ public class AutoBidService {
     return transactionManager.runInTransaction(
         conn -> {
           Auction auction = lockedRunningAuction(conn, auctionId);
-          if (auction.getSellerId() == actor.getId()) {
-            throw new ServiceException("Người bán không được dùng auto-bid cho phiên của mình.");
-          }
+          OwnershipGuard.requireNotAuctionSeller(
+              auction, actor, "Người bán không được dùng auto-bid cho phiên của mình.");
 
           AutoBid autoBid =
               autoBidDAO
@@ -207,19 +205,13 @@ public class AutoBidService {
     if (auctionId <= 0) {
       throw new ServiceException("Phiên đấu giá không hợp lệ.");
     }
-    if (actor == null || actor.getId() <= 0) {
-      throw new ServiceException("Người đặt auto-bid không hợp lệ.");
-    }
-    if (actor.getRole() != UserRole.BIDDER) {
-      throw new ServiceException("Chỉ bidder được dùng auto-bid.");
-    }
+    OwnershipGuard.requireValidActor(actor);
   }
 
   private void validateAutoBidRules(
       Auction auction, Item item, User actor, long maxAmount, long incrementAmount) {
-    if (auction.getSellerId() == actor.getId()) {
-      throw new ServiceException("Người bán không được dùng auto-bid cho phiên của mình.");
-    }
+    OwnershipGuard.requireNotAuctionSeller(
+        auction, actor, "Người bán không được dùng auto-bid cho phiên của mình.");
     if (incrementAmount <= 0) {
       throw new ServiceException("Bước tăng auto-bid không hợp lệ.");
     }

@@ -24,7 +24,7 @@ public class FetchAuctionSummariesCommand extends SafeCommand {
 
   @Override
   protected ResponseType responseType() {
-    return ResponseType.FETCH_AUCTION_SUMMARIES_RESULT;
+    return ResponseType.AUCTION_SUMMARIES_RESULT;
   }
 
   @Override

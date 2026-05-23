@@ -96,5 +96,4 @@ public class SetAutoBidCommand extends SafeCommand {
       logger.error("Failed to broadcast auction detail", e);
     }
   }
-
 }

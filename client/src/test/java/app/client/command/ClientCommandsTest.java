@@ -171,7 +171,7 @@ public class ClientCommandsTest {
             null,
             new ArrayList<>());
     AuctionDetailResponse payload = new AuctionDetailResponse(auction);
-    PacketRes packet = PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Success", payload);
+    PacketRes packet = PacketRes.of(ResponseType.AUCTION_RESULT, "Success", payload);
     cmd.execute(packet);
 
     assertTrue(updateNotified);
@@ -198,7 +198,7 @@ public class ClientCommandsTest {
             1,
             new UserPreview(1, "John Doe", "john", UserRole.SELLER)));
     AuctionHistoryResponse payload = new AuctionHistoryResponse(auctions, true);
-    PacketRes packet = PacketRes.of(ResponseType.FETCH_AUCTION_HISTORY_RESULT, "Success", payload);
+    PacketRes packet = PacketRes.of(ResponseType.AUCTION_HISTORY_RESULT, "Success", payload);
     cmd.execute(packet);
 
     assertTrue(updateNotified);
@@ -243,7 +243,7 @@ public class ClientCommandsTest {
             new UserPreview(1, "John Doe", "john", UserRole.SELLER)));
     AuctionSummariesResponse payload = new AuctionSummariesResponse(auctions);
     PacketRes packet =
-        PacketRes.of(ResponseType.FETCH_AUCTION_SUMMARIES_RESULT, "Success", payload);
+        PacketRes.of(ResponseType.AUCTION_SUMMARIES_RESULT, "Success", payload);
     cmd.execute(packet);
 
     assertTrue(updateNotified);
