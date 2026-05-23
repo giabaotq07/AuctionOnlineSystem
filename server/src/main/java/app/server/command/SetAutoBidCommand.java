@@ -5,8 +5,7 @@ import app.common.dto.SetAutoBidRequest;
 import app.common.dto.SetAutoBidResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
-import app.common.exception.DatabaseException;
-import app.common.exception.ServiceException;
+import app.common.exception.ValidationException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
@@ -14,12 +13,9 @@ import app.server.network.Server;
 import app.server.service.AuctionQueryService;
 import app.server.service.AutoBidService;
 import app.server.service.result.AutoBidUpdateResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** SetAutoBidCommand. */
-public class SetAutoBidCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(SetAutoBidCommand.class);
+public class SetAutoBidCommand extends SafeCommand {
   private final AutoBidService autoBidService;
   private final AuctionQueryService auctionQueryService;
 
@@ -30,48 +26,62 @@ public class SetAutoBidCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    int auctionId = 0;
-    try {
-      SetAutoBidRequest request = packet.getData(SetAutoBidRequest.class);
-      if (request == null || request.auctionId() <= 0) {
-        sendError(clientHandler, "Dữ liệu auto-bid không hợp lệ.");
-        return;
-      }
-      auctionId = request.auctionId();
-      AutoBidUpdateResult result =
-          autoBidService.setAutoBid(
-              auctionId, clientHandler.getUser(), request.maxAmount(), request.incrementAmount());
-      SetAutoBidResponse response =
-          new SetAutoBidResponse(
-              result.auction().getId(),
-              result.autoBid().getMaxAmount(),
-              result.autoBid().getIncrementAmount(),
-              result.autoBid().isEnabled(),
-              result.auction().getHighestBid(),
-              result.auction().getWinnerId() == null ? 0 : result.auction().getWinnerId());
-      clientHandler.sendPacket(
-          PacketRes.of(
-              ResponseType.SET_AUTO_BID_RESULT, "Cập nhật auto-bid thành công.", response));
-      sendWalletUpdate(clientHandler, result);
-      Server.broadcastAuctionList(auctionQueryService);
-      broadcastAuctionDetail(result.auction().getId());
-    } catch (ServiceException e) {
-      logger.warn("Set auto-bid failed: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
-    } catch (DatabaseException e) {
-      logger.error("Set auto-bid database error", e);
-      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
-    } catch (Exception e) {
-      logger.error("Unexpected set auto-bid error", e);
-      sendError(clientHandler, "Không thể cập nhật auto-bid.");
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    SetAutoBidRequest request =
+        requirePayload(packet, SetAutoBidRequest.class, "Dữ liệu auto-bid không hợp lệ.");
+    if (request.auctionId() <= 0) {
+      throw new ValidationException("Dữ liệu auto-bid không hợp lệ.");
     }
+    int auctionId = request.auctionId();
+    AutoBidUpdateResult result =
+        autoBidService.setAutoBid(
+            auctionId, requireUser(clientHandler), request.maxAmount(), request.incrementAmount());
+    SetAutoBidResponse response =
+        new SetAutoBidResponse(
+            result.auction().getId(),
+            result.autoBid().getMaxAmount(),
+            result.autoBid().getIncrementAmount(),
+            result.autoBid().isEnabled(),
+            result.auction().getHighestBid(),
+            result.auction().getWinnerId() == null ? 0 : result.auction().getWinnerId());
+    sendSuccess(clientHandler, "Cập nhật auto-bid thành công.", response);
+    notifyAfterSetAutoBid(clientHandler, result);
+  }
+
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.SET_AUTO_BID_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Không thể cập nhật auto-bid.";
   }
 
   private void sendWalletUpdate(ClientHandler clientHandler, AutoBidUpdateResult result) {
     WalletUpdateResponse response =
         new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(result.user()));
     clientHandler.sendPacket(PacketRes.of(ResponseType.WALLET_UPDATED, "OK", response));
+  }
+
+  private void notifyAfterSetAutoBid(ClientHandler clientHandler, AutoBidUpdateResult result) {
+    try {
+      sendWalletUpdate(clientHandler, result);
+    } catch (Exception e) {
+      logger.warn(
+          "Auto-bid for auction {} succeeded, but wallet notification failed",
+          result.auction().getId(),
+          e);
+    }
+    try {
+      Server.broadcastAuctionList(auctionQueryService);
+      broadcastAuctionDetail(result.auction().getId());
+    } catch (Exception e) {
+      logger.warn(
+          "Auto-bid for auction {} succeeded, but auction notification failed",
+          result.auction().getId(),
+          e);
+    }
   }
 
   private void broadcastAuctionDetail(int auctionId) {
@@ -87,7 +97,4 @@ public class SetAutoBidCommand implements Command {
     }
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.SET_AUTO_BID_RESULT, message));
-  }
 }

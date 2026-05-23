@@ -5,7 +5,7 @@ import app.common.dto.UploadImageRequest;
 import app.common.dto.UploadImageResponse;
 import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
-import app.common.exception.ServiceException;
+import app.common.exception.ValidationException;
 import app.common.models.Auction;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -14,14 +14,9 @@ import app.server.network.Server;
 import app.server.service.AuctionQueryService;
 import app.server.service.ImageStorageService;
 import app.server.service.ItemService;
-import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Nhận ảnh Base64 từ client, lưu file, cập nhật DB. */
-public class UploadImageCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(UploadImageCommand.class);
-
+public class UploadImageCommand extends SafeCommand {
   private final ItemService itemService;
   private final ImageStorageService imageStorageService;
   private final AuctionQueryService auctionQueryService;
@@ -37,20 +32,22 @@ public class UploadImageCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) throws Exception {
+    String newImagePath = null;
     try {
-      UploadImageRequest request = packet.getData(UploadImageRequest.class);
-      if (request == null || request.base64Data() == null || request.originalFileName() == null) {
-        sendError(clientHandler, "Dữ liệu ảnh không hợp lệ.");
-        return;
+      UploadImageRequest request =
+          requirePayload(packet, UploadImageRequest.class, "Dữ liệu ảnh không hợp lệ.");
+      if (request.itemId() <= 0
+          || request.base64Data() == null
+          || request.originalFileName() == null) {
+        throw new ValidationException("Dữ liệu ảnh không hợp lệ.");
       }
 
-      var user = clientHandler.getUser();
+      var user = requireUser(clientHandler);
       UserRole role = user.getRole();
 
       // 1. Ghi file ra đĩa, lấy relative path
-      String newImagePath =
-          imageStorageService.save(request.base64Data(), request.originalFileName());
+      newImagePath = imageStorageService.save(request.base64Data(), request.originalFileName());
 
       // 2. Cập nhật DB; đồng thời lấy lại path ảnh cũ để xoá
       String oldImagePath =
@@ -67,11 +64,35 @@ public class UploadImageCommand implements Command {
               "Tải ảnh thành công.",
               new UploadImageResponse(request.itemId(), newImagePath)));
 
-      // 4. Broadcast để tất cả client khác biết ảnh đã cập nhật
-      Server.broadcastAuctionList(auctionQueryService);
+      notifyAfterUpload(request.itemId());
 
-      // Broadcast AUCTION_DETAIL_UPDATED cho các client để đồng bộ chi tiết và tải ảnh mới
-      for (Auction auction : auctionQueryService.getAuctionsByItem(request.itemId())) {
+      logger.info("Image uploaded for item {} by user {}", request.itemId(), user.getId());
+
+    } catch (Exception e) {
+      imageStorageService.deleteIfExists(newImagePath);
+      throw e;
+    }
+  }
+
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.UPLOAD_IMAGE;
+  }
+
+  @Override
+  protected String ioErrorMessage() {
+    return "Không thể lưu file ảnh trên server.";
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Lỗi không xác định khi tải ảnh.";
+  }
+
+  private void notifyAfterUpload(int itemId) {
+    try {
+      Server.broadcastAuctionList(auctionQueryService);
+      for (Auction auction : auctionQueryService.getAuctionsByItem(itemId)) {
         AuctionDetailResponse detailResponse =
             new AuctionDetailResponse(
                 app.common.mapper.ModelMapper.toAuctionDto(
@@ -79,25 +100,8 @@ public class UploadImageCommand implements Command {
         Server.broadcast(
             PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", detailResponse), -1);
       }
-
-      logger.info("Image uploaded for item {} by user {}", request.itemId(), user.getId());
-
-    } catch (ServiceException e) {
-      logger.warn("Upload image service error: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
-    } catch (IllegalArgumentException e) {
-      logger.warn("Upload image validation error: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
-    } catch (IOException e) {
-      logger.error("Upload image IO error", e);
-      sendError(clientHandler, "Không thể lưu file ảnh trên server.");
     } catch (Exception e) {
-      logger.error("Unexpected upload image error", e);
-      sendError(clientHandler, "Lỗi không xác định khi tải ảnh.");
+      logger.warn("Image for item {} uploaded, but notification failed", itemId, e);
     }
-  }
-
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.UPLOAD_IMAGE, message));
   }
 }

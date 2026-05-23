@@ -57,12 +57,16 @@ public class ItemService {
 
   /** getSellerItems. */
   public List<Item> getSellerItems(int requesterId, UserRole requesterRole, int requestedSellerId) {
+    validateSellerAccess(requesterId, requesterRole, requestedSellerId);
 
     return itemDAO.findBySeller(requestedSellerId);
   }
 
   /** updateManagedItem. */
   public Item updateManagedItem(Item item, int requesterId, UserRole requesterRole) {
+    if (item == null || item.getId() <= 0) {
+      throw new ServiceException("Dữ liệu sản phẩm không hợp lệ.");
+    }
 
     return transactionManager.runInTransaction(
         conn -> {
@@ -70,6 +74,7 @@ public class ItemService {
               itemDAO
                   .findById(conn, item.getId())
                   .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
+          validateSellerAccess(requesterId, requesterRole, stored.getSellerId());
 
           stored.setName(item.getName());
           stored.setDescription(item.getDescription());
@@ -83,6 +88,9 @@ public class ItemService {
 
   /** softDeleteManagedItem. */
   public Item softDeleteManagedItem(int itemId, int requesterId, UserRole requesterRole) {
+    if (itemId <= 0) {
+      throw new ServiceException("Sản phẩm không hợp lệ.");
+    }
 
     return transactionManager.runInTransaction(
         conn -> {
@@ -90,6 +98,7 @@ public class ItemService {
               itemDAO
                   .findById(conn, itemId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
+          validateSellerAccess(requesterId, requesterRole, stored.getSellerId());
 
           stored.setDeleted(true);
           itemDAO.update(conn, stored);
@@ -107,6 +116,9 @@ public class ItemService {
    */
   public String updateImagePath(
       int itemId, String imagePath, int requesterId, UserRole requesterRole) {
+    if (itemId <= 0) {
+      throw new ServiceException("Sản phẩm không hợp lệ.");
+    }
 
     return transactionManager.runInTransaction(
         conn -> {
@@ -114,11 +126,24 @@ public class ItemService {
               itemDAO
                   .findById(conn, itemId)
                   .orElseThrow(() -> new ServiceException("Không tìm thấy sản phẩm."));
+          validateSellerAccess(requesterId, requesterRole, stored.getSellerId());
 
           String oldImagePath = stored.getImageUrl();
           stored.setImageUrl(imagePath);
           itemDAO.update(conn, stored);
           return oldImagePath;
         });
+  }
+
+  private void validateSellerAccess(int requesterId, UserRole requesterRole, int sellerId) {
+    if (requesterId <= 0 || sellerId <= 0 || requesterRole == null) {
+      throw new ServiceException("Dữ liệu quyền truy cập không hợp lệ.");
+    }
+    if (requesterRole == UserRole.ADMIN) {
+      return;
+    }
+    if (requesterRole != UserRole.SELLER || requesterId != sellerId) {
+      throw new ServiceException("Bạn không có quyền thực hiện yêu cầu này.");
+    }
   }
 }

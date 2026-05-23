@@ -101,6 +101,7 @@ public class AuctionService {
       LocalDateTime startTime,
       int expectedVersion,
       User actor) {
+    validateAuctionIdentity(auctionId, expectedVersion);
     validateAuctionManager(actor);
     validateAuctionPayload(name, startingPrice, stepPrice, type, durationMinutes, startTime);
 
@@ -110,8 +111,6 @@ public class AuctionService {
               Auction storedAuction = requireAuction(conn, auctionId);
               validateOwnerOrAdmin(storedAuction, actor);
               validateEditableAuction(storedAuction);
-
-              LocalDateTime now = now();
 
               Item storedItem =
                   itemDAO
@@ -141,6 +140,7 @@ public class AuctionService {
   }
 
   public Set<Integer> cancelAuction(int auctionId, User actor, int expectedVersion) {
+    validateAuctionIdentity(auctionId, expectedVersion);
     validateAuctionManager(actor);
 
     return transactionManager.runInTransaction(
@@ -269,6 +269,15 @@ public class AuctionService {
     }
     if (actor.getRole() != UserRole.SELLER && actor.getRole() != UserRole.ADMIN) {
       throw new ServiceException("Bạn không có quyền thực hiện yêu cầu này.");
+    }
+  }
+
+  private void validateAuctionIdentity(int auctionId, int expectedVersion) {
+    if (auctionId <= 0) {
+      throw new ServiceException("Phiên đấu giá không hợp lệ.");
+    }
+    if (expectedVersion < 0) {
+      throw new ServiceException("Phiên bản dữ liệu không hợp lệ.");
     }
   }
 

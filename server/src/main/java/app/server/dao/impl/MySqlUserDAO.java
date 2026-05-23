@@ -158,13 +158,11 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
     String sql = "SELECT id FROM users WHERE id = ? FOR UPDATE";
     try (PreparedStatement ps = conn.prepareStatement(sql)) {
       setParameters(ps, id);
-      try (ResultSet rs = ps.executeQuery()) {
-        if (!rs.next()) {
-          throw new DatabaseException("Người dùng không tồn tại: " + id);
-        }
+      try (ResultSet ignored = ps.executeQuery()) {
+        // Row absence is handled by the service's findById lookup as a business error.
       }
     } catch (SQLException e) {
-      throw new DatabaseException("Không tìm thấy user để khóa.");
+      throw new DatabaseException("Lỗi khi khóa user.", e);
     }
   }
 

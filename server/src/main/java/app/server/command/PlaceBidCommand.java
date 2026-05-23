@@ -2,8 +2,7 @@ package app.server.command;
 
 import app.common.dto.*;
 import app.common.enums.ResponseType;
-import app.common.exception.DatabaseException;
-import app.common.exception.ServiceException;
+import app.common.exception.ValidationException;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -12,12 +11,9 @@ import app.server.network.Server;
 import app.server.service.AuctionQueryService;
 import app.server.service.BidService;
 import app.server.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** PlaceBidCommand. */
-public class PlaceBidCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(PlaceBidCommand.class);
+public class PlaceBidCommand extends SafeCommand {
   private final BidService bidService;
   private final UserService userService;
   private final AuctionQueryService auctionQueryService;
@@ -31,53 +27,57 @@ public class PlaceBidCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    int auctionId = 0;
-    int bidderId = 0;
-    try {
-      PlaceBidRequest request = packet.getData(PlaceBidRequest.class);
-      if (request == null) {
-        sendError(clientHandler, "Dữ liệu đặt giá không hợp lệ.");
-        return;
-      }
-      auctionId = request.auctionId();
-      long bidAmount = request.bidAmount();
-      if (auctionId <= 0) {
-        sendError(clientHandler, "Phiên đấu giá không hợp lệ.");
-        return;
-      }
-      User user = clientHandler.getUser();
-      bidderId = user.getId();
-      Auction updatedAuction = bidService.placeBid(auctionId, user, bidAmount);
-      PlaceBidResponse response =
-          new PlaceBidResponse(updatedAuction.getId(), updatedAuction.getHighestBid(), bidderId);
-      PacketRes packetResponse =
-          PacketRes.of(ResponseType.PLACE_BID_RESULT, "Đặt giá thành công.", response);
-      clientHandler.sendPacket(packetResponse);
-      Server.broadcastToAuctionViewers(
-          auctionId,
-          PacketRes.of(ResponseType.BID_PLACED, "Có lượt đặt giá mới.", response),
-          bidderId);
-      sendWalletUpdate(clientHandler, userService.getById(bidderId));
-      Server.broadcastAuctionList(auctionQueryService);
-      broadcastAuctionDetail(auctionId);
-      logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
-    } catch (ServiceException e) {
-      logger.warn("Place bid failed: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
-    } catch (DatabaseException e) {
-      logger.error("Place bid database error", e);
-      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
-    } catch (Exception e) {
-      logger.error("Unexpected place bid error", e);
-      sendError(clientHandler, "Không thể đặt giá.");
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    PlaceBidRequest request =
+        requirePayload(packet, PlaceBidRequest.class, "Dữ liệu đặt giá không hợp lệ.");
+    int auctionId = request.auctionId();
+    long bidAmount = request.bidAmount();
+    if (auctionId <= 0) {
+      throw new ValidationException("Phiên đấu giá không hợp lệ.");
     }
+    User user = requireUser(clientHandler);
+    int bidderId = user.getId();
+    Auction updatedAuction = bidService.placeBid(auctionId, user, bidAmount);
+    PlaceBidResponse response =
+        new PlaceBidResponse(updatedAuction.getId(), updatedAuction.getHighestBid(), bidderId);
+    sendSuccess(clientHandler, "Đặt giá thành công.", response);
+    notifyAfterBid(clientHandler, auctionId, bidderId, response);
+    logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
+  }
+
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.PLACE_BID_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Không thể đặt giá.";
   }
 
   private void sendWalletUpdate(ClientHandler clientHandler, User user) {
     WalletUpdateResponse response =
         new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(user));
     clientHandler.sendPacket(PacketRes.of(ResponseType.WALLET_UPDATED, "OK", response));
+  }
+
+  private void notifyAfterBid(
+      ClientHandler clientHandler, int auctionId, int bidderId, PlaceBidResponse response) {
+    try {
+      sendWalletUpdate(clientHandler, userService.getById(bidderId));
+    } catch (Exception e) {
+      logger.warn("Bid in auction {} succeeded, but wallet notification failed", auctionId, e);
+    }
+    try {
+      Server.broadcastToAuctionViewers(
+          auctionId,
+          PacketRes.of(ResponseType.BID_PLACED, "Có lượt đặt giá mới.", response),
+          bidderId);
+      Server.broadcastAuctionList(auctionQueryService);
+      broadcastAuctionDetail(auctionId);
+    } catch (Exception e) {
+      logger.warn("Bid in auction {} succeeded, but auction notification failed", auctionId, e);
+    }
   }
 
   private void broadcastAuctionDetail(int auctionId) {
@@ -93,7 +93,4 @@ public class PlaceBidCommand implements Command {
     }
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.PLACE_BID_RESULT, message));
-  }
 }

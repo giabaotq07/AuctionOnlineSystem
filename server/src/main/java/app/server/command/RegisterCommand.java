@@ -4,18 +4,14 @@ import app.common.dto.RegisterRequest;
 import app.common.dto.RegisterResponse;
 import app.common.enums.ResponseType;
 import app.common.enums.UserRole;
-import app.common.exception.ServiceException;
+import app.common.exception.ValidationException;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
-import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** RegisterCommand. */
-public class RegisterCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(RegisterCommand.class);
+public class RegisterCommand extends SafeCommand {
   private final UserService userService;
 
   /** RegisterCommand. */
@@ -24,12 +20,9 @@ public class RegisterCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    RegisterRequest request = packet.getData(RegisterRequest.class);
-    if (request == null) {
-      sendError(clientHandler, "Dữ liệu đăng ký không hợp lệ.");
-      return;
-    }
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    RegisterRequest request =
+        requirePayload(packet, RegisterRequest.class, "Dữ liệu đăng ký không hợp lệ.");
     String name = request.name();
     String username = request.account();
     String password = request.password();
@@ -39,34 +32,28 @@ public class RegisterCommand implements Command {
         || username.isBlank()
         || password == null
         || password.isBlank()) {
-      sendError(clientHandler, "Thông tin đăng ký không được để trống.");
-      return;
+      throw new ValidationException("Thông tin đăng ký không được để trống.");
     }
     if (request.role() != null
         && request.role() != UserRole.BIDDER
         && request.role() != UserRole.SELLER) {
-      sendError(clientHandler, "Vai trò không hợp lệ.");
-      return;
+      throw new ValidationException("Vai trò không hợp lệ.");
     }
     UserRole role = request.role() != null ? request.role() : UserRole.BIDDER;
-    try {
-      User newUser = new User(name, new Account(username, password, role), new Wallet());
-      User created = userService.register(newUser);
-      logger.info("[SERVER] User {} registered successfully.", username);
-      RegisterResponse response =
-          new RegisterResponse(app.common.mapper.ModelMapper.toUserDto(created));
-      clientHandler.sendPacket(
-          PacketRes.of(ResponseType.REGISTER_RESULT, "Đăng ký thành công!", response));
-    } catch (ServiceException e) {
-      logger.warn("[SERVER] Register failed for user {}", username);
-      sendError(clientHandler, "Tài khoản đã tồn tại hoặc dữ liệu không hợp lệ.");
-    } catch (Exception e) {
-      logger.error("[SERVER] Register error", e);
-      sendError(clientHandler, "Lỗi hệ thống.");
-    }
+    User newUser = new User(name, new Account(username, password, role), new Wallet());
+    User created = userService.register(newUser);
+    logger.info("[SERVER] User {} registered successfully.", username);
+    RegisterResponse response = new RegisterResponse(app.common.mapper.ModelMapper.toUserDto(created));
+    sendSuccess(clientHandler, "Đăng ký thành công!", response);
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.REGISTER_RESULT, message));
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.REGISTER_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Lỗi hệ thống.";
   }
 }

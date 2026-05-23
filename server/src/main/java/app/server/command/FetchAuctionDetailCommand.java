@@ -3,17 +3,13 @@ package app.server.command;
 import app.common.dto.AuctionDetailRequest;
 import app.common.dto.AuctionDetailResponse;
 import app.common.enums.ResponseType;
-import app.common.exception.ServiceException;
+import app.common.exception.ValidationException;
 import app.common.protocol.PacketReq;
-import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.AuctionQueryService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** FetchAuctionDetailCommand. */
-public class FetchAuctionDetailCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(FetchAuctionDetailCommand.class);
+public class FetchAuctionDetailCommand extends SafeCommand {
   private final AuctionQueryService auctionQueryService;
 
   /** FetchAuctionDetailCommand. */
@@ -22,42 +18,33 @@ public class FetchAuctionDetailCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    try {
-      AuctionDetailRequest request = packet.getData(AuctionDetailRequest.class);
-      if (request == null) {
-        clientHandler.sendPacket(
-            PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Invalid request"));
-        return;
-      }
-      if (request.auctionId() <= 0) {
-        clientHandler.sendPacket(
-            PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Invalid auction id"));
-        return;
-      }
-      clientHandler.getSession().setViewingAuctionId(request.auctionId());
-      if (auctionQueryService.isAuctionVersionCurrent(
-          request.auctionId(), request.knownVersion())) {
-        AuctionDetailResponse response =
-            AuctionDetailResponse.notModified(request.auctionId(), request.knownVersion());
-        clientHandler.sendPacket(
-            PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "OK", response));
-        return;
-      }
-      AuctionDetailResponse response =
-          new AuctionDetailResponse(
-              app.common.mapper.ModelMapper.toAuctionDto(
-                  auctionQueryService.getAuctionDetail(request.auctionId())));
-      clientHandler.sendPacket(
-          PacketRes.of(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "OK", response));
-    } catch (ServiceException e) {
-      logger.warn("Fetch auction detail failed: {}", e.getMessage());
-      clientHandler.sendPacket(
-          PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, e.getMessage()));
-    } catch (Exception e) {
-      logger.error("Unexpected error while fetching auction detail", e);
-      clientHandler.sendPacket(
-          PacketRes.error(ResponseType.FETCH_AUCTION_DETAIL_RESULT, "Internal server error"));
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    AuctionDetailRequest request =
+        requirePayload(packet, AuctionDetailRequest.class, "Dữ liệu phiên đấu giá không hợp lệ.");
+    if (request.auctionId() <= 0) {
+      throw new ValidationException("Phiên đấu giá không hợp lệ.");
     }
+    clientHandler.getSession().setViewingAuctionId(request.auctionId());
+    if (auctionQueryService.isAuctionVersionCurrent(request.auctionId(), request.knownVersion())) {
+      AuctionDetailResponse response =
+          AuctionDetailResponse.notModified(request.auctionId(), request.knownVersion());
+      sendSuccess(clientHandler, "OK", response);
+      return;
+    }
+    AuctionDetailResponse response =
+        new AuctionDetailResponse(
+            app.common.mapper.ModelMapper.toAuctionDto(
+                auctionQueryService.getAuctionDetail(request.auctionId())));
+    sendSuccess(clientHandler, "OK", response);
+  }
+
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.FETCH_AUCTION_DETAIL_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Không thể tải chi tiết đấu giá.";
   }
 }

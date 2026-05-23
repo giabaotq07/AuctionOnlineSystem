@@ -3,7 +3,7 @@ package app.common.exception;
 import java.io.Serial;
 
 /** ConnectException. */
-public class ConnectException extends RuntimeException {
+public class ConnectException extends AppException {
   /** ConnectException. */
   @Serial private static final long serialVersionUID = 1L;
 

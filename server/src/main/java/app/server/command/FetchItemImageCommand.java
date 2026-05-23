@@ -4,17 +4,13 @@ package app.server.command;
 import app.common.dto.FetchItemImageRequest;
 import app.common.dto.FetchItemImageResponse;
 import app.common.enums.ResponseType;
+import app.common.exception.ValidationException;
 import app.common.protocol.PacketReq;
-import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.ImageStorageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Đọc file ảnh từ server_data, encode Base64, gửi về client qua Socket. */
-public class FetchItemImageCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(FetchItemImageCommand.class);
-
+public class FetchItemImageCommand extends SafeCommand {
   private final ImageStorageService imageStorageService;
 
   public FetchItemImageCommand(ImageStorageService imageStorageService) {
@@ -22,32 +18,24 @@ public class FetchItemImageCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    try {
-      FetchItemImageRequest request = packet.getData(FetchItemImageRequest.class);
-      if (request == null || request.imagePath() == null || request.imagePath().isBlank()) {
-        clientHandler.sendPacket(
-            PacketRes.error(ResponseType.FETCH_ITEM_IMAGE, "Đường dẫn ảnh không hợp lệ."));
-        return;
-      }
-      // Server đọc file ảnh và encode sang Base64 — không để client tự đọc filesystem
-      String base64Data = imageStorageService.readAsBase64(request.imagePath());
-
-      clientHandler.sendPacket(
-          PacketRes.of(
-              ResponseType.FETCH_ITEM_IMAGE,
-              "OK",
-              new FetchItemImageResponse(request.itemId(), base64Data)));
-
-      logger.info("Served image for itemId={}, path={}", request.itemId(), request.imagePath());
-
-    } catch (IllegalArgumentException e) {
-      logger.warn("Invalid image request: {}", e.getMessage());
-      clientHandler.sendPacket(PacketRes.error(ResponseType.FETCH_ITEM_IMAGE, e.getMessage()));
-    } catch (java.io.IOException e) {
-      logger.error("Cannot read image file", e);
-      clientHandler.sendPacket(
-          PacketRes.error(ResponseType.FETCH_ITEM_IMAGE, "Không thể đọc file ảnh trên server."));
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) throws java.io.IOException {
+    FetchItemImageRequest request =
+        requirePayload(packet, FetchItemImageRequest.class, "Đường dẫn ảnh không hợp lệ.");
+    if (request.imagePath() == null || request.imagePath().isBlank()) {
+      throw new ValidationException("Đường dẫn ảnh không hợp lệ.");
     }
+    String base64Data = imageStorageService.readAsBase64(request.imagePath());
+    sendSuccess(clientHandler, "OK", new FetchItemImageResponse(request.itemId(), base64Data));
+    logger.info("Served image for itemId={}, path={}", request.itemId(), request.imagePath());
+  }
+
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.FETCH_ITEM_IMAGE;
+  }
+
+  @Override
+  protected String ioErrorMessage() {
+    return "Không thể đọc file ảnh trên server.";
   }
 }

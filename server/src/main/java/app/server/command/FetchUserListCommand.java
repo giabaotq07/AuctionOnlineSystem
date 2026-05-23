@@ -2,19 +2,14 @@ package app.server.command;
 
 import app.common.dto.UserListResponse;
 import app.common.enums.ResponseType;
-import app.common.exception.ServiceException;
 import app.common.mapper.ModelMapper;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
-import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** FetchUserListCommand. */
-public class FetchUserListCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(FetchUserListCommand.class);
+public class FetchUserListCommand extends SafeCommand {
   private final UserService userService;
 
   /** FetchUserListCommand. */
@@ -23,24 +18,21 @@ public class FetchUserListCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    try {
-      java.util.List<User> users = userService.getAllUsers(clientHandler.getUser().getId());
-      clientHandler.sendPacket(
-          PacketRes.of(
-              ResponseType.FETCH_USER_LIST_RESULT,
-              "OK",
-              new UserListResponse(users.stream().map(ModelMapper::toUserPreview).toList())));
-    } catch (ServiceException e) {
-      logger.warn("Fetch users failed: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
-    } catch (Exception e) {
-      logger.error("Unexpected fetch users error", e);
-      sendError(clientHandler, "Không thể tải danh sách người dùng.");
-    }
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    java.util.List<User> users = userService.getAllUsers(requireUser(clientHandler).getId());
+    sendSuccess(
+        clientHandler,
+        "OK",
+        new UserListResponse(users.stream().map(ModelMapper::toUserPreview).toList()));
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.FETCH_USER_LIST_RESULT, message));
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.FETCH_USER_LIST_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Không thể tải danh sách người dùng.";
   }
 }
