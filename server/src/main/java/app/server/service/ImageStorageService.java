@@ -40,23 +40,9 @@ public class ImageStorageService {
    */
   public String save(String base64Data, String originalFileName)
       throws IllegalArgumentException, IOException {
-    if (base64Data == null || base64Data.isBlank()) {
-      throw new IllegalArgumentException("Dữ liệu ảnh trống.");
-    }
-    // Tách phần data nếu có header "data:image/jpeg;base64,..."
+
     String pureBase64 = stripDataUriPrefix(base64Data);
-
-    byte[] imageBytes;
-    try {
-      imageBytes = Base64.getDecoder().decode(pureBase64);
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Dữ liệu Base64 không hợp lệ.", e);
-    }
-
-    if (imageBytes.length > MAX_SIZE_BYTES) {
-      throw new IllegalArgumentException(
-          "File ảnh vượt quá 5MB. Kích thước thực: " + (imageBytes.length / 1024 / 1024) + "MB");
-    }
+    byte[] imageBytes = Base64.getDecoder().decode(pureBase64);
 
     String ext = extractSafeExtension(originalFileName);
     String uniqueName = UUID.randomUUID().toString() + "." + ext;
@@ -114,9 +100,7 @@ public class ImageStorageService {
    * @throws IOException nếu file không tồn tại hoặc không đọc được
    */
   public String readAsBase64(String relativePath) throws IOException {
-    if (relativePath == null || relativePath.isBlank()) {
-      throw new IllegalArgumentException("Đường dẫn ảnh trống.");
-    }
+
     Path filePath =
         Paths.get(
             System.getProperty("user.dir"), relativePath.replace("/", java.io.File.separator));

@@ -34,6 +34,7 @@ public class ClientHandler implements Runnable {
       AuctionService auctionService,
       AuctionQueryService auctionQueryService,
       BidService bidService,
+      AutoBidService autoBidService,
       UserService userService,
       ItemService itemService,
       ImageStorageService imageStorageService) {
@@ -43,15 +44,37 @@ public class ClientHandler implements Runnable {
             auctionService,
             auctionQueryService,
             bidService,
+            autoBidService,
             userService,
             itemService,
             imageStorageService);
+  }
+
+  /** ClientHandler. */
+  public ClientHandler(
+      Socket socket,
+      AuctionService auctionService,
+      AuctionQueryService auctionQueryService,
+      BidService bidService,
+      UserService userService,
+      ItemService itemService,
+      ImageStorageService imageStorageService) {
+    this(
+        socket,
+        auctionService,
+        auctionQueryService,
+        bidService,
+        null,
+        userService,
+        itemService,
+        imageStorageService);
   }
 
   private Map<RequestType, Command> createCommands(
       AuctionService auctionService,
       AuctionQueryService auctionQueryService,
       BidService bidService,
+      AutoBidService autoBidService,
       UserService userService,
       ItemService itemService,
       ImageStorageService imageStorageService) {
@@ -80,6 +103,9 @@ public class ClientHandler implements Runnable {
         new CancelAuctionCommand(auctionService, auctionQueryService, userService));
     registry.put(
         RequestType.PLACE_BID, new PlaceBidCommand(bidService, userService, auctionQueryService));
+    registry.put(
+        RequestType.SET_AUTO_BID, new SetAutoBidCommand(autoBidService, auctionQueryService));
+    registry.put(RequestType.DISABLE_AUTO_BID, new DisableAutoBidCommand(autoBidService));
     registry.put(RequestType.DEPOSIT, new DepositCommand(userService));
     registry.put(
         RequestType.SETTLE_WALLET,
@@ -167,6 +193,8 @@ public class ClientHandler implements Runnable {
       case FETCH_USER_LIST -> ResponseType.FETCH_USER_LIST_RESULT;
       case CANCEL_AUCTION -> ResponseType.CANCEL_AUCTION_RESULT;
       case PLACE_BID -> ResponseType.PLACE_BID_RESULT;
+      case SET_AUTO_BID -> ResponseType.SET_AUTO_BID_RESULT;
+      case DISABLE_AUTO_BID -> ResponseType.DISABLE_AUTO_BID_RESULT;
       case DEPOSIT -> ResponseType.DEPOSIT_RESULT;
       case SETTLE_WALLET -> ResponseType.SETTLE_WALLET_RESULT;
       case CHAT -> ResponseType.CHAT_RESULT;

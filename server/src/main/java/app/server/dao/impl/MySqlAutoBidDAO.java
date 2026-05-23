@@ -62,10 +62,13 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   @Override
   public List<AutoBid> findByAuction(int auctionId) {
     return withConnection(
-        conn ->
-            findMany(
-                conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", auctionId),
-        "Lỗi kết nối khi tải danh sách auto bid.");
+        conn -> findByAuction(conn, auctionId), "Lỗi kết nối khi tải danh sách auto bid.");
+  }
+
+  @Override
+  public List<AutoBid> findByAuction(Connection conn, int auctionId) {
+    return findMany(
+        conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", auctionId);
   }
 
   @Override

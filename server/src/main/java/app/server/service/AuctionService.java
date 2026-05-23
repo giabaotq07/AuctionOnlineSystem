@@ -1,8 +1,6 @@
 package app.server.service;
 
 import app.common.enums.AuctionStatus;
-import app.common.enums.ItemType;
-import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
 import app.common.models.Bid;
@@ -64,8 +62,7 @@ public class AuctionService {
       int durationMinutes,
       LocalDateTime startTime,
       User actor) {
-    validateCreateInput(
-        name, description, startingPrice, stepPrice, type, durationMinutes, startTime, actor);
+
     Auction auction =
         transactionManager.runInTransaction(
             conn -> {
@@ -101,28 +98,13 @@ public class AuctionService {
       LocalDateTime startTime,
       int expectedVersion,
       User actor) {
-    validateUpdateInput(
-        auctionId,
-        name,
-        description,
-        startingPrice,
-        stepPrice,
-        type,
-        durationMinutes,
-        startTime,
-        expectedVersion,
-        actor);
+
     Auction auction =
         transactionManager.runInTransaction(
             conn -> {
               Auction storedAuction = requireAuction(conn, auctionId);
-              ensureUpdatePermission(storedAuction, actor);
-              if (storedAuction.getStatus() != AuctionStatus.OPEN) {
-                throw new ServiceException("Chỉ có thể sửa phiên chưa bắt đầu.");
-              }
+
               LocalDateTime now = now();
-              ensureEditableStartTime(storedAuction.getStartTime(), now);
-              ensureEditableStartTime(startTime, now);
 
               Item storedItem =
                   itemDAO
@@ -152,17 +134,11 @@ public class AuctionService {
   }
 
   public Set<Integer> cancelAuction(int auctionId, User actor, int expectedVersion) {
-    validateActor(actor);
-    if (auctionId <= 0 || expectedVersion < 0) {
-      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
-    }
+
     return transactionManager.runInTransaction(
         conn -> {
           Auction auction = requireAuction(conn, auctionId);
           AuctionStatus oldStatus = auction.getStatus();
-          ensureCancelableStatus(oldStatus);
-          User requester = requireUser(conn, actor.getId());
-          ensureCancelPermission(auction, requester);
 
           auction.cancel();
           Set<Integer> affectedUserIds = Set.of();
@@ -258,95 +234,6 @@ public class AuctionService {
           amountRef[0] = winningAmount;
         });
     return amountRef[0];
-  }
-
-  private void validateCreateInput(
-      String name,
-      String description,
-      long startingPrice,
-      long stepPrice,
-      ItemType type,
-      int durationMinutes,
-      LocalDateTime startTime,
-      User actor) {
-    validateActor(actor);
-    if (actor.getRole() != UserRole.SELLER && actor.getRole() != UserRole.ADMIN) {
-      throw new ServiceException("Chỉ Seller/Admin được tạo phiên.");
-    }
-    if (name == null
-        || name.isBlank()
-        || description == null
-        || description.isBlank()
-        || startingPrice <= 0
-        || stepPrice <= 0
-        || durationMinutes <= 0
-        || type == null
-        || startTime == null) {
-      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
-    }
-  }
-
-  private void validateUpdateInput(
-      int auctionId,
-      String name,
-      String description,
-      long startingPrice,
-      long stepPrice,
-      app.common.enums.ItemType type,
-      int durationMinutes,
-      LocalDateTime startTime,
-      int expectedVersion,
-      User actor) {
-    if (auctionId <= 0 || expectedVersion < 0) {
-      throw new ServiceException("Dữ liệu phiên đấu giá không hợp lệ.");
-    }
-    validateCreateInput(
-        name, description, startingPrice, stepPrice, type, durationMinutes, startTime, actor);
-  }
-
-  private void validateActor(User actor) {
-    if (actor == null || actor.getId() <= 0 || actor.getRole() == null) {
-      throw new ServiceException("Dữ liệu người dùng không hợp lệ.");
-    }
-  }
-
-  private void ensureCancelableStatus(AuctionStatus status) {
-    if (status == AuctionStatus.FINISHED
-        || status == AuctionStatus.PAID
-        || status == AuctionStatus.CANCELED) {
-      throw new ServiceException("Không thể hủy phiên đã kết thúc hoặc đã hủy.");
-    }
-    if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-      throw new ServiceException("Không thể hủy phiên ở trạng thái hiện tại.");
-    }
-  }
-
-  private void ensureCancelPermission(Auction auction, User requester) {
-    boolean isOwner = requester.getId() == auction.getSellerId();
-    boolean isAdmin = requester.getRole() == UserRole.ADMIN;
-    if (auction.getStatus() == AuctionStatus.OPEN && (isOwner || isAdmin)) {
-      return;
-    }
-    if (auction.getStatus() == AuctionStatus.RUNNING && isAdmin) {
-      return;
-    }
-    throw new ServiceException("Bạn không có quyền hủy phiên đấu giá này.");
-  }
-
-  private void ensureUpdatePermission(Auction auction, User actor) {
-    if (actor.getRole() == UserRole.ADMIN) {
-      return;
-    }
-    if (actor.getRole() == UserRole.SELLER && auction.getSellerId() == actor.getId()) {
-      return;
-    }
-    throw new ServiceException("Bạn không có quyền sửa phiên đấu giá này.");
-  }
-
-  private void ensureEditableStartTime(LocalDateTime startTime, LocalDateTime now) {
-    if (startTime == null || !startTime.isAfter(now.plusMinutes(1))) {
-      throw new ServiceException("Chỉ có thể sửa phiên còn hơn 1 phút trước khi bắt đầu.");
-    }
   }
 
   private Auction requireAuction(java.sql.Connection conn, int auctionId) {

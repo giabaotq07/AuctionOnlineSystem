@@ -31,12 +31,14 @@ public class AdditionalCommandsTest extends BaseDAOTest {
   private ItemDAO itemDAO;
   private AuctionDAO auctionDAO;
   private BidDAO bidDAO;
+  private AutoBidDAO autoBidDAO;
   private TransactionManager transactionManager;
 
   private UserService userService;
   private ItemService itemService;
   private AuctionQueryService queryService;
   private BidService bidService;
+  private AutoBidService autoBidService;
   private ImageStorageService imageStorageService;
   private AuctionService auctionService;
 
@@ -52,6 +54,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     itemDAO = new MySqlItemDAO();
     auctionDAO = new MySqlAuctionDAO();
     bidDAO = new MySqlBidDAO();
+    autoBidDAO = new MySqlAutoBidDAO();
     transactionManager = new TransactionManager();
 
     userService = new UserService(userDAO, transactionManager);
@@ -61,6 +64,16 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     BidValidator bidValidator = new BidValidator();
     imageStorageService = new ImageStorageService();
     AntiSnipeService antiSnipeService = new AntiSnipeService();
+    autoBidService =
+        new AutoBidService(
+            autoBidDAO,
+            auctionDAO,
+            bidDAO,
+            itemDAO,
+            userDAO,
+            transactionManager,
+            bidValidator,
+            antiSnipeService);
     bidService =
         new BidService(
             bidDAO,
@@ -69,7 +82,8 @@ public class AdditionalCommandsTest extends BaseDAOTest {
             userDAO,
             transactionManager,
             bidValidator,
-            antiSnipeService);
+            antiSnipeService,
+            autoBidService);
 
     AuctionSettlementService settlementService = new AuctionSettlementService(bidDAO, userDAO);
     auctionService =
@@ -290,6 +304,35 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     assertNotNull(res);
     assertTrue(res.isSuccess());
     assertEquals(ResponseType.WALLET_UPDATED, res.getType());
+  }
+
+  @Test
+  public void testSetAndDisableAutoBidCommands() {
+    auction.start();
+    auctionDAO.update(auction);
+
+    SetAutoBidCommand setCommand = new SetAutoBidCommand(autoBidService, queryService);
+    PacketReq setReq =
+        PacketReq.of(RequestType.SET_AUTO_BID, new SetAutoBidRequest(auction.getId(), 2000L, 100L));
+
+    fakeClientHandler.setFakeUser(bidder);
+    setCommand.execute(fakeClientHandler, setReq);
+
+    PacketRes setRes = fakeClientHandler.getSentPacket();
+    assertNotNull(setRes);
+    assertTrue(setRes.isSuccess());
+    assertEquals(ResponseType.WALLET_UPDATED, setRes.getType());
+
+    DisableAutoBidCommand disableCommand = new DisableAutoBidCommand(autoBidService);
+    PacketReq disableReq =
+        PacketReq.of(RequestType.DISABLE_AUTO_BID, new DisableAutoBidRequest(auction.getId()));
+
+    disableCommand.execute(fakeClientHandler, disableReq);
+
+    PacketRes disableRes = fakeClientHandler.getSentPacket();
+    assertNotNull(disableRes);
+    assertTrue(disableRes.isSuccess());
+    assertEquals(ResponseType.WALLET_UPDATED, disableRes.getType());
   }
 
   @Test

@@ -27,11 +27,13 @@ public class AdditionalServicesTest extends BaseDAOTest {
   private ItemDAO itemDAO;
   private AuctionDAO auctionDAO;
   private BidDAO bidDAO;
+  private AutoBidDAO autoBidDAO;
   private TransactionManager transactionManager;
 
   private AuctionQueryService queryService;
   private ItemService itemService;
   private BidService bidService;
+  private AutoBidService autoBidService;
   private BidValidator bidValidator;
   private ImageStorageService imageStorageService;
   private AuctionService auctionService;
@@ -48,6 +50,7 @@ public class AdditionalServicesTest extends BaseDAOTest {
     itemDAO = new MySqlItemDAO();
     auctionDAO = new MySqlAuctionDAO();
     bidDAO = new MySqlBidDAO();
+    autoBidDAO = new MySqlAutoBidDAO();
     transactionManager = new TransactionManager();
 
     bidValidator = new BidValidator();
@@ -56,6 +59,16 @@ public class AdditionalServicesTest extends BaseDAOTest {
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
 
     AntiSnipeService antiSnipeService = new AntiSnipeService();
+    autoBidService =
+        new AutoBidService(
+            autoBidDAO,
+            auctionDAO,
+            bidDAO,
+            itemDAO,
+            userDAO,
+            transactionManager,
+            bidValidator,
+            antiSnipeService);
     bidService =
         new BidService(
             bidDAO,
@@ -64,7 +77,8 @@ public class AdditionalServicesTest extends BaseDAOTest {
             userDAO,
             transactionManager,
             bidValidator,
-            antiSnipeService);
+            antiSnipeService,
+            autoBidService);
 
     AuctionSettlementService settlementService = new AuctionSettlementService(bidDAO, userDAO);
     auctionService =

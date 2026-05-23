@@ -30,8 +30,14 @@ class RequestTypeTest {
   @Test
   void bidderRequests_allowOnlyBidder() {
     assertTrue(RequestType.PLACE_BID.isAllowed(UserRole.BIDDER));
+    assertTrue(RequestType.SET_AUTO_BID.isAllowed(UserRole.BIDDER));
+    assertTrue(RequestType.DISABLE_AUTO_BID.isAllowed(UserRole.BIDDER));
     assertFalse(RequestType.PLACE_BID.isAllowed(UserRole.SELLER));
+    assertFalse(RequestType.SET_AUTO_BID.isAllowed(UserRole.SELLER));
+    assertFalse(RequestType.DISABLE_AUTO_BID.isAllowed(UserRole.SELLER));
     assertFalse(RequestType.PLACE_BID.isAllowed(UserRole.ADMIN));
+    assertFalse(RequestType.SET_AUTO_BID.isAllowed(UserRole.ADMIN));
+    assertFalse(RequestType.DISABLE_AUTO_BID.isAllowed(UserRole.ADMIN));
   }
 
   @Test

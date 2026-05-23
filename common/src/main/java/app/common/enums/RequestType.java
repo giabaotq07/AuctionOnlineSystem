@@ -8,6 +8,8 @@ public enum RequestType {
   LOGIN(Access.PUBLIC),
   REGISTER(Access.PUBLIC),
   PLACE_BID(UserRole.BIDDER),
+  SET_AUTO_BID(UserRole.BIDDER),
+  DISABLE_AUTO_BID(UserRole.BIDDER),
   CREATE_AUCTION(UserRole.SELLER, UserRole.ADMIN),
   UPDATE_AUCTION(UserRole.SELLER, UserRole.ADMIN),
   CHAT(Access.AUTHENTICATED),

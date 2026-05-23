@@ -19,6 +19,9 @@ public interface AutoBidDAO {
   /** findByAuction. */
   List<AutoBid> findByAuction(int auctionId);
 
+  /** findByAuction. */
+  List<AutoBid> findByAuction(Connection conn, int auctionId);
+
   /** findEnabledByAuction. */
   List<AutoBid> findEnabledByAuction(int auctionId);
 

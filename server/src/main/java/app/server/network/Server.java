@@ -41,6 +41,7 @@ public class Server {
   private AuctionService auctionService;
   private AuctionQueryService auctionQueryService;
   private BidService bidService;
+  private AutoBidService autoBidService;
   private UserService userService;
   private ItemService itemService;
   private ImageStorageService imageStorageService;
@@ -72,13 +73,25 @@ public class Server {
     ItemDAO itemDAO = new MySqlItemDAO();
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
+    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     TransactionManager transactionManager = new TransactionManager();
     BidValidator bidValidator = new BidValidator();
     Clock clock = Clock.systemDefaultZone();
     AntiSnipeService antiSnipeService = new AntiSnipeService(clock);
-    AuctionSettlementService settlementService = new AuctionSettlementService(bidDAO, userDAO);
+    AuctionSettlementService settlementService =
+        new AuctionSettlementService(bidDAO, userDAO, autoBidDAO);
     userService = new UserService(userDAO, transactionManager);
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
+    autoBidService =
+        new AutoBidService(
+            autoBidDAO,
+            auctionDAO,
+            bidDAO,
+            itemDAO,
+            userDAO,
+            transactionManager,
+            bidValidator,
+            antiSnipeService);
     bidService =
         new BidService(
             bidDAO,
@@ -87,7 +100,8 @@ public class Server {
             userDAO,
             transactionManager,
             bidValidator,
-            antiSnipeService);
+            antiSnipeService,
+            autoBidService);
     auctionService =
         new AuctionService(
             auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, settlementService, clock);
@@ -217,6 +231,7 @@ public class Server {
                   auctionService,
                   auctionQueryService,
                   bidService,
+                  autoBidService,
                   userService,
                   itemService,
                   imageStorageService);
