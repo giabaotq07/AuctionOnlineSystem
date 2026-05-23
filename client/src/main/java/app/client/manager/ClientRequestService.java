@@ -72,11 +72,6 @@ public final class ClientRequestService {
     send(RequestType.UNWATCH_AUCTION, null);
   }
 
-  /** fetchAuctionResult. */
-  public void fetchAuctionResult(int auctionId) throws IOException {
-    send(RequestType.FETCH_AUCTION_RESULT, new AuctionResultRequest(auctionId));
-  }
-
   /** placeBid. */
   public void placeBid(int auctionId, long bidAmount) throws IOException {
     send(RequestType.PLACE_BID, new PlaceBidRequest(auctionId, bidAmount));

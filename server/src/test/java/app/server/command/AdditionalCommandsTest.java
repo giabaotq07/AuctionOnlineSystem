@@ -222,25 +222,6 @@ public class AdditionalCommandsTest extends BaseDAOTest {
   }
 
   @Test
-  public void testFetchAuctionResultCommand() {
-    FetchAuctionResultCommand cmd = new FetchAuctionResultCommand(auctionService, userService);
-
-    // Ket thuc phien dau gia de co the fetch ket qua
-    auction.setStatus(AuctionStatus.FINISHED);
-    auctionDAO.update(auction);
-
-    PacketReq req =
-        PacketReq.of(RequestType.FETCH_AUCTION_RESULT, new AuctionResultRequest(auction.getId()));
-
-    cmd.execute(fakeClientHandler, req);
-
-    PacketRes res = fakeClientHandler.getSentPacket();
-    assertNotNull(res);
-    assertTrue(res.isSuccess());
-    assertEquals(ResponseType.AUCTION_RESULT_FETCHED, res.getType());
-  }
-
-  @Test
   public void testFetchSellerItemsCommand() {
     FetchSellerItemsCommand cmd = new FetchSellerItemsCommand(itemService);
     PacketReq req =

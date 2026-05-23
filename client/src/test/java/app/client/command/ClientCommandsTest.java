@@ -246,8 +246,7 @@ public class ClientCommandsTest {
             1,
             new UserPreview(1, "John Doe", "john", UserRole.SELLER, "avatar_url")));
     AuctionSummariesResponse payload = new AuctionSummariesResponse(auctions);
-    PacketRes packet =
-        PacketRes.of(ResponseType.AUCTION_SUMMARIES_RESULT, "Success", payload);
+    PacketRes packet = PacketRes.of(ResponseType.AUCTION_SUMMARIES_RESULT, "Success", payload);
     cmd.execute(packet);
 
     assertTrue(updateNotified);

@@ -94,9 +94,6 @@ public class ClientRequestServiceTest {
     // 8. Unwatch
     assertDoesNotThrow(() -> service.unwatchAuction());
 
-    // 9. Fetch result
-    assertDoesNotThrow(() -> service.fetchAuctionResult(10));
-
     // 10. Place bid
     assertDoesNotThrow(() -> service.placeBid(10, 1500L));
 

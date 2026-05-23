@@ -93,9 +93,6 @@ public class ClientHandler implements Runnable {
     registry.put(
         RequestType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionQueryService));
     registry.put(RequestType.UNWATCH_AUCTION, new UnwatchAuctionCommand());
-    registry.put(
-        RequestType.FETCH_AUCTION_RESULT,
-        new FetchAuctionResultCommand(auctionService, userService));
     registry.put(RequestType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
     registry.put(RequestType.FETCH_USER_LIST, new FetchUserListCommand(userService));
     registry.put(
@@ -191,7 +188,6 @@ public class ClientHandler implements Runnable {
       case FETCH_AUCTION_SUMMARIES -> ResponseType.AUCTION_SUMMARIES_RESULT;
       case FETCH_AUCTION_HISTORY -> ResponseType.AUCTION_HISTORY_RESULT;
       case FETCH_AUCTION_DETAIL -> ResponseType.AUCTION_RESULT;
-      case FETCH_AUCTION_RESULT -> ResponseType.AUCTION_RESULT_FETCHED;
       case FETCH_SELLER_ITEMS -> ResponseType.SELLER_ITEMS_RESULT;
       case FETCH_USER_LIST -> ResponseType.USER_LIST_RESULT;
       case CANCEL_AUCTION -> ResponseType.CANCEL_AUCTION_RESULT;
