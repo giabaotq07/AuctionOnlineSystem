@@ -1,6 +1,6 @@
-package app.client.manager;
+package app.client.store;
 
-import app.client.store.AuctionStore;
+import app.client.manager.AuctionDetailProxy;
 import app.common.dto.AuctionPreview;
 
 /** Session-scoped state for the currently opened live auction screen. */

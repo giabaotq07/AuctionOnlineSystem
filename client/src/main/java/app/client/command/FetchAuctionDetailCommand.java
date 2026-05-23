@@ -1,6 +1,6 @@
 package app.client.command;
 
-import app.client.manager.LiveAuctionSessionStore;
+import app.client.store.LiveAuctionSessionStore;
 import app.client.store.AuctionStore;
 import app.common.dto.AuctionDetailResponse;
 import app.common.protocol.PacketRes;

@@ -1,6 +1,7 @@
 package app.client.manager;
 
 import app.client.controllers.Cleanable;
+import app.client.store.LiveAuctionSessionStore;
 import app.common.dto.AuctionPreview;
 import app.common.enums.View;
 import java.io.IOException;

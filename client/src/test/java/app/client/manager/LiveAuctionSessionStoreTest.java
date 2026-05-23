@@ -2,6 +2,7 @@ package app.client.manager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import app.client.store.LiveAuctionSessionStore;
 import app.common.dto.AuctionPreview;
 import app.common.dto.UserPreview;
 import app.common.enums.AuctionStatus;

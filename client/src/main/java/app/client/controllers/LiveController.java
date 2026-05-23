@@ -7,7 +7,7 @@ import static app.common.enums.AuctionStatus.RUNNING;
 import app.client.manager.AuctionDetailProxy;
 import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
-import app.client.manager.LiveAuctionSessionStore;
+import app.client.store.LiveAuctionSessionStore;
 import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
