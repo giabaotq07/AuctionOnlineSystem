@@ -3,6 +3,7 @@ package app.server.command;
 import app.common.dto.*;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
+import app.common.exception.DatabaseException;
 import app.common.exception.ServiceException;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
@@ -64,6 +65,9 @@ public class CreateAuctionCommand implements Command {
     } catch (ServiceException e) {
       logger.warn("Create auction failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
+    } catch (DatabaseException e) {
+      logger.error("Create auction database error", e);
+      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
     } catch (Exception e) {
       logger.error("Create auction failed", e);
       sendError(clientHandler, "Tạo phiên thất bại");

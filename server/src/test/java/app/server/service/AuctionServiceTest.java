@@ -114,6 +114,50 @@ public class AuctionServiceTest extends BaseDAOTest {
     assertEquals(AuctionStatus.RUNNING, auction.getStatus());
   }
 
+  /** Test tao phien that bai khi du lieu khong hop le. */
+  @Test
+  public void testCreateAuctionInvalidPayload() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(1);
+
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                " ", "Mo ta", 1000L, 100L, ItemType.ART, 60, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 0L, 100L, ItemType.ART, 60, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 1000L, 0L, ItemType.ART, 60, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 1000L, 100L, ItemType.ART, 0, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 1000L, 100L, ItemType.ART, 60, null, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham",
+                "Mo ta",
+                1000L,
+                100L,
+                ItemType.ART,
+                30,
+                LocalDateTime.now().minusHours(2),
+                seller));
+  }
+
   /** Test huy phien dau gia boi chu so huu. */
   @Test
   public void testCancelAuctionByOwner() {
@@ -186,6 +230,71 @@ public class AuctionServiceTest extends BaseDAOTest {
         () -> {
           auctionService.cancelAuction(auction.getId(), bidder, auction.getVersion());
         });
+  }
+
+  /** Test cap nhat phien that bai neu khong phai chu phien hoac admin. */
+  @Test
+  public void testUpdateAuctionNoPermission() {
+    User otherSeller =
+        userDAO.save(TestFixtures.user("other_seller", UserRole.SELLER, new BigDecimal("1000")));
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Dong ho co", "Dong ho suu tam", 12000L, 1000L, ItemType.ART, 60, startTime, seller);
+
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.updateAuction(
+                auction.getId(),
+                "Dong ho moi",
+                "Mo ta moi",
+                13000L,
+                1000L,
+                ItemType.ART,
+                90,
+                startTime.plusHours(1),
+                auction.getVersion(),
+                otherSeller));
+  }
+
+  /** Test khong duoc cap nhat phien dang chay. */
+  @Test
+  public void testUpdateRunningAuctionRejected() {
+    LocalDateTime startTime = LocalDateTime.now().minusMinutes(5);
+    Auction auction =
+        auctionService.createAuction(
+            "May anh", "May anh phim", 9000L, 500L, ItemType.ELECTRONICS, 60, startTime, seller);
+
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.updateAuction(
+                auction.getId(),
+                "May anh moi",
+                "Mo ta moi",
+                9500L,
+                500L,
+                ItemType.ELECTRONICS,
+                60,
+                LocalDateTime.now().plusHours(1),
+                auction.getVersion(),
+                seller));
+  }
+
+  /** Test khong duoc huy phien da ket thuc. */
+  @Test
+  public void testCancelFinishedAuctionRejected() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Tuong go", "Do go my nghe", 7000L, 500L, ItemType.ART, 60, startTime, seller);
+    auction.setStatus(AuctionStatus.FINISHED);
+    auctionDAO.update(auction);
+
+    assertThrows(
+        ServiceException.class,
+        () -> auctionService.cancelAuction(auction.getId(), seller, auction.getVersion()));
   }
 
   /** Kiet tac clean du lieu de tranh anh huong giua cac testcase. */

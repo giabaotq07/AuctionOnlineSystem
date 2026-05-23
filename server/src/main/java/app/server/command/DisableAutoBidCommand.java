@@ -4,6 +4,7 @@ import app.common.dto.DisableAutoBidRequest;
 import app.common.dto.DisableAutoBidResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
+import app.common.exception.DatabaseException;
 import app.common.exception.ServiceException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -41,6 +42,9 @@ public class DisableAutoBidCommand implements Command {
     } catch (ServiceException e) {
       logger.warn("Disable auto-bid failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
+    } catch (DatabaseException e) {
+      logger.error("Disable auto-bid database error", e);
+      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
     } catch (Exception e) {
       logger.error("Unexpected disable auto-bid error", e);
       sendError(clientHandler, "Không thể tắt auto-bid.");

@@ -35,13 +35,15 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói mỗi request thành một object có thể thực thi qua cùng một contract.
 
 **Nơi áp dụng:**
-* `app.observer.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)`.
-* Các command cụ thể như `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`.
-* `app.observer.ClientHandler` tạo bảng đăng ký command theo `PacketType`, sau đó dispatch request đến command tương ứng.
+* `app.server.command.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)` cho request phía server.
+* Các command server cụ thể như `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `SetAutoBidCommand`, `FetchAuctionSummariesCommand`.
+* `app.server.network.ClientHandler` tạo bảng đăng ký `EnumMap<RequestType, Command>`, sau đó dispatch request đến command tương ứng.
+* `app.client.command.Command` định nghĩa method `execute(PacketRes packet)` cho response phía client.
+* `app.client.Client` tạo bảng đăng ký `EnumMap<ResponseType, Command>`, sau đó dispatch response đến command tương ứng.
 
 **Lợi ích trong dự án:**
 * Server không bị dồn logic xử lý request vào một `switch` hoặc `if-else` lớn.
-* Thêm request mới chỉ cần thêm DTO, `PacketType`, command mới và đăng ký command.
+* Thêm request/response mới chỉ cần thêm DTO, `RequestType`/`ResponseType`, command mới và đăng ký command.
 
 ---
 
@@ -126,9 +128,11 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Dùng một bảng đăng ký để ánh xạ key sang handler tương ứng, từ đó dispatch request mà không cần chuỗi `if-else` dài.
 
 **Nơi áp dụng:**
-* `ClientHandler.createCommands(...)` tạo `EnumMap<PacketType, Command>`.
+* `ClientHandler.createCommands(...)` tạo `EnumMap<RequestType, app.server.command.Command>`.
 * `ClientHandler.handlePacket(...)` lấy command bằng `commands.get(type)` rồi gọi `execute(...)`.
-* `PacketType` đóng vai trò key chung cho protocol client-server.
+* `Client.createCommands(...)` tạo `EnumMap<ResponseType, app.client.command.Command>`.
+* `Client.handlePacket(...)` lấy command bằng `commands.get(type)` rồi gọi `execute(...)`.
+* `RequestType` và `ResponseType` đóng vai trò key cho protocol client-server.
 
 **Lợi ích trong dự án:**
 * Dễ nhìn toàn bộ request server hỗ trợ.

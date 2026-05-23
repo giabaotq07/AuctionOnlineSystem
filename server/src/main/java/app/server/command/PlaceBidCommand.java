@@ -2,6 +2,7 @@ package app.server.command;
 
 import app.common.dto.*;
 import app.common.enums.ResponseType;
+import app.common.exception.DatabaseException;
 import app.common.exception.ServiceException;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
@@ -45,10 +46,6 @@ public class PlaceBidCommand implements Command {
         sendError(clientHandler, "Phiên đấu giá không hợp lệ.");
         return;
       }
-      if (bidAmount <= 0) {
-        sendError(clientHandler, "Giá đặt không hợp lệ.");
-        return;
-      }
       User user = clientHandler.getUser();
       bidderId = user.getId();
       Auction updatedAuction = bidService.placeBid(auctionId, user, bidAmount);
@@ -68,6 +65,9 @@ public class PlaceBidCommand implements Command {
     } catch (ServiceException e) {
       logger.warn("Place bid failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
+    } catch (DatabaseException e) {
+      logger.error("Place bid database error", e);
+      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
     } catch (Exception e) {
       logger.error("Unexpected place bid error", e);
       sendError(clientHandler, "Không thể đặt giá.");

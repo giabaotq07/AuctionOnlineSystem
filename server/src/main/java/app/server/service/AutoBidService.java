@@ -1,5 +1,6 @@
 package app.server.service;
 
+import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
 import app.common.models.AutoBid;
@@ -52,11 +53,13 @@ public class AutoBidService {
   /** setAutoBid. */
   public AutoBidUpdateResult setAutoBid(
       int auctionId, User actor, long maxAmount, long incrementAmount) {
+    validateAutoBidActor(auctionId, actor);
 
     return transactionManager.runInTransaction(
         conn -> {
           Auction auction = lockedRunningAuction(conn, auctionId);
           Item item = auctionItem(conn, auction);
+          validateAutoBidRules(auction, item, actor, maxAmount, incrementAmount);
 
           User bidder = lockedUser(conn, actor.getId());
           try {
@@ -104,10 +107,14 @@ public class AutoBidService {
 
   /** disableAutoBid. */
   public AutoBidUpdateResult disableAutoBid(int auctionId, User actor) {
+    validateAutoBidActor(auctionId, actor);
 
     return transactionManager.runInTransaction(
         conn -> {
           Auction auction = lockedRunningAuction(conn, auctionId);
+          if (auction.getSellerId() == actor.getId()) {
+            throw new ServiceException("Người bán không được dùng auto-bid cho phiên của mình.");
+          }
 
           AutoBid autoBid =
               autoBidDAO
@@ -192,8 +199,31 @@ public class AutoBidService {
         auctionDAO
             .findById(conn, auctionId)
             .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
-
+    bidValidator.validateAuctionState(auction);
     return auction;
+  }
+
+  private void validateAutoBidActor(int auctionId, User actor) {
+    if (auctionId <= 0) {
+      throw new ServiceException("Phiên đấu giá không hợp lệ.");
+    }
+    if (actor == null || actor.getId() <= 0) {
+      throw new ServiceException("Người đặt auto-bid không hợp lệ.");
+    }
+    if (actor.getRole() != UserRole.BIDDER) {
+      throw new ServiceException("Chỉ bidder được dùng auto-bid.");
+    }
+  }
+
+  private void validateAutoBidRules(
+      Auction auction, Item item, User actor, long maxAmount, long incrementAmount) {
+    if (auction.getSellerId() == actor.getId()) {
+      throw new ServiceException("Người bán không được dùng auto-bid cho phiên của mình.");
+    }
+    if (incrementAmount <= 0) {
+      throw new ServiceException("Bước tăng auto-bid không hợp lệ.");
+    }
+    bidValidator.validateBidAmount(maxAmount, auction.getHighestBid(), item.getStepPrice());
   }
 
   private Item auctionItem(Connection conn, Auction auction) {

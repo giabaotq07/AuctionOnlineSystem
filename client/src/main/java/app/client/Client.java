@@ -43,8 +43,12 @@ public class Client {
     registry.put(ResponseType.FETCH_AUCTION_HISTORY_RESULT, new FetchAuctionHistoryCommand());
     registry.put(ResponseType.FETCH_AUCTION_DETAIL_RESULT, new FetchAuctionDetailCommand());
     registry.put(ResponseType.AUCTION_RESULT_FETCHED, new FetchAuctionResultCommand());
+    registry.put(ResponseType.FETCH_SELLER_ITEMS_RESULT, new FetchSellerItemsCommand());
+    registry.put(ResponseType.FETCH_USER_LIST_RESULT, new FetchUserListCommand());
     registry.put(ResponseType.CANCEL_AUCTION_RESULT, new CancelAuctionCommand());
     registry.put(ResponseType.PLACE_BID_RESULT, new PlaceBidCommand());
+    registry.put(ResponseType.SET_AUTO_BID_RESULT, new SetAutoBidCommand());
+    registry.put(ResponseType.DISABLE_AUTO_BID_RESULT, new DisableAutoBidCommand());
     registry.put(ResponseType.DEPOSIT_RESULT, new DepositCommand());
     registry.put(ResponseType.CHAT_MESSAGE, new ChatCommand());
     registry.put(ResponseType.AUCTION_CREATED, new CreateAuctionCommand());

@@ -4,6 +4,7 @@ import app.common.dto.AuctionDetailResponse;
 import app.common.dto.UpdateAuctionRequest;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
+import app.common.exception.DatabaseException;
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
 import app.common.protocol.PacketReq;
@@ -64,6 +65,9 @@ public class UpdateAuctionCommand implements Command {
     } catch (ServiceException e) {
       logger.warn("Update auction failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
+    } catch (DatabaseException e) {
+      logger.error("Update auction database error", e);
+      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
     } catch (Exception e) {
       logger.error("Unexpected update auction error", e);
       sendError(clientHandler, "Không thể cập nhật phiên đấu giá.");

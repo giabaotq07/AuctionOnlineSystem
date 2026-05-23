@@ -5,6 +5,7 @@ import app.common.dto.CancelAuctionRequest;
 import app.common.dto.CancelAuctionResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
+import app.common.exception.DatabaseException;
 import app.common.exception.ServiceException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -72,6 +73,9 @@ public class CancelAuctionCommand implements Command {
     } catch (ServiceException e) {
       logger.warn("Cancel auction failed: {}", e.getMessage());
       sendError(clientHandler, auctionId, e.getMessage());
+    } catch (DatabaseException e) {
+      logger.error("Cancel auction database error", e);
+      sendError(clientHandler, auctionId, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
     } catch (Exception e) {
       logger.error("Unexpected cancel auction error", e);
       sendError(clientHandler, auctionId, "Không thể hủy phiên đấu giá.");

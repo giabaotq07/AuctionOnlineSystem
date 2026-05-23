@@ -5,6 +5,7 @@ import app.common.dto.SetAutoBidRequest;
 import app.common.dto.SetAutoBidResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
+import app.common.exception.DatabaseException;
 import app.common.exception.ServiceException;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -33,7 +34,7 @@ public class SetAutoBidCommand implements Command {
     int auctionId = 0;
     try {
       SetAutoBidRequest request = packet.getData(SetAutoBidRequest.class);
-      if (request == null) {
+      if (request == null || request.auctionId() <= 0) {
         sendError(clientHandler, "Dữ liệu auto-bid không hợp lệ.");
         return;
       }
@@ -58,6 +59,9 @@ public class SetAutoBidCommand implements Command {
     } catch (ServiceException e) {
       logger.warn("Set auto-bid failed: {}", e.getMessage());
       sendError(clientHandler, e.getMessage());
+    } catch (DatabaseException e) {
+      logger.error("Set auto-bid database error", e);
+      sendError(clientHandler, "Lỗi dữ liệu hoặc kết nối, vui lòng thử lại.");
     } catch (Exception e) {
       logger.error("Unexpected set auto-bid error", e);
       sendError(clientHandler, "Không thể cập nhật auto-bid.");

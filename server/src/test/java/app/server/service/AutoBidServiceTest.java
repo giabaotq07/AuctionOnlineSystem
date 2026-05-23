@@ -182,4 +182,24 @@ public class AutoBidServiceTest extends app.server.dao.BaseDAOTest {
         ServiceException.class,
         () -> autoBidService.setAutoBid(auction.getId(), seller, 2000L, 100L));
   }
+
+  @Test
+  void setAutoBidRejectsClosedAuction() {
+    auction.setStatus(AuctionStatus.FINISHED);
+    auctionDAO.update(auction);
+
+    assertThrows(
+        ServiceException.class,
+        () -> autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 100L));
+  }
+
+  @Test
+  void setAutoBidRejectsInvalidAmounts() {
+    assertThrows(
+        ServiceException.class,
+        () -> autoBidService.setAutoBid(auction.getId(), bidder1, 1050L, 100L));
+    assertThrows(
+        ServiceException.class,
+        () -> autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 0L));
+  }
 }

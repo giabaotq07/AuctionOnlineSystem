@@ -244,6 +244,9 @@ public class AdditionalServicesTest extends BaseDAOTest {
     auction.start();
     auctionDAO.update(auction);
 
+    assertThrows(ServiceException.class, () -> bidService.placeBid(auction.getId(), bidder, -10L));
+    assertThrows(ServiceException.class, () -> bidService.placeBid(auction.getId(), bidder, 1050L));
+
     // Bid thanh cong
     Auction bidded = bidService.placeBid(auction.getId(), bidder, 1500L);
     assertNotNull(bidded);
