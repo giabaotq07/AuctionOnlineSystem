@@ -110,7 +110,8 @@ public class ClientHandler implements Runnable {
     registry.put(
         RequestType.UPLOAD_IMAGE,
         new UploadImageCommand(itemService, imageStorageService, auctionQueryService));
-    registry.put(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageCommand(imageStorageService));
+    registry.put(
+        RequestType.FETCH_ITEM_IMAGE, new FetchItemImageCommand(imageStorageService, itemService));
     registry.put(
         RequestType.UPLOAD_AVATAR, new UploadAvatarCommand(userService, imageStorageService));
     registry.put(RequestType.FETCH_AVATAR, new FetchAvatarCommand(imageStorageService));

@@ -92,8 +92,8 @@ public final class ClientRequestService {
     send(RequestType.CHAT, request);
   }
 
-  public void fetchItemImage(int itemId, String imagePath) throws IOException {
-    send(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(itemId, imagePath));
+  public void fetchItemImage(int itemId) throws IOException {
+    send(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(itemId));
   }
 
   public void uploadImage(int itemId, java.io.File imageFile) throws IOException {

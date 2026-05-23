@@ -107,7 +107,7 @@ public class ClientRequestServiceTest {
     assertDoesNotThrow(() -> service.chat(new ChatRequest("Hello")));
 
     // 14. Fetch image
-    assertDoesNotThrow(() -> service.fetchItemImage(5, "path/to/img"));
+    assertDoesNotThrow(() -> service.fetchItemImage(5));
 
     // 15. Upload image
     File tempFile = File.createTempFile("temp_img", ".jpg");

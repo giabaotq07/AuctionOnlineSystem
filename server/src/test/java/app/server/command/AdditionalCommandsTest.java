@@ -374,12 +374,15 @@ public class AdditionalCommandsTest extends BaseDAOTest {
 
   @Test
   public void testFetchItemImageCommand() throws Exception {
-    FetchItemImageCommand cmd = new FetchItemImageCommand(imageStorageService);
+    FetchItemImageCommand cmd = new FetchItemImageCommand(imageStorageService, itemService);
     String base64 = java.util.Base64.getEncoder().encodeToString("dummy_image_data".getBytes());
     String path = imageStorageService.save(base64, "image.jpg");
 
+    item.setImageUrl(path);
+    itemService.update(item);
+
     PacketReq req =
-        PacketReq.of(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(item.getId(), path));
+        PacketReq.of(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(item.getId()));
 
     cmd.execute(fakeClientHandler, req);
 

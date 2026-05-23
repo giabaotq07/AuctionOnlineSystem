@@ -279,7 +279,7 @@ public class FirstScene implements Cleanable {
     } else if (imageUrl != null && !imageUrl.isBlank() && itemId > 0) {
       if (imageFetchInFlight.add(itemId)) {
         try {
-          requests.fetchItemImage(itemId, imageUrl);
+          requests.fetchItemImage(itemId);
         } catch (Exception e) {
           logger.warn("Failed to fetch image for item {}", itemId, e);
           imageFetchInFlight.remove(itemId);

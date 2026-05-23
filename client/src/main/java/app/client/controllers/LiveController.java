@@ -1151,7 +1151,7 @@ public class LiveController implements Cleanable {
               // Chưa có trong cache, gửi request nếu chưa có request đang bay
               if (imageFetchInFlight.add(itemId)) { // add() trả về false nếu đã tồn tại
                 try {
-                  requests.fetchItemImage(itemId, imageUrl);
+                  requests.fetchItemImage(itemId);
                   logger.debug("Sent FETCH_ITEM_IMAGE for itemId={}", itemId);
                 } catch (java.io.IOException e) {
                   imageFetchInFlight.remove(itemId);
