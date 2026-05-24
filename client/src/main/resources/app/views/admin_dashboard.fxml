@@ -84,11 +84,11 @@
                                 </HBox>
                                 <HBox spacing="15.0">
                                     <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                        <Label text="Giá khởi điểm (VNĐ) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                        <Label text="Giá khởi điểm ($) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
                                         <TextField fx:id="startingPriceField" promptText="VD: 1000000" style="-fx-padding: 8;" />
                                     </VBox>
                                     <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                        <Label text="Bước giá tối thiểu (VNĐ) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                        <Label text="Bước giá tối thiểu ($) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
                                         <TextField fx:id="stepPriceField" promptText="VD: 50000" style="-fx-padding: 8;" />
                                     </VBox>
                                 </HBox>
@@ -135,7 +135,7 @@
                             <TableColumn fx:id="colUserId" prefWidth="80.0" text="Mã KH" />
                             <TableColumn fx:id="colUserName" prefWidth="250.0" text="Họ tên" />
                             <TableColumn fx:id="colUserAccount" prefWidth="250.0" text="Tên tài khoản" />
-                            <TableColumn fx:id="colUserBalance" prefWidth="250.0" text="Số dư khả dụng (VNĐ)" />
+                            <TableColumn fx:id="colUserBalance" prefWidth="250.0" text="Số dư khả dụng ($)" />
                             <TableColumn fx:id="colUserRole" prefWidth="180.0" text="Vai trò" />
                         </columns>
                     </TableView>

@@ -81,11 +81,11 @@
                         </HBox>
                         <HBox spacing="15.0">
                             <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                <Label text="Giá khởi điểm (VNĐ) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <Label text="Giá khởi điểm ($) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
                                 <TextField fx:id="startingPriceField" promptText="VD: 1000000" style="-fx-padding: 8;" />
                             </VBox>
                             <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                                <Label text="Bước giá tối thiểu (VNĐ) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <Label text="Bước giá tối thiểu ($) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
                                 <TextField fx:id="stepPriceField" promptText="VD: 50000" style="-fx-padding: 8;" />
                             </VBox>
                         </HBox>
