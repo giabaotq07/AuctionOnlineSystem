@@ -137,3 +137,17 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Lợi ích trong dự án:**
 * Dễ nhìn toàn bộ request server hỗ trợ.
 * Mỗi command độc lập, giảm rủi ro sửa request này ảnh hưởng request khác.
+
+---
+
+## 10. Facade Pattern
+**Ý nghĩa:** Cung cấp một giao diện đơn giản cho client code, che giấu chi tiết phức tạp của subsystem phía sau.
+
+**Nơi áp dụng:**
+* `app.client.manager.ClientRequestService`: Cung cấp các method dễ dùng như `login(...)`, `createAuction(...)`, `placeBid(...)`, `deposit(...)`, `setAutoBid(...)`.
+* Các controller JavaFX như `AuctionController`, `LiveController`, `DepositController`, `LoginController` chỉ gọi `ClientRequestService` thay vì tự tạo `PacketReq`, chọn `RequestType` và gọi `Client.sendRequest(...)`.
+
+**Lợi ích trong dự án:**
+* Controller không phụ thuộc trực tiếp vào chi tiết giao thức mạng.
+* Logic đóng gói request tập trung trong một class.
+* Khi cách gửi request thay đổi, phần lớn controller không cần sửa.

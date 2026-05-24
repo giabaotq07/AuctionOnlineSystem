@@ -7,7 +7,12 @@ import app.common.protocol.PacketReq;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-/** Facade for client requests. */
+/**
+ * Facade Pattern.
+ *
+ * <p>Provides a simple request API for JavaFX controllers and hides packet creation, request type
+ * mapping, and socket sending details.
+ */
 public final class ClientRequestService {
   private static volatile ClientRequestService instance;
 
