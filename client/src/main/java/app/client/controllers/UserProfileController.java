@@ -76,7 +76,7 @@ public class UserProfileController {
       return;
     }
     if (avatarCircle != null) {
-      avatarCircle.setFill(Color.web("#673ab7"));
+      avatarCircle.setFill(Color.web("#5146f2"));
       avatarCircle.setRadius(70);
     }
     if (avatarLabel != null) {

@@ -45,9 +45,11 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -84,6 +86,7 @@ public class LiveController implements Cleanable {
   @FXML private Label leaderPriceLabel;
   @FXML private Circle leaderAvatar;
   @FXML private TextField bidAmountField;
+  @FXML private ScrollPane bidHistoryScrollPane;
   @FXML private VBox bidHistoryList;
   @FXML private ProgressIndicator detailLoadingIndicator;
   @FXML private ImageView itemImageView;
@@ -123,9 +126,38 @@ public class LiveController implements Cleanable {
     notifications.addUpdateListener(updateListener);
     notifications.addMessageListener(messageListener);
     updateAvailableBalance();
+    configureBidHistoryScroll();
     loadSessionAuction();
     maybeRequestAuctionDetail();
     updateAutoBidUi();
+  }
+
+  private void configureBidHistoryScroll() {
+    if (bidHistoryScrollPane == null) {
+      return;
+    }
+    bidHistoryScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    bidHistoryScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    bidHistoryScrollPane.addEventFilter(ScrollEvent.SCROLL, this::scrollBidHistory);
+  }
+
+  private void scrollBidHistory(ScrollEvent event) {
+    if (bidHistoryScrollPane == null || bidHistoryList == null) {
+      return;
+    }
+    double contentHeight = bidHistoryList.getBoundsInLocal().getHeight();
+    double viewHeight = bidHistoryScrollPane.getViewportBounds().getHeight();
+    double maxScroll = contentHeight - viewHeight;
+    if (maxScroll <= 0) {
+      return;
+    }
+    double nextPixel = bidHistoryScrollPane.getVvalue() * maxScroll - event.getDeltaY();
+    bidHistoryScrollPane.setVvalue(clamp(nextPixel / maxScroll));
+    event.consume();
+  }
+
+  private double clamp(double value) {
+    return Math.max(0, Math.min(1, value));
   }
 
   /** setAuction. */

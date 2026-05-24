@@ -4,23 +4,37 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0f1424;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.DepositController">
-  <top>
-    <HBox alignment="CENTER_LEFT" spacing="20.0" style="-fx-background-color: #11182d;">
-      <padding>
-        <Insets bottom="12.0" left="40.0" right="40.0" top="12.0" />
-      </padding>
-      <Button onAction="#handleBack" style="-fx-background-color: transparent; -fx-text-fill: #4f46e5; -fx-font-weight: bold;" text="&lt; TRỞ VỀ TRANG CHỦ" />
-      <Label style="-fx-font-size: 22px; -fx-font-weight: bold;" text="NẠP TIỀN" textFill="WHITE" />
-    </HBox>
-  </top>
-  <center>
-    <VBox alignment="CENTER" spacing="12.0" style="-fx-background-color: #0f1424;">
-      <Label fx:id="totalBalanceLabel" style="-fx-text-fill: #cbd5e1; -fx-font-size: 16px;" text="Tổng số dư: ---" />
-      <Label fx:id="availableBalanceLabel" style="-fx-text-fill: #94a3b8; -fx-font-size: 14px;" text="Khả dụng: ---" />
-      <Label style="-fx-text-fill: #cbd5e1; -fx-font-size: 16px;" text="Nhập số tiền cần nạp" />
-      <TextField fx:id="depositAmountField" prefWidth="220.0" promptText="Nhập số tiền..." style="-fx-background-color: #11182d; -fx-text-fill: white; -fx-border-color: #2d3748; -fx-border-radius: 8; -fx-background-radius: 8;" />
-      <Button onAction="#handleDeposit" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #4f46e5; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;" text="Nạp tiền" />
-    </VBox>
-  </center>
+<BorderPane prefHeight="720.0" prefWidth="1280.0" styleClass="screen-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.DepositController">
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="68.0" spacing="14.0" styleClass="top-bar">
+            <padding>
+                <Insets left="28.0" right="28.0" />
+            </padding>
+            <Button onAction="#handleBack" styleClass="ghost-button" text="Trở về trang chủ" />
+            <Label styleClass="screen-title" text="Ví của tôi" />
+        </HBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="18.0" styleClass="content-shell">
+            <VBox maxWidth="480.0" spacing="16.0" styleClass="wallet-card">
+                <padding>
+                    <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+                </padding>
+                <Label styleClass="section-title" text="Nạp tiền vào ví" />
+                <VBox spacing="8.0" styleClass="panel-soft">
+                    <padding>
+                        <Insets bottom="16.0" left="18.0" right="18.0" top="16.0" />
+                    </padding>
+                    <Label fx:id="totalBalanceLabel" styleClass="price-label" text="Tổng số dư: ---" />
+                    <Label fx:id="availableBalanceLabel" styleClass="muted-label" text="Khả dụng: ---" />
+                </VBox>
+                <VBox spacing="8.0">
+                    <Label styleClass="field-label" text="Số tiền cần nạp" />
+                    <TextField fx:id="depositAmountField" prefWidth="260.0" promptText="Nhập số tiền..." />
+                </VBox>
+                <Button maxWidth="Infinity" onAction="#handleDeposit" prefHeight="44.0" text="NẠP TIỀN" />
+            </VBox>
+        </VBox>
+    </center>
 </BorderPane>

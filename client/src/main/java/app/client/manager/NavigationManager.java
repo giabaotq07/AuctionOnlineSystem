@@ -58,11 +58,20 @@ public class NavigationManager {
         controllerCallback.accept(newController);
       }
       currentController = newController;
-      Scene scene = new Scene(root);
+      Scene currentScene = primaryStage.getScene();
+      double width =
+          currentScene != null && currentScene.getWidth() > 0 ? currentScene.getWidth() : 1280;
+      double height =
+          currentScene != null && currentScene.getHeight() > 0 ? currentScene.getHeight() : 720;
+      boolean maximized = primaryStage.isMaximized();
+      boolean fullScreen = primaryStage.isFullScreen();
+      Scene scene = new Scene(root, width, height);
       String css =
           Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
       scene.getStylesheets().add(css);
       primaryStage.setScene(scene);
+      primaryStage.setMaximized(maximized);
+      primaryStage.setFullScreen(fullScreen);
       primaryStage.show();
     } catch (IOException e) {
       logger.warn("Lỗi nghiêm trọng: Không thể load màn hình " + view.name());
