@@ -19,6 +19,9 @@ public interface AutoBidDAO {
   /** findByAuction. */
   List<AutoBid> findByAuction(int auctionId);
 
+  /** findByAuction. */
+  List<AutoBid> findByAuction(Connection conn, int auctionId);
+
   /** findEnabledByAuction. */
   List<AutoBid> findEnabledByAuction(int auctionId);
 
@@ -39,6 +42,9 @@ public interface AutoBidDAO {
 
   /** delete. */
   boolean delete(int id);
+
+  /** delete. */
+  boolean delete(Connection conn, int id);
 
   /** setEnabled. */
   boolean setEnabled(int id, boolean enabled);

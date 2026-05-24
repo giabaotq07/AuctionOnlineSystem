@@ -53,7 +53,7 @@ jobs:
           mysql -h 127.0.0.1 -u root \
           -e "CREATE DATABASE IF NOT EXISTS auction_db_test;"
       - name: Build & Test
-        run: mvn --batch-mode clean verify
+        run: xvfb-run -a mvn --batch-mode clean verify
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:

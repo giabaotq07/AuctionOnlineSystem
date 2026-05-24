@@ -8,7 +8,7 @@ import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
-import app.common.dto.AuctionSummary;
+import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
 import app.common.models.User;
@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -49,16 +51,19 @@ public class FirstScene implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(FirstScene.class);
   private static final double CARD_WIDTH = 280;
   private static final double SPACING = 30;
+  private static final DateTimeFormatter CARD_TIME_FORMAT =
+      DateTimeFormatter.ofPattern("dd/MM HH:mm");
   @FXML private TextField searchField;
-  @FXML private ListView<AuctionSummary> auctionListView;
+  @FXML private ListView<AuctionPreview> auctionListView;
   @FXML private Button btnAuth;
   @FXML private StackPane activeAuctionsPane;
   @FXML private StackPane completedAuctionsPane;
   @FXML private StackPane upcomingAuctionsPane;
+  @FXML private ScrollPane contentScrollPane;
   @FXML private Label balanceLabel;
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
-  private final List<AuctionSummary> summaries = new ArrayList<>();
+  private final List<AuctionPreview> auctions = new ArrayList<>();
   private final HBox upcomingBox = new HBox();
   private final HBox activeBox = new HBox();
   private final HBox completedBox = new HBox();
@@ -98,12 +103,12 @@ public class FirstScene implements Cleanable {
         lv ->
             new ListCell<>() {
               @Override
-              protected void updateItem(AuctionSummary item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
+              protected void updateItem(AuctionPreview auction, boolean empty) {
+                super.updateItem(auction, empty);
+                if (empty || auction == null) {
                   setText(null);
                 } else {
-                  setText(item.itemName());
+                  setText(itemName(auction));
                 }
               }
             });
@@ -154,8 +159,8 @@ public class FirstScene implements Cleanable {
   }
 
   private void loadInitialData() {
-    summaries.clear();
-    summaries.addAll(AuctionStore.getInstance().getAuctionSummaries());
+    auctions.clear();
+    auctions.addAll(AuctionStore.getInstance().getAuctionPreviews());
     rebuildUi();
   }
 
@@ -164,19 +169,19 @@ public class FirstScene implements Cleanable {
     upcomingBox.getChildren().clear();
     activeBox.getChildren().clear();
     completedBox.getChildren().clear();
-    for (AuctionSummary summary : summaries) {
-      addAuctionCard(summary);
+    for (AuctionPreview auction : auctions) {
+      addAuctionCard(auction);
     }
     updateListView();
   }
 
-  private void addAuctionCard(AuctionSummary summary) {
-    VBox card = createAuctionCard(summary);
-    if (summary.status() == AuctionStatus.OPEN) {
+  private void addAuctionCard(AuctionPreview auction) {
+    VBox card = createAuctionCard(auction);
+    if (auction.status() == AuctionStatus.OPEN) {
       upcomingBox.getChildren().add(card);
       return;
     }
-    if (summary.status() == AuctionStatus.RUNNING) {
+    if (auction.status() == AuctionStatus.RUNNING) {
       activeBox.getChildren().add(card);
       return;
     }
@@ -192,10 +197,10 @@ public class FirstScene implements Cleanable {
     if (searchField != null && searchField.getText() != null) {
       keyword = searchField.getText().toLowerCase().trim();
     }
-    for (AuctionSummary summary : summaries) {
-      String itemName = summary.itemName() == null ? "" : summary.itemName().toLowerCase();
-      if (keyword.isBlank() || itemName.contains(keyword)) {
-        auctionListView.getItems().add(summary);
+    for (AuctionPreview auction : auctions) {
+      String name = itemName(auction).toLowerCase();
+      if (keyword.isBlank() || name.contains(keyword)) {
+        auctionListView.getItems().add(auction);
       }
     }
   }
@@ -210,11 +215,13 @@ public class FirstScene implements Cleanable {
     viewport.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
     viewport.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
     viewport.setFitToHeight(true);
+    viewport.setPannable(true);
     viewport.setStyle("-fx-background-color: transparent;" + "-fx-background-insets: 0;");
-    double viewportWidth = 3 * CARD_WIDTH + 2 * SPACING;
-    viewport.setPrefWidth(viewportWidth);
-    viewport.setMaxWidth(viewportWidth);
+    viewport.setFitToWidth(true);
+    viewport.setMaxWidth(Double.MAX_VALUE);
     viewport.setPrefHeight(350);
+    viewport.addEventFilter(
+        ScrollEvent.SCROLL, event -> scrollAuctionRow(viewport, container, event));
     Timeline scrollTimeline =
         new Timeline(
             new KeyFrame(
@@ -235,36 +242,95 @@ public class FirstScene implements Cleanable {
                   viewport.setHvalue(nextPixel / maxScroll);
                 }));
     scrollTimeline.setCycleCount(Timeline.INDEFINITE);
-    scrollTimeline.play();
+    container
+        .widthProperty()
+        .addListener(
+            (obs, oldValue, newValue) ->
+                updateHorizontalScroll(viewport, container, scrollTimeline));
+    viewport
+        .viewportBoundsProperty()
+        .addListener(
+            (obs, oldValue, newValue) ->
+                updateHorizontalScroll(viewport, container, scrollTimeline));
     viewport.setOnMouseEntered(e -> scrollTimeline.pause());
-    viewport.setOnMouseExited(e -> scrollTimeline.play());
+    viewport.setOnMouseExited(e -> updateHorizontalScroll(viewport, container, scrollTimeline));
     timelines.add(scrollTimeline);
+    Platform.runLater(() -> updateHorizontalScroll(viewport, container, scrollTimeline));
     return viewport;
   }
 
-  private VBox createAuctionCard(AuctionSummary summary) {
+  private void updateHorizontalScroll(
+      ScrollPane viewport, HBox container, Timeline scrollTimeline) {
+    boolean overflow = hasHorizontalOverflow(viewport, container);
+    viewport.setPannable(overflow);
+    if (!overflow) {
+      scrollTimeline.pause();
+      viewport.setHvalue(0);
+      return;
+    }
+    if (!viewport.isHover()) {
+      scrollTimeline.play();
+    }
+  }
+
+  private boolean hasHorizontalOverflow(ScrollPane viewport, HBox container) {
+    double contentWidth = container.getBoundsInLocal().getWidth();
+    double viewWidth = viewport.getViewportBounds().getWidth();
+    return contentWidth - viewWidth > 1;
+  }
+
+  private void scrollAuctionRow(ScrollPane viewport, HBox container, ScrollEvent event) {
+    double contentWidth = container.getBoundsInLocal().getWidth();
+    double viewWidth = viewport.getViewportBounds().getWidth();
+    double maxScroll = contentWidth - viewWidth;
+    boolean horizontalScroll = Math.abs(event.getDeltaX()) > Math.abs(event.getDeltaY());
+    if (maxScroll <= 0 || !horizontalScroll) {
+      scrollPageVertically(event);
+      return;
+    }
+    double delta = -event.getDeltaX();
+    double nextPixel = viewport.getHvalue() * maxScroll + delta;
+    viewport.setHvalue(clamp(nextPixel / maxScroll));
+    event.consume();
+  }
+
+  private void scrollPageVertically(ScrollEvent event) {
+    if (contentScrollPane == null || contentScrollPane.getContent() == null) {
+      return;
+    }
+    double contentHeight = contentScrollPane.getContent().getBoundsInLocal().getHeight();
+    double viewHeight = contentScrollPane.getViewportBounds().getHeight();
+    double maxScroll = contentHeight - viewHeight;
+    if (maxScroll <= 0) {
+      return;
+    }
+    double nextPixel = contentScrollPane.getVvalue() * maxScroll - event.getDeltaY();
+    contentScrollPane.setVvalue(clamp(nextPixel / maxScroll));
+    event.consume();
+  }
+
+  private double clamp(double value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
+  private VBox createAuctionCard(AuctionPreview auction) {
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
     vbox.setMaxWidth(CARD_WIDTH);
-    vbox.setStyle(
-        "-fx-background-color: #1a1f35;"
-            + "-fx-background-radius: 8;"
-            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-            + "-fx-padding: 15;"
-            + "-fx-spacing: 10;");
+    vbox.getStyleClass().add("auction-card");
     StackPane imagePane = new StackPane();
     imagePane.setPrefHeight(150);
-    imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
+    imagePane.getStyleClass().add("auction-image");
     Label imgLabel = new Label("Ảnh tài sản");
-    imgLabel.setStyle("-fx-text-fill: #aaa;");
+    imgLabel.getStyleClass().add("image-placeholder");
     ImageView imageView = new ImageView();
     imageView.setFitWidth(CARD_WIDTH - 30);
     imageView.setFitHeight(140);
     imageView.setPreserveRatio(true);
     imageView.setSmooth(true);
-    int itemId = summary.itemId();
-    String imageUrl = summary.imageUrl();
+    int itemId = auction.itemId();
+    String imageUrl = auction.imageUrl();
     Optional<String> cachedBase64 = ItemStore.getInstance().getItemImageBase64(itemId);
     if (cachedBase64.isPresent()) {
       try {
@@ -279,7 +345,7 @@ public class FirstScene implements Cleanable {
     } else if (imageUrl != null && !imageUrl.isBlank() && itemId > 0) {
       if (imageFetchInFlight.add(itemId)) {
         try {
-          requests.fetchItemImage(itemId, imageUrl);
+          requests.fetchItemImage(itemId);
         } catch (Exception e) {
           logger.warn("Failed to fetch image for item {}", itemId, e);
           imageFetchInFlight.remove(itemId);
@@ -287,37 +353,83 @@ public class FirstScene implements Cleanable {
       }
     }
     imagePane.getChildren().addAll(imgLabel, imageView);
-    Label titleLabel = new Label(summary.itemName());
+    Label titleLabel = new Label(itemName(auction));
     titleLabel.setWrapText(true);
-    titleLabel.setStyle(
-        "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
-    Label priceLabel = new Label("Giá hiện tại: " + summary.currentPrice() + " đ");
-    priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
-    Label timeLabel = new Label(timeText(summary));
-    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
-    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
-      attachStartCountdown(summary.startTime(), timeLabel);
+    titleLabel.getStyleClass().add("auction-card-title");
+    Label priceLabel = new Label(priceText(auction));
+    priceLabel.getStyleClass().add("price-label");
+    Label timeLabel = new Label(timeText(auction));
+    timeLabel.getStyleClass().add("time-label");
+    if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
+      attachCountdown(auction.startTime(), timeLabel, "Bắt đầu sau: ", "Đang chờ bắt đầu...");
+    } else if (auction.status() == AuctionStatus.RUNNING && auction.endTime() != null) {
+      attachCountdown(auction.endTime(), timeLabel, "Kết thúc sau: ", "Đang chờ kết thúc...");
     }
-    Button btnDetail =
-        new Button(
-            summary.status() == AuctionStatus.FINISHED || summary.status() == AuctionStatus.PAID
-                ? "Xem kết quả"
-                : "Chi tiết");
+    Button btnDetail = new Button(detailButtonText(auction.status()));
     btnDetail.setMaxWidth(Double.MAX_VALUE);
-    btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
-    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(summary));
+    btnDetail.getStyleClass().add("compact-primary-button");
+    btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(auction));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
   }
 
-  private String timeText(AuctionSummary summary) {
-    if (summary.status() == AuctionStatus.OPEN && summary.startTime() != null) {
-      return "Bắt đầu sau: " + countdownText(summary.startTime());
+  private String priceText(AuctionPreview auction) {
+    long currentPrice = Math.max(auction.highestBid(), auction.startingPrice());
+    if (auction.status() == AuctionStatus.OPEN) {
+      return "Giá khởi điểm: " + formatDollar(auction.startingPrice());
     }
-    return "Kết thúc: " + (summary.endTime() == null ? "--" : summary.endTime());
+    if (auction.status() == AuctionStatus.RUNNING) {
+      return "Giá hiện tại: " + formatDollar(currentPrice);
+    }
+    if (auction.status() == AuctionStatus.FINISHED || auction.status() == AuctionStatus.PAID) {
+      return auction.highestBid() > 0
+          ? "Giá chốt: " + formatDollar(auction.highestBid())
+          : "Không có giá thắng";
+    }
+    if (auction.status() == AuctionStatus.CANCELED) {
+      return "Phiên đã hủy";
+    }
+    return "Giá: " + formatDollar(currentPrice);
   }
 
-  private void attachStartCountdown(LocalDateTime startTime, Label label) {
+  private String detailButtonText(AuctionStatus status) {
+    if (status == AuctionStatus.OPEN) {
+      return "Xem trước";
+    }
+    if (status == AuctionStatus.RUNNING) {
+      return "Vào đấu giá";
+    }
+    if (status == AuctionStatus.FINISHED || status == AuctionStatus.PAID) {
+      return "Xem kết quả";
+    }
+    return "Xem chi tiết";
+  }
+
+  private String timeText(AuctionPreview auction) {
+    if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
+      return "Bắt đầu sau: " + countdownText(auction.startTime());
+    }
+    if (auction.status() == AuctionStatus.RUNNING) {
+      return auction.endTime() == null
+          ? "Đang diễn ra"
+          : "Kết thúc sau: " + countdownText(auction.endTime());
+    }
+    if (auction.status() == AuctionStatus.FINISHED) {
+      return auction.endTime() == null
+          ? "Đã kết thúc"
+          : "Kết thúc lúc: " + CARD_TIME_FORMAT.format(auction.endTime());
+    }
+    if (auction.status() == AuctionStatus.PAID) {
+      return "Đã thanh toán";
+    }
+    if (auction.status() == AuctionStatus.CANCELED) {
+      return "Đã hủy";
+    }
+    return "Chưa có lịch";
+  }
+
+  private void attachCountdown(
+      LocalDateTime targetTime, Label label, String prefix, String finishedText) {
     Timeline timeline = new Timeline();
     timeline
         .getKeyFrames()
@@ -325,12 +437,12 @@ public class FirstScene implements Cleanable {
             new KeyFrame(
                 Duration.seconds(1),
                 event -> {
-                  if (!LocalDateTime.now().isBefore(startTime)) {
-                    label.setText("Đang chờ bắt đầu...");
+                  if (!LocalDateTime.now().isBefore(targetTime)) {
+                    label.setText(finishedText);
                     timeline.stop();
                     return;
                   }
-                  label.setText("Bắt đầu sau: " + countdownText(startTime));
+                  label.setText(prefix + countdownText(targetTime));
                 }));
     timeline.setCycleCount(Timeline.INDEFINITE);
     timeline.play();
@@ -349,6 +461,16 @@ public class FirstScene implements Cleanable {
     return String.format("%02d:%02d:%02d", hours, minutes, seconds);
   }
 
+  private String formatDollar(long amount) {
+    return "$" + currencyFormat.format(Math.max(0, amount));
+  }
+
+  private String itemName(AuctionPreview auction) {
+    return auction == null || auction.itemName() == null
+        ? "(Không có tên tài sản)"
+        : auction.itemName();
+  }
+
   private void setupWalletSection() {
     updateBalanceLabel();
   }
@@ -362,12 +484,12 @@ public class FirstScene implements Cleanable {
       return;
     }
     if (user == null) {
-      balanceLabel.setText("Số dư: 0 đ");
+      balanceLabel.setText("Số dư: $0");
       return;
     }
     Wallet wallet = user.getWallet();
     BigDecimal total = wallet.getTotalBalance();
-    balanceLabel.setText("Số dư: " + formatCurrency(total) + " đ");
+    balanceLabel.setText("Số dư: $" + formatCurrency(total));
   }
 
   private String formatCurrency(BigDecimal amount) {
@@ -420,7 +542,12 @@ public class FirstScene implements Cleanable {
   /** Member. */
   @FXML
   public void switchToMine(ActionEvent e) {
-    NavigationManager.getInstance().navigateTo(View.HISTORY);
+    User user = UserManager.getInstance().getCurrentUser();
+    if (user != null && user.getRole() == app.common.enums.UserRole.SELLER) {
+      NavigationManager.getInstance().navigateTo(View.SELLER_DASHBOARD);
+    } else {
+      NavigationManager.getInstance().navigateTo(View.HISTORY);
+    }
   }
 
   /** Member. */

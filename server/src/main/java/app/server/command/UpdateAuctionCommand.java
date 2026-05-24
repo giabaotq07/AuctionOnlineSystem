@@ -2,66 +2,94 @@ package app.server.command;
 
 import app.common.dto.AuctionDetailResponse;
 import app.common.dto.UpdateAuctionRequest;
+import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
-import app.common.exception.ServiceException;
+import app.common.exception.ValidationException;
+import app.common.models.Auction;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
+import app.server.service.AuctionQueryService;
+import app.server.service.AuctionScheduler;
 import app.server.service.AuctionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** UpdateAuctionCommand. */
-public class UpdateAuctionCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(UpdateAuctionCommand.class);
+public class UpdateAuctionCommand extends SafeCommand {
   private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** UpdateAuctionCommand. */
-  public UpdateAuctionCommand(AuctionService auctionService) {
+  public UpdateAuctionCommand(
+      AuctionService auctionService, AuctionQueryService auctionQueryService) {
     this.auctionService = auctionService;
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    int auctionId = 0;
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    UpdateAuctionRequest request =
+        requirePayload(packet, UpdateAuctionRequest.class, "Dữ liệu phiên đấu giá không hợp lệ.");
+    if (request.auctionId() <= 0 || request.expectedVersion() < 0) {
+      throw new ValidationException("Dữ liệu phiên đấu giá không hợp lệ.");
+    }
+    Auction auction =
+        auctionService.updateAuction(
+            request.auctionId(),
+            request.name(),
+            request.description(),
+            request.startingPrice(),
+            request.stepPrice(),
+            request.type(),
+            request.durationMinutes(),
+            request.startTime(),
+            request.expectedVersion(),
+            requireUser(clientHandler));
+    AuctionDetailResponse response = buildResponse(auction);
+    sendSuccess(clientHandler, "Cập nhật phiên thành công.", response);
+    notifyAfterUpdate(auction, response);
+  }
+
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.UPDATE_AUCTION_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Không thể cập nhật phiên đấu giá.";
+  }
+
+  private AuctionDetailResponse buildResponse(Auction auction) {
     try {
-      UpdateAuctionRequest request = packet.getData(UpdateAuctionRequest.class);
-      if (request == null || request.auctionId() <= 0 || request.expectedVersion() < 0) {
-        sendError(clientHandler, "Dữ liệu phiên đấu giá không hợp lệ.");
-        return;
-      }
-      auctionId = request.auctionId();
-      var user = clientHandler.getUser();
-      var detail =
-          auctionService.updateAuctionWithItem(
-              request.auctionId(),
-              request.name(),
-              request.description(),
-              request.startingPrice(),
-              request.stepPrice(),
-              request.type(),
-              request.durationMinutes(),
-              request.startTime(),
-              user.getId(),
-              user.getRole(),
-              request.expectedVersion());
-      AuctionDetailResponse response = new AuctionDetailResponse(detail);
-      clientHandler.sendPacket(
-          PacketRes.of(ResponseType.UPDATE_AUCTION_RESULT, "Cập nhật phiên thành công.", response));
-      Server.broadcastToAuctionViewers(
-          auctionId, PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
-      Server.broadcastAuctionList(auctionService);
-    } catch (ServiceException e) {
-      logger.warn("Update auction failed: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
+      return new AuctionDetailResponse(
+          app.common.mapper.ModelMapper.toAuctionDto(
+              auctionQueryService.getAuctionDetail(auction.getId())));
     } catch (Exception e) {
-      logger.error("Unexpected update auction error", e);
-      sendError(clientHandler, "Không thể cập nhật phiên đấu giá.");
+      logger.warn("Updated auction {}, but failed to load detail response", auction.getId(), e);
+      return new AuctionDetailResponse(app.common.mapper.ModelMapper.toAuctionDto(auction));
     }
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.UPDATE_AUCTION_RESULT, message));
+  private void notifyAfterUpdate(Auction auction, AuctionDetailResponse response) {
+    try {
+      scheduleStartIfNeeded(auction);
+    } catch (Exception e) {
+      logger.warn("Auction {} was updated, but scheduling failed", auction.getId(), e);
+    }
+    try {
+      Server.broadcastToAuctionViewers(
+          auction.getId(), PacketRes.of(ResponseType.AUCTION_DETAIL_UPDATED, "OK", response), -1);
+      Server.broadcastAuctionList(auctionQueryService);
+    } catch (Exception e) {
+      logger.warn(
+          "Auction {} was updated, but post-update notification failed", auction.getId(), e);
+    }
+  }
+
+  private void scheduleStartIfNeeded(Auction auction) {
+    if (auction.getStatus() == AuctionStatus.OPEN && auction.getStartTime() != null) {
+      AuctionScheduler.getInstance().scheduleStart(auction.getId(), auction.getStartTime());
+    }
   }
 }

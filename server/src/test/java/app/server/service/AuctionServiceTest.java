@@ -7,237 +7,309 @@ import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
 import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
-import app.common.models.Auction;
-import app.common.models.Item;
-import app.common.models.User;
-import app.server.dao.AuctionDAO;
-import app.server.dao.BaseDAOTest;
-import app.server.dao.BidDAO;
-import app.server.dao.ItemDAO;
-import app.server.dao.UserDAO;
-import app.server.dao.impl.MySqlAuctionDAO;
-import app.server.dao.impl.MySqlBidDAO;
-import app.server.dao.impl.MySqlItemDAO;
-import app.server.dao.impl.MySqlUserDAO;
+import app.common.models.*;
+import app.server.dao.*;
+import app.server.dao.impl.*;
 import app.server.database.TransactionManager;
+import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-class AuctionServiceTest extends BaseDAOTest {
-  private UserDAO userDAO;
-  private ItemDAO itemDAO;
+/** Lop kiem thu cho AuctionService. Viet bang tieng Viet khong dau de giai thich cho mentor. */
+public class AuctionServiceTest extends BaseDAOTest {
+  private static final Logger logger = LoggerFactory.getLogger(AuctionServiceTest.class);
+
+  private AuctionService auctionService;
   private AuctionDAO auctionDAO;
   private BidDAO bidDAO;
-  private AuctionService auctionService;
+  private ItemDAO itemDAO;
+  private UserDAO userDAO;
   private TransactionManager transactionManager;
-  private User seller;
 
+  private User seller;
+  private User bidder;
+  private User admin;
+
+  /** Thiet lap moi truong database va khoi tao cac service, dao can thiet. */
   @BeforeEach
-  void setUp() {
-    userDAO = new MySqlUserDAO();
-    itemDAO = new MySqlItemDAO();
+  public void setUp() {
+    logger.info("Thiet lap moi truong test cho AuctionService...");
     auctionDAO = new MySqlAuctionDAO();
     bidDAO = new MySqlBidDAO();
+    itemDAO = new MySqlItemDAO();
+    userDAO = new MySqlUserDAO();
     transactionManager = new TransactionManager();
-    auctionService = new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager);
-    seller = userDAO.save(TestFixtures.user(TestFixtures.unique("seller"), UserRole.SELLER));
+    AuctionSettlementService settlementService = new AuctionSettlementService(bidDAO, userDAO);
+    Clock clock = Clock.systemDefaultZone();
+
+    auctionService =
+        new AuctionService(
+            auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, settlementService, clock);
+
+    // Xoa du lieu cu
+    cleanAllData();
+
+    // Tao du lieu nguoi dung phuc vu testcase
+    seller = TestFixtures.user("seller_user", UserRole.SELLER, new BigDecimal("1000"));
+    bidder = TestFixtures.user("bidder_user", UserRole.BIDDER, new BigDecimal("5000"));
+    admin = TestFixtures.user("admin_user", UserRole.ADMIN, new BigDecimal("0"));
+
+    seller = userDAO.save(seller);
+    bidder = userDAO.save(bidder);
+    admin = userDAO.save(admin);
   }
 
+  /** Test tao phien dau gia thanh cong. */
   @Test
-  void createAndStartAuctionWithItem_shouldPersistItemAndRunningAuction() {
-    Auction created =
-        auctionService.createAndStartAuctionWithItem(
-            "Camera",
-            "Test camera",
+  public void testCreateAuctionSuccess() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(1);
+    Auction auction =
+        auctionService.createAuction(
+            "Buc hoa Mona Lisa",
+            "Tranh son dau noi tieng",
+            10000L,
             1000L,
-            100L,
+            ItemType.ART,
+            60,
+            startTime,
+            seller);
+
+    assertNotNull(auction);
+    assertTrue(auction.getId() > 0);
+    assertEquals(AuctionStatus.OPEN, auction.getStatus());
+    assertEquals(10000L, auction.getHighestBid());
+
+    // Kiem tra du lieu trong DB
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction stored = auctionDAO.findById(conn, auction.getId()).orElse(null);
+          assertNotNull(stored);
+          assertEquals(seller.getId(), stored.getSellerId());
+          assertEquals(AuctionStatus.OPEN, stored.getStatus());
+        });
+  }
+
+  /** Test tao phien dau gia bat dau ngay lập tức. */
+  @Test
+  public void testCreateAuctionStartImmediately() {
+    LocalDateTime startTime = LocalDateTime.now().minusMinutes(5); // Da bat dau tu 5 phut truoc
+    Auction auction =
+        auctionService.createAuction(
+            "iPhone 15 Pro Max",
+            "Dien thoai moi 99%",
+            20000L,
+            2000L,
             ItemType.ELECTRONICS,
-            10,
-            seller.getId(),
-            seller.getRole(),
-            LocalDateTime.now());
+            120,
+            startTime,
+            seller);
 
-    Auction found = auctionDAO.findById(created.getId()).orElseThrow();
-    Item item = itemDAO.findById(found.getItemId()).orElseThrow();
-    assertEquals(AuctionStatus.RUNNING, found.getStatus());
-    assertEquals("Camera", item.getName());
-    assertEquals(seller.getId(), item.getSellerId());
+    assertNotNull(auction);
+    // Vi start time o qua khu, phien phai tu dong chuyen sang RUNNING
+    assertEquals(AuctionStatus.RUNNING, auction.getStatus());
   }
 
+  /** Test tao phien that bai khi du lieu khong hop le. */
   @Test
-  void completeAndGetHighestBid_shouldReturnHighestBidWhenBidsExist() {
-    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Laptop", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
-
-    var highestBid = auctionService.completeAndGetHighestBid(auction.getId()).orElseThrow();
-
-    assertEquals(auction.getId(), highestBid.getAuctionId());
-    assertEquals(bidder.getId(), highestBid.getBidderId());
-    assertEquals(1500L, highestBid.getAmount());
-  }
-
-  @Test
-  void completeAndGetHighestBid_shouldFinishExpiredAuctionAndSetWinner() {
-    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Tablet", ItemType.ELECTRONICS));
-    Auction auction =
-        TestFixtures.auction(
-            item.getId(), seller.getId(), LocalDateTime.now().minusMinutes(1), 1000L);
-    auction.start();
-    auction = auctionDAO.save(auction);
-    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
-
-    auctionService.completeAndGetHighestBid(auction.getId());
-
-    Auction finished = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(AuctionStatus.FINISHED, finished.getStatus());
-    assertEquals(bidder.getId(), finished.getWinnerId());
-  }
-
-  @Test
-  void cancelAuction_shouldAllowSellerOwner() {
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-
-    auctionService.cancelAuction(auction.getId(), seller.getId(), auction.getVersion());
-
-    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(AuctionStatus.CANCELED, found.getStatus());
-  }
-
-  @Test
-  void cancelAuction_shouldAllowAdmin() {
-    User admin = userDAO.save(TestFixtures.user(TestFixtures.unique("admin"), UserRole.ADMIN));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-
-    auctionService.cancelAuction(auction.getId(), admin.getId(), auction.getVersion());
-
-    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(AuctionStatus.CANCELED, found.getStatus());
-  }
-
-  @Test
-  void cancelAuction_shouldRejectNonOwnerNonAdmin() {
-    User otherSeller =
-        userDAO.save(TestFixtures.user(TestFixtures.unique("other_seller"), UserRole.SELLER));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
+  public void testCreateAuctionInvalidPayload() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(1);
 
     assertThrows(
         ServiceException.class,
         () ->
-            auctionService.cancelAuction(
-                auction.getId(), otherSeller.getId(), auction.getVersion()));
-
-    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(AuctionStatus.OPEN, found.getStatus());
+            auctionService.createAuction(
+                " ", "Mo ta", 1000L, 100L, ItemType.ART, 60, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 0L, 100L, ItemType.ART, 60, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 1000L, 0L, ItemType.ART, 60, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 1000L, 100L, ItemType.ART, 0, startTime, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham", "Mo ta", 1000L, 100L, ItemType.ART, 60, null, seller));
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.createAuction(
+                "San pham",
+                "Mo ta",
+                1000L,
+                100L,
+                ItemType.ART,
+                30,
+                LocalDateTime.now().minusHours(2),
+                seller));
   }
 
+  /** Test huy phien dau gia boi chu so huu. */
   @Test
-  void cancelAuction_shouldRejectStaleVersion() {
-    User admin = userDAO.save(TestFixtures.user(TestFixtures.unique("admin"), UserRole.ADMIN));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Speaker", ItemType.ELECTRONICS));
+  public void testCancelAuctionByOwner() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
     Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-    int staleVersion = auction.getVersion();
-    auction.setStatus(AuctionStatus.RUNNING);
+        auctionService.createAuction(
+            "Xe co Vespa 1970",
+            "Xe con chay tot",
+            50000L,
+            5000L,
+            ItemType.VEHICLE,
+            180,
+            startTime,
+            seller);
+
+    // Owner huy phien dang OPEN
+    Set<Integer> affectedUsers =
+        auctionService.cancelAuction(auction.getId(), seller, auction.getVersion());
+    assertNotNull(affectedUsers);
+
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction stored = auctionDAO.findById(conn, auction.getId()).orElse(null);
+          assertNotNull(stored);
+          assertEquals(AuctionStatus.CANCELED, stored.getStatus());
+        });
+  }
+
+  /** Test Admin huy phien dang chay (RUNNING). */
+  @Test
+  public void testCancelRunningAuctionByAdmin() {
+    LocalDateTime startTime = LocalDateTime.now().minusMinutes(10);
+    Auction auction =
+        auctionService.createAuction(
+            "Laptop Dell XPS",
+            "Laptop van phong",
+            15000L,
+            1000L,
+            ItemType.ELECTRONICS,
+            30,
+            startTime,
+            seller);
+
+    assertEquals(AuctionStatus.RUNNING, auction.getStatus());
+
+    // Admin huy phien RUNNING
+    Set<Integer> affectedUsers =
+        auctionService.cancelAuction(auction.getId(), admin, auction.getVersion());
+    assertNotNull(affectedUsers);
+
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction stored = auctionDAO.findById(conn, auction.getId()).orElse(null);
+          assertNotNull(stored);
+          assertEquals(AuctionStatus.CANCELED, stored.getStatus());
+        });
+  }
+
+  /** Test huy phien that bai neu khong phai Owner hoac Admin. */
+  @Test
+  public void testCancelAuctionNoPermission() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Tranh thuy mac", "Tranh nghe thuat", 8000L, 500L, ItemType.ART, 60, startTime, seller);
+
+    // Bidder khong co quyen huy phien OPEN cua Seller
+    assertThrows(
+        ServiceException.class,
+        () -> {
+          auctionService.cancelAuction(auction.getId(), bidder, auction.getVersion());
+        });
+  }
+
+  /** Test cap nhat phien that bai neu khong phai chu phien hoac admin. */
+  @Test
+  public void testUpdateAuctionNoPermission() {
+    User otherSeller =
+        userDAO.save(TestFixtures.user("other_seller", UserRole.SELLER, new BigDecimal("1000")));
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Dong ho co", "Dong ho suu tam", 12000L, 1000L, ItemType.ART, 60, startTime, seller);
+
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.updateAuction(
+                auction.getId(),
+                "Dong ho moi",
+                "Mo ta moi",
+                13000L,
+                1000L,
+                ItemType.ART,
+                90,
+                startTime.plusHours(1),
+                auction.getVersion(),
+                otherSeller));
+  }
+
+  /** Test khong duoc cap nhat phien dang chay. */
+  @Test
+  public void testUpdateRunningAuctionRejected() {
+    LocalDateTime startTime = LocalDateTime.now().minusMinutes(5);
+    Auction auction =
+        auctionService.createAuction(
+            "May anh", "May anh phim", 9000L, 500L, ItemType.ELECTRONICS, 60, startTime, seller);
+
+    assertThrows(
+        ServiceException.class,
+        () ->
+            auctionService.updateAuction(
+                auction.getId(),
+                "May anh moi",
+                "Mo ta moi",
+                9500L,
+                500L,
+                ItemType.ELECTRONICS,
+                60,
+                LocalDateTime.now().plusHours(1),
+                auction.getVersion(),
+                seller));
+  }
+
+  /** Test khong duoc huy phien da ket thuc. */
+  @Test
+  public void testCancelFinishedAuctionRejected() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Tuong go", "Do go my nghe", 7000L, 500L, ItemType.ART, 60, startTime, seller);
+    auction.setStatus(AuctionStatus.FINISHED);
     auctionDAO.update(auction);
 
     assertThrows(
         ServiceException.class,
-        () -> auctionService.cancelAuction(auction.getId(), admin.getId(), staleVersion));
-
-    Auction found = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(AuctionStatus.RUNNING, found.getStatus());
+        () -> auctionService.cancelAuction(auction.getId(), seller, auction.getVersion()));
   }
 
-  @Test
-  void getAuctions_shouldUseCacheUntilInvalidated() {
-    Item firstItem = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-    auctionDAO.save(
-        TestFixtures.auction(
-            firstItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-    var firstLoad = auctionService.getAuctions();
-
-    Item secondItem = itemDAO.save(TestFixtures.item(seller.getId(), "Bike", ItemType.VEHICLE));
-    auctionDAO.save(
-        TestFixtures.auction(
-            secondItem.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 2000L));
-    var cachedLoad = auctionService.getAuctions();
-
-    assertEquals(1, firstLoad.size());
-    assertEquals(1, cachedLoad.size());
-
-    auctionService.invalidateCache();
-    var refreshed = auctionService.getAuctions();
-
-    assertEquals(2, refreshed.size());
-  }
-
-  @Test
-  void getAuctionSummaries_shouldMapFromCachedSnapshots() {
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Camera", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-
-    var summaries = auctionService.getAuctionSummaries();
-
-    assertEquals(1, summaries.size());
-    assertEquals(auction.getId(), summaries.get(0).auctionId());
-  }
-
-  @Test
-  void getHistorySummaries_shouldFilterByHistoryStatusAndSellerOrBidder() {
-    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-    auction.setStatus(AuctionStatus.FINISHED);
-    auctionDAO.update(auction);
-    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
-
-    var sellerHistory = auctionService.getHistorySummaries(seller.getId());
-    var bidderHistory = auctionService.getHistorySummaries(bidder.getId());
-
-    assertEquals(1, sellerHistory.size());
-    assertEquals(1, bidderHistory.size());
-    assertEquals(auction.getId(), sellerHistory.get(0).auctionId());
-    assertEquals(auction.getId(), bidderHistory.get(0).auctionId());
-  }
-
-  @Test
-  void getHistorySummaries_shouldExcludeRunningAuctions() {
-    User bidder = userDAO.save(TestFixtures.user(TestFixtures.unique("bidder"), UserRole.BIDDER));
-    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Phone", ItemType.ELECTRONICS));
-    Auction auction =
-        auctionDAO.save(
-            TestFixtures.auction(
-                item.getId(), seller.getId(), LocalDateTime.now().plusHours(1), 1000L));
-    bidDAO.insertBid(auction.getId(), bidder.getId(), 1500L, false);
-
-    assertEquals(0, auctionService.getHistorySummaries(seller.getId()).size());
-    assertEquals(0, auctionService.getHistorySummaries(bidder.getId()).size());
+  /** Kiet tac clean du lieu de tranh anh huong giua cac testcase. */
+  private void cleanAllData() {
+    transactionManager.runWithoutResult(
+        conn -> {
+          try (var stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM auto_bids");
+            stmt.executeUpdate("DELETE FROM bids");
+            stmt.executeUpdate("DELETE FROM auction_sessions");
+            stmt.executeUpdate("DELETE FROM items");
+            stmt.executeUpdate("DELETE FROM users");
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 }

@@ -21,8 +21,7 @@ public class AuctionPaidNoticeCommand extends Command {
         "WINNER".equalsIgnoreCase(response.role()) ? "Bạn đã thanh toán" : "Bạn đã nhận thanh toán";
     DecimalFormat formatter = new DecimalFormat("#,###");
     String amountText = response.amount() == null ? "0" : formatter.format(response.amount());
-    String content =
-        roleLabel + "\nPhiên: " + response.auctionName() + "\nSố tiền: " + amountText + " đ";
+    String content = roleLabel + "\nPhiên: " + response.auctionName() + "\nSố tiền: $" + amountText;
     Platform.runLater(() -> AlertUtils.showInfo("Thanh toán thành công", content));
   }
 }

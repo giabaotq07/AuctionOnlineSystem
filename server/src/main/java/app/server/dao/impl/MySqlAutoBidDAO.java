@@ -62,10 +62,13 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
   @Override
   public List<AutoBid> findByAuction(int auctionId) {
     return withConnection(
-        conn ->
-            findMany(
-                conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", auctionId),
-        "Lỗi kết nối khi tải danh sách auto bid.");
+        conn -> findByAuction(conn, auctionId), "Lỗi kết nối khi tải danh sách auto bid.");
+  }
+
+  @Override
+  public List<AutoBid> findByAuction(Connection conn, int auctionId) {
+    return findMany(
+        conn, BASE_SELECT + " WHERE session_id = ? ORDER BY max_amount DESC", auctionId);
   }
 
   @Override
@@ -150,9 +153,12 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
 
   @Override
   public boolean delete(int id) {
-    return withConnection(
-        conn -> executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id),
-        "Lỗi kết nối khi xóa auto bid.");
+    return withConnection(conn -> delete(conn, id), "Lỗi kết nối khi xóa auto bid.");
+  }
+
+  @Override
+  public boolean delete(Connection conn, int id) {
+    return executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id);
   }
 
   @Override

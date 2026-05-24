@@ -2,12 +2,12 @@ package app.common.dto;
 
 /** AuctionDetailResponse. */
 public record AuctionDetailResponse(
-    AuctionDetail detail, int auctionId, int version, boolean notModified) implements Response {
-  public AuctionDetailResponse(AuctionDetail detail) {
+    AuctionDto auction, int auctionId, int version, boolean notModified) implements Response {
+  public AuctionDetailResponse(AuctionDto auction) {
     this(
-        detail,
-        detail == null ? 0 : detail.auctionId(),
-        detail == null ? -1 : detail.version(),
+        auction,
+        auction == null ? 0 : auction.id(),
+        auction == null ? -1 : auction.version(),
         false);
   }
 

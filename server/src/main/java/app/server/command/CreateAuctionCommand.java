@@ -1,68 +1,90 @@
 package app.server.command;
 
 import app.common.dto.*;
+import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
-import app.common.exception.ServiceException;
 import app.common.models.*;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
+import app.server.service.AuctionQueryService;
+import app.server.service.AuctionScheduler;
 import app.server.service.AuctionService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** CreateAuctionCommand. */
-public class CreateAuctionCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(CreateAuctionCommand.class);
+public class CreateAuctionCommand extends SafeCommand {
   private final AuctionService auctionService;
+  private final AuctionQueryService auctionQueryService;
 
   /** CreateAuctionCommand. */
-  public CreateAuctionCommand(AuctionService auctionService) {
+  public CreateAuctionCommand(
+      AuctionService auctionService, AuctionQueryService auctionQueryService) {
     this.auctionService = auctionService;
+    this.auctionQueryService = auctionQueryService;
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    try {
-      CreateAuctionRequest request = packet.getData(CreateAuctionRequest.class);
-      if (request == null) {
-        sendError(clientHandler, "Invalid request");
-        return;
-      }
-      User user = clientHandler.getUser();
-      Auction auction =
-          auctionService.createAndStartAuctionWithItem(
-              request.name(),
-              request.description(),
-              request.startingPrice(),
-              request.stepPrice(),
-              request.type(),
-              request.durationMinutes(),
-              user.getId(),
-              user.getRole(),
-              request.startTime());
-      CreateAuctionResponse response =
-          new CreateAuctionResponse(auctionService.getAuctionDetail(auction.getId()));
-      PacketRes packetRes =
-          PacketRes.of(ResponseType.CREATE_AUCTION_RESULT, "Tạo phiên thành công", response);
-      clientHandler.sendPacket(packetRes);
-      Server.broadcast(
-          PacketRes.of(ResponseType.AUCTION_CREATED, "Có phiên đấu giá mới.", response),
-          user.getId());
-      Server.broadcastAuctionList(auctionService);
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    CreateAuctionRequest request =
+        requirePayload(packet, CreateAuctionRequest.class, "Invalid request");
+    User user = requireUser(clientHandler);
+    Auction auction =
+        auctionService.createAuction(
+            request.name(),
+            request.description(),
+            request.startingPrice(),
+            request.stepPrice(),
+            request.type(),
+            request.durationMinutes(),
+            request.startTime(),
+            user);
+    CreateAuctionResponse response = buildResponse(auction);
+    sendSuccess(clientHandler, "Tạo phiên thành công", response);
+    notifyAfterCreate(auction, response, user.getId());
+    logger.info("Auction created successfully by user {}", user.getId());
+  }
 
-      logger.info("Auction created successfully by user {}", user.getId());
-    } catch (ServiceException e) {
-      logger.warn("Create auction failed: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.CREATE_AUCTION_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Tạo phiên thất bại";
+  }
+
+  private CreateAuctionResponse buildResponse(Auction auction) {
+    try {
+      return new CreateAuctionResponse(
+          app.common.mapper.ModelMapper.toAuctionDto(
+              auctionQueryService.getAuctionDetail(auction.getId())));
     } catch (Exception e) {
-      logger.error("Create auction failed", e);
-      sendError(clientHandler, "Tạo phiên thất bại");
+      logger.warn("Created auction {}, but failed to load detail response", auction.getId(), e);
+      return new CreateAuctionResponse(app.common.mapper.ModelMapper.toAuctionDto(auction));
     }
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.CREATE_AUCTION_RESULT, message));
+  private void notifyAfterCreate(Auction auction, CreateAuctionResponse response, int actorId) {
+    try {
+      scheduleStartIfNeeded(auction);
+    } catch (Exception e) {
+      logger.warn("Auction {} was created, but scheduling failed", auction.getId(), e);
+    }
+    try {
+      Server.broadcast(
+          PacketRes.of(ResponseType.AUCTION_CREATED, "Có phiên đấu giá mới.", response), actorId);
+      Server.broadcastAuctionList(auctionQueryService);
+    } catch (Exception e) {
+      logger.warn(
+          "Auction {} was created, but post-create notification failed", auction.getId(), e);
+    }
+  }
+
+  private void scheduleStartIfNeeded(Auction auction) {
+    if (auction.getStatus() == AuctionStatus.OPEN && auction.getStartTime() != null) {
+      AuctionScheduler.getInstance().scheduleStart(auction.getId(), auction.getStartTime());
+    }
   }
 }

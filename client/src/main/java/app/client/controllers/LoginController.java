@@ -84,7 +84,12 @@ public class LoginController implements Cleanable {
       AlertUtils.showError("Đăng nhập thất bại", message);
       return;
     }
-    switchToUi();
+    app.common.models.User currentUser = UserManager.getInstance().getCurrentUser();
+    if (currentUser.getRole() == app.common.enums.UserRole.ADMIN) {
+      NavigationManager.getInstance().navigateTo(View.ADMIN_DASHBOARD);
+    } else {
+      switchToUi();
+    }
   }
 
   private void setLoginLoading(boolean loading) {

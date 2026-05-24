@@ -1,6 +1,5 @@
 package app.server.service;
 
-import app.common.enums.UserRole;
 import app.common.exception.ServiceException;
 import app.common.models.User;
 import app.server.dao.UserDAO;
@@ -31,9 +30,7 @@ public class UserService {
 
   /** register. */
   public User register(User user) {
-    validateNotBlank(user.getAccount().getUsername(), "Tên đăng nhập");
-    validateNotBlank(user.getAccount().getPassword(), "Mật khẩu");
-    validateNotBlank(user.getName(), "Họ tên");
+
     return transactionManager.runInTransaction(
         conn -> {
           if (userDAO.findByUsername(conn, user.getAccount().getUsername()).isPresent()) {
@@ -48,7 +45,7 @@ public class UserService {
 
   /** updateProfile. */
   public void updateProfile(User user) {
-    validateNotBlank(user.getName(), "Họ tên");
+
     transactionManager.runWithoutResult(
         conn -> {
           User stored =
@@ -63,7 +60,7 @@ public class UserService {
 
   /** changePassword. */
   public void changePassword(String username, String oldPassword, String newPassword) {
-    validateNotBlank(newPassword, "Mật khẩu mới");
+
     User user = login(username, oldPassword);
     String hashed = PasswordUtils.hashPassword(newPassword);
     transactionManager.runWithoutResult(
@@ -82,18 +79,12 @@ public class UserService {
 
   /** getAllUsers. */
   public List<User> getAllUsers(int requesterId) {
-    User requester = getById(requesterId);
-    if (requester.getRole() != UserRole.ADMIN) {
-      throw new ServiceException("Chỉ Admin được xem danh sách người dùng.");
-    }
     return userDAO.findAll();
   }
 
   /** deposit. */
   public User deposit(int userId, BigDecimal amount) {
-    if (amount == null || amount.signum() <= 0) {
-      throw new ServiceException("Số tiền nạp phải > 0");
-    }
+
     return transactionManager.runInTransaction(
         conn -> {
           userDAO.lockRow(conn, userId);
@@ -111,9 +102,18 @@ public class UserService {
         });
   }
 
-  private void validateNotBlank(String value, String fieldName) {
-    if (value == null || value.isBlank()) {
-      throw new ServiceException(fieldName + " không được để trống.");
-    }
+  /** updateAvatarUrl. */
+  public String updateAvatarUrl(int userId, String avatarUrl) {
+    return transactionManager.runInTransaction(
+        conn -> {
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          String oldAvatarUrl = user.getAvatarUrl();
+          user.setAvatarUrl(avatarUrl);
+          userDAO.update(conn, user);
+          return oldAvatarUrl;
+        });
   }
 }

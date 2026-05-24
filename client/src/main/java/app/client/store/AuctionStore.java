@@ -1,11 +1,9 @@
 package app.client.store;
 
-import app.common.dto.AuctionDetail;
-import app.common.dto.AuctionSummary;
+import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
-import app.common.mapper.DtoMapper;
+import app.common.mapper.ModelMapper;
 import app.common.models.Auction;
-import app.common.models.Item;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -13,11 +11,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Stores full Auction models only. */
+/** Stores lightweight auction previews separately from full detail aggregates. */
 public final class AuctionStore {
   private static volatile AuctionStore instance;
 
-  private final Map<Integer, Auction> auctionMap = new ConcurrentHashMap<>();
+  private final Map<Integer, AuctionPreview> previewMap = new ConcurrentHashMap<>();
+  private final Map<Integer, Auction> detailMap = new ConcurrentHashMap<>();
   private final Object historyLock = new Object();
   private List<Integer> historyAuctionIds = new ArrayList<>();
 
@@ -35,193 +34,202 @@ public final class AuctionStore {
     return instance;
   }
 
-  /** addAuction. */
+  public void addPreview(AuctionPreview preview) {
+    if (preview == null || preview.auctionId() <= 0) {
+      return;
+    }
+    previewMap.merge(preview.auctionId(), preview, this::mergePreview);
+  }
+
+  public void addDetail(Auction auction) {
+    if (auction == null || auction.getId() <= 0) {
+      return;
+    }
+    if (auction.getItem() != null) {
+      ItemStore.getInstance().addItem(auction.getItem());
+    }
+    detailMap.merge(auction.getId(), auction, this::mergeDetail);
+    addPreview(ModelMapper.toAuctionPreview(auction));
+  }
+
   public void addAuction(Auction auction) {
-    if (auction == null) {
-      return;
-    }
-    auctionMap.merge(auction.getId(), auction, this::mergeAuction);
+    addDetail(auction);
   }
 
-  /** getAuction. */
+  public AuctionPreview getPreview(int auctionId) {
+    return previewMap.get(auctionId);
+  }
+
+  public List<AuctionPreview> getAuctionPreviews() {
+    return new ArrayList<>(previewMap.values());
+  }
+
+  public Auction getDetailIfLoaded(int auctionId) {
+    return detailMap.get(auctionId);
+  }
+
+  public boolean hasDetail(int auctionId) {
+    return detailMap.containsKey(auctionId);
+  }
+
+  public int getKnownDetailVersion(int auctionId) {
+    Auction detail = detailMap.get(auctionId);
+    return detail == null ? -1 : detail.getVersion();
+  }
+
   public Auction getAuction(int auctionId) {
-    return auctionMap.get(auctionId);
+    return getDetailIfLoaded(auctionId);
   }
 
-  /** getAuctions. */
-  public List<Auction> getAuctions() {
-    return new ArrayList<>(auctionMap.values());
-  }
-
-  /** getAuctionSummaries. */
-  public List<AuctionSummary> getAuctionSummaries() {
-    List<AuctionSummary> summaries = new ArrayList<>();
-    for (Auction auction : auctionMap.values()) {
-      Item item =
-          auction.getItemId() > 0 ? ItemStore.getInstance().getItem(auction.getItemId()) : null;
-      summaries.add(DtoMapper.toAuctionSummary(auction, item));
-    }
-    return summaries;
-  }
-
-  /** setHistorySummaries. */
-  public void setHistorySummaries(List<AuctionSummary> summaries) {
+  public void setHistoryAuctions(List<AuctionPreview> auctions) {
     Set<Integer> nextIds = new LinkedHashSet<>();
-    if (summaries == null) {
-      synchronized (historyLock) {
-        historyAuctionIds = new ArrayList<>(nextIds);
+    if (auctions != null) {
+      for (AuctionPreview preview : auctions) {
+        if (preview == null || preview.auctionId() <= 0) {
+          continue;
+        }
+        nextIds.add(preview.auctionId());
+        addPreview(preview);
       }
-      return;
-    }
-    for (AuctionSummary summary : summaries) {
-      if (summary == null) {
-        continue;
-      }
-      if (summary.auctionId() <= 0) {
-        continue;
-      }
-      nextIds.add(summary.auctionId());
-      addAuction(DtoMapper.toAuction(summary));
     }
     synchronized (historyLock) {
       historyAuctionIds = new ArrayList<>(nextIds);
     }
   }
 
-  /** getHistorySummaries. */
-  public List<AuctionSummary> getHistorySummaries() {
+  public List<AuctionPreview> getHistoryAuctionPreviews() {
     List<Integer> ids;
     synchronized (historyLock) {
       ids = new ArrayList<>(historyAuctionIds);
     }
-    List<AuctionSummary> summaries = new ArrayList<>();
+    List<AuctionPreview> auctions = new ArrayList<>();
     for (Integer id : ids) {
-      Auction auction = id == null ? null : auctionMap.get(id);
-      if (auction == null) {
-        continue;
+      AuctionPreview preview = id == null ? null : previewMap.get(id);
+      if (preview != null) {
+        auctions.add(preview);
       }
-      Item item =
-          auction.getItemId() > 0 ? ItemStore.getInstance().getItem(auction.getItemId()) : null;
-      summaries.add(DtoMapper.toAuctionSummary(auction, item));
     }
-    return summaries;
+    return auctions;
   }
 
-  /** appendHistorySummaries. */
-  public void appendHistorySummaries(List<AuctionSummary> summaries) {
-    if (summaries == null || summaries.isEmpty()) {
+  public void appendHistoryAuctions(List<AuctionPreview> auctions) {
+    if (auctions == null || auctions.isEmpty()) {
       return;
     }
     synchronized (historyLock) {
       Set<Integer> merged = new LinkedHashSet<>(historyAuctionIds);
-      for (AuctionSummary summary : summaries) {
-        if (summary == null || summary.auctionId() <= 0) {
+      for (AuctionPreview preview : auctions) {
+        if (preview == null || preview.auctionId() <= 0) {
           continue;
         }
-        merged.add(summary.auctionId());
-        addAuction(DtoMapper.toAuction(summary));
+        merged.add(preview.auctionId());
+        addPreview(preview);
       }
       historyAuctionIds = new ArrayList<>(merged);
     }
   }
 
-  /** getMaxHistoryVersion. */
   public int getMaxHistoryVersion() {
     int maxVersion = -1;
-    for (AuctionSummary summary : getHistorySummaries()) {
-      if (summary != null && summary.version() > maxVersion) {
-        maxVersion = summary.version();
+    for (AuctionPreview preview : getHistoryAuctionPreviews()) {
+      if (preview != null && preview.version() > maxVersion) {
+        maxVersion = preview.version();
       }
     }
     return maxVersion;
   }
 
-  /** clearHistory. */
   public void clearHistory() {
     synchronized (historyLock) {
       historyAuctionIds = new ArrayList<>();
     }
   }
 
-  /** getAuctionDetail. */
-  public AuctionDetail getAuctionDetail(int auctionId) {
-    Auction auction = getAuction(auctionId);
-    if (auction == null || auction.getItemId() <= 0) {
-      return null;
-    }
-    Item item = ItemStore.getInstance().getItem(auction.getItemId());
-    if (item == null) {
-      return null;
-    }
-    return DtoMapper.toAuctionDetail(auction, item);
-  }
-
-  /** updateBid. */
   public void updateBid(long auctionId, long highestBid, long bidderId) {
-    Auction auction =
-        auctionMap.computeIfAbsent(toIntId(auctionId), id -> partialAuction(id, highestBid));
-    auction.setHighestBid(highestBid);
-    if (bidderId > 0 && bidderId <= Integer.MAX_VALUE) {
-      auction.setWinnerId((int) bidderId);
+    int id = toIntId(auctionId);
+    previewMap.computeIfPresent(
+        id, (ignored, preview) -> withStatusAndHighestBid(preview, preview.status(), highestBid));
+    Auction detail = detailMap.get(id);
+    if (detail != null) {
+      detail.setHighestBid(highestBid);
+      if (bidderId > 0 && bidderId <= Integer.MAX_VALUE) {
+        detail.setWinnerId((int) bidderId);
+      }
     }
   }
 
-  /** markCanceled. */
   public void markCanceled(int auctionId) {
-    Auction auction = auctionMap.computeIfAbsent(auctionId, id -> partialAuction(id, 0));
-    auction.setStatus(AuctionStatus.CANCELED);
+    previewMap.computeIfPresent(
+        auctionId,
+        (ignored, preview) ->
+            withStatusAndHighestBid(preview, AuctionStatus.CANCELED, preview.highestBid()));
+    Auction detail = detailMap.get(auctionId);
+    if (detail != null) {
+      detail.setStatus(AuctionStatus.CANCELED);
+    }
   }
 
-  /** markFinished. */
   public void markFinished(long auctionId, long finalPrice) {
     markFinished(auctionId, finalPrice, null);
   }
 
-  /** markFinished. */
   public void markFinished(long auctionId, long finalPrice, Integer winnerId) {
-    Auction auction =
-        auctionMap.computeIfAbsent(toIntId(auctionId), id -> partialAuction(id, finalPrice));
-    auction.setStatus(AuctionStatus.FINISHED);
-    auction.setHighestBid(finalPrice);
-    if (winnerId != null && winnerId > 0) {
-      auction.setWinnerId(winnerId);
+    int id = toIntId(auctionId);
+    previewMap.computeIfPresent(
+        id,
+        (ignored, preview) -> withStatusAndHighestBid(preview, AuctionStatus.FINISHED, finalPrice));
+    Auction detail = detailMap.get(id);
+    if (detail != null) {
+      detail.setStatus(AuctionStatus.FINISHED);
+      detail.setHighestBid(finalPrice);
+      if (winnerId != null && winnerId > 0) {
+        detail.setWinnerId(winnerId);
+      }
     }
   }
 
-  private Auction mergeAuction(Auction existing, Auction incoming) {
+  private AuctionPreview mergePreview(AuctionPreview existing, AuctionPreview incoming) {
+    if (incoming.version() < existing.version()) {
+      return existing;
+    }
+    return incoming;
+  }
+
+  private Auction mergeDetail(Auction existing, Auction incoming) {
     if (incoming.getVersion() < existing.getVersion()) {
       return existing;
     }
-    boolean incomingHasDetail = incoming.getItemId() > 0 || incoming.getSellerId() > 0;
-    boolean incomingHasFullState =
-        incomingHasDetail || incoming.getCreatedAt() != null || incoming.getUpdatedAt() != null;
-    long highestBid =
-        incomingHasFullState
-            ? incoming.getHighestBid()
-            : Math.max(existing.getHighestBid(), incoming.getHighestBid());
-    Auction merged =
-        new Auction(
-            existing.getId(),
-            incoming.getItemId() > 0 ? incoming.getItemId() : existing.getItemId(),
-            incoming.getSellerId() > 0 ? incoming.getSellerId() : existing.getSellerId(),
-            incoming.getWinnerId() != null ? incoming.getWinnerId() : existing.getWinnerId(),
-            incoming.getStatus() != null ? incoming.getStatus() : existing.getStatus(),
-            incoming.getStartTime() != null ? incoming.getStartTime() : existing.getStartTime(),
-            incoming.getEndTime() != null ? incoming.getEndTime() : existing.getEndTime(),
-            highestBid,
-            incomingHasDetail ? incoming.getExtendedCount() : existing.getExtendedCount(),
-            incoming.getVersion(),
-            incoming.getCreatedAt() != null ? incoming.getCreatedAt() : existing.getCreatedAt(),
-            incoming.getUpdatedAt() != null ? incoming.getUpdatedAt() : existing.getUpdatedAt());
-    merged.setItemName(
-        incoming.getItemName() != null ? incoming.getItemName() : existing.getItemName());
-    merged.setImageUrl(
-        incoming.getImageUrl() != null ? incoming.getImageUrl() : existing.getImageUrl());
-    return merged;
+    if (incoming.getItem() == null) {
+      incoming.setItem(existing.getItem());
+    }
+    if (incoming.getSeller() == null) {
+      incoming.setSeller(existing.getSeller());
+    }
+    if (incoming.getWinner() == null) {
+      incoming.setWinner(existing.getWinner());
+    }
+    if (incoming.getBids().isEmpty()) {
+      incoming.setBids(existing.getBids());
+    }
+    return incoming;
   }
 
-  private Auction partialAuction(int auctionId, long highestBid) {
-    return new Auction(auctionId, 0, 0, null, null, null, null, highestBid, 0, 0, null, null);
+  private AuctionPreview withStatusAndHighestBid(
+      AuctionPreview preview, AuctionStatus status, long highestBid) {
+    return new AuctionPreview(
+        preview.auctionId(),
+        preview.itemId(),
+        preview.itemName(),
+        preview.imageUrl(),
+        preview.itemType(),
+        status,
+        preview.startTime(),
+        preview.endTime(),
+        highestBid,
+        preview.startingPrice(),
+        preview.stepPrice(),
+        preview.version(),
+        preview.seller());
   }
 
   private int toIntId(long id) {

@@ -5,12 +5,12 @@ import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
-import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketRes;
 import app.server.dao.*;
 import app.server.dao.impl.*;
 import app.server.database.TransactionManager;
 import app.server.service.*;
+import app.server.service.result.AuctionCompletion;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -39,7 +39,9 @@ public class Server {
   private final ScheduledExecutorService auctionMaintenancePool =
       Executors.newSingleThreadScheduledExecutor();
   private AuctionService auctionService;
+  private AuctionQueryService auctionQueryService;
   private BidService bidService;
+  private AutoBidService autoBidService;
   private UserService userService;
   private ItemService itemService;
   private ImageStorageService imageStorageService;
@@ -71,12 +73,18 @@ public class Server {
     ItemDAO itemDAO = new MySqlItemDAO();
     AuctionDAO auctionDAO = new MySqlAuctionDAO();
     BidDAO bidDAO = new MySqlBidDAO();
+    AutoBidDAO autoBidDAO = new MySqlAutoBidDAO();
     TransactionManager transactionManager = new TransactionManager();
     BidValidator bidValidator = new BidValidator();
     Clock clock = Clock.systemDefaultZone();
     AntiSnipeService antiSnipeService = new AntiSnipeService(clock);
+    AuctionSettlementService settlementService =
+        new AuctionSettlementService(bidDAO, userDAO, autoBidDAO);
     userService = new UserService(userDAO, transactionManager);
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
+    autoBidService =
+        new AutoBidService(
+            autoBidDAO, auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, bidValidator);
     bidService =
         new BidService(
             bidDAO,
@@ -85,11 +93,14 @@ public class Server {
             userDAO,
             transactionManager,
             bidValidator,
-            antiSnipeService);
+            antiSnipeService,
+            autoBidService);
     auctionService =
-        new AuctionService(auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, clock);
+        new AuctionService(
+            auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, settlementService, clock);
+    auctionQueryService = new AuctionQueryService(auctionDAO, bidDAO, itemDAO, userDAO);
     imageStorageService = new ImageStorageService();
-    AuctionScheduler.getInstance().init(auctionService);
+    AuctionScheduler.getInstance().init(auctionService, auctionQueryService);
     startAuctionMaintenance();
   }
 
@@ -102,7 +113,7 @@ public class Server {
               logger.info(
                   "[SERVER] Completed expired auctions: {}",
                   completions.stream().map(completion -> completion.auctionId()).toList());
-              broadcastAuctionList(auctionService);
+              broadcastAuctionList(auctionQueryService);
               sendPaymentNotices(completions);
               sendWalletUpdates(completions);
             }
@@ -115,12 +126,12 @@ public class Server {
         TimeUnit.SECONDS);
   }
 
-  public static void broadcastAuctionList(AuctionService auctionService) {
-    if (auctionService == null) {
+  public static void broadcastAuctionList(AuctionQueryService auctionQueryService) {
+    if (auctionQueryService == null) {
       return;
     }
     try {
-      var response = new AuctionSummariesResponse(auctionService.getAuctionSummaries());
+      var response = new AuctionSummariesResponse(auctionQueryService.getAuctionPreviews());
       broadcast(PacketRes.of(ResponseType.AUCTION_SUMMARIES_UPDATED, "OK", response), -1);
     } catch (Exception e) {
       logger.error("[SERVER] Failed to broadcast auction list", e);
@@ -134,8 +145,8 @@ public class Server {
           .ifPresent(
               bid -> {
                 try {
-                  var snapshot = auctionService.getAuction(completion.auctionId());
-                  if (snapshot.auction().getStatus() != AuctionStatus.PAID) {
+                  var auction = auctionQueryService.getAuction(completion.auctionId());
+                  if (auction.getStatus() != AuctionStatus.PAID) {
                     return;
                   }
                   var amount = completion.winningAmount();
@@ -143,9 +154,9 @@ public class Server {
                     return;
                   }
                   String auctionName =
-                      snapshot.item() == null
+                      auction.getItem() == null
                           ? "Phiên #" + completion.auctionId()
-                          : snapshot.item().getName();
+                          : auction.getItem().getName();
                   var sellerNotice =
                       new AuctionPaidNoticeResponse(
                           completion.auctionId(), auctionName, amount, "SELLER");
@@ -153,7 +164,7 @@ public class Server {
                       new AuctionPaidNoticeResponse(
                           completion.auctionId(), auctionName, amount, "WINNER");
                   sendToUser(
-                      snapshot.auction().getSellerId(),
+                      auction.getSellerId(),
                       PacketRes.of(ResponseType.AUCTION_PAID_NOTICE, "OK", sellerNotice));
                   sendToUser(
                       bid.getBidderId(),
@@ -186,7 +197,7 @@ public class Server {
           PacketRes.of(
               ResponseType.WALLET_UPDATED,
               "OK",
-              new WalletUpdateResponse(DtoMapper.toUserData(user))));
+              new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(user))));
     } catch (Exception e) {
       logger.warn("[SERVER] Failed to send wallet update to user {}", userId, e);
     }
@@ -211,7 +222,9 @@ public class Server {
               new ClientHandler(
                   socket,
                   auctionService,
+                  auctionQueryService,
                   bidService,
+                  autoBidService,
                   userService,
                   itemService,
                   imageStorageService);

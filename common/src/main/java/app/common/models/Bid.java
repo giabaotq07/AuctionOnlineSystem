@@ -8,6 +8,7 @@ public class Bid {
   private int auctionId;
   private int bidderId;
   private String bidderName;
+  private User bidder;
   private long amount;
   private LocalDateTime createAt;
   private boolean isAutoBid;
@@ -25,6 +26,15 @@ public class Bid {
     this.auctionId = auctionId;
     this.bidderId = bidderId;
     this.bidderName = bidderName;
+    this.bidder =
+        bidderId <= 0 || bidderName == null || bidderName.isBlank()
+            ? null
+            : new User(
+                    bidderId,
+                    bidderName,
+                    new Account(String.valueOf(bidderId), null, null),
+                    new Wallet())
+                .publicView();
     this.amount = amount;
     this.createAt = createAt;
     this.isAutoBid = isAutoBid;
@@ -35,6 +45,9 @@ public class Bid {
   }
 
   public String getBidderName() {
+    if (bidder != null) {
+      return bidder.getName();
+    }
     return bidderName;
   }
 
@@ -51,11 +64,23 @@ public class Bid {
   }
 
   public int getBidderId() {
-    return bidderId;
+    return bidder == null ? bidderId : bidder.getId();
   }
 
   public void setBidderId(int bidderId) {
     this.bidderId = bidderId;
+  }
+
+  public User getBidder() {
+    return bidder;
+  }
+
+  public void setBidder(User bidder) {
+    this.bidder = bidder == null ? null : bidder.publicView();
+    if (bidder != null) {
+      this.bidderId = bidder.getId();
+      this.bidderName = bidder.getName();
+    }
   }
 
   public long getAmount() {

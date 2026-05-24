@@ -8,7 +8,10 @@ public class RegisterCommand extends Command {
   @Override
   public void execute(PacketRes packet) {
     if (packet.isSuccess()) {
-      packet.getData(RegisterResponse.class);
+      RegisterResponse response = packet.getData(RegisterResponse.class);
+      if (response != null && response.user() != null) {
+        // user registered
+      }
     }
     notifyMessage(packet == null ? "" : packet.getMessage());
   }

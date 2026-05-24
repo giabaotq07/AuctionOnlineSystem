@@ -35,13 +35,15 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói mỗi request thành một object có thể thực thi qua cùng một contract.
 
 **Nơi áp dụng:**
-* `app.observer.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)`.
-* Các command cụ thể như `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `ChatCommand`, `FetchAuctionsCommand`.
-* `app.observer.ClientHandler` tạo bảng đăng ký command theo `PacketType`, sau đó dispatch request đến command tương ứng.
+* `app.server.command.Command` định nghĩa method `execute(ClientHandler clientHandler, PacketReq packet)` cho request phía server.
+* Các command server cụ thể như `LoginCommand`, `RegisterCommand`, `PlaceBidCommand`, `DepositCommand`, `CreateAuctionCommand`, `CancelAuctionCommand`, `SetAutoBidCommand`, `FetchAuctionSummariesCommand`.
+* `app.server.network.ClientHandler` tạo bảng đăng ký `EnumMap<RequestType, Command>`, sau đó dispatch request đến command tương ứng.
+* `app.client.command.Command` định nghĩa method `execute(PacketRes packet)` cho response phía client.
+* `app.client.Client` tạo bảng đăng ký `EnumMap<ResponseType, Command>`, sau đó dispatch response đến command tương ứng.
 
 **Lợi ích trong dự án:**
 * Server không bị dồn logic xử lý request vào một `switch` hoặc `if-else` lớn.
-* Thêm request mới chỉ cần thêm DTO, `PacketType`, command mới và đăng ký command.
+* Thêm request/response mới chỉ cần thêm DTO, `RequestType`/`ResponseType`, command mới và đăng ký command.
 
 ---
 
@@ -80,30 +82,30 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói dữ liệu để truyền qua mạng hoặc giữa các tầng mà không kéo theo behavior nghiệp vụ.
 
 **Nơi áp dụng:**
-* Package `app.data` chứa các record làm request/response DTO, ví dụ `LoginRequest`, `LoginResponse`, `CreateAuctionRequest`, `AuctionDetailResponse`, `PlaceBidRequest`, `PlaceBidResponse`, `ChatRequest`, `ChatResponse`.
+* Package `app.common.dto` chứa các record làm request/response DTO, ví dụ `LoginRequest`, `LoginResponse`, `CreateAuctionRequest`, `AuctionDetailResponse`, `PlaceBidRequest`, `PlaceBidResponse`, `ChatRequest`, `ChatResponse`.
+* `AuctionPreview`, `ItemPreview`, `UserPreview` là DTO projection nhẹ cho màn danh sách/lịch sử, không kéo theo bid history hoặc dữ liệu nhạy cảm.
 * Marker interfaces `Request` và `Response` phân biệt dữ liệu vào/ra.
-* `PacketType` ánh xạ mỗi packet type với class request/response tương ứng.
+* `RequestType` và `ResponseType` ánh xạ mỗi packet type với class request/response tương ứng.
 * `PacketReq` và `PacketRes` serialize/deserialize payload bằng Gson.
 
 **Lợi ích trong dự án:**
 * Client-server trao đổi JSON nhất quán.
-* Domain model không bị gửi nguyên trạng qua socket.
-* Response trả về client chỉ gồm dữ liệu cần thiết.
+* Màn danh sách nhận payload nhẹ, còn màn chi tiết có thể nhận domain aggregate đầy đủ khi cần.
+* Response trả về client đúng theo nhu cầu từng luồng, tránh gửi thừa dữ liệu.
 
 ---
 
-## 7. Mapper Pattern
-**Ý nghĩa:** Chuyển đổi giữa domain model và DTO/view model để giảm phụ thuộc trực tiếp giữa tầng nghiệp vụ và dữ liệu trả về client.
+## 7. Proxy Pattern
+**Ý nghĩa:** Cung cấp một object đại diện cho object thật, kiểm soát lúc nào cần tải hoặc truy cập object thật.
 
 **Nơi áp dụng:**
-* `app.server.service.AuctionMapper`: Chuyển `Auction` thành `AuctionSummary` và `AuctionDetail`.
-* `app.data.UserData`: Tạo DTO từ `User`.
-* `app.data.ItemData`: Tạo DTO từ `Item`.
+* `app.client.manager.AuctionDetailProxy`: Giữ `auctionId`, trả preview đã có trong cache và chỉ fetch `Auction` detail đầy đủ khi màn live cần.
+* `LiveAuctionSessionStore`: Lưu proxy của phiên đang xem để `LiveController` không phải tự quản lý chi tiết lazy loading.
 
 **Lợi ích trong dự án:**
-* Màn hình danh sách không cần nhận toàn bộ dữ liệu chi tiết.
-* Response không expose trực tiếp mọi field nội bộ của domain object.
-* Logic tính/chọn dữ liệu hiển thị được tập trung tại mapper.
+* First scene, all auctions và history chỉ nhận `AuctionPreview` nhẹ.
+* Live screen vẫn hiển thị được preview trước, sau đó proxy tải full `Auction` có item, seller, winner và bid history.
+* Refresh danh sách không ghi đè mất detail đã cache.
 
 ---
 
@@ -126,9 +128,11 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Dùng một bảng đăng ký để ánh xạ key sang handler tương ứng, từ đó dispatch request mà không cần chuỗi `if-else` dài.
 
 **Nơi áp dụng:**
-* `ClientHandler.createCommands(...)` tạo `EnumMap<PacketType, Command>`.
+* `ClientHandler.createCommands(...)` tạo `EnumMap<RequestType, app.server.command.Command>`.
 * `ClientHandler.handlePacket(...)` lấy command bằng `commands.get(type)` rồi gọi `execute(...)`.
-* `PacketType` đóng vai trò key chung cho protocol client-server.
+* `Client.createCommands(...)` tạo `EnumMap<ResponseType, app.client.command.Command>`.
+* `Client.handlePacket(...)` lấy command bằng `commands.get(type)` rồi gọi `execute(...)`.
+* `RequestType` và `ResponseType` đóng vai trò key cho protocol client-server.
 
 **Lợi ích trong dự án:**
 * Dễ nhìn toàn bộ request server hỗ trợ.

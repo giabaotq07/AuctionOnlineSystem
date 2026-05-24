@@ -9,6 +9,10 @@ import com.google.gson.JsonSyntaxException;
 public class JsonUtil {
   private static final Gson GSON = new GsonBuilder().create();
 
+  public static Gson gson() {
+    return GSON;
+  }
+
   /** toJson. */
   public static String toJson(Object obj) {
     return GSON.toJson(obj);

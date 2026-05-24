@@ -8,9 +8,14 @@ import app.common.models.Auction;
 public class BidValidator {
   /** validateAuctionState. */
   public void validateAuctionState(Auction auction) {
+    if (auction == null) {
+      throw new ServiceException("Phiên đấu giá không tồn tại.");
+    }
     if (auction.getStatus() != AuctionStatus.RUNNING) {
-      throw new ServiceException(
-          "Phiên đấu giá đã " + auction.getStatus().name().toLowerCase() + ".");
+      throw new ServiceException("Phiên đấu giá chưa mở hoặc đã đóng.");
+    }
+    if (auction.isExpired()) {
+      throw new ServiceException("Phiên đấu giá đã kết thúc.");
     }
   }
 
@@ -19,9 +24,12 @@ public class BidValidator {
     if (stepPrice <= 0) {
       throw new ServiceException("Bước giá không hợp lệ.");
     }
-    long minimumRequired = currentPrice + stepPrice;
-    if (bidAmount < minimumRequired) {
-      throw new ServiceException("Giá đặt phải tối thiểu " + minimumRequired + " VNĐ.");
+    if (bidAmount <= 0) {
+      throw new ServiceException("Giá đặt không hợp lệ.");
+    }
+    long minimumBid = currentPrice + stepPrice;
+    if (bidAmount < minimumBid) {
+      throw new ServiceException("Giá đặt phải từ " + minimumBid + " trở lên.");
     }
   }
 }

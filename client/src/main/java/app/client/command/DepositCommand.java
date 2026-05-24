@@ -2,7 +2,6 @@ package app.client.command;
 
 import app.client.manager.UserManager;
 import app.common.dto.WalletUpdateResponse;
-import app.common.mapper.DtoMapper;
 import app.common.protocol.PacketRes;
 
 /** DepositCommand. */
@@ -12,7 +11,8 @@ public class DepositCommand extends Command {
     if (packet != null && packet.isSuccess()) {
       WalletUpdateResponse response = packet.getData(WalletUpdateResponse.class);
       if (response != null && response.user() != null) {
-        UserManager.getInstance().setCurrentUser(DtoMapper.toUser(response.user()));
+        UserManager.getInstance()
+            .setCurrentUser(app.common.mapper.ModelMapper.toUserModel(response.user()));
         notifyUpdate();
       }
     }

@@ -3,20 +3,14 @@ package app.server.command;
 import app.common.dto.DepositRequest;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.ResponseType;
-import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
-import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.service.UserService;
 import java.math.BigDecimal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** DepositCommand. */
-public class DepositCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(DepositCommand.class);
+public class DepositCommand extends SafeCommand {
   private final UserService userService;
 
   /** DepositCommand. */
@@ -25,27 +19,26 @@ public class DepositCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    try {
-      DepositRequest request = packet.getData(DepositRequest.class);
-      if (request == null || request.amount() == null) {
-        sendError(clientHandler, "Dữ liệu nạp tiền không hợp lệ.");
-        return;
-      }
-      BigDecimal amount = request.amount();
-      User user = userService.deposit(clientHandler.getUser().getId(), amount);
-      WalletUpdateResponse response = new WalletUpdateResponse(DtoMapper.toUserData(user));
-      clientHandler.sendPacket(PacketRes.of(ResponseType.DEPOSIT_RESULT, "OK", response));
-    } catch (ServiceException e) {
-      logger.warn("Deposit failed: {}", e.getMessage());
-      sendError(clientHandler, e.getMessage());
-    } catch (Exception e) {
-      logger.error("Unexpected deposit error", e);
-      sendError(clientHandler, "Không thể nạp tiền.");
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    DepositRequest request =
+        requirePayload(packet, DepositRequest.class, "Dữ liệu nạp tiền không hợp lệ.");
+    if (request.amount() == null) {
+      throw new app.common.exception.ValidationException("Dữ liệu nạp tiền không hợp lệ.");
     }
+    BigDecimal amount = request.amount();
+    User user = userService.deposit(requireUser(clientHandler).getId(), amount);
+    WalletUpdateResponse response =
+        new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(user));
+    sendSuccess(clientHandler, "OK", response);
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.DEPOSIT_RESULT, message));
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.DEPOSIT_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Không thể nạp tiền.";
   }
 }

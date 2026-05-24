@@ -1,71 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <?import javafx.geometry.Insets?>
+
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-  <BorderPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #0a0b10;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.AuctionController">
-  <!-- Header -->
-  <top>
-   <VBox style="-fx-background-color:#161b26;">
-  <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="20.0" style="-fx-border-color: #eaeaea; -fx-border-width: 0 0 1 0;">
-  <padding>
-    <Insets left="40.0" right="40.0" />
-  </padding>
-  <Button mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: transparent; -fx-text-fill: #673ab7; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand;" text="&lt; TRỞ VỀ TRANG CHỦ" />
-  <Region HBox.hgrow="ALWAYS" />
-  <Label text="TẠO PHIÊN ĐẤU GIÁ MỚI" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 24px;" />
-  </HBox>
-   </VBox>
-  </top>
-  <!-- Center Content -->
-  <center>
-   <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
-  <padding>
-  <Insets top="30.0" right="40.0" bottom="30.0" left="40.0" />
-  </padding>
-  <VBox alignment="CENTER">
-  <VBox spacing="20.0" maxWidth="800.0" style="-fx-background-color:#161b26; -fx-background-radius: 10; -fx-padding: 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);">
-    <Label text="THÔNG TIN TÀI SẢN ĐẤU GIÁ" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333333;" />
-    <Separator />
-    <GridPane vgap="20.0" hgap="20.0">
-  <columnConstraints>
-   <ColumnConstraints minWidth="200.0" />
-   <ColumnConstraints hgrow="ALWAYS" />
-  </columnConstraints>
-  <Label text="Tên tài sản *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-  <TextField fx:id="nameField" promptText="Nhập tên tài sản..." style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-  <Label text="Mô tả chi tiết" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.valignment="TOP" />
-  <TextArea fx:id="descriptionField" promptText="Nhập mô tả tình trạng, thông tin..." prefRowCount="4" style="-fx-border-radius: 5; -fx-wrap-text: true;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-  <Label text="Phân loại *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-  <ComboBox fx:id="typeComboBox" prefWidth="300.0"
-  style="-fx-background-color: #0a0b10; -fx-border-color: #1a2236; -fx-border-radius: 5; -fx-background-radius: 5; -fx-text-fill: white;"
-  GridPane.columnIndex="1" GridPane.rowIndex="2" />
-  <Label text="Giá khởi điểm (VNĐ) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-  <TextField fx:id="startingPriceField" promptText="VD: 5000000" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-  <Label text="Bước giá tối thiểu (VNĐ) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-  <TextField fx:id="stepPriceField" promptText="VD: 100000" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-  <Label text="Thời gian diễn ra (Phút) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-  <TextField fx:id="durationField" promptText="VD: 60" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-  <Label text="Ngày bắt đầu *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="6" />
-  <DatePicker fx:id="startDatePicker" promptText="Chọn ngày" style="-fx-padding: 10; -fx-background-radius: 5; -fx-text-fill: white;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-  <Label text="Giờ bắt đầu (HH:mm) *" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="7" />
-  <TextField fx:id="startTimeField" promptText="VD: 14:30" style="-fx-padding: 10; -fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-  <Label text="Ảnh vật phẩm" style="-fx-font-weight: bold;"
-         GridPane.columnIndex="0" GridPane.rowIndex="8" />
-  <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="8" alignment="CENTER_LEFT">
-    <Button fx:id="chooseImageButton" text="📁 Chọn ảnh..."
-            onAction="#handleChooseImage"
-            style="-fx-background-color: #3d3d5c; -fx-text-fill: white;
-               -fx-background-radius: 5; -fx-cursor: hand; -fx-padding: 8 15;" />
-    <Label fx:id="imageFileNameLabel" text="Chưa chọn ảnh"
-           style="-fx-text-fill: #888; -fx-font-size: 12px;" />
-  </HBox>
-    </GridPane>
-    <HBox alignment="CENTER_RIGHT" spacing="15.0" style="-fx-padding: 20 0 0 0;">
-  <Button mnemonicParsing="false" onAction="#handleBack" text="Hủy bỏ" style="-fx-background-color: transparent; -fx-text-fill: #666; -fx-font-weight: bold; -fx-cursor: hand;" />
-  <Button mnemonicParsing="false" onAction="#handleAdd" text="BẮT ĐẦU PHIÊN ĐẤU GIÁ" style="-fx-background-color: #673ab7; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10 30; -fx-background-radius: 5; -fx-cursor: hand;" />
-    </HBox>
-  </VBox>
-  </VBox>
-   </ScrollPane>
-  </center>
+
+<BorderPane prefHeight="720.0" prefWidth="1280.0" styleClass="screen-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.AuctionController">
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="68.0" spacing="14.0" styleClass="top-bar">
+            <padding>
+                <Insets left="28.0" right="28.0" />
+            </padding>
+            <Button mnemonicParsing="false" onAction="#handleBack" styleClass="ghost-button" text="Trở về trang chủ" />
+            <Label styleClass="screen-title" text="Tạo phiên đấu giá mới" />
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="content-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="20.0" styleClass="content-shell">
+                    <VBox maxWidth="860.0" spacing="18.0" styleClass="card">
+                        <padding>
+                            <Insets bottom="28.0" left="30.0" right="30.0" top="28.0" />
+                        </padding>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <Label styleClass="status-pill" text="SELLER" />
+                            <Label styleClass="section-title" text="Thông tin tài sản đấu giá" />
+                        </HBox>
+                        <Separator />
+
+                        <GridPane hgap="18.0" vgap="16.0">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="210.0" />
+                                <ColumnConstraints hgrow="ALWAYS" />
+                            </columnConstraints>
+
+                            <Label styleClass="field-label" text="Tên tài sản *" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                            <TextField fx:id="nameField" promptText="Nhập tên tài sản..." GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                            <Label styleClass="field-label" text="Mô tả chi tiết" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.valignment="TOP" />
+                            <TextArea fx:id="descriptionField" prefRowCount="4" promptText="Nhập mô tả tình trạng, thông tin..." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                            <Label styleClass="field-label" text="Phân loại *" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                            <ComboBox fx:id="typeComboBox" prefWidth="320.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                            <Label styleClass="field-label" text="Giá khởi điểm (USD) *" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                            <TextField fx:id="startingPriceField" promptText="VD: 5000000" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                            <Label styleClass="field-label" text="Bước giá tối thiểu (USD) *" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                            <TextField fx:id="stepPriceField" promptText="VD: 100000" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                            <Label styleClass="field-label" text="Thời gian diễn ra (phút) *" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                            <TextField fx:id="durationField" promptText="VD: 60" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+
+                            <Label styleClass="field-label" text="Ngày bắt đầu *" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                            <DatePicker fx:id="startDatePicker" promptText="Chọn ngày" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+
+                            <Label styleClass="field-label" text="Giờ bắt đầu (HH:mm) *" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+                            <TextField fx:id="startTimeField" promptText="VD: 14:30" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+
+                            <Label styleClass="field-label" text="Ảnh vật phẩm" GridPane.columnIndex="0" GridPane.rowIndex="8" />
+                            <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="8">
+                                <Button fx:id="chooseImageButton" mnemonicParsing="false" onAction="#handleChooseImage" styleClass="secondary-button" text="Chọn ảnh..." />
+                                <Label fx:id="imageFileNameLabel" styleClass="muted-label" text="Chưa chọn ảnh" />
+                            </HBox>
+                        </GridPane>
+
+                        <HBox alignment="CENTER_RIGHT" spacing="12.0">
+                            <Button mnemonicParsing="false" onAction="#handleBack" styleClass="secondary-button" text="Hủy bỏ" />
+                            <Button mnemonicParsing="false" onAction="#handleAdd" text="BẮT ĐẦU PHIÊN ĐẤU GIÁ" />
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
 </BorderPane>

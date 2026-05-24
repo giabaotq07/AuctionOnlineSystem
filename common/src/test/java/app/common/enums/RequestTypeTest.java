@@ -11,8 +11,6 @@ class RequestTypeTest {
     assertTrue(RequestType.LOGIN.isAllowed(null));
     assertTrue(RequestType.REGISTER.isAllowed(null));
     assertTrue(RequestType.FETCH_AUCTION_SUMMARIES.isAllowed(null));
-    assertTrue(RequestType.FETCH_AUCTION_DETAIL.isAllowed(null));
-    assertTrue(RequestType.FETCH_AUCTION_RESULT.isAllowed(null));
     assertTrue(RequestType.UNWATCH_AUCTION.isAllowed(null));
   }
 
@@ -30,8 +28,14 @@ class RequestTypeTest {
   @Test
   void bidderRequests_allowOnlyBidder() {
     assertTrue(RequestType.PLACE_BID.isAllowed(UserRole.BIDDER));
+    assertTrue(RequestType.SET_AUTO_BID.isAllowed(UserRole.BIDDER));
+    assertTrue(RequestType.DISABLE_AUTO_BID.isAllowed(UserRole.BIDDER));
     assertFalse(RequestType.PLACE_BID.isAllowed(UserRole.SELLER));
+    assertFalse(RequestType.SET_AUTO_BID.isAllowed(UserRole.SELLER));
+    assertFalse(RequestType.DISABLE_AUTO_BID.isAllowed(UserRole.SELLER));
     assertFalse(RequestType.PLACE_BID.isAllowed(UserRole.ADMIN));
+    assertFalse(RequestType.SET_AUTO_BID.isAllowed(UserRole.ADMIN));
+    assertFalse(RequestType.DISABLE_AUTO_BID.isAllowed(UserRole.ADMIN));
   }
 
   @Test

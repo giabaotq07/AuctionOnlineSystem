@@ -3,20 +3,15 @@ package app.server.command;
 import app.common.dto.LoginRequest;
 import app.common.dto.LoginResponse;
 import app.common.enums.ResponseType;
-import app.common.exception.ServiceException;
-import app.common.mapper.DtoMapper;
+import app.common.exception.ValidationException;
 import app.common.models.User;
 import app.common.protocol.PacketReq;
-import app.common.protocol.PacketRes;
 import app.server.network.ClientHandler;
 import app.server.network.Server;
 import app.server.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** LoginCommand. */
-public class LoginCommand implements Command {
-  private static final Logger logger = LoggerFactory.getLogger(LoginCommand.class);
+public class LoginCommand extends SafeCommand {
   private final UserService userService;
 
   /** LoginCommand. */
@@ -25,41 +20,30 @@ public class LoginCommand implements Command {
   }
 
   @Override
-  public void execute(ClientHandler clientHandler, PacketReq packet) {
-    try {
-      LoginRequest request = packet.getData(LoginRequest.class);
-      if (request == null) {
-        sendError(clientHandler, "Dữ liệu đăng nhập không hợp lệ.");
-        return;
-      }
-      String username = request.username();
-      String password = request.password();
-      if (username == null || username.isBlank() || password == null || password.isBlank()) {
-        sendError(clientHandler, "Tên đăng nhập và mật khẩu không được để trống.");
-        return;
-      }
-      username = username.trim();
-      User user = userService.login(username, password);
-      if (user == null) {
-        sendError(clientHandler, "Sai tên tài khoản hoặc mật khẩu.");
-        return;
-      }
-      clientHandler.getSession().authenticate(user);
-      Server.registerClient(user.getId(), clientHandler);
-      logger.info("[SERVER] User {} logged in", username);
-      LoginResponse response = new LoginResponse(DtoMapper.toUserData(user));
-      clientHandler.sendPacket(
-          PacketRes.of(ResponseType.LOGIN_RESULT, "Đăng nhập thành công!", response));
-    } catch (ServiceException e) {
-      logger.warn("[SERVER] Login failed: {}", e.getMessage());
-      sendError(clientHandler, "Sai tên tài khoản hoặc mật khẩu.");
-    } catch (Exception e) {
-      logger.error("[SERVER] Login error", e);
-      sendError(clientHandler, "Lỗi hệ thống.");
+  protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+    LoginRequest request =
+        requirePayload(packet, LoginRequest.class, "Dữ liệu đăng nhập không hợp lệ.");
+    String username = request.username();
+    String password = request.password();
+    if (username == null || username.isBlank() || password == null || password.isBlank()) {
+      throw new ValidationException("Tên đăng nhập và mật khẩu không được để trống.");
     }
+    username = username.trim();
+    User user = userService.login(username, password);
+    clientHandler.getSession().authenticate(user);
+    Server.registerClient(user.getId(), clientHandler);
+    logger.info("[SERVER] User {} logged in", username);
+    LoginResponse response = new LoginResponse(app.common.mapper.ModelMapper.toUserDto(user));
+    sendSuccess(clientHandler, "Đăng nhập thành công!", response);
   }
 
-  private void sendError(ClientHandler clientHandler, String message) {
-    clientHandler.sendPacket(PacketRes.error(ResponseType.LOGIN_RESULT, message));
+  @Override
+  protected ResponseType responseType() {
+    return ResponseType.LOGIN_RESULT;
+  }
+
+  @Override
+  protected String unexpectedErrorMessage() {
+    return "Lỗi hệ thống.";
   }
 }

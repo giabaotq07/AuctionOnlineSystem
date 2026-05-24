@@ -72,11 +72,6 @@ public final class ClientRequestService {
     send(RequestType.UNWATCH_AUCTION, null);
   }
 
-  /** fetchAuctionResult. */
-  public void fetchAuctionResult(int auctionId) throws IOException {
-    send(RequestType.FETCH_AUCTION_RESULT, new AuctionResultRequest(auctionId));
-  }
-
   /** placeBid. */
   public void placeBid(int auctionId, long bidAmount) throws IOException {
     send(RequestType.PLACE_BID, new PlaceBidRequest(auctionId, bidAmount));
@@ -92,19 +87,47 @@ public final class ClientRequestService {
     send(RequestType.SETTLE_WALLET, new SettleWalletRequest(auctionId));
   }
 
+  public void cancelAuction(int auctionId, int expectedVersion) throws IOException {
+    send(RequestType.CANCEL_AUCTION, new CancelAuctionRequest(auctionId, expectedVersion));
+  }
+
   /** chat. */
   public void chat(ChatRequest request) throws IOException {
     send(RequestType.CHAT, request);
   }
 
-  public void fetchItemImage(int itemId, String imagePath) throws IOException {
-    send(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(itemId, imagePath));
+  public void fetchItemImage(int itemId) throws IOException {
+    send(RequestType.FETCH_ITEM_IMAGE, new FetchItemImageRequest(itemId));
   }
 
   public void uploadImage(int itemId, java.io.File imageFile) throws IOException {
     byte[] fileBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
     String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
     send(RequestType.UPLOAD_IMAGE, new UploadImageRequest(itemId, base64Data, imageFile.getName()));
+  }
+
+  public void fetchUserList() throws IOException {
+    send(RequestType.FETCH_USER_LIST, null);
+  }
+
+  public void uploadAvatar(java.io.File imageFile) throws IOException {
+    byte[] fileBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
+    String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
+    send(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest(base64Data, imageFile.getName()));
+  }
+
+  public void fetchAvatar(int userId, String avatarUrl) throws IOException {
+    send(RequestType.FETCH_AVATAR, new FetchAvatarRequest(userId, avatarUrl));
+  }
+
+  /** setAutoBid. */
+  public void setAutoBid(int auctionId, long maxAmount, long incrementAmount) throws IOException {
+    send(RequestType.SET_AUTO_BID, new SetAutoBidRequest(auctionId, maxAmount, incrementAmount));
+  }
+
+  /** disableAutoBid. */
+  public void disableAutoBid(int auctionId) throws IOException {
+    send(RequestType.DISABLE_AUTO_BID, new DisableAutoBidRequest(auctionId));
   }
 
   private void send(RequestType type, Request payload) throws IOException {

@@ -20,6 +20,7 @@ public class BidService {
   private final TransactionManager transactionManager;
   private final BidValidator bidValidator;
   private final AntiSnipeService antiSnipeService;
+  private final AutoBidService autoBidService;
 
   /** BidService. */
   public BidService(
@@ -29,7 +30,8 @@ public class BidService {
       UserDAO userDAO,
       TransactionManager transactionManager,
       BidValidator bidValidator,
-      AntiSnipeService antiSnipeService) {
+      AntiSnipeService antiSnipeService,
+      AutoBidService autoBidService) {
     this.bidDAO = bidDAO;
     this.auctionDAO = auctionDAO;
     this.itemDAO = itemDAO;
@@ -37,44 +39,56 @@ public class BidService {
     this.transactionManager = transactionManager;
     this.bidValidator = bidValidator;
     this.antiSnipeService = antiSnipeService;
+    this.autoBidService = autoBidService;
   }
 
-  /** placeBid. */
-  public Auction placeBid(int auctionId, int userId, long bidAmount) {
+  public Auction placeBid(int auctionId, User actor, long bidAmount) {
+    validateBidRequest(auctionId, actor);
+
     return transactionManager.runInTransaction(
         conn -> {
+          int bidderId = actor.getId();
           auctionDAO.lockRow(conn, auctionId);
           Auction auction =
               auctionDAO
                   .findById(conn, auctionId)
                   .orElseThrow(() -> new ServiceException("Phiên đấu giá không tồn tại."));
-          if (auction.getSellerId() == userId) {
-            throw new ServiceException("Người bán không được tự đặt giá sản phẩm của mình.");
-          }
+
           bidValidator.validateAuctionState(auction);
           Item item =
               itemDAO
                   .findById(conn, auction.getItemId())
                   .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid(), item.getStepPrice());
-          userDAO.lockRow(conn, userId);
+          userDAO.lockRow(conn, bidderId);
           User bidder =
               userDAO
-                  .findById(conn, userId)
-                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+                  .findById(conn, bidderId)
+                  .orElseThrow(
+                      () -> new ServiceException("Không tìm thấy user với id: " + bidderId));
           try {
+            long reserveAmount =
+                autoBidService.reserveAmountForManualBid(conn, auctionId, bidderId, bidAmount);
             bidder
                 .getWallet()
-                .setFrozenAmount(String.valueOf(auctionId), BigDecimal.valueOf(bidAmount));
+                .setFrozenAmount(String.valueOf(auctionId), BigDecimal.valueOf(reserveAmount));
           } catch (IllegalArgumentException e) {
             throw new ServiceException(e.getMessage());
           }
-          auction.updateHighestBid(bidAmount, userId);
-          antiSnipeService.apply(auction);
-          bidDAO.insertBid(conn, auctionId, userId, bidAmount, false);
+          auction.updateHighestBid(bidAmount, bidderId);
+          bidDAO.insertBid(conn, auctionId, bidderId, bidAmount, false);
           userDAO.update(conn, bidder);
+          autoBidService.resolveAutoBid(conn, auction, item);
+          antiSnipeService.apply(auction);
           auctionDAO.update(conn, auction);
           return auction;
         });
+  }
+
+  private void validateBidRequest(int auctionId, User actor) {
+    if (auctionId <= 0) {
+      throw new ServiceException("Phiên đấu giá không hợp lệ.");
+    }
+    OwnershipGuard.requireValidActor(actor);
   }
 }
