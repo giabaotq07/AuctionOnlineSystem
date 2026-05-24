@@ -8,10 +8,7 @@ import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
-import app.common.dto.AuctionSummary;
-import app.common.dto.CreateAuctionRequest;
-import app.common.dto.UpdateAuctionRequest;
-import app.common.dto.UserData;
+import app.common.dto.*;
 import app.common.enums.ItemType;
 import app.common.enums.View;
 import app.common.models.Item;
@@ -50,14 +47,14 @@ public class AdminDashboardController implements Cleanable {
   @FXML private TextField userSearchField;
 
   // Auctions Table
-  @FXML private TableView<AuctionSummary> auctionTableView;
-  @FXML private TableColumn<AuctionSummary, Integer> colAuctionId;
-  @FXML private TableColumn<AuctionSummary, String> colItemName;
-  @FXML private TableColumn<AuctionSummary, String> colItemType;
-  @FXML private TableColumn<AuctionSummary, String> colStartingPrice;
-  @FXML private TableColumn<AuctionSummary, String> colHighestBid;
-  @FXML private TableColumn<AuctionSummary, String> colStartTime;
-  @FXML private TableColumn<AuctionSummary, String> colStatus;
+  @FXML private TableView<AuctionPreview> auctionTableView;
+  @FXML private TableColumn<AuctionPreview, Integer> colAuctionId;
+  @FXML private TableColumn<AuctionPreview, String> colItemName;
+  @FXML private TableColumn<AuctionPreview, String> colItemType;
+  @FXML private TableColumn<AuctionPreview, String> colStartingPrice;
+  @FXML private TableColumn<AuctionPreview, String> colHighestBid;
+  @FXML private TableColumn<AuctionPreview, String> colStartTime;
+  @FXML private TableColumn<AuctionPreview, String> colStatus;
 
   // Detail Form Inputs
   @FXML private TextField nameField;
@@ -70,15 +67,15 @@ public class AdminDashboardController implements Cleanable {
   @FXML private TextField startTimeField;
 
   // Users Table
-  @FXML private TableView<UserData> userTableView;
-  @FXML private TableColumn<UserData, Integer> colUserId;
-  @FXML private TableColumn<UserData, String> colUserName;
-  @FXML private TableColumn<UserData, String> colUserAccount;
-  @FXML private TableColumn<UserData, String> colUserBalance;
-  @FXML private TableColumn<UserData, String> colUserRole;
+  @FXML private TableView<UserDto> userTableView;
+  @FXML private TableColumn<UserDto, Integer> colUserId;
+  @FXML private TableColumn<UserDto, String> colUserName;
+  @FXML private TableColumn<UserDto, String> colUserAccount;
+  @FXML private TableColumn<UserDto, String> colUserBalance;
+  @FXML private TableColumn<UserDto, String> colUserRole;
 
-  private final List<AuctionSummary> masterAuctions = new ArrayList<>();
-  private final List<UserData> masterUsers = new ArrayList<>();
+  private final List<AuctionPreview> masterAuctions = new ArrayList<>();
+  private final List<UserDto> masterUsers = new ArrayList<>();
 
   private boolean actionLoading = false;
   private Button currentLoadingButton;
@@ -86,7 +83,7 @@ public class AdminDashboardController implements Cleanable {
 
   // Listeners
   private final Runnable auctionsListener = () -> Platform.runLater(this::loadAuctionsData);
-  private final Consumer<List<UserData>> usersListener =
+  private final Consumer<List<UserDto>> usersListener =
       users -> Platform.runLater(() -> loadUsersData(users));
   private final Consumer<String> messageListener =
       msg -> Platform.runLater(() -> handleIncomingMessage(msg));
@@ -140,7 +137,7 @@ public class AdminDashboardController implements Cleanable {
 
     colHighestBid.setCellValueFactory(
         data ->
-            new SimpleStringProperty(currencyFormat.format(data.getValue().currentPrice()) + " đ"));
+            new SimpleStringProperty(currencyFormat.format(data.getValue().highestBid()) + " đ"));
 
     colStartTime.setCellValueFactory(
         data -> {
@@ -169,16 +166,18 @@ public class AdminDashboardController implements Cleanable {
     colUserId.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().id()));
     colUserName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
     colUserAccount.setCellValueFactory(
-        data -> new SimpleStringProperty(data.getValue().username()));
+        data -> new SimpleStringProperty(data.getValue().account().username()));
     colUserBalance.setCellValueFactory(
         data -> {
-          BigDecimal bal = data.getValue().availableBalance();
+          BigDecimal bal = data.getValue().wallet().availableBalance();
           return new SimpleStringProperty(bal != null ? currencyFormat.format(bal) + " đ" : "0 đ");
         });
     colUserRole.setCellValueFactory(
         data ->
             new SimpleStringProperty(
-                data.getValue().role() != null ? data.getValue().role().name() : ""));
+                data.getValue().account().role() != null
+                    ? data.getValue().account().role().name()
+                    : ""));
   }
 
   private void setupForm() {
@@ -192,7 +191,7 @@ public class AdminDashboardController implements Cleanable {
     userSearchField.textProperty().addListener((obs, oldVal, newVal) -> filterUsers(newVal));
   }
 
-  private void autofillForm(AuctionSummary summary) {
+  private void autofillForm(AuctionPreview summary) {
     Item item = ItemStore.getInstance().getItem(summary.itemId());
     nameField.setText(summary.itemName());
     descriptionField.setText(item != null ? item.getDescription() : "");
@@ -223,11 +222,11 @@ public class AdminDashboardController implements Cleanable {
   // Master Data Loaders
   private void loadAuctionsData() {
     masterAuctions.clear();
-    masterAuctions.addAll(AuctionStore.getInstance().getAuctionSummaries());
+    masterAuctions.addAll(AuctionStore.getInstance().getAuctionPreviews());
     filterAuctions(auctionSearchField.getText());
   }
 
-  private void loadUsersData(List<UserData> users) {
+  private void loadUsersData(List<UserDto> users) {
     masterUsers.clear();
     if (users != null) {
       masterUsers.addAll(users);
@@ -241,7 +240,7 @@ public class AdminDashboardController implements Cleanable {
       return;
     }
     String keyword = query.toLowerCase().trim();
-    List<AuctionSummary> filtered =
+    List<AuctionPreview> filtered =
         masterAuctions.stream()
             .filter(
                 a ->
@@ -257,12 +256,13 @@ public class AdminDashboardController implements Cleanable {
       return;
     }
     String keyword = query.toLowerCase().trim();
-    List<UserData> filtered =
+    List<UserDto> filtered =
         masterUsers.stream()
             .filter(
                 u ->
                     (u.name() != null && u.name().toLowerCase().contains(keyword))
-                        || (u.username() != null && u.username().toLowerCase().contains(keyword))
+                        || (u.account().username() != null
+                            && u.account().username().toLowerCase().contains(keyword))
                         || String.valueOf(u.id()).contains(keyword))
             .toList();
     userTableView.getItems().setAll(filtered);
@@ -342,7 +342,7 @@ public class AdminDashboardController implements Cleanable {
       AlertUtils.showError("Mất kết nối", "Mất kết nối tới máy chủ.");
       return;
     }
-    AuctionSummary selected = auctionTableView.getSelectionModel().getSelectedItem();
+    AuctionPreview selected = auctionTableView.getSelectionModel().getSelectedItem();
     if (selected == null) {
       AlertUtils.showError("Chưa chọn phiên", "Vui lòng chọn phiên đấu giá cần cập nhật từ bảng.");
       return;
@@ -367,7 +367,7 @@ public class AdminDashboardController implements Cleanable {
       AlertUtils.showError("Mất kết nối", "Mất kết nối tới máy chủ.");
       return;
     }
-    AuctionSummary selected = auctionTableView.getSelectionModel().getSelectedItem();
+    AuctionPreview selected = auctionTableView.getSelectionModel().getSelectedItem();
     if (selected == null) {
       AlertUtils.showError("Chưa chọn phiên", "Vui lòng chọn phiên đấu giá cần hủy.");
       return;
@@ -431,7 +431,7 @@ public class AdminDashboardController implements Cleanable {
     }
   }
 
-  private UpdateAuctionRequest buildUpdateRequest(AuctionSummary selected) {
+  private UpdateAuctionRequest buildUpdateRequest(AuctionPreview selected) {
     String name = nameField.getText().trim();
     String desc = descriptionField.getText().trim();
     String startingStr = startingPriceField.getText().trim();

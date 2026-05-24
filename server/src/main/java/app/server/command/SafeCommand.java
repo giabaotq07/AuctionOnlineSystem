@@ -86,6 +86,7 @@ public abstract class SafeCommand implements Command {
   protected void sendError(ClientHandler clientHandler, String message) {
     if (clientHandler != null) {
       clientHandler.sendPacket(PacketRes.error(responseType(), message));
+      logger.error(responseType().name());
     }
   }
 

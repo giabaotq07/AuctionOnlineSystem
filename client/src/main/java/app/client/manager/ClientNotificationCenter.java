@@ -12,7 +12,7 @@ public final class ClientNotificationCenter {
   private final List<Consumer<String>> messageListeners = new ArrayList<>();
   private final List<Consumer<ChatResponse>> chatListeners = new ArrayList<>();
   private final List<Runnable> updateListeners = new ArrayList<>();
-  private final List<Consumer<List<app.common.dto.UserData>>> userListListeners = new ArrayList<>();
+  private final List<Consumer<List<app.common.dto.UserDto>>> userListListeners = new ArrayList<>();
 
   private ClientNotificationCenter() {}
 
@@ -109,24 +109,23 @@ public final class ClientNotificationCenter {
     notifyMessage(message);
   }
 
-  public synchronized void addUserListListener(Consumer<List<app.common.dto.UserData>> listener) {
+  public synchronized void addUserListListener(Consumer<List<app.common.dto.UserDto>> listener) {
     userListListeners.add(listener);
   }
 
-  public synchronized void removeUserListListener(
-      Consumer<List<app.common.dto.UserData>> listener) {
+  public synchronized void removeUserListListener(Consumer<List<app.common.dto.UserDto>> listener) {
     userListListeners.remove(listener);
   }
 
-  public void notifyUserList(List<app.common.dto.UserData> users) {
+  public void notifyUserList(List<app.common.dto.UserDto> users) {
     if (users == null) {
       return;
     }
-    List<Consumer<List<app.common.dto.UserData>>> snapshot;
+    List<Consumer<List<app.common.dto.UserDto>>> snapshot;
     synchronized (this) {
       snapshot = new ArrayList<>(userListListeners);
     }
-    for (Consumer<List<app.common.dto.UserData>> listener : snapshot) {
+    for (Consumer<List<app.common.dto.UserDto>> listener : snapshot) {
       listener.accept(users);
     }
   }

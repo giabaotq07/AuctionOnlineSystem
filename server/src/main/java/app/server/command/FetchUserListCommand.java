@@ -23,7 +23,7 @@ public class FetchUserListCommand extends SafeCommand {
     sendSuccess(
         clientHandler,
         "OK",
-        new UserListResponse(users.stream().map(ModelMapper::toUserPreview).toList()));
+        new UserListResponse(users.stream().map(ModelMapper::toUserDto).toList()));
   }
 
   @Override
