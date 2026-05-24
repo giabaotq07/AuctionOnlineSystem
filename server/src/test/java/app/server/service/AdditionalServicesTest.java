@@ -61,14 +61,7 @@ public class AdditionalServicesTest extends BaseDAOTest {
     AntiSnipeService antiSnipeService = new AntiSnipeService();
     autoBidService =
         new AutoBidService(
-            autoBidDAO,
-            auctionDAO,
-            bidDAO,
-            itemDAO,
-            userDAO,
-            transactionManager,
-            bidValidator,
-            antiSnipeService);
+            autoBidDAO, auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, bidValidator);
     bidService =
         new BidService(
             bidDAO,
@@ -218,24 +211,8 @@ public class AdditionalServicesTest extends BaseDAOTest {
   public void testBidService() {
     // Validate inputs
     assertThrows(ServiceException.class, () -> bidService.placeBid(auction.getId(), null, 1500L));
-    assertThrows(ServiceException.class, () -> bidService.placeBid(auction.getId(), seller, 1500L));
     assertThrows(ServiceException.class, () -> bidService.placeBid(-5, bidder, 1500L));
     assertThrows(ServiceException.class, () -> bidService.placeBid(auction.getId(), bidder, -10L));
-
-    // Seller khong duoc bid san pham cua minh
-    User sellerBidder = userDAO.save(TestFixtures.user("seller_bidder", UserRole.BIDDER));
-
-    // Tao mot Item moi cho sellerBidder nham thoa man rang buoc UNIQUE(item_id) cua
-    // auction_sessions
-    Item sellerItem =
-        itemDAO.save(TestFixtures.item(sellerBidder.getId(), "Another Vase", ItemType.ART));
-
-    Auction sellerAuc =
-        auctionDAO.save(
-            TestFixtures.auction(
-                sellerItem.getId(), sellerBidder.getId(), LocalDateTime.now().plusDays(1), 1000L));
-    assertThrows(
-        ServiceException.class, () -> bidService.placeBid(sellerAuc.getId(), sellerBidder, 1500L));
 
     // Phien khong RUNNING
     assertThrows(ServiceException.class, () -> bidService.placeBid(auction.getId(), bidder, 1500L));

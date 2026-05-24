@@ -27,13 +27,6 @@ public final class OwnershipGuard {
     }
   }
 
-  public static void requireNotAuctionSeller(Auction auction, User actor, String deniedMessage) {
-    requireValidActor(actor);
-    if (auction != null && auction.getSellerId() == actor.getId()) {
-      throw new ServiceException(deniedMessage);
-    }
-  }
-
   public static void requireSellerOwnerOrAdmin(
       int requesterId, UserRole requesterRole, int sellerId) {
     if (requesterId <= 0 || sellerId <= 0 || requesterRole == null) {

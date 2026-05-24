@@ -59,8 +59,6 @@ public class BidService {
               itemDAO
                   .findById(conn, auction.getItemId())
                   .orElseThrow(() -> new ServiceException("Không tìm thấy vật phẩm."));
-          OwnershipGuard.requireNotAuctionSeller(
-              auction, actor, "Người bán không được đặt giá phiên của mình.");
           bidValidator.validateBidAmount(bidAmount, auction.getHighestBid(), item.getStepPrice());
           userDAO.lockRow(conn, bidderId);
           User bidder =

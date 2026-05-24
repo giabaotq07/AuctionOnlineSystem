@@ -84,14 +84,7 @@ public class Server {
     itemService = new ItemService(itemDAO, auctionDAO, transactionManager);
     autoBidService =
         new AutoBidService(
-            autoBidDAO,
-            auctionDAO,
-            bidDAO,
-            itemDAO,
-            userDAO,
-            transactionManager,
-            bidValidator,
-            antiSnipeService);
+            autoBidDAO, auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, bidValidator);
     bidService =
         new BidService(
             bidDAO,

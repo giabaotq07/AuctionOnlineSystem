@@ -30,7 +30,6 @@ public class AutoBidService {
   private final UserDAO userDAO;
   private final TransactionManager transactionManager;
   private final BidValidator bidValidator;
-  private final AntiSnipeService antiSnipeService;
 
   /** AutoBidService. */
   public AutoBidService(
@@ -40,8 +39,7 @@ public class AutoBidService {
       ItemDAO itemDAO,
       UserDAO userDAO,
       TransactionManager transactionManager,
-      BidValidator bidValidator,
-      AntiSnipeService antiSnipeService) {
+      BidValidator bidValidator) {
     this.autoBidDAO = autoBidDAO;
     this.auctionDAO = auctionDAO;
     this.bidDAO = bidDAO;
@@ -49,7 +47,6 @@ public class AutoBidService {
     this.userDAO = userDAO;
     this.transactionManager = transactionManager;
     this.bidValidator = bidValidator;
-    this.antiSnipeService = antiSnipeService;
   }
 
   /** getAutoBid. */
@@ -90,14 +87,6 @@ public class AutoBidService {
                   .orElseGet(
                       () ->
                           saveAutoBid(conn, auctionId, actor.getId(), maxAmount, incrementAmount));
-
-          if (hasCompetingAutoBid(conn, auctionId, actor.getId())) {
-            boolean resolved = resolveAutoBid(conn, auction, item);
-            if (resolved) {
-              antiSnipeService.apply(auction);
-              auctionDAO.update(conn, auction);
-            }
-          }
           AutoBid currentAutoBid =
               autoBidDAO.findByAuctionAndUser(conn, auctionId, actor.getId()).orElse(autoBid);
           User currentBidder = userDAO.findById(conn, actor.getId()).orElse(bidder);
@@ -112,8 +101,6 @@ public class AutoBidService {
     return transactionManager.runInTransaction(
         conn -> {
           Auction auction = lockedRunningAuction(conn, auctionId);
-          OwnershipGuard.requireNotAuctionSeller(
-              auction, actor, "Người bán không được dùng auto-bid cho phiên của mình.");
 
           AutoBid autoBid =
               autoBidDAO
@@ -248,8 +235,6 @@ public class AutoBidService {
 
   private void validateAutoBidRules(
       Auction auction, Item item, User actor, long maxAmount, long incrementAmount) {
-    OwnershipGuard.requireNotAuctionSeller(
-        auction, actor, "Người bán không được dùng auto-bid cho phiên của mình.");
     if (incrementAmount <= 0) {
       throw new ServiceException("Bước tăng auto-bid không hợp lệ.");
     }
@@ -283,15 +268,6 @@ public class AutoBidService {
       Connection conn, int auctionId, int userId, long maxAmount, long incrementAmount) {
     return autoBidDAO.save(
         conn, new AutoBid(0, auctionId, userId, maxAmount, incrementAmount, true, null, null));
-  }
-
-  private boolean hasCompetingAutoBid(Connection conn, int auctionId, int userId) {
-    for (AutoBid autoBid : autoBidDAO.findEnabledByAuction(conn, auctionId)) {
-      if (autoBid.getUserId() != userId) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private long highestBidForUser(Connection conn, int auctionId, int userId) {

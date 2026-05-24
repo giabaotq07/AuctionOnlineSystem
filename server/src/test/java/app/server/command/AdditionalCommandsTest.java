@@ -66,14 +66,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     AntiSnipeService antiSnipeService = new AntiSnipeService();
     autoBidService =
         new AutoBidService(
-            autoBidDAO,
-            auctionDAO,
-            bidDAO,
-            itemDAO,
-            userDAO,
-            transactionManager,
-            bidValidator,
-            antiSnipeService);
+            autoBidDAO, auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, bidValidator);
     bidService =
         new BidService(
             bidDAO,
