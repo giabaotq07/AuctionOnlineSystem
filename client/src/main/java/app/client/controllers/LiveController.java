@@ -522,6 +522,11 @@ public class LiveController implements Cleanable {
       statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
       return;
     }
+    if (status == AuctionStatus.CANCELED) {
+      statusLabel.setText("Đã bị hủy");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
+      return;
+    }
     statusLabel.setText("Đã kết thúc");
     statusLabel.setTextFill(javafx.scene.paint.Color.web("#ef4444"));
   }

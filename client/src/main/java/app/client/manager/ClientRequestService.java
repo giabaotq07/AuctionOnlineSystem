@@ -92,6 +92,10 @@ public final class ClientRequestService {
     send(RequestType.SETTLE_WALLET, new SettleWalletRequest(auctionId));
   }
 
+  public void cancelAuction(int auctionId, int expectedVersion) throws IOException {
+    send(RequestType.CANCEL_AUCTION, new CancelAuctionRequest(auctionId, expectedVersion));
+  }
+
   /** chat. */
   public void chat(ChatRequest request) throws IOException {
     send(RequestType.CHAT, request);
@@ -105,6 +109,10 @@ public final class ClientRequestService {
     byte[] fileBytes = java.nio.file.Files.readAllBytes(imageFile.toPath());
     String base64Data = java.util.Base64.getEncoder().encodeToString(fileBytes);
     send(RequestType.UPLOAD_IMAGE, new UploadImageRequest(itemId, base64Data, imageFile.getName()));
+  }
+
+  public void fetchUserList() throws IOException {
+    send(RequestType.FETCH_USER_LIST, null);
   }
 
   private void send(RequestType type, Request payload) throws IOException {
