@@ -79,6 +79,7 @@ public class LiveController implements Cleanable {
   @FXML private Label stepPriceLabel;
   @FXML private Label currentPriceLabel;
   @FXML private Label bidCountLabel;
+  @FXML private Label statusLabel;
   @FXML private Label bidHintLabel;
   @FXML private Label availableBalanceLabel;
   @FXML private Label leaderNameLabel;
@@ -1047,6 +1048,30 @@ public class LiveController implements Cleanable {
         TimeUnit.SECONDS);
   }
 
+  private void updateStatusLabel(AuctionStatus status) {
+    handleStatusTransition(status);
+    if (statusLabel == null || status == null) {
+      return;
+    }
+    if (status == AuctionStatus.OPEN) {
+      statusLabel.setText("Sắp đấu giá");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#22c55e"));
+      return;
+    }
+    if (status == AuctionStatus.RUNNING) {
+      statusLabel.setText("Đang đấu giá");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
+      return;
+    }
+    if (status == AuctionStatus.CANCELED) {
+      statusLabel.setText("Đã bị hủy");
+      statusLabel.setTextFill(javafx.scene.paint.Color.web("#f97316"));
+      return;
+    }
+    statusLabel.setText("Đã kết thúc");
+    statusLabel.setTextFill(javafx.scene.paint.Color.web("#ef4444"));
+  }
+
   private void handleStatusTransition(AuctionStatus newStatus) {
     if (newStatus == null) {
       return;
@@ -1120,7 +1145,6 @@ public class LiveController implements Cleanable {
     setDetailLoading(false);
     lastKnownStatus = null;
     imageFetchInFlight.clear();
-    priceHistory.clear();
   }
 
   /** Member. */
