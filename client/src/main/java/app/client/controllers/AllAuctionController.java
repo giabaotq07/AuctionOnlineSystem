@@ -108,26 +108,20 @@ public class AllAuctionController implements Cleanable {
     vbox.setMinWidth(CARD_WIDTH);
     vbox.setMaxWidth(CARD_WIDTH);
     vbox.setPrefHeight(CARD_HEIGHT);
-    vbox.setStyle(
-        "-fx-background-color: #1a1f35;"
-            + "-fx-background-radius: 8;"
-            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-            + "-fx-padding: 15;"
-            + "-fx-spacing: 10;");
+    vbox.getStyleClass().add("auction-card");
     StackPane imagePane = new StackPane();
     imagePane.setPrefHeight(100);
-    imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
+    imagePane.getStyleClass().add("auction-image");
     Label imgLabel = new Label("Ảnh tài sản");
-    imgLabel.setStyle("-fx-text-fill: #aaa;");
+    imgLabel.getStyleClass().add("image-placeholder");
     imagePane.getChildren().add(imgLabel);
     Label titleLabel = new Label(itemName(auction));
     titleLabel.setWrapText(true);
-    titleLabel.setStyle(
-        "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
+    titleLabel.getStyleClass().add("auction-card-title");
     Label priceLabel = new Label("Giá hiện tại: $" + auction.highestBid());
-    priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
+    priceLabel.getStyleClass().add("price-label");
     Label timeLabel = new Label(timeText(auction));
-    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
+    timeLabel.getStyleClass().add("time-label");
     if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
       attachStartCountdown(auction.startTime(), timeLabel);
     }
@@ -137,8 +131,7 @@ public class AllAuctionController implements Cleanable {
                 ? "Xem kết quả"
                 : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
-    btnDetail.setStyle(
-        "-fx-background-color: #673ab7;" + "-fx-text-fill: white;" + "-fx-cursor: hand;");
+    btnDetail.getStyleClass().add("compact-primary-button");
     btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(auction));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;

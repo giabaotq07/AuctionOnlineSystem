@@ -91,7 +91,7 @@ public class MessController implements Cleanable {
               + "-fx-effect: dropshadow(gaussian, rgba(79,70,229,0.25), 10, 0, 0, 3);");
     } else {
       bubble.setStyle(
-          "-fx-background-color: #161b26;"
+          "-fx-background-color: #111827;"
               + "-fx-background-radius: 14 14 14 4;"
               + "-fx-border-color: #2d3748;"
               + "-fx-border-radius: 14 14 14 4;");

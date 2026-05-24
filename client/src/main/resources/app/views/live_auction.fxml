@@ -19,16 +19,16 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<BorderPane prefHeight="780.0" prefWidth="1280.0" styleClass="live-root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.LiveController">
+<BorderPane prefHeight="780.0" prefWidth="1280.0" styleClass="live-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.LiveController">
     <top>
         <!-- Minimal header with back button -->
         <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="15.0" styleClass="live-header">
             <padding>
                 <Insets left="30.0" right="30.0" />
             </padding>
-            <Button mnemonicParsing="false" onAction="#switchToUi" styleClass="live-back-btn" text="‹ TRỞ VỀ TRANG CHỦ" />
+            <Button mnemonicParsing="false" onAction="#switchToUi" styleClass="live-back-btn" text="Trở về trang chủ" />
             <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="availableBalanceLabel" styleClass="live-balance-label" text="Available: ---" />
+            <Label fx:id="availableBalanceLabel" styleClass="live-balance-label" text="Khả dụng: ---" />
         </HBox>
     </top>
     <center>
@@ -174,7 +174,7 @@
                                     <Label styleClass="live-section-title" text="LỊCH SỬ ĐẶT GIÁ" />
                                 </HBox>
                                 <!-- Bid history list (VBox populated programmatically) -->
-                                <ScrollPane fitToWidth="true" styleClass="live-history-scroll" VBox.vgrow="ALWAYS">
+                                <ScrollPane fx:id="bidHistoryScrollPane" fitToWidth="true" hbarPolicy="NEVER" pannable="true" prefHeight="250.0" styleClass="live-history-scroll" vbarPolicy="AS_NEEDED" VBox.vgrow="ALWAYS">
                                     <content>
                                         <VBox fx:id="bidHistoryList" spacing="4.0" />
                                     </content>
@@ -217,7 +217,7 @@
                             <!-- Status display -->
                             <HBox alignment="CENTER_LEFT" spacing="5.0">
                                 <Label styleClass="live-detail-key" text="Trạng thái:" />
-                                <Label fx:id="autoBidStatusLabel" style="-fx-text-fill: #94a3b8; -fx-font-weight: bold;" text="Chưa thiết lập" />
+                                <Label fx:id="autoBidStatusLabel" styleClass="muted-label" text="Chưa thiết lập" />
                             </HBox>
                             
                             <Region VBox.vgrow="ALWAYS" />

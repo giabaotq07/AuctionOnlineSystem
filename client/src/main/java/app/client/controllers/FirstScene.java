@@ -37,6 +37,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -210,11 +211,13 @@ public class FirstScene implements Cleanable {
     viewport.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
     viewport.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
     viewport.setFitToHeight(true);
+    viewport.setPannable(true);
     viewport.setStyle("-fx-background-color: transparent;" + "-fx-background-insets: 0;");
-    double viewportWidth = 3 * CARD_WIDTH + 2 * SPACING;
-    viewport.setPrefWidth(viewportWidth);
-    viewport.setMaxWidth(viewportWidth);
+    viewport.setFitToWidth(true);
+    viewport.setMaxWidth(Double.MAX_VALUE);
     viewport.setPrefHeight(350);
+    viewport.addEventFilter(
+        ScrollEvent.SCROLL, event -> scrollAuctionRow(viewport, container, event));
     Timeline scrollTimeline =
         new Timeline(
             new KeyFrame(
@@ -242,22 +245,37 @@ public class FirstScene implements Cleanable {
     return viewport;
   }
 
+  private void scrollAuctionRow(ScrollPane viewport, HBox container, ScrollEvent event) {
+    double contentWidth = container.getBoundsInLocal().getWidth();
+    double viewWidth = viewport.getViewportBounds().getWidth();
+    double maxScroll = contentWidth - viewWidth;
+    if (maxScroll <= 0) {
+      return;
+    }
+    double delta =
+        Math.abs(event.getDeltaX()) > Math.abs(event.getDeltaY())
+            ? -event.getDeltaX()
+            : -event.getDeltaY();
+    double nextPixel = viewport.getHvalue() * maxScroll + delta;
+    viewport.setHvalue(clamp(nextPixel / maxScroll));
+    event.consume();
+  }
+
+  private double clamp(double value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
   private VBox createAuctionCard(AuctionPreview auction) {
     VBox vbox = new VBox();
     vbox.setPrefWidth(CARD_WIDTH);
     vbox.setMinWidth(CARD_WIDTH);
     vbox.setMaxWidth(CARD_WIDTH);
-    vbox.setStyle(
-        "-fx-background-color: #1a1f35;"
-            + "-fx-background-radius: 8;"
-            + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);"
-            + "-fx-padding: 15;"
-            + "-fx-spacing: 10;");
+    vbox.getStyleClass().add("auction-card");
     StackPane imagePane = new StackPane();
     imagePane.setPrefHeight(150);
-    imagePane.setStyle("-fx-background-color: #2a2f45;" + "-fx-background-radius: 5;");
+    imagePane.getStyleClass().add("auction-image");
     Label imgLabel = new Label("Ảnh tài sản");
-    imgLabel.setStyle("-fx-text-fill: #aaa;");
+    imgLabel.getStyleClass().add("image-placeholder");
     ImageView imageView = new ImageView();
     imageView.setFitWidth(CARD_WIDTH - 30);
     imageView.setFitHeight(140);
@@ -289,12 +307,11 @@ public class FirstScene implements Cleanable {
     imagePane.getChildren().addAll(imgLabel, imageView);
     Label titleLabel = new Label(itemName(auction));
     titleLabel.setWrapText(true);
-    titleLabel.setStyle(
-        "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-text-fill: white;");
+    titleLabel.getStyleClass().add("auction-card-title");
     Label priceLabel = new Label("Giá hiện tại: $" + auction.highestBid());
-    priceLabel.setStyle("-fx-text-fill: #e91e63;" + "-fx-font-weight: bold;");
+    priceLabel.getStyleClass().add("price-label");
     Label timeLabel = new Label(timeText(auction));
-    timeLabel.setStyle("-fx-text-fill: #9aa0b4;" + "-fx-font-size: 12px;");
+    timeLabel.getStyleClass().add("time-label");
     if (auction.status() == AuctionStatus.OPEN && auction.startTime() != null) {
       attachStartCountdown(auction.startTime(), timeLabel);
     }
@@ -304,7 +321,7 @@ public class FirstScene implements Cleanable {
                 ? "Xem kết quả"
                 : "Chi tiết");
     btnDetail.setMaxWidth(Double.MAX_VALUE);
-    btnDetail.setStyle("-fx-background-color: #673ab7;" + "-fx-text-fill: white;");
+    btnDetail.getStyleClass().add("compact-primary-button");
     btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(auction));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
