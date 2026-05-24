@@ -89,6 +89,11 @@ public class LiveController implements Cleanable {
   @FXML private ImageView itemImageView;
   @FXML private Label imagePlaceholderLabel;
   @FXML private Canvas priceChartCanvas;
+  @FXML private TextField autoBidMaxField;
+  @FXML private TextField autoBidStepField;
+  @FXML private Label autoBidStatusLabel;
+  @FXML private Button setAutoBidBtn;
+  @FXML private Button disableAutoBidBtn;
 
   private final Set<Integer> imageFetchInFlight = ConcurrentHashMap.newKeySet();
   private ScheduledExecutorService scheduler;
@@ -120,6 +125,7 @@ public class LiveController implements Cleanable {
     updateAvailableBalance();
     loadSessionAuction();
     maybeRequestAuctionDetail();
+    updateAutoBidUi();
   }
 
   /** setAuction. */
@@ -187,6 +193,7 @@ public class LiveController implements Cleanable {
     maybeRequestAuctionDetail();
     updateAvailableBalance();
     updateTimer();
+    updateAutoBidUi();
   }
 
   private void updateTimer() {
@@ -278,6 +285,10 @@ public class LiveController implements Cleanable {
 
   private void handleMessageNotification(String message) {
     if (message == null || message.isBlank()) {
+      return;
+    }
+    if (message.contains("đã bị vượt") || message.contains("Auto-bid")) {
+      AlertUtils.showInfo("Cảnh báo Auto Bid", message);
       return;
     }
     if (bidLoading) {
@@ -385,6 +396,7 @@ public class LiveController implements Cleanable {
     // Cập nhật giá vào chart
     addPricePoint(currentPrice);
     drawPriceChart();
+    updateAutoBidUi();
   }
 
   private void applyDetail(Auction detail) {
@@ -417,6 +429,7 @@ public class LiveController implements Cleanable {
     // Cập nhật chart từ bid history
     rebuildChartFromBids(detail);
     drawPriceChart();
+    updateAutoBidUi();
   }
 
   // === BID HISTORY - Rich UI rows thay vì TextArea ===
@@ -979,6 +992,118 @@ public class LiveController implements Cleanable {
     } catch (IOException e) {
       setBidLoading(false);
       AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  /** handleSetAutoBid. */
+  @FXML
+  public void handleSetAutoBid(ActionEvent event) {
+    if (!requests.isConnected()) {
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
+      return;
+    }
+    int selectedAuctionId = selectedAuctionId();
+    if (selectedAuctionId <= 0) {
+      AlertUtils.showError("Lỗi", "Phiên không hợp lệ.");
+      return;
+    }
+    User currentUser = UserManager.getInstance().getCurrentUser();
+    if (currentUser == null) {
+      AlertUtils.showError("Lỗi", "Bạn phải đăng nhập để dùng Auto Bid!");
+      return;
+    }
+    AuctionStatus selectedStatus = selectedStatus();
+    if (selectedStatus != RUNNING) {
+      AlertUtils.showError("Lỗi", "Chỉ được kích hoạt Auto Bid khi phiên đang diễn ra!");
+      return;
+    }
+    long maxAmount;
+    long incrementAmount;
+    try {
+      maxAmount = Long.parseLong(autoBidMaxField.getText().trim());
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "Giá tối đa không hợp lệ.");
+      return;
+    }
+    try {
+      incrementAmount = Long.parseLong(autoBidStepField.getText().trim());
+    } catch (NumberFormatException e) {
+      AlertUtils.showError("Lỗi", "Bước tăng không hợp lệ.");
+      return;
+    }
+
+    // Validate inputs
+    long minBid = minimumBid();
+    if (maxAmount < minBid) {
+      AlertUtils.showError(
+          "Lỗi",
+          "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo: " + formatCurrency(minBid));
+      return;
+    }
+    Item item = auction == null ? null : auction.getItem();
+    long stepPrice =
+        item == null ? (preview == null ? 1L : preview.stepPrice()) : item.getStepPrice();
+    if (incrementAmount < stepPrice) {
+      AlertUtils.showError(
+          "Lỗi",
+          "Bước tăng tự động không được nhỏ hơn bước giá tối thiểu: " + formatCurrency(stepPrice));
+      return;
+    }
+
+    Wallet wallet = currentUser.getWallet();
+    BigDecimal available = wallet == null ? BigDecimal.ZERO : wallet.getAvailableBalance();
+    if (available.compareTo(BigDecimal.valueOf(maxAmount)) < 0) {
+      AlertUtils.showError("Lỗi", "Số dư khả dụng không đủ để ký quỹ mức tối đa!");
+      return;
+    }
+
+    try {
+      requests.setAutoBid(selectedAuctionId, maxAmount, incrementAmount);
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  /** handleDisableAutoBid. */
+  @FXML
+  public void handleDisableAutoBid(ActionEvent event) {
+    if (!requests.isConnected()) {
+      AlertUtils.showError("Mất kết nối", "Bạn đã mất kết nối tới server!");
+      return;
+    }
+    int selectedAuctionId = selectedAuctionId();
+    if (selectedAuctionId <= 0) {
+      AlertUtils.showError("Lỗi", "Phiên không hợp lệ.");
+      return;
+    }
+    try {
+      requests.disableAutoBid(selectedAuctionId);
+    } catch (IOException e) {
+      AlertUtils.showError("Lỗi Kết nối", "Server không phản hồi");
+    }
+  }
+
+  private void updateAutoBidUi() {
+    if (autoBidStatusLabel == null) {
+      return;
+    }
+    LiveAuctionSessionStore store = LiveAuctionSessionStore.getInstance();
+    if (store.isActiveAutoBidEnabled() && store.getActiveAutoBidMaxAmount() != null) {
+      autoBidStatusLabel.setText(
+          String.format(
+              "Đang chạy (Max: %s, Step: %s)",
+              formatDollar(store.getActiveAutoBidMaxAmount()),
+              formatDollar(store.getActiveAutoBidIncrementAmount())));
+      autoBidStatusLabel.setStyle("-fx-text-fill: #22c55e; -fx-font-weight: bold;");
+      if (autoBidMaxField != null && autoBidMaxField.getText().trim().isEmpty()) {
+        autoBidMaxField.setText(String.valueOf(store.getActiveAutoBidMaxAmount()));
+      }
+      if (autoBidStepField != null && autoBidStepField.getText().trim().isEmpty()) {
+        autoBidStepField.setText(String.valueOf(store.getActiveAutoBidIncrementAmount()));
+      }
+    } else {
+      autoBidStatusLabel.setText("Chưa thiết lập");
+      autoBidStatusLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-weight: bold;");
     }
   }
 

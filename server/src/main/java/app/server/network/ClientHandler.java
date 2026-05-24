@@ -91,7 +91,8 @@ public class ClientHandler implements Runnable {
     registry.put(
         RequestType.FETCH_AUCTION_HISTORY, new FetchAuctionHistoryCommand(auctionQueryService));
     registry.put(
-        RequestType.FETCH_AUCTION_DETAIL, new FetchAuctionDetailCommand(auctionQueryService));
+        RequestType.FETCH_AUCTION_DETAIL,
+        new FetchAuctionDetailCommand(auctionQueryService, autoBidService));
     registry.put(RequestType.UNWATCH_AUCTION, new UnwatchAuctionCommand());
     registry.put(RequestType.FETCH_SELLER_ITEMS, new FetchSellerItemsCommand(itemService));
     registry.put(RequestType.FETCH_USER_LIST, new FetchUserListCommand(userService));

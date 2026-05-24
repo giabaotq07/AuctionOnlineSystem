@@ -198,7 +198,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
 
   @Test
   public void testFetchAuctionDetailCommand() {
-    FetchAuctionDetailCommand cmd = new FetchAuctionDetailCommand(queryService);
+    FetchAuctionDetailCommand cmd = new FetchAuctionDetailCommand(queryService, autoBidService);
     PacketReq req =
         PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auction.getId()));
 
@@ -352,7 +352,7 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertTrue(res.isSuccess());
-    assertEquals(ResponseType.WALLET_UPDATED, res.getType());
+    assertEquals(ResponseType.SETTLE_WALLET_RESULT, res.getType());
   }
 
   @Test

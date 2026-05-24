@@ -461,7 +461,8 @@ public class AdminDashboardController implements Cleanable {
           name, desc, startingPrice, stepPrice, type, durationMins, startDateTime);
     } catch (NumberFormatException e) {
       AlertUtils.showError(
-          "Sai định dạng số hoặc giá trị ngoài khoảng", "Giá khởi điểm, bước giá và thời lượng phải là số nguyên hợp lệ.");
+          "Sai định dạng số hoặc giá trị ngoài khoảng",
+          "Giá khởi điểm, bước giá và thời lượng phải là số nguyên hợp lệ.");
       return null;
     } catch (DateTimeParseException e) {
       AlertUtils.showError(

@@ -120,6 +120,16 @@ public final class ClientRequestService {
     send(RequestType.FETCH_AVATAR, new FetchAvatarRequest(userId, avatarUrl));
   }
 
+  /** setAutoBid. */
+  public void setAutoBid(int auctionId, long maxAmount, long incrementAmount) throws IOException {
+    send(RequestType.SET_AUTO_BID, new SetAutoBidRequest(auctionId, maxAmount, incrementAmount));
+  }
+
+  /** disableAutoBid. */
+  public void disableAutoBid(int auctionId) throws IOException {
+    send(RequestType.DISABLE_AUTO_BID, new DisableAutoBidRequest(auctionId));
+  }
+
   private void send(RequestType type, Request payload) throws IOException {
     client.sendRequest(PacketReq.of(type, payload));
   }

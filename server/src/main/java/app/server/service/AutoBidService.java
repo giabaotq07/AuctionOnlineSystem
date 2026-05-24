@@ -1,11 +1,14 @@
 package app.server.service;
 
+import app.common.dto.WalletUpdateResponse;
+import app.common.enums.ResponseType;
 import app.common.exception.ServiceException;
 import app.common.models.Auction;
 import app.common.models.AutoBid;
 import app.common.models.Bid;
 import app.common.models.Item;
 import app.common.models.User;
+import app.common.protocol.PacketRes;
 import app.server.dao.AuctionDAO;
 import app.server.dao.AutoBidDAO;
 import app.server.dao.BidDAO;
@@ -47,6 +50,11 @@ public class AutoBidService {
     this.transactionManager = transactionManager;
     this.bidValidator = bidValidator;
     this.antiSnipeService = antiSnipeService;
+  }
+
+  /** getAutoBid. */
+  public java.util.Optional<AutoBid> getAutoBid(int auctionId, int userId) {
+    return autoBidDAO.findByAuctionAndUser(auctionId, userId);
   }
 
   /** setAutoBid. */
@@ -188,6 +196,43 @@ public class AutoBidService {
     if (changed) {
       bidDAO.insertBid(conn, auction.getId(), winner.getUserId(), finalBid, true);
     }
+
+    // Check for outbid auto-bids
+    long newHighest = auction.getHighestBid();
+    for (AutoBid ab : autoBids) {
+      if (ab.isEnabled() && ab.getMaxAmount() < newHighest) {
+        ab.setEnabled(false);
+        autoBidDAO.update(conn, ab);
+        try {
+          userDAO.lockRow(conn, ab.getUserId());
+          User outbidUser = userDAO.findById(conn, ab.getUserId()).orElse(null);
+          if (outbidUser != null) {
+            long retainedBid = highestBidForUser(conn, auction.getId(), ab.getUserId());
+            outbidUser
+                .getWallet()
+                .setFrozenAmount(String.valueOf(auction.getId()), BigDecimal.valueOf(retainedBid));
+            userDAO.update(conn, outbidUser);
+
+            String msg =
+                "Auto-bid của bạn cho phiên #"
+                    + auction.getId()
+                    + " đã bị vượt (mức tối đa: "
+                    + ab.getMaxAmount()
+                    + "). Mời bạn đặt lại!";
+            app.server.network.Server.sendPacketToUser(
+                ab.getUserId(), PacketRes.of(ResponseType.CHAT_MESSAGE, msg, null));
+
+            WalletUpdateResponse walletUpdate =
+                new WalletUpdateResponse(app.common.mapper.ModelMapper.toUserDto(outbidUser));
+            app.server.network.Server.sendPacketToUser(
+                ab.getUserId(), PacketRes.of(ResponseType.WALLET_UPDATED, "OK", walletUpdate));
+          }
+        } catch (Exception e) {
+          // Log minimal warnings
+        }
+      }
+    }
+
     return changed;
   }
 

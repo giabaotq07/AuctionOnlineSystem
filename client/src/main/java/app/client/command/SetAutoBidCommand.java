@@ -1,6 +1,7 @@
 package app.client.command;
 
 import app.client.store.AuctionStore;
+import app.client.store.LiveAuctionSessionStore;
 import app.common.dto.SetAutoBidResponse;
 import app.common.protocol.PacketRes;
 
@@ -13,6 +14,8 @@ public class SetAutoBidCommand extends Command {
       if (response != null) {
         AuctionStore.getInstance()
             .updateBid(response.auctionId(), response.highestBid(), response.leadingBidderId());
+        LiveAuctionSessionStore.getInstance()
+            .setActiveAutoBid(response.maxAmount(), response.incrementAmount(), response.enabled());
       }
       notifyUpdate();
     }

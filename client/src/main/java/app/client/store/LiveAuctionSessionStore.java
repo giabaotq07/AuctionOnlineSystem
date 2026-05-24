@@ -9,6 +9,9 @@ public final class LiveAuctionSessionStore {
 
   private Integer selectedAuctionId;
   private AuctionDetailProxy selectedProxy;
+  private Long activeAutoBidMaxAmount;
+  private Long activeAutoBidIncrementAmount;
+  private boolean activeAutoBidEnabled;
 
   private LiveAuctionSessionStore() {}
 
@@ -57,8 +60,29 @@ public final class LiveAuctionSessionStore {
     }
   }
 
+  public synchronized void setActiveAutoBid(long maxAmount, long incrementAmount, boolean enabled) {
+    this.activeAutoBidMaxAmount = maxAmount;
+    this.activeAutoBidIncrementAmount = incrementAmount;
+    this.activeAutoBidEnabled = enabled;
+  }
+
+  public synchronized Long getActiveAutoBidMaxAmount() {
+    return activeAutoBidMaxAmount;
+  }
+
+  public synchronized Long getActiveAutoBidIncrementAmount() {
+    return activeAutoBidIncrementAmount;
+  }
+
+  public synchronized boolean isActiveAutoBidEnabled() {
+    return activeAutoBidEnabled;
+  }
+
   public synchronized void clear() {
     selectedAuctionId = null;
     selectedProxy = null;
+    activeAutoBidMaxAmount = null;
+    activeAutoBidIncrementAmount = null;
+    activeAutoBidEnabled = false;
   }
 }

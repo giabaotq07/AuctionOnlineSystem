@@ -195,15 +195,37 @@
                             </StackPane>
                         </VBox>
 
-                        <!-- ============ BOTTOM-RIGHT: Auto Bid Placeholder ============ -->
+                        <!-- ============ BOTTOM-RIGHT: Auto Bid Panel ============ -->
                         <VBox alignment="TOP_LEFT" spacing="10.0" styleClass="live-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
                             <padding>
-                                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                                <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
                             </padding>
                             <Label styleClass="live-section-title" text="AUTO BID" />
-                            <Label styleClass="live-auto-bid-desc" text="Tự động đấu giá thay bạn" wrapText="true" />
+                            <Label styleClass="live-auto-bid-desc" text="Tự động đấu giá thay bạn đến giá trị tối đa thiết lập." wrapText="true" />
+                            
+                            <!-- Input Fields -->
+                            <VBox spacing="4.0">
+                                <Label styleClass="live-detail-key" text="Giá tối đa muốn trả (USD):" />
+                                <TextField fx:id="autoBidMaxField" promptText="Nhập giá tối đa..." styleClass="live-bid-input" />
+                            </VBox>
+                            
+                            <VBox spacing="4.0">
+                                <Label styleClass="live-detail-key" text="Bước tăng tự động (USD):" />
+                                <TextField fx:id="autoBidStepField" promptText="Nhập bước tăng..." styleClass="live-bid-input" />
+                            </VBox>
+                            
+                            <!-- Status display -->
+                            <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                <Label styleClass="live-detail-key" text="Trạng thái:" />
+                                <Label fx:id="autoBidStatusLabel" style="-fx-text-fill: #94a3b8; -fx-font-weight: bold;" text="Chưa thiết lập" />
+                            </HBox>
+                            
                             <Region VBox.vgrow="ALWAYS" />
-                            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" styleClass="live-auto-bid-placeholder" text="Chức năng đang phát triển..." />
+                            
+                            <HBox spacing="10.0">
+                                <Button fx:id="disableAutoBidBtn" maxWidth="1.7976931348623157E308" onAction="#handleDisableAutoBid" prefHeight="36.0" styleClass="live-view-all-btn" text="HỦY KÍCH HOẠT" HBox.hgrow="ALWAYS" />
+                                <Button fx:id="setAutoBidBtn" maxWidth="1.7976931348623157E308" onAction="#handleSetAutoBid" prefHeight="36.0" styleClass="live-bid-btn" text="KÍCH HOẠT" HBox.hgrow="ALWAYS" />
+                            </HBox>
                         </VBox>
                     </GridPane>
                 </VBox>
