@@ -17,7 +17,11 @@ public class Main extends Application {
     Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
     FXMLLoader fxmlLoader =
         new FXMLLoader(Main.class.getResource("/app/views/ConnectServerController.fxml"));
-    Scene scene = new Scene(fxmlLoader.load(), 1280, 720);
+    Scene scene =
+        new Scene(
+            fxmlLoader.load(),
+            NavigationManager.FIXED_SCENE_WIDTH,
+            NavigationManager.FIXED_SCENE_HEIGHT);
     String css =
         Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
     scene.getStylesheets().add(css);
@@ -26,8 +30,11 @@ public class Main extends Application {
             Objects.requireNonNull(getClass().getResourceAsStream("/app/views/images/icon.png")));
     stage.getIcons().add(icon);
     stage.setTitle("LoPPy");
+    stage.setResizable(true);
+    stage.setMaximized(false);
     stage.setScene(scene);
-    stage.show();
+    stage.sizeToScene();
     NavigationManager.getInstance().setPrimaryStage(stage);
+    stage.show();
   }
 }

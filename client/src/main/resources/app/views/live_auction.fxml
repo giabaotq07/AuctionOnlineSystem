@@ -190,7 +190,7 @@
                                 <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
                             </padding>
                             <Label styleClass="live-section-title" text="BIỂU ĐỒ GIÁ THEO THỜI GIAN" />
-                            <StackPane styleClass="live-chart-container" VBox.vgrow="ALWAYS" minHeight="200.0">
+                            <StackPane fx:id="priceChartContainer" styleClass="live-chart-container" VBox.vgrow="ALWAYS" minHeight="200.0">
                                 <Canvas fx:id="priceChartCanvas" height="200.0" width="580.0" />
                             </StackPane>
                         </VBox>

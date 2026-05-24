@@ -46,7 +46,7 @@
     </left>
 
     <center>
-        <ScrollPane fitToWidth="true" styleClass="content-scroll">
+        <ScrollPane fx:id="contentScrollPane" fitToWidth="true" styleClass="content-scroll">
             <content>
                 <VBox spacing="24.0" styleClass="content-shell">
                     <StackPane prefHeight="190.0" styleClass="hero-panel">
@@ -56,22 +56,22 @@
                             </padding>
                             <Label styleClass="warning-pill" text="LIVE AUCTION" />
                             <Label styleClass="section-title-large" text="Theo dõi phiên đấu giá nổi bật trong thời gian thực" wrapText="true" />
-                            <Label styleClass="muted-label" text="Duyệt tài sản sắp diễn ra, đang mở và đã hoàn tất với bố cục gọn, rõ và dễ thao tác." wrapText="true" />
+                            <Label styleClass="muted-label" text="Duyệt phiên sắp diễn ra, đang đấu giá và đã kết thúc với bố cục gọn, rõ và dễ thao tác." wrapText="true" />
                         </VBox>
                     </StackPane>
 
                     <VBox spacing="12.0">
-                        <Label styleClass="section-title" text="Tài sản sắp đấu giá" />
+                        <Label styleClass="section-title" text="Phiên sắp diễn ra" />
                         <StackPane fx:id="upcomingAuctionsPane" minHeight="270.0" styleClass="panel-card" />
                     </VBox>
 
                     <VBox spacing="12.0">
-                        <Label styleClass="section-title" text="Tài sản đang đấu giá" />
+                        <Label styleClass="section-title" text="Phiên đang diễn ra" />
                         <StackPane fx:id="activeAuctionsPane" minHeight="270.0" styleClass="panel-card" />
                     </VBox>
 
                     <VBox spacing="12.0">
-                        <Label styleClass="section-title" text="Tài sản đã đấu giá" />
+                        <Label styleClass="section-title" text="Phiên đã kết thúc" />
                         <StackPane fx:id="completedAuctionsPane" minHeight="270.0" styleClass="panel-card" />
                     </VBox>
 

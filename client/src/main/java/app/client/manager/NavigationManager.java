@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 /** NavigationManager. */
 public class NavigationManager {
+  public static final double FIXED_SCENE_WIDTH = 1280;
+  public static final double FIXED_SCENE_HEIGHT = 720;
   private static final NavigationManager instance = new NavigationManager();
   private final Logger logger = LoggerFactory.getLogger(NavigationManager.class);
   private Stage primaryStage;
@@ -60,15 +62,20 @@ public class NavigationManager {
       currentController = newController;
       Scene currentScene = primaryStage.getScene();
       double width =
-          currentScene != null && currentScene.getWidth() > 0 ? currentScene.getWidth() : 1280;
+          currentScene != null && currentScene.getWidth() > 0
+              ? currentScene.getWidth()
+              : FIXED_SCENE_WIDTH;
       double height =
-          currentScene != null && currentScene.getHeight() > 0 ? currentScene.getHeight() : 720;
+          currentScene != null && currentScene.getHeight() > 0
+              ? currentScene.getHeight()
+              : FIXED_SCENE_HEIGHT;
       boolean maximized = primaryStage.isMaximized();
       boolean fullScreen = primaryStage.isFullScreen();
       Scene scene = new Scene(root, width, height);
       String css =
           Objects.requireNonNull(getClass().getResource("/app/views/style.css")).toExternalForm();
       scene.getStylesheets().add(css);
+      primaryStage.setResizable(true);
       primaryStage.setScene(scene);
       primaryStage.setMaximized(maximized);
       primaryStage.setFullScreen(fullScreen);

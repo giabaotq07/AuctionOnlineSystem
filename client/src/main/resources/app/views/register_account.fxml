@@ -7,44 +7,49 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" styleClass="auth-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.RegisterController">
     <children>
 
-        <VBox alignment="TOP_LEFT" prefWidth="430.0" spacing="14.0" styleClass="auth-card" AnchorPane.bottomAnchor="64.0" AnchorPane.rightAnchor="76.0" AnchorPane.topAnchor="64.0">
+        <StackPane prefWidth="430.0" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="76.0" AnchorPane.topAnchor="0.0">
             <children>
-                <Label styleClass="auth-title" text="Đăng ký tài khoản" />
-                <HBox alignment="CENTER_LEFT" spacing="6.0">
-                    <Label styleClass="muted-label" text="Bạn đã có tài khoản?" />
-                    <Label fx:id="lblLogin" onMouseClicked="#backToLoginMouse" styleClass="link-label" text="Đăng nhập ngay" />
-                </HBox>
+                <VBox alignment="TOP_LEFT" maxHeight="-Infinity" prefWidth="430.0" spacing="14.0" styleClass="auth-card">
+                    <children>
+                        <Label styleClass="auth-title" text="Đăng ký tài khoản" />
+                        <HBox alignment="CENTER_LEFT" spacing="6.0">
+                            <Label styleClass="muted-label" text="Bạn đã có tài khoản?" />
+                            <Label fx:id="lblLogin" onMouseClicked="#backToLoginMouse" styleClass="link-label" text="Đăng nhập ngay" />
+                        </HBox>
 
-                <VBox spacing="8.0">
-                    <Label styleClass="field-label" text="Họ và tên" />
-                    <TextField fx:id="txtName" promptText="Nhập họ và tên" />
+                        <VBox spacing="8.0">
+                            <Label styleClass="field-label" text="Họ và tên" />
+                            <TextField fx:id="txtName" promptText="Nhập họ và tên" />
+                        </VBox>
+
+                        <VBox spacing="8.0">
+                            <Label styleClass="field-label" text="Tên đăng nhập / Email" />
+                            <TextField fx:id="txtAccount" promptText="Nhập tên đăng nhập" />
+                        </VBox>
+
+                        <VBox spacing="8.0">
+                            <Label styleClass="field-label" text="Mật khẩu" />
+                            <PasswordField fx:id="txtPassword" promptText="Nhập mật khẩu" />
+                        </VBox>
+
+                        <VBox spacing="8.0">
+                            <Label styleClass="field-label" text="Vai trò" />
+                            <HBox alignment="CENTER_LEFT" spacing="22.0">
+                                <RadioButton fx:id="rbBidder" text="Bidder" />
+                                <RadioButton fx:id="rbSeller" text="Seller" />
+                            </HBox>
+                        </VBox>
+
+                        <Button fx:id="registerButton" maxWidth="Infinity" onAction="#handleRegister" prefHeight="46.0" text="ĐĂNG KÝ" />
+                    </children>
                 </VBox>
-
-                <VBox spacing="8.0">
-                    <Label styleClass="field-label" text="Tên đăng nhập / Email" />
-                    <TextField fx:id="txtAccount" promptText="Nhập tên đăng nhập" />
-                </VBox>
-
-                <VBox spacing="8.0">
-                    <Label styleClass="field-label" text="Mật khẩu" />
-                    <PasswordField fx:id="txtPassword" promptText="Nhập mật khẩu" />
-                </VBox>
-
-                <VBox spacing="8.0">
-                    <Label styleClass="field-label" text="Vai trò" />
-                    <HBox alignment="CENTER_LEFT" spacing="22.0">
-                        <RadioButton fx:id="rbBidder" text="Bidder" />
-                        <RadioButton fx:id="rbSeller" text="Seller" />
-                    </HBox>
-                </VBox>
-
-                <Button fx:id="registerButton" maxWidth="Infinity" onAction="#handleRegister" prefHeight="46.0" text="ĐĂNG KÝ" />
             </children>
-        </VBox>
+        </StackPane>
     </children>
 </AnchorPane>

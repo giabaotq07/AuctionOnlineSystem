@@ -53,6 +53,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
@@ -91,6 +92,7 @@ public class LiveController implements Cleanable {
   @FXML private ProgressIndicator detailLoadingIndicator;
   @FXML private ImageView itemImageView;
   @FXML private Label imagePlaceholderLabel;
+  @FXML private StackPane priceChartContainer;
   @FXML private Canvas priceChartCanvas;
   @FXML private TextField autoBidMaxField;
   @FXML private TextField autoBidStepField;
@@ -127,9 +129,47 @@ public class LiveController implements Cleanable {
     notifications.addMessageListener(messageListener);
     updateAvailableBalance();
     configureBidHistoryScroll();
+    configurePriceChart();
     loadSessionAuction();
     maybeRequestAuctionDetail();
     updateAutoBidUi();
+  }
+
+  private void configurePriceChart() {
+    if (priceChartContainer == null || priceChartCanvas == null) {
+      return;
+    }
+    priceChartCanvas.setManaged(false);
+    priceChartContainer
+        .widthProperty()
+        .addListener((obs, oldValue, newValue) -> resizePriceChart());
+    priceChartContainer
+        .heightProperty()
+        .addListener((obs, oldValue, newValue) -> resizePriceChart());
+    Platform.runLater(this::resizePriceChart);
+  }
+
+  private void resizePriceChart() {
+    if (priceChartContainer == null || priceChartCanvas == null) {
+      return;
+    }
+    double width = priceChartContainer.getWidth();
+    double height = priceChartContainer.getHeight();
+    if (width <= 1 || height <= 1) {
+      return;
+    }
+    boolean changed = false;
+    if (Math.abs(priceChartCanvas.getWidth() - width) > 0.5) {
+      priceChartCanvas.setWidth(width);
+      changed = true;
+    }
+    if (Math.abs(priceChartCanvas.getHeight() - height) > 0.5) {
+      priceChartCanvas.setHeight(height);
+      changed = true;
+    }
+    if (changed) {
+      drawPriceChart();
+    }
   }
 
   private void configureBidHistoryScroll() {
@@ -762,6 +802,7 @@ public class LiveController implements Cleanable {
 
   private void addPricePoint(long price) {
     priceHistory.add(new ChartPoint(LocalDateTime.now(), price));
+    priceHistory.sort((left, right) -> left.time.compareTo(right.time));
   }
 
   /** Rebuild chart data từ bid list. */
@@ -780,14 +821,13 @@ public class LiveController implements Cleanable {
     if (startingPrice > 0) {
       priceHistory.add(new ChartPoint(startTime, startingPrice));
     }
-    // Thêm từng bid (reversed - bids typically newest first, we need oldest first for chart)
-    List<Bid> bids = detail.getBids();
-    for (int i = bids.size() - 1; i >= 0; i--) {
-      Bid bid = bids.get(i);
-      if (bid != null && bid.getCreateAt() != null) {
-        priceHistory.add(new ChartPoint(bid.getCreateAt(), bid.getAmount()));
-      }
+    List<Bid> bids = new ArrayList<>(detail.getBids());
+    bids.removeIf(bid -> bid == null || bid.getCreateAt() == null);
+    bids.sort((left, right) -> left.getCreateAt().compareTo(right.getCreateAt()));
+    for (Bid bid : bids) {
+      priceHistory.add(new ChartPoint(bid.getCreateAt(), bid.getAmount()));
     }
+    priceHistory.sort((left, right) -> left.time.compareTo(right.time));
   }
 
   /** Vẽ biểu đồ giá trực tiếp lên Canvas. */
@@ -802,12 +842,19 @@ public class LiveController implements Cleanable {
     // Clear canvas
     gc.clearRect(0, 0, w, h);
 
-    double padLeft = 60;
-    double padRight = 20;
-    double padTop = 25;
-    double padBottom = 30;
+    if (w <= 0 || h <= 0) {
+      return;
+    }
+
+    double padLeft = 64;
+    double padRight = 24;
+    double padTop = 56;
+    double padBottom = 34;
     double chartW = w - padLeft - padRight;
     double chartH = h - padTop - padBottom;
+    if (chartW <= 0 || chartH <= 0) {
+      return;
+    }
 
     // Vẽ nền grid
     gc.setStroke(Color.web("#1e293b"));
@@ -816,6 +863,10 @@ public class LiveController implements Cleanable {
       double y = padTop + (chartH / 4.0) * i;
       gc.strokeLine(padLeft, y, w - padRight, y);
     }
+    gc.setStroke(Color.web("#334155"));
+    gc.setLineWidth(1);
+    gc.strokeLine(padLeft, padTop, padLeft, padTop + chartH);
+    gc.strokeLine(padLeft, padTop + chartH, padLeft + chartW, padTop + chartH);
 
     if (priceHistory.isEmpty()) {
       gc.setFill(Color.web("#475569"));
@@ -838,6 +889,11 @@ public class LiveController implements Cleanable {
     long range = maxPrice - minPrice;
     minPrice = Math.max(0, minPrice - range / 10);
     maxPrice = maxPrice + range / 10;
+    LocalDateTime minTime = priceHistory.get(0).time;
+    LocalDateTime maxTime = priceHistory.get(priceHistory.size() - 1).time;
+    long rawTimeRangeMillis = ChronoUnit.MILLIS.between(minTime, maxTime);
+    long timeRangeMillis = Math.max(1, rawTimeRangeMillis);
+    boolean useTimeScale = rawTimeRangeMillis > 0;
 
     // Vẽ trục Y labels
     gc.setFill(Color.web("#64748b"));
@@ -854,10 +910,20 @@ public class LiveController implements Cleanable {
       int labelCount = Math.min(priceHistory.size(), 6);
       for (int i = 0; i < labelCount; i++) {
         int idx = (int) ((double) i / (labelCount - 1) * (priceHistory.size() - 1));
-        double x = padLeft + (chartW / (priceHistory.size() - 1.0)) * idx;
-        String timeStr = timeFormat.format(priceHistory.get(idx).time);
+        ChartPoint point = priceHistory.get(idx);
+        double x =
+            xForPoint(
+                point,
+                idx,
+                priceHistory.size(),
+                minTime,
+                timeRangeMillis,
+                useTimeScale,
+                padLeft,
+                chartW);
+        String timeStr = timeFormat.format(point.time);
         gc.setFill(Color.web("#64748b"));
-        gc.fillText(timeStr, x - 15, h - 5);
+        fillTextClamped(gc, timeStr, x - 15, h - 7, padLeft, w - padRight - 30);
       }
     }
 
@@ -867,11 +933,7 @@ public class LiveController implements Cleanable {
       double y = padTop + chartH / 2;
       gc.setFill(Color.web("#4f46e5"));
       gc.fillOval(x - 4, y - 4, 8, 8);
-
-      // Tooltip
-      gc.setFill(Color.web("#e2e8f0"));
-      gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 11));
-      gc.fillText(formatDollar(priceHistory.get(0).price), x + 8, y - 5);
+      drawLastPointLabel(gc, priceHistory.get(0), x, y, w, padRight);
       return;
     }
 
@@ -880,10 +942,18 @@ public class LiveController implements Cleanable {
     gc.setFill(Color.web("#4f46e5"));
     gc.beginPath();
     for (int i = 0; i < priceHistory.size(); i++) {
-      double x = padLeft + (chartW / (priceHistory.size() - 1.0)) * i;
-      double normalizedPrice =
-          (double) (priceHistory.get(i).price - minPrice) / (maxPrice - minPrice);
-      double y = padTop + chartH * (1.0 - normalizedPrice);
+      ChartPoint point = priceHistory.get(i);
+      double x =
+          xForPoint(
+              point,
+              i,
+              priceHistory.size(),
+              minTime,
+              timeRangeMillis,
+              useTimeScale,
+              padLeft,
+              chartW);
+      double y = yForPrice(point.price, minPrice, maxPrice, padTop, chartH);
       if (i == 0) {
         gc.moveTo(x, y);
       } else {
@@ -901,10 +971,18 @@ public class LiveController implements Cleanable {
     gc.setLineWidth(2.5);
     gc.beginPath();
     for (int i = 0; i < priceHistory.size(); i++) {
-      double x = padLeft + (chartW / (priceHistory.size() - 1.0)) * i;
-      double normalizedPrice =
-          (double) (priceHistory.get(i).price - minPrice) / (maxPrice - minPrice);
-      double y = padTop + chartH * (1.0 - normalizedPrice);
+      ChartPoint point = priceHistory.get(i);
+      double x =
+          xForPoint(
+              point,
+              i,
+              priceHistory.size(),
+              minTime,
+              timeRangeMillis,
+              useTimeScale,
+              padLeft,
+              chartW);
+      double y = yForPrice(point.price, minPrice, maxPrice, padTop, chartH);
       if (i == 0) {
         gc.moveTo(x, y);
       } else {
@@ -915,10 +993,18 @@ public class LiveController implements Cleanable {
 
     // Vẽ dots tại mỗi data point
     for (int i = 0; i < priceHistory.size(); i++) {
-      double x = padLeft + (chartW / (priceHistory.size() - 1.0)) * i;
-      double normalizedPrice =
-          (double) (priceHistory.get(i).price - minPrice) / (maxPrice - minPrice);
-      double y = padTop + chartH * (1.0 - normalizedPrice);
+      ChartPoint point = priceHistory.get(i);
+      double x =
+          xForPoint(
+              point,
+              i,
+              priceHistory.size(),
+              minTime,
+              timeRangeMillis,
+              useTimeScale,
+              padLeft,
+              chartW);
+      double y = yForPrice(point.price, minPrice, maxPrice, padTop, chartH);
 
       // Outer glow
       gc.setFill(Color.web("#4f46e5", 0.3));
@@ -931,28 +1017,76 @@ public class LiveController implements Cleanable {
     // Tooltip cho điểm cuối (giá mới nhất)
     if (!priceHistory.isEmpty()) {
       ChartPoint last = priceHistory.get(priceHistory.size() - 1);
-      double x = padLeft + chartW;
-      double normalizedPrice = (double) (last.price - minPrice) / (maxPrice - minPrice);
-      double y = padTop + chartH * (1.0 - normalizedPrice);
-
-      // Tooltip box
-      String tooltipText = formatDollar(last.price);
-      DateTimeFormatter tf = DateTimeFormatter.ofPattern("HH:mm:ss");
-      String timeStr = tf.format(last.time);
-
-      gc.setFill(Color.web("#1e293b"));
-      double boxW = 100;
-      double boxH = 32;
-      double boxX = Math.min(x + 5, w - padRight - boxW);
-      double boxY = y - boxH / 2;
-      gc.fillRoundRect(boxX, boxY, boxW, boxH, 6, 6);
-
-      gc.setFill(Color.web("#e2e8f0"));
-      gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 11));
-      gc.fillText(timeStr, boxX + 6, boxY + 13);
-      gc.setFill(Color.web("#22c55e"));
-      gc.fillText(tooltipText, boxX + 6, boxY + 26);
+      double x =
+          xForPoint(
+              last,
+              priceHistory.size() - 1,
+              priceHistory.size(),
+              minTime,
+              timeRangeMillis,
+              useTimeScale,
+              padLeft,
+              chartW);
+      double y = yForPrice(last.price, minPrice, maxPrice, padTop, chartH);
+      drawLastPointLabel(gc, last, x, y, w, padRight);
     }
+  }
+
+  private double xForPoint(
+      ChartPoint point,
+      int index,
+      int pointCount,
+      LocalDateTime minTime,
+      long timeRangeMillis,
+      boolean useTimeScale,
+      double padLeft,
+      double chartW) {
+    if (!useTimeScale) {
+      double normalizedIndex = pointCount <= 1 ? 0.5 : (double) index / (pointCount - 1.0);
+      return padLeft + chartW * normalizedIndex;
+    }
+    long elapsedMillis = Math.max(0, ChronoUnit.MILLIS.between(minTime, point.time));
+    double normalizedTime = clamp((double) elapsedMillis / timeRangeMillis);
+    return padLeft + chartW * normalizedTime;
+  }
+
+  private double yForPrice(long price, long minPrice, long maxPrice, double padTop, double chartH) {
+    double normalizedPrice = (double) (price - minPrice) / (maxPrice - minPrice);
+    return padTop + chartH * (1.0 - clamp(normalizedPrice));
+  }
+
+  private void drawLastPointLabel(
+      GraphicsContext gc,
+      ChartPoint point,
+      double x,
+      double y,
+      double canvasWidth,
+      double padRight) {
+    String priceText = formatDollar(point.price);
+    String timeText = DateTimeFormatter.ofPattern("HH:mm:ss").format(point.time);
+    double boxW = Math.max(112, Math.max(priceText.length(), timeText.length()) * 7.5 + 16);
+    double boxH = 36;
+    double boxX = Math.max(6, Math.min(x - boxW / 2, canvasWidth - padRight - boxW));
+    double boxY = Math.max(6, y - boxH - 12);
+
+    gc.setFill(Color.web("#111827"));
+    gc.fillRoundRect(boxX, boxY, boxW, boxH, 7, 7);
+    gc.setStroke(Color.web("#475569"));
+    gc.setLineWidth(1);
+    gc.strokeRoundRect(boxX, boxY, boxW, boxH, 7, 7);
+    gc.setStroke(Color.web("#475569"));
+    gc.strokeLine(x, boxY + boxH, x, y - 6);
+
+    gc.setFill(Color.web("#e2e8f0"));
+    gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 11));
+    gc.fillText(timeText, boxX + 8, boxY + 14);
+    gc.setFill(Color.web("#22c55e"));
+    gc.fillText(priceText, boxX + 8, boxY + 28);
+  }
+
+  private void fillTextClamped(
+      GraphicsContext gc, String text, double x, double y, double minX, double maxX) {
+    gc.fillText(text, Math.max(minX, Math.min(x, maxX)), y);
   }
 
   // === EXISTING LOGIC (unchanged) ===
