@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="768.0" prefWidth="1366.0" styleClass="root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.client.controllers.SellerDashboardController">
+    <!-- Header Area -->
+    <top>
+        <VBox style="-fx-background-color: #0f1424; -fx-border-color: #1a2236; -fx-border-width: 0 0 2 0;">
+            <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="20.0">
+                <padding>
+                    <Insets left="30.0" right="30.0" />
+                </padding>
+                <Label text="VẠN BẢO CÁC" style="-fx-font-size: 26px; -fx-font-weight: 900; -fx-text-fill: linear-gradient(to right, #3b82f6, #2d5cf7); -fx-effect: dropshadow(three-pass-box, rgba(45, 92, 247, 0.4), 10, 0, 0, 0);" />
+                <Separator orientation="VERTICAL" prefHeight="40.0" styleClass="separator" />
+                <Label text="ĐẤU GIÁ CỦA TÔI" style="-fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: #ffffff; -fx-letter-spacing: 2px;" />
+                <Region HBox.hgrow="ALWAYS" />
+                <HBox alignment="CENTER" spacing="15.0">
+                    <Label fx:id="sellerNameLabel" text="Người bán: " style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                    <Button mnemonicParsing="false" onAction="#handleBackToMain" text="TRỞ VỀ TRANG CHỦ" style="-fx-background-color: linear-gradient(to right, #3b82f6, #2d5cf7); -fx-font-size: 13px; -fx-padding: 8 20; -fx-background-radius: 8;" />
+                </HBox>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- Main Content Area: directly the HBox without TabPane -->
+    <center>
+        <HBox spacing="20.0" style="-fx-background-color: #080c18;">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+
+            <!-- Left Column: Auction List, Search and Filter -->
+            <VBox spacing="15.0" HBox.hgrow="ALWAYS" maxWidth="800.0">
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <TextField fx:id="auctionSearchField" promptText="Tìm kiếm phiên đấu giá..." HBox.hgrow="ALWAYS" style="-fx-font-size: 14px; -fx-padding: 10;" />
+                    <ComboBox fx:id="typeFilterComboBox" prefWidth="150.0" style="-fx-padding: 8;" />
+                    <Button mnemonicParsing="false" onAction="#handleRefreshAuctions" text="LÀM MỚI" style="-fx-font-size: 13px; -fx-padding: 10 20;" />
+                </HBox>
+                <TableView fx:id="auctionTableView" VBox.vgrow="ALWAYS" styleClass="table-view">
+                    <columns>
+                        <TableColumn fx:id="colAuctionId" prefWidth="60.0" text="Mã" />
+                        <TableColumn fx:id="colItemName" prefWidth="180.0" text="Tên vật phẩm" />
+                        <TableColumn fx:id="colItemType" prefWidth="90.0" text="Phân loại" />
+                        <TableColumn fx:id="colStartingPrice" prefWidth="110.0" text="Giá khởi điểm" />
+                        <TableColumn fx:id="colHighestBid" prefWidth="110.0" text="Giá hiện tại" />
+                        <TableColumn fx:id="colStartTime" prefWidth="130.0" text="Bắt đầu" />
+                        <TableColumn fx:id="colStatus" prefWidth="90.0" text="Trạng thái" />
+                    </columns>
+                </TableView>
+            </VBox>
+
+            <!-- Right Column: Detail Editor Card -->
+            <VBox spacing="15.0" minWidth="420.0" maxWidth="500.0" styleClass="card" HBox.hgrow="NEVER">
+                <padding>
+                    <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                </padding>
+                <Label text="THÔNG TIN PHIÊN ĐẤU GIÁ" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                <Separator styleClass="separator" />
+
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                    <VBox spacing="15.0">
+                        <VBox spacing="5.0">
+                            <Label text="Tên tài sản *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                            <TextField fx:id="nameField" promptText="Nhập tên tài sản..." style="-fx-padding: 8;" />
+                        </VBox>
+                        <VBox spacing="5.0">
+                            <Label text="Mô tả chi tiết" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                            <TextArea fx:id="descriptionField" prefHeight="80.0" promptText="Mô tả tình trạng vật phẩm..." style="-fx-font-size: 13px; -fx-wrap-text: true;" />
+                        </VBox>
+                        <HBox spacing="15.0">
+                            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                <Label text="Phân loại *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <ComboBox fx:id="typeComboBox" maxWidth="Infinity" style="-fx-padding: 5;" />
+                            </VBox>
+                            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                <Label text="Thời lượng (Phút) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <TextField fx:id="durationField" promptText="VD: 60" style="-fx-padding: 8;" />
+                            </VBox>
+                        </HBox>
+                        <HBox spacing="15.0">
+                            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                <Label text="Giá khởi điểm (VNĐ) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <TextField fx:id="startingPriceField" promptText="VD: 1000000" style="-fx-padding: 8;" />
+                            </VBox>
+                            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                <Label text="Bước giá tối thiểu (VNĐ) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <TextField fx:id="stepPriceField" promptText="VD: 50000" style="-fx-padding: 8;" />
+                            </VBox>
+                        </HBox>
+                        <HBox spacing="15.0">
+                            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                <Label text="Ngày bắt đầu *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <DatePicker fx:id="startDatePicker" maxWidth="Infinity" style="-fx-padding: 5;" />
+                            </VBox>
+                            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                <Label text="Giờ bắt đầu (HH:mm) *" style="-fx-font-weight: bold; -fx-text-fill: #8a9bbf;" />
+                                <TextField fx:id="startTimeField" promptText="VD: 14:30" style="-fx-padding: 8;" />
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                </ScrollPane>
+
+                <Separator styleClass="separator" />
+                <VBox spacing="10.0" alignment="CENTER">
+                    <HBox spacing="10.0" alignment="CENTER">
+                        <Button mnemonicParsing="false" onAction="#handleClearForm" text="XÓA FORM" style="-fx-background-color: transparent; -fx-border-color: #1a2236; -fx-border-radius: 8; -fx-font-size: 13px; -fx-padding: 10 20; -fx-text-fill: #ffffff;" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#handleCreateAuction" text="THÊM MỚI" style="-fx-font-size: 13px; -fx-padding: 10 25;" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                    <HBox spacing="10.0" alignment="CENTER">
+                        <Button mnemonicParsing="false" onAction="#handleUpdateAuction" text="CẬP NHẬT" style="-fx-background-color: linear-gradient(to right, #10b981, #059669); -fx-font-size: 13px; -fx-padding: 10 20;" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#handleCancelAuction" text="HỦY PHIÊN" style="-fx-background-color: linear-gradient(to right, #ef4444, #dc2626); -fx-font-size: 13px; -fx-padding: 10 20;" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                </VBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

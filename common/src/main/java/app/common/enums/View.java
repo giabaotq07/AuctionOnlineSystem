@@ -14,6 +14,7 @@ public enum View {
   DEPOSIT("/app/views/deposit.fxml"),
   ALL_AUCTIONS("/app/views/All_Auctions.fxml"),
   ADMIN_DASHBOARD("/app/views/admin_dashboard.fxml"),
+  SELLER_DASHBOARD("/app/views/seller_dashboard.fxml"),
   ;
   private final String fxmlPath;
 

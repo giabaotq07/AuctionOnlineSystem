@@ -8,14 +8,14 @@ import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
-import app.common.dto.*;
+import app.common.dto.AuctionPreview;
+import app.common.dto.CreateAuctionRequest;
+import app.common.dto.UpdateAuctionRequest;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
 import app.common.enums.View;
 import app.common.models.Item;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -33,9 +33,9 @@ import javafx.scene.control.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AdminDashboardController implements Cleanable {
-  private static final Logger logger = LoggerFactory.getLogger(AdminDashboardController.class);
-  private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
+public class SellerDashboardController implements Cleanable {
+  private static final Logger logger = LoggerFactory.getLogger(SellerDashboardController.class);
+  private final java.text.DecimalFormat currencyFormat = new java.text.DecimalFormat("#,###");
   private final DateTimeFormatter dateTimeFormatter =
       DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
   private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -43,9 +43,8 @@ public class AdminDashboardController implements Cleanable {
   private final ClientRequestService requests = ClientRequestService.getInstance();
   private final ClientNotificationCenter notifications = ClientNotificationCenter.getInstance();
 
-  @FXML private Label adminNameLabel;
+  @FXML private Label sellerNameLabel;
   @FXML private TextField auctionSearchField;
-  @FXML private TextField userSearchField;
   @FXML private ComboBox<String> typeFilterComboBox;
 
   // Auctions Table
@@ -68,16 +67,7 @@ public class AdminDashboardController implements Cleanable {
   @FXML private DatePicker startDatePicker;
   @FXML private TextField startTimeField;
 
-  // Users Table
-  @FXML private TableView<UserDto> userTableView;
-  @FXML private TableColumn<UserDto, Integer> colUserId;
-  @FXML private TableColumn<UserDto, String> colUserName;
-  @FXML private TableColumn<UserDto, String> colUserAccount;
-  @FXML private TableColumn<UserDto, String> colUserBalance;
-  @FXML private TableColumn<UserDto, String> colUserRole;
-
   private final List<AuctionPreview> masterAuctions = new ArrayList<>();
-  private final List<UserDto> masterUsers = new ArrayList<>();
 
   private boolean actionLoading = false;
   private Button currentLoadingButton;
@@ -85,8 +75,6 @@ public class AdminDashboardController implements Cleanable {
 
   // Listeners
   private final Runnable auctionsListener = () -> Platform.runLater(this::loadAuctionsData);
-  private final Consumer<List<UserDto>> usersListener =
-      users -> Platform.runLater(() -> loadUsersData(users));
   private final Consumer<String> messageListener =
       msg -> Platform.runLater(() -> handleIncomingMessage(msg));
 
@@ -94,29 +82,26 @@ public class AdminDashboardController implements Cleanable {
   public void initialize() {
     setupGreeter();
     setupAuctionsTable();
-    setupUsersTable();
     setupForm();
     setupSearchFilters();
 
     // Add listeners
     notifications.addUpdateListener(auctionsListener);
-    notifications.addUserListListener(usersListener);
     notifications.addMessageListener(messageListener);
 
     // Load master list immediately on load if there's cached data!
     loadAuctionsData();
 
-    // Initial fetch
+    // Initial fetch to get latest from server
     refreshAuctions();
-    refreshUsers();
   }
 
   private void setupGreeter() {
     var user = UserManager.getInstance().getCurrentUser();
     if (user != null) {
-      adminNameLabel.setText("Admin: " + user.getName());
+      sellerNameLabel.setText("Người bán: " + user.getName());
     } else {
-      adminNameLabel.setText("Admin: Administrator");
+      sellerNameLabel.setText("Người bán: ");
     }
   }
 
@@ -127,7 +112,7 @@ public class AdminDashboardController implements Cleanable {
 
     colItemType.setCellValueFactory(
         data -> {
-          var type = data.getValue().itemType();
+          ItemType type = data.getValue().itemType();
           String typeStr = (type != null) ? type.name() : "OTHER";
           return new SimpleStringProperty(typeStr);
         });
@@ -165,24 +150,6 @@ public class AdminDashboardController implements Cleanable {
             });
   }
 
-  private void setupUsersTable() {
-    colUserId.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().id()));
-    colUserName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
-    colUserAccount.setCellValueFactory(
-        data -> new SimpleStringProperty(data.getValue().account().username()));
-    colUserBalance.setCellValueFactory(
-        data -> {
-          BigDecimal bal = data.getValue().wallet().availableBalance();
-          return new SimpleStringProperty(bal != null ? currencyFormat.format(bal) + " đ" : "0 đ");
-        });
-    colUserRole.setCellValueFactory(
-        data ->
-            new SimpleStringProperty(
-                data.getValue().account().role() != null
-                    ? data.getValue().account().role().name()
-                    : ""));
-  }
-
   private void setupForm() {
     typeComboBox.getItems().setAll(ItemType.values());
     typeComboBox.getSelectionModel().selectFirst();
@@ -191,7 +158,6 @@ public class AdminDashboardController implements Cleanable {
 
   private void setupSearchFilters() {
     auctionSearchField.textProperty().addListener((obs, oldVal, newVal) -> filterAuctions(newVal));
-    userSearchField.textProperty().addListener((obs, oldVal, newVal) -> filterUsers(newVal));
 
     typeFilterComboBox.getItems().addAll("ALL", "ELECTRONICS", "ART", "VEHICLE");
     typeFilterComboBox.setValue("ALL");
@@ -202,7 +168,7 @@ public class AdminDashboardController implements Cleanable {
     Item item = ItemStore.getInstance().getItem(summary.itemId());
     nameField.setText(summary.itemName());
     descriptionField.setText(item != null ? item.getDescription() : "");
-    typeComboBox.setValue((item != null && item.getType() != null) ? item.getType() : ItemType.ART);
+    typeComboBox.setValue((summary.itemType() != null) ? summary.itemType() : ItemType.ART);
 
     // Duration
     // Calculate duration in minutes if possible
@@ -214,8 +180,8 @@ public class AdminDashboardController implements Cleanable {
       durationField.setText("60");
     }
 
-    startingPriceField.setText(String.valueOf(item != null ? item.getStartingPrice() : 0));
-    stepPriceField.setText(String.valueOf(item != null ? item.getStepPrice() : 0));
+    startingPriceField.setText(String.valueOf(summary.startingPrice()));
+    stepPriceField.setText(String.valueOf(summary.stepPrice()));
 
     if (summary.startTime() != null) {
       startDatePicker.setValue(summary.startTime().toLocalDate());
@@ -228,8 +194,21 @@ public class AdminDashboardController implements Cleanable {
 
   // Master Data Loaders
   private void loadAuctionsData() {
+    var user = UserManager.getInstance().getCurrentUser();
+    if (user == null) {
+      masterAuctions.clear();
+      auctionTableView.getItems().clear();
+      return;
+    }
+    int currentUserId = user.getId();
     masterAuctions.clear();
-    masterAuctions.addAll(AuctionStore.getInstance().getAuctionPreviews());
+
+    // Only display auctions belonging to the currently logged in Seller using the UserPreview
+    for (AuctionPreview summary : AuctionStore.getInstance().getAuctionPreviews()) {
+      if (summary.seller() != null && summary.seller().userId() == currentUserId) {
+        masterAuctions.add(summary);
+      }
+    }
 
     // Sort by status: OPEN -> RUNNING -> PAID -> FINISHED (end) -> CANCELED
     masterAuctions.sort(
@@ -256,14 +235,6 @@ public class AdminDashboardController implements Cleanable {
     };
   }
 
-  private void loadUsersData(List<UserDto> users) {
-    masterUsers.clear();
-    if (users != null) {
-      masterUsers.addAll(users);
-    }
-    filterUsers(userSearchField.getText());
-  }
-
   private void filterAuctions(String query) {
     String type = typeFilterComboBox.getValue() == null ? "ALL" : typeFilterComboBox.getValue();
     String keyword = (query == null) ? "" : query.toLowerCase().trim();
@@ -280,31 +251,10 @@ public class AdminDashboardController implements Cleanable {
                   if ("ALL".equals(type)) {
                     return true;
                   }
-                  Item item = ItemStore.getInstance().getItem(a.itemId());
-                  return item != null
-                      && item.getType() != null
-                      && item.getType().name().equals(type);
+                  return a.itemType() != null && a.itemType().name().equals(type);
                 })
             .toList();
     auctionTableView.getItems().setAll(filtered);
-  }
-
-  private void filterUsers(String query) {
-    if (query == null || query.isBlank()) {
-      userTableView.getItems().setAll(masterUsers);
-      return;
-    }
-    String keyword = query.toLowerCase().trim();
-    List<UserDto> filtered =
-        masterUsers.stream()
-            .filter(
-                u ->
-                    (u.name() != null && u.name().toLowerCase().contains(keyword))
-                        || (u.account().username() != null
-                            && u.account().username().toLowerCase().contains(keyword))
-                        || String.valueOf(u.id()).contains(keyword))
-            .toList();
-    userTableView.getItems().setAll(filtered);
   }
 
   // Refresh triggers
@@ -316,28 +266,14 @@ public class AdminDashboardController implements Cleanable {
     }
   }
 
-  private void refreshUsers() {
-    try {
-      requests.fetchUserList();
-    } catch (IOException e) {
-      logger.error("Failed to refresh user list", e);
-    }
-  }
-
   @FXML
   public void handleRefreshAuctions(ActionEvent event) {
     refreshAuctions();
   }
 
   @FXML
-  public void handleRefreshUsers(ActionEvent event) {
-    refreshUsers();
-  }
-
-  @FXML
-  public void handleLogout(ActionEvent event) {
-    UserManager.getInstance().setCurrentUser(null);
-    NavigationManager.getInstance().navigateTo(View.LOGIN);
+  public void handleBackToMain(ActionEvent event) {
+    NavigationManager.getInstance().navigateTo(View.UI);
   }
 
   @FXML
@@ -545,13 +481,7 @@ public class AdminDashboardController implements Cleanable {
 
   @Override
   public void cleanup() {
-    notifications.removeUpdateListener(MasterAuctionsListener());
-    notifications.removeUserListListener(usersListener);
+    notifications.removeUpdateListener(auctionsListener);
     notifications.removeMessageListener(messageListener);
-  }
-
-  // Helper method to keep naming clean
-  private Runnable MasterAuctionsListener() {
-    return auctionsListener;
   }
 }

@@ -82,7 +82,7 @@ public class MyHistoryController implements Cleanable {
       return;
     }
     try {
-      requests.fetchAuctionHistory(AuctionStore.getInstance().getMaxHistoryVersion());
+      requests.fetchAuctionHistory(-1);
       historyOwnerUserId = userId;
       lastHistoryFetchAtMs = now;
       historyLoaded = true;

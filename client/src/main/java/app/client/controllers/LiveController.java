@@ -1,8 +1,6 @@
 package app.client.controllers;
 
-import static app.common.enums.AuctionStatus.FINISHED;
-import static app.common.enums.AuctionStatus.OPEN;
-import static app.common.enums.AuctionStatus.RUNNING;
+import static app.common.enums.AuctionStatus.*;
 
 import app.client.manager.AuctionDetailProxy;
 import app.client.manager.ClientNotificationCenter;
@@ -639,6 +637,14 @@ public class LiveController implements Cleanable {
           "-fx-background-color: rgba(34,197,94,0.15);"
               + "-fx-text-fill: #22c55e;"
               + "-fx-border-color: rgba(34,197,94,0.3);");
+      return;
+    }
+    if (status == AuctionStatus.CANCELED) {
+      statusBadge.setText("ĐÃ BỊ HỦY");
+      statusBadge.setStyle(
+          "-fx-background-color: rgba(59,130,246,0.15);"
+              + "-fx-text-fill: #3b82f6;"
+              + "-fx-border-color: rgba(59,130,246,0.3);");
       return;
     }
     statusBadge.setText("ĐÃ KẾT THÚC");

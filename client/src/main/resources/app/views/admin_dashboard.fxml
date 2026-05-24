@@ -38,6 +38,7 @@
                     <VBox spacing="15.0" HBox.hgrow="ALWAYS" maxWidth="800.0">
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                             <TextField fx:id="auctionSearchField" promptText="Tìm kiếm phiên đấu giá..." HBox.hgrow="ALWAYS" style="-fx-font-size: 14px; -fx-padding: 10;" />
+                            <ComboBox fx:id="typeFilterComboBox" prefWidth="150.0" style="-fx-padding: 8;" />
                             <Button mnemonicParsing="false" onAction="#handleRefreshAuctions" text="LÀM MỚI" style="-fx-font-size: 13px; -fx-padding: 10 20;" />
                         </HBox>
                         <TableView fx:id="auctionTableView" VBox.vgrow="ALWAYS" styleClass="table-view">

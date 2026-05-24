@@ -426,7 +426,12 @@ public class FirstScene implements Cleanable {
   /** Member. */
   @FXML
   public void switchToMine(ActionEvent e) {
-    NavigationManager.getInstance().navigateTo(View.HISTORY);
+    User user = UserManager.getInstance().getCurrentUser();
+    if (user != null && user.getRole() == app.common.enums.UserRole.SELLER) {
+      NavigationManager.getInstance().navigateTo(View.SELLER_DASHBOARD);
+    } else {
+      NavigationManager.getInstance().navigateTo(View.HISTORY);
+    }
   }
 
   /** Member. */
