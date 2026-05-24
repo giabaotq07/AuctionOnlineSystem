@@ -1,10 +1,8 @@
 package app.client.command;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import app.client.manager.ClientNotificationCenter;
-import app.client.utils.AlertUtils;
 import app.common.dto.*;
 import app.common.enums.*;
 import app.common.protocol.PacketRes;
@@ -13,35 +11,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import javafx.application.Platform;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
-/**
- * ClientCommandsTest. Kiem thu tat ca cac lop Command o phia Client. Khoi dong JavaFX Platform thuc
- * te va dung AlertUtils mock de tuong thich JDK 25.
- */
+/** ClientCommandsTest. Kiem thu cac lop Command o phia Client. */
 public class ClientCommandsTest {
 
-  private MockedStatic<AlertUtils> mockedAlertUtils;
   private boolean messageNotified = false;
   private boolean updateNotified = false;
   private ChatResponse chatNotified = null;
 
   @BeforeEach
   void setUp() {
-    // Khoi dong JavaFX Platform thuc te va giu cho no luon chay bang cach setImplicitExit(false)
-    try {
-      Platform.startup(() -> {});
-      Platform.setImplicitExit(false);
-    } catch (IllegalStateException e) {
-      // Da khoi dong tu truoc
-    }
-
-    mockedAlertUtils = mockStatic(AlertUtils.class);
-
     // Lang nghe cac notification tu ClientNotificationCenter
     ClientNotificationCenter.getInstance().addMessageListener(msg -> messageNotified = true);
     ClientNotificationCenter.getInstance().addUpdateListener(() -> updateNotified = true);
@@ -50,11 +31,6 @@ public class ClientCommandsTest {
     messageNotified = false;
     updateNotified = false;
     chatNotified = null;
-  }
-
-  @AfterEach
-  void tearDown() {
-    mockedAlertUtils.close();
   }
 
   @Test

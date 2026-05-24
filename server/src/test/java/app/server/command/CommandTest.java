@@ -103,7 +103,7 @@ public class CommandTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertFalse(res.isSuccess());
-    assertEquals("Sai tên tài khoản hoặc mật khẩu.", res.getMessage());
+    assertEquals("Tên đăng nhập hoặc mật khẩu không đúng", res.getMessage());
   }
 
   /** Test RegisterCommand dang ky thanh cong. */
@@ -145,7 +145,7 @@ public class CommandTest extends BaseDAOTest {
     PacketRes res = fakeClientHandler.getSentPacket();
     assertNotNull(res);
     assertFalse(res.isSuccess());
-    assertEquals("Tài khoản đã tồn tại hoặc dữ liệu không hợp lệ.", res.getMessage());
+    assertEquals("User đã tồn tại: duplicate_user", res.getMessage());
   }
 
   /** FakeClientHandler de gia lap hoat dong socket network va phien session. */

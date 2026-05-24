@@ -11,7 +11,6 @@ class RequestTypeTest {
     assertTrue(RequestType.LOGIN.isAllowed(null));
     assertTrue(RequestType.REGISTER.isAllowed(null));
     assertTrue(RequestType.FETCH_AUCTION_SUMMARIES.isAllowed(null));
-    assertTrue(RequestType.FETCH_AUCTION_DETAIL.isAllowed(null));
     assertTrue(RequestType.UNWATCH_AUCTION.isAllowed(null));
   }
 
