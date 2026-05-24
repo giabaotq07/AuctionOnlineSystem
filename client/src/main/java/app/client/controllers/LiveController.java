@@ -1033,11 +1033,10 @@ public class LiveController implements Cleanable {
     }
 
     // Validate inputs
-    long minBid = minimumBid();
-    if (maxAmount < minBid) {
+    long minimumMaxAmount = autoBidMinimumMaxAmount(currentUser);
+    if (maxAmount < minimumMaxAmount) {
       AlertUtils.showError(
-          "Lỗi",
-          "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo: " + formatCurrency(minBid));
+          "Lỗi", "Giá tối đa phải lớn hơn hoặc bằng: " + formatCurrency(minimumMaxAmount));
       return;
     }
     Item item = auction == null ? null : auction.getItem();
@@ -1112,6 +1111,16 @@ public class LiveController implements Cleanable {
     long previewStepPrice = preview == null ? 1L : Math.max(preview.stepPrice(), 1L);
     long stepPrice = item == null ? previewStepPrice : Math.max(item.getStepPrice(), 1L);
     return currentPrice + stepPrice;
+  }
+
+  private long autoBidMinimumMaxAmount(User currentUser) {
+    if (currentUser != null
+        && auction != null
+        && auction.getWinnerId() != null
+        && auction.getWinnerId() == currentUser.getId()) {
+      return currentPrice;
+    }
+    return minimumBid();
   }
 
   private int selectedAuctionId() {

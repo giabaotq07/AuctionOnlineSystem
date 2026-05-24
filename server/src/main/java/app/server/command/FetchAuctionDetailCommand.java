@@ -5,6 +5,7 @@ import app.common.dto.AuctionDetailResponse;
 import app.common.dto.SetAutoBidResponse;
 import app.common.enums.ResponseType;
 import app.common.exception.ValidationException;
+import app.common.models.Auction;
 import app.common.models.AutoBid;
 import app.common.protocol.PacketReq;
 import app.common.protocol.PacketRes;
@@ -32,15 +33,15 @@ public class FetchAuctionDetailCommand extends SafeCommand {
       throw new ValidationException("Phiên đấu giá không hợp lệ.");
     }
     clientHandler.getSession().setViewingAuctionId(request.auctionId());
-    if (auctionQueryService.isAuctionVersionCurrent(request.auctionId(), request.knownVersion())) {
+    Auction currentAuction = auctionQueryService.getAuction(request.auctionId());
+    if (request.knownVersion() >= 0 && currentAuction.getVersion() == request.knownVersion()) {
       AuctionDetailResponse response =
           AuctionDetailResponse.notModified(request.auctionId(), request.knownVersion());
       sendSuccess(clientHandler, "OK", response);
     } else {
+      currentAuction = auctionQueryService.getAuctionDetail(request.auctionId());
       AuctionDetailResponse response =
-          new AuctionDetailResponse(
-              app.common.mapper.ModelMapper.toAuctionDto(
-                  auctionQueryService.getAuctionDetail(request.auctionId())));
+          new AuctionDetailResponse(app.common.mapper.ModelMapper.toAuctionDto(currentAuction));
       sendSuccess(clientHandler, "OK", response);
     }
 
@@ -55,8 +56,8 @@ public class FetchAuctionDetailCommand extends SafeCommand {
                 autoBid != null ? autoBid.getMaxAmount() : 0L,
                 autoBid != null ? autoBid.getIncrementAmount() : 0L,
                 autoBid != null && autoBid.isEnabled(),
-                0L,
-                0);
+                currentAuction.getHighestBid(),
+                currentAuction.getWinnerId() == null ? 0 : currentAuction.getWinnerId());
         clientHandler.sendPacket(
             PacketRes.of(ResponseType.SET_AUTO_BID_RESULT, "OK", autoBidResponse));
       }

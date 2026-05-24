@@ -153,9 +153,12 @@ public class MySqlAutoBidDAO extends BaseDAO implements AutoBidDAO {
 
   @Override
   public boolean delete(int id) {
-    return withConnection(
-        conn -> executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id),
-        "Lỗi kết nối khi xóa auto bid.");
+    return withConnection(conn -> delete(conn, id), "Lỗi kết nối khi xóa auto bid.");
+  }
+
+  @Override
+  public boolean delete(Connection conn, int id) {
+    return executeUpdate(conn, "DELETE FROM auto_bids WHERE id = ?", id);
   }
 
   @Override

@@ -83,32 +83,25 @@ public class AutoBidService {
                   .findByAuctionAndUser(conn, auctionId, actor.getId())
                   .map(
                       existing -> {
-                        existing.setMaxAmount(maxAmount);
-                        existing.setIncrementAmount(incrementAmount);
-                        existing.setEnabled(true);
-                        autoBidDAO.update(conn, existing);
-                        return existing;
+                        autoBidDAO.delete(conn, existing.getId());
+                        return saveAutoBid(
+                            conn, auctionId, actor.getId(), maxAmount, incrementAmount);
                       })
                   .orElseGet(
                       () ->
-                          autoBidDAO.save(
-                              conn,
-                              new AutoBid(
-                                  0,
-                                  auctionId,
-                                  actor.getId(),
-                                  maxAmount,
-                                  incrementAmount,
-                                  true,
-                                  null,
-                                  null)));
+                          saveAutoBid(conn, auctionId, actor.getId(), maxAmount, incrementAmount));
 
-          boolean resolved = resolveAutoBid(conn, auction, item);
-          if (resolved) {
-            antiSnipeService.apply(auction);
-            auctionDAO.update(conn, auction);
+          if (hasCompetingAutoBid(conn, auctionId, actor.getId())) {
+            boolean resolved = resolveAutoBid(conn, auction, item);
+            if (resolved) {
+              antiSnipeService.apply(auction);
+              auctionDAO.update(conn, auction);
+            }
           }
-          return new AutoBidUpdateResult(auction, autoBid, bidder);
+          AutoBid currentAutoBid =
+              autoBidDAO.findByAuctionAndUser(conn, auctionId, actor.getId()).orElse(autoBid);
+          User currentBidder = userDAO.findById(conn, actor.getId()).orElse(bidder);
+          return new AutoBidUpdateResult(auction, currentAutoBid, currentBidder);
         });
   }
 
@@ -260,7 +253,17 @@ public class AutoBidService {
     if (incrementAmount <= 0) {
       throw new ServiceException("Bước tăng auto-bid không hợp lệ.");
     }
-    bidValidator.validateBidAmount(maxAmount, auction.getHighestBid(), item.getStepPrice());
+    long stepPrice = item.getStepPrice();
+    if (stepPrice <= 0) {
+      throw new ServiceException("Bước giá không hợp lệ.");
+    }
+    long minimumMaxAmount = auction.getHighestBid();
+    if (auction.getWinnerId() == null || auction.getWinnerId() != actor.getId()) {
+      minimumMaxAmount += stepPrice;
+    }
+    if (maxAmount < minimumMaxAmount) {
+      throw new ServiceException("Giá tối đa auto-bid phải từ " + minimumMaxAmount + " trở lên.");
+    }
   }
 
   private Item auctionItem(Connection conn, Auction auction) {
@@ -274,6 +277,21 @@ public class AutoBidService {
     return userDAO
         .findById(conn, userId)
         .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+  }
+
+  private AutoBid saveAutoBid(
+      Connection conn, int auctionId, int userId, long maxAmount, long incrementAmount) {
+    return autoBidDAO.save(
+        conn, new AutoBid(0, auctionId, userId, maxAmount, incrementAmount, true, null, null));
+  }
+
+  private boolean hasCompetingAutoBid(Connection conn, int auctionId, int userId) {
+    for (AutoBid autoBid : autoBidDAO.findEnabledByAuction(conn, auctionId)) {
+      if (autoBid.getUserId() != userId) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private long highestBidForUser(Connection conn, int auctionId, int userId) {

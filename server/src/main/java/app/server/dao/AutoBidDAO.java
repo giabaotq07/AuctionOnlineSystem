@@ -43,6 +43,9 @@ public interface AutoBidDAO {
   /** delete. */
   boolean delete(int id);
 
+  /** delete. */
+  boolean delete(Connection conn, int id);
+
   /** setEnabled. */
   boolean setEnabled(int id, boolean enabled);
 }

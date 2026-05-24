@@ -21,6 +21,7 @@ import app.server.dao.impl.MySqlBidDAO;
 import app.server.dao.impl.MySqlItemDAO;
 import app.server.dao.impl.MySqlUserDAO;
 import app.server.database.TransactionManager;
+import app.server.service.result.AutoBidUpdateResult;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,13 +97,14 @@ public class AutoBidServiceTest extends app.server.dao.BaseDAOTest {
   }
 
   @Test
-  void setAutoBidCreatesRecordAndFreezesMaxAmount() {
+  void setAutoBidCreatesRecordAndFreezesMaxAmountWithoutBiddingImmediately() {
     autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 100L);
 
     assertTrue(autoBidDAO.findByAuctionAndUser(auction.getId(), bidder1.getId()).isPresent());
     Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(1100L, stored.getHighestBid());
-    assertEquals(bidder1.getId(), stored.getWinnerId());
+    assertEquals(1000L, stored.getHighestBid());
+    assertNull(stored.getWinnerId());
+    assertTrue(bidDAO.findByAuction(auction.getId()).isEmpty());
 
     User storedBidder = userDAO.findById(bidder1.getId()).orElseThrow();
     assertEquals(
@@ -119,6 +121,7 @@ public class AutoBidServiceTest extends app.server.dao.BaseDAOTest {
     autoBidService.setAutoBid(auction.getId(), bidder2, 2500L, 100L);
 
     Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+
     assertEquals(bidder1.getId(), stored.getWinnerId());
     assertEquals(2600L, stored.getHighestBid());
   }
@@ -129,8 +132,89 @@ public class AutoBidServiceTest extends app.server.dao.BaseDAOTest {
     autoBidService.setAutoBid(auction.getId(), bidder2, 2000L, 100L);
 
     Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+
     assertEquals(bidder1.getId(), stored.getWinnerId());
     assertEquals(2000L, stored.getHighestBid());
+  }
+
+  @Test
+  void overwritingAutoBidResetsTiePriority() {
+    autoBidService.setAutoBid(auction.getId(), bidder1, 1500L, 100L);
+    autoBidService.setAutoBid(auction.getId(), bidder2, 2000L, 100L);
+    autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 100L);
+
+    Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+
+    assertEquals(bidder2.getId(), stored.getWinnerId());
+    assertEquals(2000L, stored.getHighestBid());
+  }
+
+  @Test
+  void firstAutoBidDoesNotImmediatelyOutbidManualLeader() {
+    bidService.placeBid(auction.getId(), bidder2, 1100L);
+
+    autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 100L);
+
+    Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(bidder2.getId(), stored.getWinnerId());
+    assertEquals(1100L, stored.getHighestBid());
+    assertEquals(1, bidDAO.findByAuction(auction.getId()).size());
+  }
+
+  @Test
+  void lowerCompetingAutoBidIsDisabledAfterImmediateResolution() {
+    autoBidService.setAutoBid(auction.getId(), bidder1, 3000L, 100L);
+
+    AutoBidUpdateResult result = autoBidService.setAutoBid(auction.getId(), bidder2, 2000L, 100L);
+
+    Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(bidder1.getId(), stored.getWinnerId());
+    assertEquals(2100L, stored.getHighestBid());
+    assertFalse(result.autoBid().isEnabled());
+
+    User storedBidder = userDAO.findById(bidder2.getId()).orElseThrow();
+    assertEquals(
+        BigDecimal.ZERO.stripTrailingZeros(),
+        storedBidder
+            .getWallet()
+            .getFrozenAmount(String.valueOf(auction.getId()))
+            .stripTrailingZeros());
+  }
+
+  @Test
+  void currentLeaderCanOverwriteAutoBidDownToCurrentPrice() {
+    autoBidService.setAutoBid(auction.getId(), bidder1, 3000L, 100L);
+
+    Auction ledAuction = bidService.placeBid(auction.getId(), bidder2, 1100L);
+    assertEquals(bidder1.getId(), ledAuction.getWinnerId());
+    assertEquals(1200L, ledAuction.getHighestBid());
+
+    autoBidService.setAutoBid(auction.getId(), bidder1, 1200L, 100L);
+
+    Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(bidder1.getId(), stored.getWinnerId());
+    assertEquals(1200L, stored.getHighestBid());
+    assertEquals(2, bidDAO.findByAuction(auction.getId()).size());
+
+    User storedBidder = userDAO.findById(bidder1.getId()).orElseThrow();
+    assertEquals(
+        BigDecimal.valueOf(1200).stripTrailingZeros(),
+        storedBidder
+            .getWallet()
+            .getFrozenAmount(String.valueOf(auction.getId()))
+            .stripTrailingZeros());
+  }
+
+  @Test
+  void currentLeaderCannotOverwriteAutoBidBelowCurrentPrice() {
+    autoBidService.setAutoBid(auction.getId(), bidder1, 3000L, 100L);
+    Auction ledAuction = bidService.placeBid(auction.getId(), bidder2, 1100L);
+
+    assertEquals(bidder1.getId(), ledAuction.getWinnerId());
+    assertEquals(1200L, ledAuction.getHighestBid());
+    assertThrows(
+        ServiceException.class,
+        () -> autoBidService.setAutoBid(auction.getId(), bidder1, 1199L, 100L));
   }
 
   @Test
@@ -140,7 +224,7 @@ public class AutoBidServiceTest extends app.server.dao.BaseDAOTest {
 
     User afterDisable = userDAO.findById(bidder1.getId()).orElseThrow();
     assertEquals(
-        BigDecimal.valueOf(1100).stripTrailingZeros(),
+        BigDecimal.ZERO.stripTrailingZeros(),
         afterDisable
             .getWallet()
             .getFrozenAmount(String.valueOf(auction.getId()))

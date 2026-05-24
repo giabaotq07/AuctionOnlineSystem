@@ -38,8 +38,11 @@ public class PlaceBidCommand extends SafeCommand {
     User user = requireUser(clientHandler);
     int bidderId = user.getId();
     Auction updatedAuction = bidService.placeBid(auctionId, user, bidAmount);
+    int leadingBidderId =
+        updatedAuction.getWinnerId() == null ? bidderId : updatedAuction.getWinnerId();
     PlaceBidResponse response =
-        new PlaceBidResponse(updatedAuction.getId(), updatedAuction.getHighestBid(), bidderId);
+        new PlaceBidResponse(
+            updatedAuction.getId(), updatedAuction.getHighestBid(), leadingBidderId);
     sendSuccess(clientHandler, "Đặt giá thành công.", response);
     notifyAfterBid(clientHandler, auctionId, bidderId, response);
     logger.info("User {} placed bid {} in auction {}", bidderId, bidAmount, auctionId);
