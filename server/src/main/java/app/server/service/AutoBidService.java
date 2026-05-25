@@ -242,6 +242,9 @@ public class AutoBidService {
     if (stepPrice <= 0) {
       throw new ServiceException("Bước giá không hợp lệ.");
     }
+    if (incrementAmount < stepPrice) {
+      throw new ServiceException("Bước tăng auto-bid phải từ " + stepPrice + " trở lên.");
+    }
     long minimumMaxAmount = auction.getHighestBid();
     if (auction.getWinnerId() == null || auction.getWinnerId() != actor.getId()) {
       minimumMaxAmount += stepPrice;

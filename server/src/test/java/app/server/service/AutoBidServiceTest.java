@@ -279,5 +279,8 @@ public class AutoBidServiceTest extends app.server.dao.BaseDAOTest {
     assertThrows(
         ServiceException.class,
         () -> autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 0L));
+    assertThrows(
+        ServiceException.class,
+        () -> autoBidService.setAutoBid(auction.getId(), bidder1, 2000L, 99L));
   }
 }

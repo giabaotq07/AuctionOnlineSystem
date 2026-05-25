@@ -102,7 +102,6 @@ public class AuctionService {
       User actor) {
     validateAuctionIdentity(auctionId, expectedVersion);
     OwnershipGuard.requireValidActor(actor);
-    validateAuctionPayload(name, startingPrice, stepPrice, type, durationMinutes, startTime);
 
     Auction auction =
         transactionManager.runInTransaction(
@@ -110,6 +109,8 @@ public class AuctionService {
               Auction storedAuction = requireAuction(conn, auctionId);
               OwnershipGuard.requireAuctionOwnerOrAdmin(storedAuction, actor);
               validateEditableAuction(storedAuction);
+              validateAuctionPayload(
+                  name, startingPrice, stepPrice, type, durationMinutes, startTime);
 
               Item storedItem =
                   itemDAO
@@ -252,12 +253,6 @@ public class AuctionService {
         .orElseThrow(() -> new ServiceException("Không tìm thấy phiên: " + auctionId));
   }
 
-  private User requireUser(java.sql.Connection conn, int userId) {
-    return userDAO
-        .findById(conn, userId)
-        .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
-  }
-
   private LocalDateTime now() {
     return LocalDateTime.now(clock);
   }
@@ -303,6 +298,11 @@ public class AuctionService {
 
   private void validateEditableAuction(Auction auction) {
     if (auction.getStatus() != AuctionStatus.OPEN) {
+      if (auction.getStatus() == AuctionStatus.FINISHED
+          || auction.getStatus() == AuctionStatus.PAID
+          || auction.getStatus() == AuctionStatus.CANCELED) {
+        throw new ServiceException("Không thể cập nhật phiên đã đóng.");
+      }
       throw new ServiceException("Chỉ có thể cập nhật phiên chưa bắt đầu.");
     }
   }

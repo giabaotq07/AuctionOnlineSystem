@@ -282,6 +282,34 @@ public class AuctionServiceTest extends BaseDAOTest {
                 seller));
   }
 
+  /** Test uu tien loi trang thai khi cap nhat phien da dong. */
+  @Test
+  public void testUpdateFinishedAuctionReturnsClosedMessageBeforePayloadValidation() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Binh gom", "Binh gom co", 7000L, 500L, ItemType.ART, 60, startTime, seller);
+    auction.setStatus(AuctionStatus.FINISHED);
+    auctionDAO.update(auction);
+
+    ServiceException ex =
+        assertThrows(
+            ServiceException.class,
+            () ->
+                auctionService.updateAuction(
+                    auction.getId(),
+                    "Binh gom moi",
+                    "Mo ta moi",
+                    8000L,
+                    500L,
+                    ItemType.ART,
+                    30,
+                    LocalDateTime.now().minusHours(2),
+                    auction.getVersion(),
+                    admin));
+    assertEquals("Không thể cập nhật phiên đã đóng.", ex.getMessage());
+  }
+
   /** Test khong duoc huy phien da ket thuc. */
   @Test
   public void testCancelFinishedAuctionRejected() {
