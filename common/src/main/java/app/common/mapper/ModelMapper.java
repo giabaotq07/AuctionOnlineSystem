@@ -34,7 +34,8 @@ public class ModelMapper {
         user.getName(),
         toAccountDto(user.getAccount()),
         toWalletDto(user.getWallet()),
-        user.getAvatarUrl());
+        user.getAvatarUrl(),
+        user.isBanned());
   }
 
   public static UserPreview toUserPreview(User user) {
@@ -51,15 +52,21 @@ public class ModelMapper {
   public static User toUserModel(UserDto dto) {
     if (dto == null) return null;
     if (dto.wallet() == null) {
-      return User.createPublicUser(
-          dto.id(), dto.name(), toAccountModel(dto.account()), dto.avatarUrl());
+      User user =
+          User.createPublicUser(
+              dto.id(), dto.name(), toAccountModel(dto.account()), dto.avatarUrl());
+      user.setStatus(!dto.isBanned());
+      return user;
     }
-    return new User(
-        dto.id(),
-        dto.name(),
-        toAccountModel(dto.account()),
-        toWalletModel(dto.wallet()),
-        dto.avatarUrl());
+    User user =
+        new User(
+            dto.id(),
+            dto.name(),
+            toAccountModel(dto.account()),
+            toWalletModel(dto.wallet()),
+            dto.avatarUrl());
+    user.setStatus(!dto.isBanned());
+    return user;
   }
 
   public static BidDto toBidDto(Bid bid) {

@@ -5,10 +5,12 @@ import java.util.Objects;
 
 /** User. */
 public class User extends Entity {
-  protected String name;
-  protected Account account;
-  protected Wallet wallet;
-  protected String avatarUrl;
+  private String name;
+  private Account account;
+  private Wallet wallet;
+  private String avatarUrl;
+  private boolean status;
+
 
   /** User. */
   public User(int id, String name, Account account, Wallet wallet, String avatarUrl) {
@@ -20,6 +22,7 @@ public class User extends Entity {
     this.account = Objects.requireNonNull(account, "account");
     this.wallet = Objects.requireNonNull(wallet, "wallet");
     this.avatarUrl = avatarUrl;
+    this.status = true;
   }
 
   /** User. */
@@ -47,6 +50,7 @@ public class User extends Entity {
     this.account = Objects.requireNonNull(account, "account");
     this.wallet = allowPublicView ? wallet : Objects.requireNonNull(wallet, "wallet");
     this.avatarUrl = avatarUrl;
+    this.status = true;
   }
 
   /** Returns a user object safe to embed inside public auction data. */
@@ -66,6 +70,22 @@ public class User extends Entity {
 
   public static User createPublicUser(int id, String name, Account account) {
     return createPublicUser(id, name, account, null);
+  }
+
+  public boolean isBanned() {
+    return !status;
+  }
+
+  public void ban() {
+    status = false;
+  }
+
+  public void unban() {
+    status = true;
+  }
+
+  public void setStatus(boolean status) {
+    this.status = status;
   }
 
   public String getName() {
@@ -95,5 +115,9 @@ public class User extends Entity {
 
   public void setAvatarUrl(String avatarUrl) {
     this.avatarUrl = avatarUrl;
+  }
+
+  public boolean getStatus() {
+    return status;
   }
 }

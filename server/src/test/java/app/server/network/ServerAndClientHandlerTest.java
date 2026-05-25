@@ -2,12 +2,14 @@ package app.server.network;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import app.common.enums.RequestType;
 import app.common.enums.ResponseType;
 import app.common.models.User;
 import app.common.protocol.PacketRes;
 import app.server.ServerApp;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +55,20 @@ public class ServerAndClientHandlerTest {
 
     // Test close
     assertDoesNotThrow(() -> clientHandler.close());
+  }
+
+  @Test
+  public void testAuthorizeRejectsBannedAuthenticatedUser() throws Exception {
+    User user = app.TestFixtures.user("banned_user", app.common.enums.UserRole.BIDDER);
+    user.setId(24);
+    user.ban();
+    clientHandler.getSession().authenticate(user);
+
+    Method authorize = ClientHandler.class.getDeclaredMethod("authorize", RequestType.class);
+    authorize.setAccessible(true);
+
+    assertFalse((boolean) authorize.invoke(clientHandler, RequestType.FETCH_AUCTION_SUMMARIES));
+    assertFalse((boolean) authorize.invoke(clientHandler, RequestType.DEPOSIT));
   }
 
   @Test

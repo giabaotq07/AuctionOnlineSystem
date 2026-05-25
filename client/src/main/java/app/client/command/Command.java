@@ -23,4 +23,8 @@ public abstract class Command {
   public void notifyChat(ChatResponse response) {
     ClientNotificationCenter.getInstance().notifyChat(response);
   }
+
+  public void notifyUserListUpdate() {
+    ClientNotificationCenter.getInstance().notifyUserList();
+  }
 }

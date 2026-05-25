@@ -327,6 +327,14 @@ public class Server {
     asyncSend(handler, packet, "Packet send failed to user {}", userId);
   }
 
+  public static void updateOnlineUserStatus(int userId, boolean active) {
+    ClientHandler handler = authenticatedClients.get(userId);
+    if (!isReady(handler)) {
+      return;
+    }
+    handler.getUser().setStatus(active);
+  }
+
   /** broadcastToAuctionViewers. */
   public static void broadcastToAuctionViewers(int auctionId, PacketRes packet, int excludeUser) {
     if (auctionId <= 0) {

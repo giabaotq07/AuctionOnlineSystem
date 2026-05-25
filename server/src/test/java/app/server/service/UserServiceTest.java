@@ -55,6 +55,23 @@ public class UserServiceTest extends BaseDAOTest {
   }
 
   @Test
+  void ban_user_shouldSetStatusToFalse() {
+    userService.banUser(tester.getId());
+
+    User banned = userDAO.findById(tester.getId()).orElseThrow();
+    assertTrue(banned.isBanned());
+  }
+
+  @Test
+  void unban_user_shouldSetStatusToTrue() {
+    userService.banUser(tester.getId());
+    userService.unbanUser(tester.getId());
+
+    User unbanned = userDAO.findById(tester.getId()).orElseThrow();
+    assertFalse(unbanned.isBanned());
+  }
+
+  @Test
   void login_shouldFail_whenPasswordWrong() {
     assertThrows(ServiceException.class, () -> userService.login("test_account", "wrong_password"));
   }
@@ -62,6 +79,16 @@ public class UserServiceTest extends BaseDAOTest {
   @Test
   void login_shouldFail_whenUserNotFound() {
     assertThrows(ServiceException.class, () -> userService.login("unknown_user", "test_password"));
+  }
+
+  @Test
+  void login_shouldFail_whenUserIsBanned() {
+    userService.banUser(tester.getId());
+
+    ServiceException exception =
+        assertThrows(
+            ServiceException.class, () -> userService.login("test_account", "test_password"));
+    assertEquals("Tài khoản đã bị cấm.", exception.getMessage());
   }
 
   @Test

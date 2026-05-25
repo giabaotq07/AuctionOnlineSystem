@@ -64,6 +64,7 @@ public class Client {
     registry.put(ResponseType.UPLOAD_AVATAR, new UploadAvatarCommand());
     registry.put(ResponseType.FETCH_AVATAR, new FetchAvatarCommand());
     registry.put(ResponseType.ERROR, new ErrorCommand());
+    registry.put(ResponseType.USER_BANNED_NOTICE, new BanUserCommand());
     return registry;
   }
 

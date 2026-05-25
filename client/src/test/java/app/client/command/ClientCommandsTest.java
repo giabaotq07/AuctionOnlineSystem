@@ -3,6 +3,7 @@ package app.client.command;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.client.manager.ClientNotificationCenter;
+import app.client.store.UserListStore;
 import app.common.dto.*;
 import app.common.enums.*;
 import app.common.protocol.PacketRes;
@@ -19,6 +20,7 @@ public class ClientCommandsTest {
 
   private boolean messageNotified = false;
   private boolean updateNotified = false;
+  private boolean userListNotified = false;
   private ChatResponse chatNotified = null;
 
   @BeforeEach
@@ -26,11 +28,14 @@ public class ClientCommandsTest {
     // Lang nghe cac notification tu ClientNotificationCenter
     ClientNotificationCenter.getInstance().addMessageListener(msg -> messageNotified = true);
     ClientNotificationCenter.getInstance().addUpdateListener(() -> updateNotified = true);
+    ClientNotificationCenter.getInstance().addUserListListener(() -> userListNotified = true);
     ClientNotificationCenter.getInstance().addChatListener(chat -> chatNotified = chat);
 
     messageNotified = false;
     updateNotified = false;
+    userListNotified = false;
     chatNotified = null;
+    UserListStore.getInstance().clear();
   }
 
   @Test
@@ -226,6 +231,50 @@ public class ClientCommandsTest {
     cmd.execute(packet);
 
     assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testFetchUserListCommandStoresUsersAndNotifies() {
+    FetchUserListCommand cmd = new FetchUserListCommand();
+
+    UserDto user =
+        new UserDto(
+            1,
+            "John Doe",
+            new AccountDto("john", UserRole.BIDDER),
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
+    PacketRes packet =
+        PacketRes.of(ResponseType.USER_LIST_RESULT, "Success", new UserListResponse(List.of(user)));
+
+    cmd.execute(packet);
+
+    assertTrue(userListNotified);
+    List<UserDto> storedUsers = UserListStore.getInstance().getMasterUsers();
+    assertEquals(1, storedUsers.size());
+    assertEquals("john", storedUsers.getFirst().account().username());
+  }
+
+  @Test
+  public void testBanUserCommandUpdatesStoreAndNotifies() {
+    UserDto user =
+        new UserDto(
+            1,
+            "John Doe",
+            new AccountDto("john", UserRole.BIDDER),
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
+    UserListStore.getInstance().setMasterUsers(List.of(user));
+
+    BanUserCommand cmd = new BanUserCommand();
+    PacketRes packet =
+        PacketRes.of(
+            ResponseType.USER_BANNED_NOTICE, "Success", new BanUserResponse(user.id(), true));
+
+    cmd.execute(packet);
+
+    assertTrue(userListNotified);
+    assertTrue(UserListStore.getInstance().getMasterUsers().getFirst().isBanned());
   }
 
   @Test
