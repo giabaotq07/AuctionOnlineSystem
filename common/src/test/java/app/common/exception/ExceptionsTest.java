@@ -50,4 +50,15 @@ public class ExceptionsTest {
     assertEquals("App error with cause", ex2.getMessage());
     assertEquals(cause, ex2.getCause());
   }
+
+  @Test
+  public void testValidationException() {
+    ValidationException ex1 = new ValidationException("Validation error");
+    assertEquals("Validation error", ex1.getMessage());
+
+    Throwable cause = new RuntimeException("cause");
+    ValidationException ex2 = new ValidationException("Validation error with cause", cause);
+    assertEquals("Validation error with cause", ex2.getMessage());
+    assertEquals(cause, ex2.getCause());
+  }
 }

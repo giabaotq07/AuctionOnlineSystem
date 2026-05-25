@@ -301,4 +301,163 @@ public class ClientCommandsTest {
 
     assertTrue(messageNotified);
   }
+
+  @Test
+  public void testCreateAuctionCommand() {
+    CreateAuctionCommand cmd = new CreateAuctionCommand();
+
+    UserDto sellerDto =
+        new UserDto(
+            1,
+            "John Doe",
+            new AccountDto("john", UserRole.SELLER),
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
+    ItemDto item =
+        new ItemDto(10, 1, "Vase", "Old Vase", 500L, 50L, ItemType.ART, false, "url", sellerDto);
+    AuctionDto auction =
+        new AuctionDto(
+            123,
+            10,
+            1,
+            null,
+            AuctionStatus.OPEN,
+            LocalDateTime.now(),
+            LocalDateTime.now().plusHours(1),
+            500L,
+            0,
+            1,
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            item,
+            sellerDto,
+            null,
+            new ArrayList<>());
+
+    CreateAuctionResponse payload = new CreateAuctionResponse(auction);
+    PacketRes successPacket = PacketRes.of(ResponseType.CREATE_AUCTION_RESULT, "Created", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testDisableAutoBidCommand() {
+    DisableAutoBidCommand cmd = new DisableAutoBidCommand();
+
+    DisableAutoBidResponse payload = new DisableAutoBidResponse(123, false);
+    PacketRes successPacket = PacketRes.of(ResponseType.WALLET_UPDATED, "Disabled", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testFetchAvatarCommand() {
+    FetchAvatarCommand cmd = new FetchAvatarCommand();
+
+    FetchAvatarResponse payload = new FetchAvatarResponse(1, "base64_data");
+    PacketRes successPacket = PacketRes.of(ResponseType.FETCH_AVATAR, "Avatar fetched", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testFetchSellerItemsCommand() {
+    FetchSellerItemsCommand cmd = new FetchSellerItemsCommand();
+
+    PacketRes successPacket = PacketRes.of(ResponseType.SELLER_ITEMS_RESULT, "Items fetched", null);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testFetchUserListCommand() {
+    FetchUserListCommand cmd = new FetchUserListCommand();
+
+    List<UserDto> users = new ArrayList<>();
+    users.add(
+        new UserDto(1, "John Doe", new AccountDto("john", UserRole.BIDDER), null, "avatar_url"));
+    UserListResponse payload = new UserListResponse(users);
+
+    PacketRes successPacket = PacketRes.of(ResponseType.USER_LIST_RESULT, "Users fetched", payload);
+    cmd.execute(successPacket);
+
+    PacketRes failPacket = PacketRes.error(ResponseType.ERROR, "Failed to load");
+    cmd.execute(failPacket);
+    assertTrue(messageNotified);
+  }
+
+  @Test
+  public void testLoginCommand() {
+    LoginCommand cmd = new LoginCommand();
+
+    UserDto user =
+        new UserDto(
+            1,
+            "John Doe",
+            new AccountDto("john", UserRole.BIDDER),
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
+    LoginResponse payload = new LoginResponse(user);
+    PacketRes successPacket = PacketRes.of(ResponseType.LOGIN_RESULT, "Logged in", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testSetAutoBidCommand() {
+    SetAutoBidCommand cmd = new SetAutoBidCommand();
+
+    SetAutoBidResponse payload = new SetAutoBidResponse(123, 2000L, 100L, true, 1500L, 2);
+    PacketRes successPacket = PacketRes.of(ResponseType.WALLET_UPDATED, "AutoBid set", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testUpdateAuctionCommand() {
+    UpdateAuctionCommand cmd = new UpdateAuctionCommand();
+
+    UserDto sellerDto =
+        new UserDto(
+            1,
+            "John Doe",
+            new AccountDto("john", UserRole.SELLER),
+            new WalletDto(BigDecimal.valueOf(1500), new HashMap<>()),
+            "avatar_url");
+    ItemDto item =
+        new ItemDto(10, 1, "Vase", "Old Vase", 500L, 50L, ItemType.ART, false, "url", sellerDto);
+    AuctionDto auction =
+        new AuctionDto(
+            123,
+            10,
+            1,
+            null,
+            AuctionStatus.OPEN,
+            LocalDateTime.now(),
+            LocalDateTime.now().plusHours(1),
+            500L,
+            0,
+            1,
+            LocalDateTime.now(),
+            LocalDateTime.now(),
+            item,
+            sellerDto,
+            null,
+            new ArrayList<>());
+
+    CreateAuctionResponse payload = new CreateAuctionResponse(auction);
+    PacketRes successPacket = PacketRes.of(ResponseType.UPDATE_AUCTION_RESULT, "Updated", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
+
+  @Test
+  public void testUploadAvatarCommand() {
+    UploadAvatarCommand cmd = new UploadAvatarCommand();
+
+    UploadAvatarResponse payload = new UploadAvatarResponse("new_avatar_url");
+    PacketRes successPacket = PacketRes.of(ResponseType.UPLOAD_AVATAR, "Avatar uploaded", payload);
+    cmd.execute(successPacket);
+    assertTrue(updateNotified);
+  }
 }

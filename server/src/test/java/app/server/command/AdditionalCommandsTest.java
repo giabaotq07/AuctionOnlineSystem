@@ -401,6 +401,120 @@ public class AdditionalCommandsTest extends BaseDAOTest {
     assertEquals(ResponseType.CHAT_MESSAGE, res.getType());
   }
 
+  @Test
+  public void testFetchAuctionResultCommand() {
+    FetchAuctionResultCommand cmd = new FetchAuctionResultCommand(auctionService, userService);
+
+    // Test that bidding finished results can be fetched
+    auction.setStatus(AuctionStatus.FINISHED);
+    auctionDAO.update(auction);
+
+    PacketReq req =
+        PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionResultRequest(auction.getId()));
+    cmd.execute(fakeClientHandler, req);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertTrue(res.isSuccess());
+    assertEquals(ResponseType.AUCTION_RESULT_FETCHED, res.getType());
+  }
+
+  @Test
+  public void testFetchAvatarCommand() throws Exception {
+    FetchAvatarCommand cmd = new FetchAvatarCommand(imageStorageService);
+
+    // Save dummy avatar
+    String base64 = java.util.Base64.getEncoder().encodeToString("avatar_data".getBytes());
+    String path = imageStorageService.save(base64, "avatar.png");
+
+    PacketReq req =
+        PacketReq.of(RequestType.FETCH_AVATAR, new FetchAvatarRequest(bidder.getId(), path));
+    cmd.execute(fakeClientHandler, req);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertTrue(res.isSuccess());
+    assertEquals(ResponseType.FETCH_AVATAR, res.getType());
+
+    imageStorageService.deleteIfExists(path);
+  }
+
+  @Test
+  public void testUploadAvatarCommand() throws Exception {
+    UploadAvatarCommand cmd = new UploadAvatarCommand(userService, imageStorageService);
+    String base64 = java.util.Base64.getEncoder().encodeToString("new_avatar_data".getBytes());
+
+    PacketReq req =
+        PacketReq.of(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest(base64, "new_avatar.png"));
+
+    fakeClientHandler.setFakeUser(bidder);
+    cmd.execute(fakeClientHandler, req);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertTrue(res.isSuccess());
+    assertEquals(ResponseType.UPLOAD_AVATAR, res.getType());
+    assertNotNull(bidder.getAvatarUrl());
+
+    imageStorageService.deleteIfExists(bidder.getAvatarUrl());
+  }
+
+  static class ExceptionCommand extends SafeCommand {
+    private final Exception exceptionToThrow;
+
+    public ExceptionCommand(Exception exceptionToThrow) {
+      this.exceptionToThrow = exceptionToThrow;
+    }
+
+    @Override
+    protected void doExecute(ClientHandler clientHandler, PacketReq packet) throws Exception {
+      throw exceptionToThrow;
+    }
+
+    @Override
+    protected ResponseType responseType() {
+      return ResponseType.ERROR;
+    }
+  }
+
+  @Test
+  public void testSafeCommandExceptions() {
+    // 1. ServiceException
+    ExceptionCommand serviceCmd =
+        new ExceptionCommand(new app.common.exception.ServiceException("Service error"));
+    serviceCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertEquals("Service error", fakeClientHandler.getSentPacket().getMessage());
+
+    // 2. DatabaseException
+    ExceptionCommand dbCmd =
+        new ExceptionCommand(new app.common.exception.DatabaseException("DB error"));
+    dbCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertEquals(dbCmd.databaseErrorMessage(), fakeClientHandler.getSentPacket().getMessage());
+
+    // 3. JsonSyntaxException
+    ExceptionCommand jsonCmd =
+        new ExceptionCommand(new com.google.gson.JsonSyntaxException("JSON syntax"));
+    jsonCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertEquals(jsonCmd.invalidRequestMessage(), fakeClientHandler.getSentPacket().getMessage());
+
+    // 4. IllegalArgumentException
+    ExceptionCommand illegalCmd =
+        new ExceptionCommand(new IllegalArgumentException("Invalid argument"));
+    illegalCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertEquals("Invalid argument", fakeClientHandler.getSentPacket().getMessage());
+
+    // 5. IOException
+    ExceptionCommand ioCmd = new ExceptionCommand(new java.io.IOException("IO failed"));
+    ioCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertEquals(ioCmd.ioErrorMessage(), fakeClientHandler.getSentPacket().getMessage());
+
+    // 6. Generic Exception
+    ExceptionCommand genericCmd = new ExceptionCommand(new RuntimeException("Unexpected error"));
+    genericCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertEquals(
+        genericCmd.unexpectedErrorMessage(), fakeClientHandler.getSentPacket().getMessage());
+  }
+
   /** FakeClientHandler de gia lap socket connection va session dang nhap. */
   public static class FakeClientHandler extends ClientHandler {
     private final Session fakeSession = new Session();
