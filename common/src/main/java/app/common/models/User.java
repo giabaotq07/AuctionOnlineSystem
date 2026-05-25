@@ -11,7 +11,6 @@ public class User extends Entity {
   private String avatarUrl;
   private boolean status;
 
-
   /** User. */
   public User(int id, String name, Account account, Wallet wallet, String avatarUrl) {
     super(id);

@@ -51,10 +51,11 @@ public class UserService {
 
     transactionManager.runWithoutResult(
         conn -> {
-          User stored = userDAO
-              .findById(conn, user.getId())
-              .orElseThrow(
-                  () -> new ServiceException("Không tìm thấy user với id: " + user.getId()));
+          User stored =
+              userDAO
+                  .findById(conn, user.getId())
+                  .orElseThrow(
+                      () -> new ServiceException("Không tìm thấy user với id: " + user.getId()));
           stored.setName(user.getName());
           userDAO.update(conn, stored);
         });
@@ -90,9 +91,10 @@ public class UserService {
     return transactionManager.runInTransaction(
         conn -> {
           userDAO.lockRow(conn, userId);
-          User user = userDAO
-              .findById(conn, userId)
-              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           try {
             user.getWallet().deposit(amount);
           } catch (IllegalArgumentException e) {
@@ -107,9 +109,10 @@ public class UserService {
   public String updateAvatarUrl(int userId, String avatarUrl) {
     return transactionManager.runInTransaction(
         conn -> {
-          User user = userDAO
-              .findById(conn, userId)
-              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           String oldAvatarUrl = user.getAvatarUrl();
           user.setAvatarUrl(avatarUrl);
           userDAO.update(conn, user);
@@ -121,9 +124,10 @@ public class UserService {
     transactionManager.runWithoutResult(
         conn -> {
           userDAO.lockRow(conn, userId);
-          User user = userDAO
-              .findById(conn, userId)
-              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           user.getWallet().clearFrozenFunds();
           user.ban();
           userDAO.update(conn, user);
@@ -134,9 +138,10 @@ public class UserService {
     transactionManager.runWithoutResult(
         conn -> {
           userDAO.lockRow(conn, userId);
-          User user = userDAO
-              .findById(conn, userId)
-              .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
           user.unban();
           userDAO.update(conn, user);
         });

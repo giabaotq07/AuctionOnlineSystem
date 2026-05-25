@@ -29,16 +29,17 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   private User mapUser(ResultSet rs) throws SQLException {
     BigDecimal available = rs.getBigDecimal("available_balance");
     String frozenJson = rs.getString("frozen_funds");
-    User user = new User(
-        rs.getInt("id"),
-        rs.getString("full_name"),
-        new Account(
-            rs.getString("username"),
-            rs.getString("password"),
-            UserRole.valueOf(rs.getString("role"))),
-        new Wallet(available, Wallet.parseFrozenFunds(frozenJson)),
-        rs.getString("avatar_url"));
-        user.setStatus(rs.getBoolean("status"));
+    User user =
+        new User(
+            rs.getInt("id"),
+            rs.getString("full_name"),
+            new Account(
+                rs.getString("username"),
+                rs.getString("password"),
+                UserRole.valueOf(rs.getString("role"))),
+            new Wallet(available, Wallet.parseFrozenFunds(frozenJson)),
+            rs.getString("avatar_url"));
+    user.setStatus(rs.getBoolean("status"));
     return user;
   }
 

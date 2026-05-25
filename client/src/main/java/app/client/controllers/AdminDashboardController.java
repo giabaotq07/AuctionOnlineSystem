@@ -393,9 +393,7 @@ public class AdminDashboardController implements Cleanable {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(ban ? "Xác nhận cấm tài khoản" : "Xác nhận mở khóa tài khoản");
     alert.setHeaderText(
-        (ban ? "Cấm tài khoản " : "Mở khóa tài khoản ")
-            + selected.account().username()
-            + "?");
+        (ban ? "Cấm tài khoản " : "Mở khóa tài khoản ") + selected.account().username() + "?");
     alert.setContentText(
         ban
             ? "Tài khoản bị cấm sẽ không thể đăng nhập hoặc gửi yêu cầu lên server."
