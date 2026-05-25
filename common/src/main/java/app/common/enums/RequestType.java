@@ -24,6 +24,8 @@ public enum RequestType {
   SETTLE_WALLET(UserRole.ADMIN),
   UPLOAD_IMAGE(UserRole.SELLER, UserRole.ADMIN),
   FETCH_ITEM_IMAGE(Access.PUBLIC),
+  BAN_USER(UserRole.ADMIN),
+  UNBAN_USER(UserRole.ADMIN),
   UPLOAD_AVATAR(Access.AUTHENTICATED),
   FETCH_AVATAR(Access.PUBLIC);
 

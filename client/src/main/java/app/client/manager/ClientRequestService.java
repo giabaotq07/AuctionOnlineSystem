@@ -72,6 +72,10 @@ public final class ClientRequestService {
     send(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auctionId, knownVersion));
   }
 
+  public void banUser(int userId, boolean ban) throws IOException {
+    send(ban ? RequestType.BAN_USER : RequestType.UNBAN_USER, new BanUserRequest(userId, ban));
+  }
+
   /** unwatchAuction. */
   public void unwatchAuction() throws IOException {
     send(RequestType.UNWATCH_AUCTION, null);

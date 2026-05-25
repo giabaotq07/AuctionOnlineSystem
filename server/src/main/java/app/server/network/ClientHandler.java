@@ -116,7 +116,8 @@ public class ClientHandler implements Runnable {
     registry.put(
         RequestType.UPLOAD_AVATAR, new UploadAvatarCommand(userService, imageStorageService));
     registry.put(RequestType.FETCH_AVATAR, new FetchAvatarCommand(imageStorageService));
-
+    registry.put(RequestType.BAN_USER, new BanUserCommand(userService));
+    registry.put(RequestType.UNBAN_USER, new BanUserCommand(userService));
     return registry;
   }
 
@@ -203,16 +204,21 @@ public class ClientHandler implements Runnable {
       case FETCH_ITEM_IMAGE -> ResponseType.FETCH_ITEM_IMAGE;
       case UPLOAD_AVATAR -> ResponseType.UPLOAD_AVATAR;
       case FETCH_AVATAR -> ResponseType.FETCH_AVATAR;
+      case BAN_USER, UNBAN_USER -> ResponseType.USER_BANNED_NOTICE;
       default -> ResponseType.ERROR;
     };
   }
 
   private boolean authorize(RequestType type) {
-    if (type.requiresAuthentication() && !session.isAuthenticated()) {
+    if (type.requiresAuthentication() && !isAuthenticated()) {
       sendPacket(PacketRes.error(toResponseType(type), "Authentication required"));
       return false;
     }
-    User user = session.getUser();
+    User user = getUser();
+    if (user != null && user.isBanned()) {
+      sendPacket(PacketRes.error(toResponseType(type), "Tài khoản đã bị cấm."));
+      return false;
+    }
     if (!type.isAllowed(user == null ? null : user.getRole())) {
       sendPacket(
           PacketRes.error(toResponseType(type), "Bạn không có quyền thực hiện yêu cầu này."));

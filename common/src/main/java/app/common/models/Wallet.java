@@ -163,6 +163,20 @@ public class Wallet {
     }
   }
 
+  public void clearFrozenFunds() {
+    lock.lock();
+    try {
+      for (BigDecimal amount : frozenFunds.values()) {
+        if (amount.signum() > 0) {
+          availableBalance = availableBalance.add(amount);
+        }
+      }
+      frozenFunds.clear();
+    } finally {
+      lock.unlock();
+    }
+  }
+
   /** commitFrozen. */
   public BigDecimal commitFrozen(String auctionId) {
     Objects.requireNonNull(auctionId, "auctionId");

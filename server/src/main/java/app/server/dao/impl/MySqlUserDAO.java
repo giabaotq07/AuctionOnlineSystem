@@ -24,20 +24,23 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
 
   private static final String TABLE = "users";
   private static final String BASE_SELECT =
-      "SELECT id, username, password, full_name, available_balance, frozen_funds, role, avatar_url FROM users ";
+      "SELECT id, username, password, full_name, available_balance, frozen_funds, role, avatar_url, status FROM users ";
 
   private User mapUser(ResultSet rs) throws SQLException {
     BigDecimal available = rs.getBigDecimal("available_balance");
     String frozenJson = rs.getString("frozen_funds");
-    return new User(
-        rs.getInt("id"),
-        rs.getString("full_name"),
-        new Account(
-            rs.getString("username"),
-            rs.getString("password"),
-            UserRole.valueOf(rs.getString("role"))),
-        new Wallet(available, Wallet.parseFrozenFunds(frozenJson)),
-        rs.getString("avatar_url"));
+    User user =
+        new User(
+            rs.getInt("id"),
+            rs.getString("full_name"),
+            new Account(
+                rs.getString("username"),
+                rs.getString("password"),
+                UserRole.valueOf(rs.getString("role"))),
+            new Wallet(available, Wallet.parseFrozenFunds(frozenJson)),
+            rs.getString("avatar_url"));
+    user.setStatus(rs.getBoolean("status"));
+    return user;
   }
 
   @Override
@@ -95,8 +98,8 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
   private User saveInternal(Connection conn, User user) {
     String sql =
         """
-        INSERT INTO users (username, password, full_name, available_balance, frozen_funds, role, avatar_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (username, password, full_name, available_balance, frozen_funds, role, avatar_url, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
     try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setString(1, user.getAccount().getUsername());
@@ -107,6 +110,7 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
       ps.setString(5, user.getWallet().serializeFrozenFunds());
       ps.setString(6, user.getRole().name());
       ps.setString(7, user.getAvatarUrl());
+      ps.setBoolean(8, user.getStatus());
       if (ps.executeUpdate() == 0) {
         throw new DatabaseException("Không thể thêm user.");
       }
@@ -139,7 +143,7 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
             """
             UPDATE users
             SET username = ?, password = ?, full_name = ?, available_balance = ?,
-                frozen_funds = ?, role = ?, avatar_url = ?
+                frozen_funds = ?, role = ?, avatar_url = ?, status = ?
             WHERE id = ?
             """,
             user.getAccount().getUsername(),
@@ -150,6 +154,7 @@ public class MySqlUserDAO extends BaseDAO implements UserDAO {
             user.getWallet().serializeFrozenFunds(),
             user.getRole().name(),
             user.getAvatarUrl(),
+            user.getStatus(),
             user.getId());
     if (!ok) {
       throw new DatabaseException("Không tìm thấy user để cập nhật.");

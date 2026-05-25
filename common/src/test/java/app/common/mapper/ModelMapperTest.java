@@ -83,22 +83,29 @@ public class ModelMapperTest {
     assertEquals("Nguyen Van A", dto.name());
     assertEquals("nva", dto.account().username());
     assertEquals(0, dto.wallet().availableBalance().compareTo(new BigDecimal("5000")));
+    assertFalse(dto.isBanned());
+
+    user.ban();
+    UserDto bannedDto = ModelMapper.toUserDto(user);
+    assertTrue(bannedDto.isBanned());
 
     // Convert DTO -> Model
-    User model = ModelMapper.toUserModel(dto);
+    User model = ModelMapper.toUserModel(bannedDto);
     assertNotNull(model);
     assertEquals(1, model.getId());
     assertEquals("Nguyen Van A", model.getName());
     assertEquals("nva", model.getAccount().getUsername());
     assertEquals(0, model.getWallet().getAvailableBalance().compareTo(new BigDecimal("5000")));
+    assertTrue(model.isBanned());
 
     // Convert DTO without wallet -> Model
     UserDto dtoNoWallet =
-        new UserDto(2, "Nguyen Van B", new AccountDto("nvb", UserRole.SELLER), null, null);
+        new UserDto(2, "Nguyen Van B", new AccountDto("nvb", UserRole.SELLER), null, null, true);
     User modelNoWallet = ModelMapper.toUserModel(dtoNoWallet);
     assertNotNull(modelNoWallet);
     assertEquals(2, modelNoWallet.getId());
     assertNull(modelNoWallet.getWallet());
+    assertTrue(modelNoWallet.isBanned());
   }
 
   /** Test anh xa Bid. */

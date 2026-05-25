@@ -244,6 +244,33 @@ public class AdditionalCommandsTest extends BaseDAOTest {
   }
 
   @Test
+  public void testBanUserCommandBanAndUnban() {
+    BanUserCommand cmd = new BanUserCommand(userService);
+    fakeClientHandler.setFakeUser(admin);
+
+    cmd.execute(
+        fakeClientHandler,
+        PacketReq.of(RequestType.BAN_USER, new BanUserRequest(bidder.getId(), true)));
+
+    PacketRes banRes = fakeClientHandler.getSentPacket();
+    assertNotNull(banRes);
+    assertTrue(banRes.isSuccess());
+    assertEquals(ResponseType.USER_BANNED_NOTICE, banRes.getType());
+    assertTrue(banRes.getData(BanUserResponse.class).isBanned());
+    assertTrue(userDAO.findById(bidder.getId()).orElseThrow().isBanned());
+
+    cmd.execute(
+        fakeClientHandler,
+        PacketReq.of(RequestType.UNBAN_USER, new BanUserRequest(bidder.getId(), false)));
+
+    PacketRes unbanRes = fakeClientHandler.getSentPacket();
+    assertNotNull(unbanRes);
+    assertTrue(unbanRes.isSuccess());
+    assertFalse(unbanRes.getData(BanUserResponse.class).isBanned());
+    assertFalse(userDAO.findById(bidder.getId()).orElseThrow().isBanned());
+  }
+
+  @Test
   public void testCancelAuctionCommand() {
     CancelAuctionCommand cmd = new CancelAuctionCommand(auctionService, queryService, userService);
     PacketReq req =

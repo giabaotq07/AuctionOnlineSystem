@@ -6,6 +6,7 @@ import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
 import app.client.store.ItemStore;
+import app.client.store.UserListStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.*;
@@ -75,18 +76,25 @@ public class AdminDashboardController implements Cleanable {
   @FXML private TableColumn<UserDto, String> colUserAccount;
   @FXML private TableColumn<UserDto, String> colUserBalance;
   @FXML private TableColumn<UserDto, String> colUserRole;
+  @FXML private TableColumn<UserDto, String> colUserStatus;
+  @FXML private TableColumn<UserDto, Void> colUserAction;
 
   private final List<AuctionPreview> masterAuctions = new ArrayList<>();
-  private final List<UserDto> masterUsers = new ArrayList<>();
 
   private boolean actionLoading = false;
   private Button currentLoadingButton;
   private Runnable stopActionLoading = () -> {};
+  private PendingAction pendingAction = PendingAction.NONE;
+
+  private enum PendingAction {
+    NONE,
+    AUCTION,
+    USER
+  }
 
   // Listeners
   private final Runnable auctionsListener = () -> Platform.runLater(this::loadAuctionsData);
-  private final Consumer<List<UserDto>> usersListener =
-      users -> Platform.runLater(() -> loadUsersData(users));
+  private final Runnable usersListener = () -> Platform.runLater(this::loadUsersData);
   private final Consumer<String> messageListener =
       msg -> Platform.runLater(() -> handleIncomingMessage(msg));
 
@@ -105,6 +113,7 @@ public class AdminDashboardController implements Cleanable {
 
     // Load master list immediately on load if there's cached data!
     loadAuctionsData();
+    loadUsersData();
 
     // Initial fetch
     refreshAuctions();
@@ -181,6 +190,40 @@ public class AdminDashboardController implements Cleanable {
                 data.getValue().account().role() != null
                     ? data.getValue().account().role().name()
                     : ""));
+    colUserStatus.setCellValueFactory(
+        data -> new SimpleStringProperty(data.getValue().isBanned() ? "Bị cấm" : "Hoạt động"));
+    colUserAction.setCellFactory(
+        column ->
+            new TableCell<>() {
+              private final Button actionButton = new Button();
+
+              {
+                actionButton.setMaxWidth(Double.MAX_VALUE);
+                actionButton.setOnAction(
+                    event -> {
+                      UserDto user = getTableView().getItems().get(getIndex());
+                      handleToggleUserBan(user, event);
+                    });
+              }
+
+              @Override
+              protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                  setGraphic(null);
+                  return;
+                }
+                UserDto user = getTableView().getItems().get(getIndex());
+                boolean banned = user.isBanned();
+                actionButton.setText(banned ? "Mở khóa" : "Cấm");
+                actionButton
+                    .getStyleClass()
+                    .removeAll("success-button", "danger-button", "secondary-button");
+                actionButton.getStyleClass().add(banned ? "success-button" : "danger-button");
+                actionButton.setDisable(isCurrentUser(user));
+                setGraphic(actionButton);
+              }
+            });
   }
 
   private void setupForm() {
@@ -256,11 +299,7 @@ public class AdminDashboardController implements Cleanable {
     };
   }
 
-  private void loadUsersData(List<UserDto> users) {
-    masterUsers.clear();
-    if (users != null) {
-      masterUsers.addAll(users);
-    }
+  private void loadUsersData() {
     filterUsers(userSearchField.getText());
   }
 
@@ -290,13 +329,14 @@ public class AdminDashboardController implements Cleanable {
   }
 
   private void filterUsers(String query) {
+    List<UserDto> users = UserListStore.getInstance().getMasterUsers();
     if (query == null || query.isBlank()) {
-      userTableView.getItems().setAll(masterUsers);
+      userTableView.getItems().setAll(users);
       return;
     }
     String keyword = query.toLowerCase().trim();
     List<UserDto> filtered =
-        masterUsers.stream()
+        users.stream()
             .filter(
                 u ->
                     (u.name() != null && u.name().toLowerCase().contains(keyword))
@@ -334,6 +374,51 @@ public class AdminDashboardController implements Cleanable {
     refreshUsers();
   }
 
+  private void handleToggleUserBan(UserDto selected, ActionEvent event) {
+    if (actionLoading) return;
+    if (!requests.isConnected()) {
+      AlertUtils.showError("Mất kết nối", "Mất kết nối tới máy chủ.");
+      return;
+    }
+    if (selected == null) {
+      AlertUtils.showError("Chưa chọn tài khoản", "Vui lòng chọn tài khoản cần xử lý.");
+      return;
+    }
+    if (isCurrentUser(selected)) {
+      AlertUtils.showError("Không hợp lệ", "Không thể tự cấm chính mình.");
+      return;
+    }
+
+    boolean ban = !selected.isBanned();
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    alert.setTitle(ban ? "Xác nhận cấm tài khoản" : "Xác nhận mở khóa tài khoản");
+    alert.setHeaderText(
+        (ban ? "Cấm tài khoản " : "Mở khóa tài khoản ") + selected.account().username() + "?");
+    alert.setContentText(
+        ban
+            ? "Tài khoản bị cấm sẽ không thể đăng nhập hoặc gửi yêu cầu lên server."
+            : "Tài khoản này sẽ được phép đăng nhập và sử dụng hệ thống trở lại.");
+
+    if (alert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+      return;
+    }
+
+    try {
+      currentLoadingButton = LoadingButton.fromEvent(event);
+      pendingAction = PendingAction.USER;
+      setActionLoading(true);
+      requests.banUser(selected.id(), ban);
+    } catch (IOException e) {
+      setActionLoading(false);
+      AlertUtils.showError("Lỗi kết nối", "Server không phản hồi.");
+    }
+  }
+
+  private boolean isCurrentUser(UserDto user) {
+    var currentUser = UserManager.getInstance().getCurrentUser();
+    return user != null && currentUser != null && user.id() == currentUser.getId();
+  }
+
   @FXML
   public void handleLogout(ActionEvent event) {
     UserManager.getInstance().setCurrentUser(null);
@@ -366,6 +451,7 @@ public class AdminDashboardController implements Cleanable {
       if (request == null) return;
 
       currentLoadingButton = LoadingButton.fromEvent(event);
+      pendingAction = PendingAction.AUCTION;
       setActionLoading(true);
       requests.createAuction(request);
     } catch (IOException e) {
@@ -391,6 +477,7 @@ public class AdminDashboardController implements Cleanable {
       if (request == null) return;
 
       currentLoadingButton = LoadingButton.fromEvent(event);
+      pendingAction = PendingAction.AUCTION;
       setActionLoading(true);
       requests.updateAuction(request);
     } catch (IOException e) {
@@ -421,6 +508,7 @@ public class AdminDashboardController implements Cleanable {
     if (alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
       try {
         currentLoadingButton = LoadingButton.fromEvent(event);
+        pendingAction = PendingAction.AUCTION;
         setActionLoading(true);
         requests.cancelAuction(selected.auctionId(), selected.version());
       } catch (IOException e) {
@@ -522,13 +610,18 @@ public class AdminDashboardController implements Cleanable {
   // Handle Response Message
   private void handleIncomingMessage(String msg) {
     if (!actionLoading) return;
+    PendingAction completedAction = pendingAction;
     setActionLoading(false);
 
     if (msg != null
         && (msg.toLowerCase().contains("thành công") || msg.toLowerCase().contains("ok"))) {
       AlertUtils.showInfo("Thành công", msg);
-      handleClearForm();
-      refreshAuctions();
+      if (completedAction == PendingAction.USER) {
+        refreshUsers();
+      } else {
+        handleClearForm();
+        refreshAuctions();
+      }
     } else {
       AlertUtils.showError("Thất bại", msg != null ? msg : "Đã xảy ra lỗi không xác định.");
     }
@@ -541,6 +634,7 @@ public class AdminDashboardController implements Cleanable {
     } else {
       stopActionLoading.run();
       stopActionLoading = () -> {};
+      pendingAction = PendingAction.NONE;
     }
   }
 

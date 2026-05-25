@@ -128,6 +128,8 @@
                             <TableColumn fx:id="colUserAccount" prefWidth="250.0" text="Tên tài khoản" />
                             <TableColumn fx:id="colUserBalance" prefWidth="250.0" text="Số dư khả dụng ($)" />
                             <TableColumn fx:id="colUserRole" prefWidth="180.0" text="Vai trò" />
+                            <TableColumn fx:id="colUserStatus" prefWidth="130.0" text="Trạng thái" />
+                            <TableColumn fx:id="colUserAction" prefWidth="120.0" text="Thao tác" />
                         </columns>
                     </TableView>
                 </VBox>

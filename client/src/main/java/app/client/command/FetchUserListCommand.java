@@ -1,6 +1,6 @@
 package app.client.command;
 
-import app.client.manager.ClientNotificationCenter;
+import app.client.store.UserListStore;
 import app.common.dto.UserListResponse;
 import app.common.protocol.PacketRes;
 
@@ -11,7 +11,8 @@ public class FetchUserListCommand extends Command {
     if (packet.isSuccess()) {
       UserListResponse response = packet.getData(UserListResponse.class);
       if (response != null && response.users() != null) {
-        ClientNotificationCenter.getInstance().notifyUserList(response.users());
+        UserListStore.getInstance().setMasterUsers(response.users());
+        notifyUserListUpdate();
       }
     } else {
       notifyMessage(packet == null ? "Không thể tải danh sách người dùng." : packet.getMessage());

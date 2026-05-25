@@ -25,6 +25,9 @@ public class UserService {
     if (user == null || !PasswordUtils.verify(rawPassword, user.getAccount().getPassword())) {
       throw new ServiceException("Tên đăng nhập hoặc mật khẩu không đúng");
     }
+    if (user.isBanned()) {
+      throw new ServiceException("Tài khoản đã bị cấm.");
+    }
     return user;
   }
 
@@ -114,6 +117,33 @@ public class UserService {
           user.setAvatarUrl(avatarUrl);
           userDAO.update(conn, user);
           return oldAvatarUrl;
+        });
+  }
+
+  public void banUser(int userId) {
+    transactionManager.runWithoutResult(
+        conn -> {
+          userDAO.lockRow(conn, userId);
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          user.getWallet().clearFrozenFunds();
+          user.ban();
+          userDAO.update(conn, user);
+        });
+  }
+
+  public void unbanUser(int userId) {
+    transactionManager.runWithoutResult(
+        conn -> {
+          userDAO.lockRow(conn, userId);
+          User user =
+              userDAO
+                  .findById(conn, userId)
+                  .orElseThrow(() -> new ServiceException("Không tìm thấy user với id: " + userId));
+          user.unban();
+          userDAO.update(conn, user);
         });
   }
 }
