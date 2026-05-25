@@ -10,12 +10,10 @@
             <padding>
                 <Insets left="28.0" right="28.0" />
             </padding>
-            <Label styleClass="brand-mark" text="LoPPy" />
-            <Separator orientation="VERTICAL" prefHeight="38.0" />
+            <Button mnemonicParsing="false" onAction="#handleBackToMain" styleClass="ghost-button" text="Trang chủ" />
             <Label styleClass="screen-title" text="Đấu giá của tôi" />
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="sellerNameLabel" styleClass="muted-label" text="Người bán: " />
-            <Button mnemonicParsing="false" onAction="#handleBackToMain" styleClass="ghost-button" text="Trang chủ" />
         </HBox>
     </top>
 
