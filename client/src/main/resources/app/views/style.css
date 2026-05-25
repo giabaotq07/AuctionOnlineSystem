@@ -2,7 +2,7 @@
 
 .root {
   -fx-font-family: "Inter", "Segoe UI", "Arial", sans-serif;
-  -fx-background-color: #020711;
+  -fx-background-color: #07111f;
   -fx-text-fill: #eaf7ff;
 }
 
@@ -18,7 +18,7 @@
 .screen-root,
 .auth-root,
 .live-root {
-  -fx-background-color: linear-gradient(to bottom right, #020711, #061422 48%, #020913);
+  -fx-background-color: linear-gradient(to bottom right, #07111f, #0b2035 48%, #071523);
 }
 
 .content-scroll,
@@ -38,13 +38,13 @@
 }
 
 .top-bar {
-  -fx-background-color: linear-gradient(to bottom, rgba(4,14,26,0.96), rgba(2,8,18,0.96));
+  -fx-background-color: linear-gradient(to bottom, rgba(8,22,38,0.96), rgba(6,17,30,0.96));
   -fx-border-color: rgba(0,103,255,0.20);
   -fx-border-width: 0 0 1 0;
 }
 
 .sidebar {
-  -fx-background-color: linear-gradient(to bottom, #04101e, #020812);
+  -fx-background-color: linear-gradient(to bottom, #081827, #061322);
   -fx-border-color: rgba(0,103,255,0.20);
   -fx-border-width: 0 1 0 0;
 }
