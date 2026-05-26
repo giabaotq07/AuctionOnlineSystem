@@ -148,6 +148,52 @@ public class CommandTest extends BaseDAOTest {
     assertEquals("User đã tồn tại: duplicate_user", res.getMessage());
   }
 
+  /** Test LoginCommand that bai khi payload null. */
+  @Test
+  public void testLoginCommand_nullPayload() {
+    LoginCommand loginCmd = new LoginCommand(userService);
+    PacketReq reqPacket = PacketReq.of(RequestType.LOGIN, null);
+
+    loginCmd.execute(fakeClientHandler, reqPacket);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertFalse(res.isSuccess());
+  }
+
+  /** Test RegisterCommand that bai khi payload null. */
+  @Test
+  public void testRegisterCommand_nullPayload() {
+    RegisterCommand regCmd = new RegisterCommand(userService);
+    PacketReq reqPacket = PacketReq.of(RequestType.REGISTER, null);
+
+    regCmd.execute(fakeClientHandler, reqPacket);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertFalse(res.isSuccess());
+  }
+
+  /** Test RegisterCommand that bai khi username hoac password trong. */
+  @Test
+  public void testRegisterCommand_blankUsernameOrPassword() {
+    RegisterCommand regCmd = new RegisterCommand(userService);
+
+    // Username trong
+    PacketReq req1 =
+        PacketReq.of(
+            RequestType.REGISTER, new RegisterRequest("Ten", "  ", "pass", UserRole.BIDDER));
+    regCmd.execute(fakeClientHandler, req1);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // Password trong
+    PacketReq req2 =
+        PacketReq.of(
+            RequestType.REGISTER, new RegisterRequest("Ten", "user123", "   ", UserRole.BIDDER));
+    regCmd.execute(fakeClientHandler, req2);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
   /** FakeClientHandler de gia lap hoat dong socket network va phien session. */
   public static class FakeClientHandler extends ClientHandler {
     private final Session fakeSession = new Session();

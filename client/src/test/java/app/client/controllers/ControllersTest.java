@@ -7,6 +7,7 @@ import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
 import app.client.store.LiveAuctionSessionStore;
+import app.client.store.UserListStore;
 import app.common.dto.*;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
@@ -20,7 +21,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.canvas.Canvas;
@@ -70,6 +70,7 @@ public class ControllersTest {
     // Clear stores and set standard logged in bidder user
     UserManager.getInstance().setCurrentUser(null);
     AuctionStore.getInstance().clearHistory();
+    UserListStore.getInstance().clear();
 
     // Start a daemon closer thread to auto-dismiss alert dialogs in headless runs
     closerThread =
@@ -508,9 +509,10 @@ public class ControllersTest {
             TextField startingPriceField = new TextField("1000");
             TextField stepPriceField = new TextField("100");
             ComboBox<ItemType> typeComboBox = new ComboBox<>();
-            TextField durationField = new TextField("60");
             DatePicker startDatePicker = new DatePicker(LocalDate.now());
             TextField startTimeField = new TextField("14:30");
+            DatePicker endDatePicker = new DatePicker(LocalDate.now().plusDays(1));
+            TextField endTimeField = new TextField("14:30");
             Button chooseImageButton = new Button("Choose");
             Label imageFileNameLabel = new Label();
 
@@ -519,9 +521,10 @@ public class ControllersTest {
             setPrivateField(controller, "startingPriceField", startingPriceField);
             setPrivateField(controller, "stepPriceField", stepPriceField);
             setPrivateField(controller, "typeComboBox", typeComboBox);
-            setPrivateField(controller, "durationField", durationField);
             setPrivateField(controller, "startDatePicker", startDatePicker);
             setPrivateField(controller, "startTimeField", startTimeField);
+            setPrivateField(controller, "endDatePicker", endDatePicker);
+            setPrivateField(controller, "endTimeField", endTimeField);
             setPrivateField(controller, "chooseImageButton", chooseImageButton);
             setPrivateField(controller, "imageFileNameLabel", imageFileNameLabel);
 
@@ -1155,6 +1158,8 @@ public class ControllersTest {
             TableColumn<UserDto, String> colUserAccount = new TableColumn<>();
             TableColumn<UserDto, String> colUserBalance = new TableColumn<>();
             TableColumn<UserDto, String> colUserRole = new TableColumn<>();
+            TableColumn<UserDto, String> colUserStatus = new TableColumn<>();
+            TableColumn<UserDto, Void> colUserAction = new TableColumn<>();
 
             setPrivateField(controller, "adminNameLabel", adminNameLabel);
             setPrivateField(controller, "auctionSearchField", auctionSearchField);
@@ -1182,6 +1187,8 @@ public class ControllersTest {
             setPrivateField(controller, "colUserAccount", colUserAccount);
             setPrivateField(controller, "colUserBalance", colUserBalance);
             setPrivateField(controller, "colUserRole", colUserRole);
+            setPrivateField(controller, "colUserStatus", colUserStatus);
+            setPrivateField(controller, "colUserAction", colUserAction);
 
             User mockUser =
                 new User(
@@ -1289,10 +1296,7 @@ public class ControllersTest {
             assertDoesNotThrow(
                 () ->
                     invokePrivateMethod(
-                        controller,
-                        "loadUsersData",
-                        new Class<?>[] {List.class},
-                        new Object[] {new ArrayList<>()}));
+                        controller, "loadUsersData", new Class<?>[] {}, new Object[] {}));
 
             assertDoesNotThrow(controller::cleanup);
           } catch (Exception e) {

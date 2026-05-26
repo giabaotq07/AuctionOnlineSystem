@@ -71,6 +71,20 @@
                     <noManPages>true</noManPages>
                 </configuration>
             </plugin>
+            <!-- JaCoCo Exclusions for untestable GUI/Socket classes -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>app/client/controllers/**</exclude>
+                        <exclude>app/client/command/**</exclude>
+                        <exclude>app/client/App.class</exclude>
+                        <exclude>app/client/Main.class</exclude>
+                        <exclude>app/client/Client.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
