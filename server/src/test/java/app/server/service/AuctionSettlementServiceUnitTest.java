@@ -66,6 +66,52 @@ public class AuctionSettlementServiceUnitTest {
     assertThrows(DatabaseException.class, () -> service.settleWalletsWithResult(null, auction));
   }
 
+  @Test
+  public void testUserNotFoundThrowsServiceException() {
+    FakeBidDAO bidDAO = new FakeBidDAO();
+    FakeUserDAO userDAO = new FakeUserDAO(Map.of(), -999);
+
+    AuctionSettlementService service = new AuctionSettlementService(bidDAO, userDAO);
+
+    Auction auction = new Auction(10, 1, LocalDateTime.now().plusDays(1), 500L);
+    auction.setId(123);
+
+    List<Bid> bids = new ArrayList<>();
+    Bid realBid = new Bid(1, 123, 9999, "transient_bidder", 600L, LocalDateTime.now(), false);
+    bids.add(realBid);
+    bidDAO.bids = bids;
+
+    assertThrows(
+        app.common.exception.ServiceException.class,
+        () -> service.settleWalletsWithResult(null, auction));
+    assertThrows(
+        app.common.exception.ServiceException.class, () -> service.releaseWallets(null, auction));
+  }
+
+  @Test
+  public void testSellerNotFoundThrowsServiceException() {
+    User winnerUser = app.TestFixtures.user("winner", UserRole.BIDDER, BigDecimal.valueOf(1000));
+    winnerUser.setId(2);
+    winnerUser.getWallet().setFrozenAmount("123", BigDecimal.valueOf(600));
+    FakeBidDAO bidDAO = new FakeBidDAO();
+    FakeUserDAO userDAO = new FakeUserDAO(Map.of(2, winnerUser), -999);
+    AuctionSettlementService service = new AuctionSettlementService(bidDAO, userDAO);
+
+    Auction auction = new Auction(10, 8888, LocalDateTime.now().plusDays(1), 500L);
+    auction.setId(123);
+    auction.setWinnerId(2);
+    auction.setStatus(AuctionStatus.FINISHED);
+
+    List<Bid> bids = new ArrayList<>();
+    Bid realBid = new Bid(1, 123, 2, "winner", 600L, LocalDateTime.now(), false);
+    bids.add(realBid);
+    bidDAO.bids = bids;
+
+    assertThrows(
+        app.common.exception.ServiceException.class,
+        () -> service.settleWalletsWithResult(null, auction));
+  }
+
   private static final class FakeBidDAO implements BidDAO {
     private List<Bid> bids = List.of();
 

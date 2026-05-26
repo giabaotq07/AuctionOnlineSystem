@@ -178,18 +178,22 @@ public class AdminDashboardController implements Cleanable {
     colUserId.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().id()));
     colUserName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
     colUserAccount.setCellValueFactory(
-        data -> new SimpleStringProperty(data.getValue().account().username()));
+        data -> {
+          var acc = data.getValue().account();
+          return new SimpleStringProperty(acc != null ? acc.username() : "");
+        });
     colUserBalance.setCellValueFactory(
         data -> {
-          BigDecimal bal = data.getValue().wallet().availableBalance();
-          return new SimpleStringProperty(bal != null ? currencyFormat.format(bal) + " $" : "0 đ");
+          var w = data.getValue().wallet();
+          BigDecimal bal = w != null ? w.availableBalance() : null;
+          return new SimpleStringProperty(bal != null ? currencyFormat.format(bal) + " $" : "0 $");
         });
     colUserRole.setCellValueFactory(
-        data ->
-            new SimpleStringProperty(
-                data.getValue().account().role() != null
-                    ? data.getValue().account().role().name()
-                    : ""));
+        data -> {
+          var acc = data.getValue().account();
+          return new SimpleStringProperty(
+              acc != null && acc.role() != null ? acc.role().name() : "");
+        });
     colUserStatus.setCellValueFactory(
         data -> new SimpleStringProperty(data.getValue().isBanned() ? "Bị cấm" : "Hoạt động"));
     colUserAction.setCellFactory(

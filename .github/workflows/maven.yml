@@ -12,23 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      DB_URL: jdbc:mysql://127.0.0.1:3306/auction_db_test
-      DB_USER: root
-      DB_PASSWORD: 123456
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: 123456
-          MYSQL_DATABASE: auction_db
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -p123456"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,22 +21,8 @@ jobs:
           distribution: temurin
           java-version: 25
           cache: maven
-      - name: Wait for MySQL
-        env:
-          MYSQL_PWD: 123456
-        run: |
-          until mysqladmin ping -h "127.0.0.1" -u root --silent; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
-      - name: Create test database
-        env:
-          MYSQL_PWD: 123456
-        run: |
-          mysql -h 127.0.0.1 -u root \
-          -e "CREATE DATABASE IF NOT EXISTS auction_db_test;"
       - name: Build & Test
-        run: xvfb-run -a mvn --batch-mode clean verify
+        run: mvn clean verify
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
