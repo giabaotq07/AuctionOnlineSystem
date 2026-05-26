@@ -426,8 +426,8 @@ public class Server {
     return authenticatedClients.containsKey(userId);
   }
 
-  public void createAdmin(){
-    User admin = new User("ADMIN" , new Account("admin123" , "123123" , UserRole.ADMIN),new Wallet());
+  public void createAdmin() {
+    User admin = new User("ADMIN", new Account("admin123", "123123", UserRole.ADMIN), new Wallet());
     userService.register(admin);
   }
 }

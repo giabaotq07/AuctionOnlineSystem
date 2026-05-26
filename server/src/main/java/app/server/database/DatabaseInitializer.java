@@ -1,13 +1,5 @@
 package app.server.database;
 
-import app.common.enums.UserRole;
-import app.common.models.Account;
-import app.common.models.User;
-import app.common.models.Wallet;
-import app.server.dao.UserDAO;
-import app.server.dao.impl.MySqlUserDAO;
-import app.server.service.UserService;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
