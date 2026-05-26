@@ -44,14 +44,8 @@ public class DatabaseInitializer {
       e.printStackTrace();
     }
   }
-  public static void createAdmin(){
-    TransactionManager transactionManager = new TransactionManager();
-    UserDAO userDAO = new MySqlUserDAO();
-    UserService userService = new UserService(userDAO , transactionManager);
-    User admin = new User("ADMIN" , new Account("admin123" , "123123" , UserRole.ADMIN),new Wallet());
-    userService.register(admin);
-  }
+
   static void main() {
-    DatabaseInitializer.initialize(); createAdmin();
+    DatabaseInitializer.initialize();
   }
 }

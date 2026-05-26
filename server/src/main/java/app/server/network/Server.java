@@ -5,6 +5,12 @@ import app.common.dto.AuctionSummariesResponse;
 import app.common.dto.WalletUpdateResponse;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ResponseType;
+import app.common.enums.UserRole;
+import app.common.exception.DatabaseException;
+import app.common.exception.ServiceException;
+import app.common.models.Account;
+import app.common.models.User;
+import app.common.models.Wallet;
 import app.common.protocol.PacketRes;
 import app.server.dao.*;
 import app.server.dao.impl.*;
@@ -229,6 +235,7 @@ public class Server {
                   itemService,
                   imageStorageService);
           clientPool.execute(clientHandler);
+          createAdmin();
         } catch (SocketException e) {
           if (serverSocket.isClosed()) {
             logger.info("[SERVER] Server socket closed");
@@ -241,6 +248,10 @@ public class Server {
       if (running) {
         logger.error("[SERVER] Error accepting client", e);
       }
+    } catch (ServiceException e) {
+      logger.error("[SERVER] admin account is existed", e);
+    } catch (DatabaseException e) {
+      logger.error("[SERVER] Database error", e);
     }
   }
 
@@ -413,5 +424,10 @@ public class Server {
   /** isUserOnline. */
   public static boolean isUserOnline(int userId) {
     return authenticatedClients.containsKey(userId);
+  }
+
+  public void createAdmin(){
+    User admin = new User("ADMIN" , new Account("admin123" , "123123" , UserRole.ADMIN),new Wallet());
+    userService.register(admin);
   }
 }
