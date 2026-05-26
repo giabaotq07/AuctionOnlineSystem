@@ -247,7 +247,8 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
     auction.start();
     auctionDAO.update(auction);
     Auction runningAuction = auctionDAO.findById(auction.getId()).orElseThrow();
-    assertEquals(AuctionStatus.RUNNING, runningAuction.getStatus(), "Phiên sau start phải RUNNING.");
+    assertEquals(
+        AuctionStatus.RUNNING, runningAuction.getStatus(), "Phiên sau start phải RUNNING.");
     assertNotNull(runningAuction.getStartTime(), "Start time phải được gán khi start.");
 
     // Kết thúc phiên → FINISHED
@@ -255,15 +256,11 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
     auctionDAO.update(runningAuction);
     Auction finishedAuction = auctionDAO.findById(auction.getId()).orElseThrow();
     assertEquals(
-        AuctionStatus.FINISHED,
-        finishedAuction.getStatus(),
-        "Phiên sau finish phải FINISHED.");
+        AuctionStatus.FINISHED, finishedAuction.getStatus(), "Phiên sau finish phải FINISHED.");
 
     // Không thể start lại phiên đã FINISHED
     assertThrows(
-        IllegalStateException.class,
-        finishedAuction::start,
-        "Không thể start phiên đã FINISHED.");
+        IllegalStateException.class, finishedAuction::start, "Không thể start phiên đã FINISHED.");
 
     // Không thể cancel phiên đã FINISHED
     assertThrows(
@@ -288,8 +285,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("bidder_nr"), UserRole.BIDDER, BigDecimal.valueOf(5000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Xe máy cổ", ItemType.VEHICLE));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Xe máy cổ", ItemType.VEHICLE));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -332,8 +328,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("bidderB_dis"), UserRole.BIDDER, BigDecimal.valueOf(5000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Tranh sơn dầu", ItemType.ART));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Tranh sơn dầu", ItemType.ART));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -393,8 +388,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("seller_nw"), UserRole.SELLER, BigDecimal.valueOf(1000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Bình gốm cổ", ItemType.ART));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Bình gốm cổ", ItemType.ART));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -447,8 +441,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("bidderB_tie"), UserRole.BIDDER, BigDecimal.valueOf(5000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Kiếm cổ Nhật Bản", ItemType.ART));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Kiếm cổ Nhật Bản", ItemType.ART));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -506,8 +499,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("bidderC_3w"), UserRole.BIDDER, BigDecimal.valueOf(10000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Xe Ferrari cổ", ItemType.VEHICLE));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Xe Ferrari cổ", ItemType.VEHICLE));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -573,8 +565,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("bidderB_hist"), UserRole.BIDDER, BigDecimal.valueOf(5000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Đĩa nhạc vinyl cổ", ItemType.ART));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Đĩa nhạc vinyl cổ", ItemType.ART));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -628,9 +619,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
     assertNotNull(userDir, "user.dir phải tồn tại trong mọi môi trường JVM.");
     assertTrue(userDir.isAbsolute(), "Đường dẫn user.dir phải là đường dẫn tuyệt đối.");
     assertNotNull(subPath, "Có thể tạo đường dẫn con từ user.dir.");
-    assertTrue(
-        subPath.startsWith(userDir),
-        "Đường dẫn con phải nằm trong thư mục chạy ứng dụng.");
+    assertTrue(subPath.startsWith(userDir), "Đường dẫn con phải nằm trong thư mục chạy ứng dụng.");
     assertFalse(
         subPath.toString().contains("\\\\") && subPath.toString().contains("/"),
         "Đường dẫn không được trộn lẫn separator Windows và Unix.");
@@ -656,8 +645,7 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         userDAO.save(
             TestFixtures.user(
                 TestFixtures.unique("bidderB_ow"), UserRole.BIDDER, BigDecimal.valueOf(10000)));
-    Item item =
-        itemDAO.save(TestFixtures.item(seller.getId(), "Nhẫn kim cương", ItemType.ART));
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Nhẫn kim cương", ItemType.ART));
     Auction auction =
         auctionDAO.save(
             TestFixtures.auction(
@@ -691,15 +679,12 @@ public class AuctionRuntimeTest extends app.server.dao.BaseDAOTest {
         finalAuction.getWinnerId(),
         "Người A phải thắng sau khi nâng maxAmount lên 4000.");
     assertEquals(
-        3100L,
-        finalAuction.getHighestBid(),
-        "Giá chốt phải là 3100 (runner-up B max 3000 + 100).");
+        3100L, finalAuction.getHighestBid(), "Giá chốt phải là 3100 (runner-up B max 3000 + 100).");
 
     // Frozen funds của A phải phản ánh maxAmount mới (4000)
     // Nhưng sau khi resolve, frozen = giá chốt autobid (3100) hoặc maxAmount tùy logic
     User finalBidderA = userDAO.findById(bidderA.getId()).orElseThrow();
-    BigDecimal frozenA =
-        finalBidderA.getWallet().getFrozenAmount(String.valueOf(auction.getId()));
+    BigDecimal frozenA = finalBidderA.getWallet().getFrozenAmount(String.valueOf(auction.getId()));
     assertTrue(
         frozenA.compareTo(BigDecimal.ZERO) >= 0,
         "Frozen funds của A phải là giá trị hợp lệ (>= 0).");

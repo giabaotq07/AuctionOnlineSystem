@@ -92,7 +92,7 @@ public class CommandTest extends BaseDAOTest {
   @Test
   public void testLoginCommandNullCredentials() {
     LoginCommand loginCmd = new LoginCommand(userService);
-    
+
     LoginRequest payloadNullUsername = new LoginRequest(null, "password");
     PacketReq reqPacket1 = PacketReq.of(RequestType.LOGIN, payloadNullUsername);
     loginCmd.execute(fakeClientHandler, reqPacket1);
