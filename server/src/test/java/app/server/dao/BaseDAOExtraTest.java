@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import app.common.exception.DatabaseException;
 import app.server.database.DatabaseConnection;
+import app.server.database.TransactionManager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
@@ -21,14 +22,6 @@ public class BaseDAOExtraTest extends BaseDAOTest {
 
     public void testRunWithConnection(java.util.function.Consumer<Connection> action) {
       runWithConnection(action, "Error run");
-    }
-
-    public <T> T testRunInTransaction(java.util.function.Function<Connection, T> action) {
-      return runInTransaction(action, "Error tx");
-    }
-
-    public void testRunInTransactionVoid(java.util.function.Consumer<Connection> action) {
-      runInTransaction(action, "Error tx void");
     }
   }
 
@@ -71,7 +64,8 @@ public class BaseDAOExtraTest extends BaseDAOTest {
     try {
       assertThrows(DatabaseException.class, () -> dao.testWithConnection(conn -> null));
       assertThrows(DatabaseException.class, () -> dao.testRunWithConnection(conn -> {}));
-      assertThrows(DatabaseException.class, () -> dao.testRunInTransaction(conn -> null));
+      assertThrows(
+          DatabaseException.class, () -> new TransactionManager().runInTransaction(conn -> null));
     } finally {
       DatabaseConnection.resetDataSource();
     }
@@ -79,22 +73,23 @@ public class BaseDAOExtraTest extends BaseDAOTest {
 
   @Test
   public void testRunInTransactionException() {
-    DummyDAO dao = new DummyDAO();
     assertThrows(
         RuntimeException.class,
         () ->
-            dao.testRunInTransaction(
-                conn -> {
-                  throw new RuntimeException("Mock error");
-                }));
+            new TransactionManager()
+                .runInTransaction(
+                    conn -> {
+                      throw new RuntimeException("Mock error");
+                    }));
 
     // Void tx
     assertThrows(
         RuntimeException.class,
         () ->
-            dao.testRunInTransactionVoid(
-                conn -> {
-                  throw new RuntimeException("Mock error void");
-                }));
+            new TransactionManager()
+                .runWithoutResult(
+                    conn -> {
+                      throw new RuntimeException("Mock error void");
+                    }));
   }
 }

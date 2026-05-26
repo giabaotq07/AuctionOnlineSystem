@@ -9,8 +9,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Base DAO class providing common connection handling. Centralizes connection management and
- * common update helpers.
+ * Base DAO class providing common connection handling. Centralizes connection management and common
+ * update helpers.
  */
 public abstract class BaseDAO {
   /** executeUpdate. */
