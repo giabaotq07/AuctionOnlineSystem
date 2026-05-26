@@ -35,4 +35,9 @@ public class PasswordUtilsTest {
 
     assertFalse(PasswordUtils.verify("wrong_password", hashedPassword));
   }
+
+  @Test
+  public void testConstructor() {
+    assertNotNull(new PasswordUtils());
+  }
 }

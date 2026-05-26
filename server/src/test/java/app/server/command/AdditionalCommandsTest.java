@@ -542,6 +542,378 @@ public class AdditionalCommandsTest extends BaseDAOTest {
         genericCmd.unexpectedErrorMessage(), fakeClientHandler.getSentPacket().getMessage());
   }
 
+  @Test
+  public void testCommandsValidationFailures() {
+    // 1. CreateAuctionCommand validation
+    CreateAuctionCommand createCmd = new CreateAuctionCommand(auctionService, queryService);
+    createCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CREATE_AUCTION, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 2. UpdateAuctionCommand validation
+    UpdateAuctionCommand updateCmd = new UpdateAuctionCommand(auctionService, queryService);
+    updateCmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPDATE_AUCTION, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 3. FetchSellerItemsCommand validation
+    FetchSellerItemsCommand sellerItemsCmd = new FetchSellerItemsCommand(itemService);
+    sellerItemsCmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_SELLER_ITEMS, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 4. BanUserCommand validation
+    BanUserCommand banCmd = new BanUserCommand(userService);
+    banCmd.execute(fakeClientHandler, PacketReq.of(RequestType.BAN_USER, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 5. CancelAuctionCommand validation
+    CancelAuctionCommand cancelCmd = new CancelAuctionCommand(auctionService, queryService, userService);
+    cancelCmd.execute(fakeClientHandler, PacketReq.of(RequestType.CANCEL_AUCTION, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 6. PlaceBidCommand validation
+    PlaceBidCommand bidCmd = new PlaceBidCommand(bidService, userService, queryService);
+    bidCmd.execute(fakeClientHandler, PacketReq.of(RequestType.PLACE_BID, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 7. SetAutoBidCommand validation
+    SetAutoBidCommand autoBidCmd = new SetAutoBidCommand(autoBidService, queryService);
+    autoBidCmd.execute(fakeClientHandler, PacketReq.of(RequestType.SET_AUTO_BID, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 8. DisableAutoBidCommand validation
+    DisableAutoBidCommand disableAutoBidCmd = new DisableAutoBidCommand(autoBidService);
+    disableAutoBidCmd.execute(fakeClientHandler, PacketReq.of(RequestType.DISABLE_AUTO_BID, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 9. DepositCommand validation
+    DepositCommand depositCmd = new DepositCommand(userService);
+    depositCmd.execute(fakeClientHandler, PacketReq.of(RequestType.DEPOSIT, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 10. SettleWalletCommand validation
+    SettleWalletCommand settleCmd = new SettleWalletCommand(auctionService, queryService, userService);
+    settleCmd.execute(fakeClientHandler, PacketReq.of(RequestType.SETTLE_WALLET, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 11. UploadImageCommand validation
+    UploadImageCommand uploadImageCmd = new UploadImageCommand(itemService, imageStorageService, queryService);
+    uploadImageCmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_IMAGE, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 12. FetchItemImageCommand validation
+    FetchItemImageCommand fetchImageCmd = new FetchItemImageCommand(imageStorageService, itemService);
+    fetchImageCmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_ITEM_IMAGE, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 13. FetchAvatarCommand validation
+    FetchAvatarCommand fetchAvatarCmd = new FetchAvatarCommand(imageStorageService);
+    fetchAvatarCmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AVATAR, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 14. UploadAvatarCommand validation
+    UploadAvatarCommand uploadAvatarCmd = new UploadAvatarCommand(userService, imageStorageService);
+    uploadAvatarCmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_AVATAR, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testCommandsRequireUserFailures() {
+    FakeClientHandler guestHandler = new FakeClientHandler(); // No user authenticated
+
+    // 1. CreateAuctionCommand requires logged in user
+    CreateAuctionCommand createCmd = new CreateAuctionCommand(auctionService, queryService);
+    CreateAuctionRequest createPayload =
+        new CreateAuctionRequest(
+            "Name",
+            "Desc",
+            1000L,
+            100L,
+            ItemType.ART,
+            60,
+            LocalDateTime.now().plusDays(1));
+    createCmd.execute(guestHandler, PacketReq.of(RequestType.CREATE_AUCTION, createPayload));
+    assertFalse(guestHandler.getSentPacket().isSuccess());
+    assertEquals(
+        "Người dùng chưa đăng nhập hoặc không hợp lệ.",
+        guestHandler.getSentPacket().getMessage());
+
+    // 2. PlaceBidCommand requires logged in user
+    PlaceBidCommand bidCmd = new PlaceBidCommand(bidService, userService, queryService);
+    PlaceBidRequest bidPayload = new PlaceBidRequest(1, 1500L);
+    bidCmd.execute(guestHandler, PacketReq.of(RequestType.PLACE_BID, bidPayload));
+    assertFalse(guestHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testRegisterCommandValidationFailures() {
+    RegisterCommand regCmd = new RegisterCommand(userService);
+
+    // Empty fields
+    regCmd.execute(fakeClientHandler, PacketReq.of(RequestType.REGISTER, new RegisterRequest("", "username", "password", UserRole.BIDDER)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    regCmd.execute(fakeClientHandler, PacketReq.of(RequestType.REGISTER, new RegisterRequest("Name", "", "password", UserRole.BIDDER)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    regCmd.execute(fakeClientHandler, PacketReq.of(RequestType.REGISTER, new RegisterRequest("Name", "username", "  ", UserRole.BIDDER)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    regCmd.execute(fakeClientHandler, PacketReq.of(RequestType.REGISTER, new RegisterRequest(null, "username", "password", UserRole.BIDDER)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // Invalid role
+    regCmd.execute(fakeClientHandler, PacketReq.of(RequestType.REGISTER, new RegisterRequest("Name", "username", "password", UserRole.ADMIN)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+    assertEquals("Vai trò không hợp lệ.", fakeClientHandler.getSentPacket().getMessage());
+
+    // Null role defaults to BIDDER
+    regCmd.execute(fakeClientHandler, PacketReq.of(RequestType.REGISTER, new RegisterRequest("Name " + TestFixtures.unique("n"), "user_" + TestFixtures.unique("u"), "password", null)));
+    assertTrue(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testFetchAuctionDetailCommandAdditional() {
+    FetchAuctionDetailCommand cmd = new FetchAuctionDetailCommand(queryService, autoBidService);
+
+    // 1. Invalid auction ID <= 0
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(0)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+    assertEquals("Phiên đấu giá không hợp lệ.", fakeClientHandler.getSentPacket().getMessage());
+
+    // 2. knownVersion matches current auction version
+    int currentVer = auction.getVersion();
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auction.getId(), currentVer)));
+    assertTrue(fakeClientHandler.getSentPacket().isSuccess());
+    assertEquals(ResponseType.AUCTION_RESULT, fakeClientHandler.getSentPacket().getType());
+
+    // 3. Authenticated user with no auto-bid
+    fakeClientHandler.setFakeUser(bidder);
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auction.getId())));
+    assertTrue(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 4. Authenticated user with auto-bid configured
+    AutoBid autoBid = new AutoBid();
+    autoBid.setAuctionId(auction.getId());
+    autoBid.setUserId(bidder.getId());
+    autoBid.setMaxAmount(3000L);
+    autoBid.setIncrementAmount(200L);
+    autoBid.setEnabled(true);
+    AutoBid savedAutoBid = autoBidDAO.save(autoBid);
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auction.getId())));
+    assertTrue(fakeClientHandler.getSentPacket().isSuccess());
+    autoBidDAO.delete(savedAutoBid.getId()); // cleanup
+
+    // 5. Throws exception inside autoBidService
+    AutoBidService throwingAutoBidService = new AutoBidService(autoBidDAO, auctionDAO, bidDAO, itemDAO, userDAO, transactionManager, new BidValidator()) {
+      @Override
+      public java.util.Optional<AutoBid> getAutoBid(int aId, int uId) {
+        throw new RuntimeException("Simulated AutoBidService error");
+      }
+    };
+    FetchAuctionDetailCommand throwingCmd = new FetchAuctionDetailCommand(queryService, throwingAutoBidService);
+    assertDoesNotThrow(() -> throwingCmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AUCTION_DETAIL, new AuctionDetailRequest(auction.getId()))));
+  }
+
+  @Test
+  public void testSettleWalletCommandAdditional() {
+    SettleWalletCommand cmd = new SettleWalletCommand(auctionService, queryService, userService);
+
+    // 1. Invalid auction ID <= 0
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.SETTLE_WALLET, new SettleWalletRequest(0)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 2. requireUser validation failure
+    FakeClientHandler guestHandler = new FakeClientHandler();
+    cmd.execute(guestHandler, PacketReq.of(RequestType.SETTLE_WALLET, new SettleWalletRequest(auction.getId())));
+    assertFalse(guestHandler.getSentPacket().isSuccess());
+
+    // 3. Settle completed auction (expired)
+    // Setup expired auction
+    Item expiredItem1 = itemDAO.save(TestFixtures.item(seller.getId(), "Painting Expired 1", ItemType.ART));
+    Auction expiredAuction = TestFixtures.auction(expiredItem1.getId(), seller.getId(), LocalDateTime.now().minusHours(1), 1000L);
+    expiredAuction.setStartTime(LocalDateTime.now().minusHours(2));
+    expiredAuction.setStatus(AuctionStatus.RUNNING);
+    expiredAuction = auctionDAO.save(expiredAuction);
+
+    bidder.getWallet().setFrozenAmount(String.valueOf(expiredAuction.getId()), BigDecimal.valueOf(1000));
+    userDAO.update(bidder);
+
+    // Register clients for notification
+    fakeClientHandler.setFakeUser(admin);
+    app.server.network.Server.registerClient(seller.getId(), fakeClientHandler);
+    app.server.network.Server.registerClient(bidder.getId(), fakeClientHandler);
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.SETTLE_WALLET, new SettleWalletRequest(expiredAuction.getId())));
+    assertTrue(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 4. Exception case on broadcast / sendToUser
+    // Register throwing handlers
+    FakeClientHandler throwingHandler = new FakeClientHandler() {
+      @Override
+      public void sendPacket(PacketRes packet) {
+        throw new RuntimeException("Simulated notification send failure");
+      }
+    };
+    app.server.network.Server.registerClient(seller.getId(), throwingHandler);
+    app.server.network.Server.registerClient(bidder.getId(), throwingHandler);
+
+    // Setup another expired auction
+    Item expiredItem2 = itemDAO.save(TestFixtures.item(seller.getId(), "Painting Expired 2", ItemType.ART));
+    Auction tempExpiredAuction2 = TestFixtures.auction(expiredItem2.getId(), seller.getId(), LocalDateTime.now().minusHours(1), 1000L);
+    tempExpiredAuction2.setStartTime(LocalDateTime.now().minusHours(2));
+    tempExpiredAuction2.setStatus(AuctionStatus.RUNNING);
+    final Auction savedExpiredAuction2 = auctionDAO.save(tempExpiredAuction2);
+
+    bidder.getWallet().setFrozenAmount(String.valueOf(savedExpiredAuction2.getId()), BigDecimal.valueOf(1000));
+    userDAO.update(bidder);
+
+    assertDoesNotThrow(() -> cmd.execute(fakeClientHandler, PacketReq.of(RequestType.SETTLE_WALLET, new SettleWalletRequest(savedExpiredAuction2.getId()))));
+  }
+
+  @Test
+  public void testCancelAuctionCommandAdditional() {
+    CancelAuctionCommand cmd = new CancelAuctionCommand(auctionService, queryService, userService);
+
+    // 1. Invalid auction ID / expectedVersion
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.CANCEL_AUCTION, new CancelAuctionRequest(0, 1)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.CANCEL_AUCTION, new CancelAuctionRequest(1, -1)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 2. Exception coverage in notifications / sendWalletUpdates
+    // Create new running auction to cancel
+    Item cancelItem = itemDAO.save(TestFixtures.item(seller.getId(), "Painting to Cancel", ItemType.ART));
+    Auction cancelAuction = TestFixtures.auction(cancelItem.getId(), seller.getId(), LocalDateTime.now().plusHours(2), 1000L);
+    cancelAuction.setStatus(AuctionStatus.RUNNING);
+    cancelAuction = auctionDAO.save(cancelAuction);
+
+    // Setup a bid and auto-bid so that we have releasedUserIds
+    fakeClientHandler.setFakeUser(seller);
+    
+    // Register a throwing handler to hit catch block in sendWalletUpdates
+    FakeClientHandler throwingHandler = new FakeClientHandler() {
+      @Override
+      public void sendPacket(PacketRes packet) {
+        throw new RuntimeException("Simulated notify cancel failure");
+      }
+    };
+    app.server.network.Server.registerClient(bidder.getId(), throwingHandler);
+
+    // Set bidder wallet frozen amount so cancel releases it and adds to releasedUserIds
+    bidder.getWallet().setFrozenAmount(String.valueOf(cancelAuction.getId()), BigDecimal.valueOf(500));
+    userDAO.update(bidder);
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.CANCEL_AUCTION, new CancelAuctionRequest(cancelAuction.getId(), cancelAuction.getVersion())));
+    assertTrue(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testUploadAvatarCommandAdditional() {
+    UploadAvatarCommand cmd = new UploadAvatarCommand(userService, imageStorageService);
+
+    // 1. Null data
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest(null, "avatar.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest("base64", null)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 2. Guest user
+    FakeClientHandler guestHandler = new FakeClientHandler();
+    cmd.execute(guestHandler, PacketReq.of(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest("base64", "avatar.png")));
+    assertFalse(guestHandler.getSentPacket().isSuccess());
+
+    // 3. Exception throwers - IOException, IllegalArgumentException, ServiceException
+    fakeClientHandler.setFakeUser(bidder);
+
+    // IllegalArgumentException (e.g. invalid base64 format)
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest("invalid_base64_&^*()", "avatar.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // ServiceException / IOException simulation using custom throwing ImageStorageService
+    ImageStorageService throwingStorage = new ImageStorageService() {
+      @Override
+      public String save(String b64, String filename) throws java.io.IOException {
+        throw new java.io.IOException("Simulated disk write error");
+      }
+    };
+    UploadAvatarCommand cmdThrowing = new UploadAvatarCommand(userService, throwingStorage);
+    cmdThrowing.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_AVATAR, new UploadAvatarRequest("YmFzZTY0", "avatar.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testFetchAvatarCommandAdditional() {
+    FetchAvatarCommand cmd = new FetchAvatarCommand(imageStorageService);
+
+    // 1. Invalid path
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AVATAR, new FetchAvatarRequest(bidder.getId(), null)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AVATAR, new FetchAvatarRequest(bidder.getId(), "  ")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 2. IOException / path not exists
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.FETCH_AVATAR, new FetchAvatarRequest(bidder.getId(), "nonexistent_avatar.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testUploadImageCommandAdditional() {
+    UploadImageCommand cmd = new UploadImageCommand(itemService, imageStorageService, queryService);
+
+    // 1. Validation failure (invalid inputs)
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_IMAGE, new UploadImageRequest(0, "base64", "img.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_IMAGE, new UploadImageRequest(item.getId(), null, "img.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_IMAGE, new UploadImageRequest(item.getId(), "base64", null)));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // 2. Cleanup deletion on failure
+    // We will simulate updateImagePath throwing ServiceException, so it cleans up the saved file
+    ItemService throwingItemService = new ItemService(itemDAO, auctionDAO, transactionManager) {
+      @Override
+      public String updateImagePath(int itemId, String path, int userId, UserRole role) {
+        throw new app.common.exception.ServiceException("Simulated DB update failure");
+      }
+    };
+    UploadImageCommand cleanupCmd = new UploadImageCommand(throwingItemService, imageStorageService, queryService);
+    fakeClientHandler.setFakeUser(seller);
+    String base64 = java.util.Base64.getEncoder().encodeToString("dummy_image_data".getBytes());
+    
+    cleanupCmd.execute(fakeClientHandler, PacketReq.of(RequestType.UPLOAD_IMAGE, new UploadImageRequest(item.getId(), base64, "avatar.png")));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
+  @Test
+  public void testSafeCommandHelperEdgeCases() {
+    SafeCommand cmd = new SafeCommand() {
+      @Override
+      protected void doExecute(ClientHandler clientHandler, PacketReq packet) {
+        // Test requireUser with id <= 0
+        User invalidUser = new User("Name", new Account("username", "password", UserRole.BIDDER), new Wallet());
+        invalidUser.setId(0);
+        FakeClientHandler invalidHandler = new FakeClientHandler();
+        invalidHandler.setFakeUser(invalidUser);
+        requireUser(invalidHandler);
+      }
+      @Override
+      protected ResponseType responseType() {
+        return ResponseType.ERROR;
+      }
+    };
+
+    // requireUser with id <= 0 will throw ValidationException which is caught in execute
+    cmd.execute(fakeClientHandler, PacketReq.of(RequestType.CHAT, null));
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // Test sendError with null clientHandler
+    assertDoesNotThrow(() -> cmd.sendError(null, "Error message"));
+  }
+
   /** FakeClientHandler de gia lap socket connection va session dang nhap. */
   public static class FakeClientHandler extends ClientHandler {
     private final Session fakeSession = new Session();

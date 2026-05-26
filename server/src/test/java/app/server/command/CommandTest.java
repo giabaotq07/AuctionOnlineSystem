@@ -88,6 +88,22 @@ public class CommandTest extends BaseDAOTest {
     assertEquals("Tên đăng nhập và mật khẩu không được để trống.", res.getMessage());
   }
 
+  /** Test LoginCommand that bai khi username hoac password bang null. */
+  @Test
+  public void testLoginCommandNullCredentials() {
+    LoginCommand loginCmd = new LoginCommand(userService);
+    
+    LoginRequest payloadNullUsername = new LoginRequest(null, "password");
+    PacketReq reqPacket1 = PacketReq.of(RequestType.LOGIN, payloadNullUsername);
+    loginCmd.execute(fakeClientHandler, reqPacket1);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    LoginRequest payloadNullPassword = new LoginRequest("test_user", null);
+    PacketReq reqPacket2 = PacketReq.of(RequestType.LOGIN, payloadNullPassword);
+    loginCmd.execute(fakeClientHandler, reqPacket2);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
   /** Test LoginCommand that bai khi sai mật khẩu. */
   @Test
   public void testLoginCommandWrongPassword() {

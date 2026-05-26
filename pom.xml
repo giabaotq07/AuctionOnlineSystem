@@ -246,6 +246,41 @@
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.14</version>
+                <configuration>
+                    <excludes>
+                        <!-- Client GUI layers are typically excluded from unit test coverage -->
+                        <exclude>app/client/controllers/**</exclude>
+                        <exclude>app/client/views/**</exclude>
+                        <exclude>app/client/Client.class</exclude>
+                        <exclude>app/client/utils/AlertUtils.class</exclude>
+                        <exclude>app/client/utils/LoadingButton.class</exclude>
+                        
+                        <!-- Server network/DB bootstrap and socket loops are typically excluded -->
+                        <exclude>app/server/Server.class</exclude>
+                        <exclude>app/server/network/Server.class</exclude>
+                        <exclude>app/server/database/DatabaseInitializer.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

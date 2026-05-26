@@ -92,21 +92,16 @@ public class ClientNotificationCenterTest {
   @Test
   public void testUserListListeners() {
     ClientNotificationCenter center = ClientNotificationCenter.getInstance();
-    AtomicReference<List<UserDto>> usersRef = new AtomicReference<>();
-    Consumer<List<UserDto>> listener = usersRef::set;
+    AtomicBoolean notified = new AtomicBoolean(false);
+    Runnable listener = () -> notified.set(true);
 
     center.addUserListListener(listener);
-    List<UserDto> users = new ArrayList<>();
-    center.notifyUserList(users);
-    assertEquals(users, usersRef.get());
-
-    // Null case check
-    center.notifyUserList(null);
-    assertEquals(users, usersRef.get());
+    center.notifyUserList();
+    assertTrue(notified.get());
 
     center.removeUserListListener(listener);
-    List<UserDto> newUsers = new ArrayList<>();
-    center.notifyUserList(newUsers);
-    assertEquals(users, usersRef.get());
+    notified.set(false);
+    center.notifyUserList();
+    assertFalse(notified.get());
   }
 }

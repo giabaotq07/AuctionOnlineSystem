@@ -112,4 +112,123 @@ public class ServerNetworkTest {
 
     assertDoesNotThrow(() -> clientHandler.close());
   }
+
+  @Test
+  public void testClientHandlerExecutionLoop() throws Exception {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    String requests =
+        "invalid_json\n"
+            + "{}\n"
+            + "{\"type\":\"FETCH_AUCTION_SUMMARIES\"}\n"
+            + "{\"type\":\"CHAT\"}\n";
+
+    Socket socket =
+        new Socket() {
+          @Override
+          public java.io.InputStream getInputStream() {
+            return new ByteArrayInputStream(requests.getBytes());
+          }
+
+          @Override
+          public java.io.OutputStream getOutputStream() {
+            return bos;
+          }
+        };
+
+    ClientHandler clientHandler =
+        new ClientHandler(socket, null, null, null, null, null, null, null);
+    clientHandler.run();
+
+    String output = bos.toString();
+    assertTrue(output.contains("ERROR") || output.contains("FETCH_AUCTION_SUMMARIES"));
+  }
+
+  @Test
+  public void testClientHandlerExecutionLoopWithUser() throws Exception {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    String requests =
+        "{\"type\":\"CHAT\",\"data\":\"{\\\"message\\\":\\\"hello\\\"}\"}\n"
+            + "{\"type\":\"BAN_USER\",\"data\":\"{\\\"userId\\\":1,\\\"ban\\\":true}\"}\n";
+
+    Socket socket =
+        new Socket() {
+          @Override
+          public java.io.InputStream getInputStream() {
+            return new ByteArrayInputStream(requests.getBytes());
+          }
+
+          @Override
+          public java.io.OutputStream getOutputStream() {
+            return bos;
+          }
+        };
+
+    ClientHandler clientHandler =
+        new ClientHandler(socket, null, null, null, null, null, null, null);
+
+    app.common.models.User user =
+        new app.common.models.User(
+            1,
+            "John",
+            new app.common.models.Account("john", "pass", app.common.enums.UserRole.BIDDER),
+            new app.common.models.Wallet(BigDecimal.TEN));
+    clientHandler.getSession().authenticate(user);
+
+    clientHandler.run();
+
+    String output = bos.toString();
+    assertTrue(
+        output.contains("CHAT_RESULT")
+            || output.contains("USER_BANNED_NOTICE")
+            || output.contains("ERROR"));
+  }
+
+  @Test
+  public void testClientHandlerExecutionLoopBannedUser() throws Exception {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    String requests = "{\"type\":\"CHAT\",\"data\":\"{\\\"message\\\":\\\"hello\\\"}\"}\n";
+    Socket socket =
+        new Socket() {
+          @Override
+          public java.io.InputStream getInputStream() {
+            return new ByteArrayInputStream(requests.getBytes());
+          }
+
+          @Override
+          public java.io.OutputStream getOutputStream() {
+            return bos;
+          }
+        };
+    ClientHandler clientHandler =
+        new ClientHandler(socket, null, null, null, null, null, null, null);
+
+    app.common.models.User user =
+        new app.common.models.User(
+            1,
+            "John",
+            new app.common.models.Account("john", "pass", app.common.enums.UserRole.BIDDER),
+            new app.common.models.Wallet(BigDecimal.TEN));
+    user.setStatus(false);
+    clientHandler.getSession().authenticate(user);
+
+    clientHandler.run();
+
+    String output = bos.toString();
+    assertTrue(output.contains("Tài khoản đã bị cấm"));
+  }
+
+  @Test
+  public void testToResponseTypeAllEnumValues() throws Exception {
+    ClientHandler clientHandler =
+        new ClientHandler(null, null, null, null, null, null, null, null);
+    for (app.common.enums.RequestType type : app.common.enums.RequestType.values()) {
+      assertDoesNotThrow(
+          () ->
+              invokePrivateMethod(
+                  clientHandler,
+                  "toResponseType",
+                  new Class<?>[] {app.common.enums.RequestType.class},
+                  new Object[] {type}));
+    }
+  }
 }

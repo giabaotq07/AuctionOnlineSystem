@@ -7,6 +7,7 @@ import app.client.manager.NavigationManager;
 import app.client.manager.UserManager;
 import app.client.store.AuctionStore;
 import app.client.store.LiveAuctionSessionStore;
+import app.client.store.UserListStore;
 import app.common.dto.*;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
@@ -67,9 +68,9 @@ public class ControllersTest {
     setPrivateField(clientInstance, "closed", false);
     setPrivateField(clientInstance, "writer", new BufferedWriter(new StringWriter()));
 
-    // Clear stores and set standard logged in bidder user
     UserManager.getInstance().setCurrentUser(null);
     AuctionStore.getInstance().clearHistory();
+    UserListStore.getInstance().clear();
 
     // Start a daemon closer thread to auto-dismiss alert dialogs in headless runs
     closerThread =
@@ -109,6 +110,7 @@ public class ControllersTest {
     UserManager.getInstance().setCurrentUser(null);
     AuctionStore.getInstance().clearHistory();
     LiveAuctionSessionStore.getInstance().clear();
+    UserListStore.getInstance().clear();
   }
 
   private void setPrivateField(Object target, String fieldName, Object value) throws Exception {
@@ -1155,6 +1157,8 @@ public class ControllersTest {
             TableColumn<UserDto, String> colUserAccount = new TableColumn<>();
             TableColumn<UserDto, String> colUserBalance = new TableColumn<>();
             TableColumn<UserDto, String> colUserRole = new TableColumn<>();
+            TableColumn<UserDto, String> colUserStatus = new TableColumn<>();
+            TableColumn<UserDto, Void> colUserAction = new TableColumn<>();
 
             setPrivateField(controller, "adminNameLabel", adminNameLabel);
             setPrivateField(controller, "auctionSearchField", auctionSearchField);
@@ -1182,6 +1186,8 @@ public class ControllersTest {
             setPrivateField(controller, "colUserAccount", colUserAccount);
             setPrivateField(controller, "colUserBalance", colUserBalance);
             setPrivateField(controller, "colUserRole", colUserRole);
+            setPrivateField(controller, "colUserStatus", colUserStatus);
+            setPrivateField(controller, "colUserAction", colUserAction);
 
             User mockUser =
                 new User(
@@ -1291,8 +1297,8 @@ public class ControllersTest {
                     invokePrivateMethod(
                         controller,
                         "loadUsersData",
-                        new Class<?>[] {List.class},
-                        new Object[] {new ArrayList<>()}));
+                        new Class<?>[0],
+                        new Object[0]));
 
             assertDoesNotThrow(controller::cleanup);
           } catch (Exception e) {
