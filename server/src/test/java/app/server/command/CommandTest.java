@@ -88,6 +88,22 @@ public class CommandTest extends BaseDAOTest {
     assertEquals("Tên đăng nhập và mật khẩu không được để trống.", res.getMessage());
   }
 
+  /** Test LoginCommand that bai khi username hoac password bang null. */
+  @Test
+  public void testLoginCommandNullCredentials() {
+    LoginCommand loginCmd = new LoginCommand(userService);
+
+    LoginRequest payloadNullUsername = new LoginRequest(null, "password");
+    PacketReq reqPacket1 = PacketReq.of(RequestType.LOGIN, payloadNullUsername);
+    loginCmd.execute(fakeClientHandler, reqPacket1);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    LoginRequest payloadNullPassword = new LoginRequest("test_user", null);
+    PacketReq reqPacket2 = PacketReq.of(RequestType.LOGIN, payloadNullPassword);
+    loginCmd.execute(fakeClientHandler, reqPacket2);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+  }
+
   /** Test LoginCommand that bai khi sai mật khẩu. */
   @Test
   public void testLoginCommandWrongPassword() {
@@ -146,6 +162,52 @@ public class CommandTest extends BaseDAOTest {
     assertNotNull(res);
     assertFalse(res.isSuccess());
     assertEquals("User đã tồn tại: duplicate_user", res.getMessage());
+  }
+
+  /** Test LoginCommand that bai khi payload null. */
+  @Test
+  public void testLoginCommand_nullPayload() {
+    LoginCommand loginCmd = new LoginCommand(userService);
+    PacketReq reqPacket = PacketReq.of(RequestType.LOGIN, null);
+
+    loginCmd.execute(fakeClientHandler, reqPacket);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertFalse(res.isSuccess());
+  }
+
+  /** Test RegisterCommand that bai khi payload null. */
+  @Test
+  public void testRegisterCommand_nullPayload() {
+    RegisterCommand regCmd = new RegisterCommand(userService);
+    PacketReq reqPacket = PacketReq.of(RequestType.REGISTER, null);
+
+    regCmd.execute(fakeClientHandler, reqPacket);
+
+    PacketRes res = fakeClientHandler.getSentPacket();
+    assertNotNull(res);
+    assertFalse(res.isSuccess());
+  }
+
+  /** Test RegisterCommand that bai khi username hoac password trong. */
+  @Test
+  public void testRegisterCommand_blankUsernameOrPassword() {
+    RegisterCommand regCmd = new RegisterCommand(userService);
+
+    // Username trong
+    PacketReq req1 =
+        PacketReq.of(
+            RequestType.REGISTER, new RegisterRequest("Ten", "  ", "pass", UserRole.BIDDER));
+    regCmd.execute(fakeClientHandler, req1);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
+
+    // Password trong
+    PacketReq req2 =
+        PacketReq.of(
+            RequestType.REGISTER, new RegisterRequest("Ten", "user123", "   ", UserRole.BIDDER));
+    regCmd.execute(fakeClientHandler, req2);
+    assertFalse(fakeClientHandler.getSentPacket().isSuccess());
   }
 
   /** FakeClientHandler de gia lap hoat dong socket network va phien session. */

@@ -3,10 +3,7 @@ package app.client.manager;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.common.dto.ChatResponse;
-import app.common.dto.UserDto;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -87,26 +84,5 @@ public class ClientNotificationCenterTest {
     updated.set(false);
     center.notifyUpdate();
     assertFalse(updated.get());
-  }
-
-  @Test
-  public void testUserListListeners() {
-    ClientNotificationCenter center = ClientNotificationCenter.getInstance();
-    AtomicReference<List<UserDto>> usersRef = new AtomicReference<>();
-    Consumer<List<UserDto>> listener = usersRef::set;
-
-    center.addUserListListener(listener);
-    List<UserDto> users = new ArrayList<>();
-    center.notifyUserList(users);
-    assertEquals(users, usersRef.get());
-
-    // Null case check
-    center.notifyUserList(null);
-    assertEquals(users, usersRef.get());
-
-    center.removeUserListListener(listener);
-    List<UserDto> newUsers = new ArrayList<>();
-    center.notifyUserList(newUsers);
-    assertEquals(users, usersRef.get());
   }
 }

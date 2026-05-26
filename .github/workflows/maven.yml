@@ -22,7 +22,7 @@ jobs:
           java-version: 25
           cache: maven
       - name: Build & Test
-        run: mvn clean verify
+        run: xvfb-run --auto-servernum mvn clean verify
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:

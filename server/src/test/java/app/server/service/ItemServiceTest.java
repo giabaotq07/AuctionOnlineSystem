@@ -2,6 +2,7 @@ package app.server.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.TestFixtures;
 import app.common.enums.ItemType;
@@ -69,5 +70,24 @@ class ItemServiceTest extends BaseDAOTest {
         ServiceException.class,
         () ->
             itemService.getSellerItems(otherSeller.getId(), otherSeller.getRole(), seller.getId()));
+  }
+
+  @Test
+  void update_shouldPersistChanges() {
+    Item item = itemDAO.save(TestFixtures.item(seller.getId(), "Old Name", ItemType.ART));
+    item.setName("New Name");
+    item.setDescription("Updated description");
+
+    itemService.update(item);
+
+    Item stored = itemDAO.findById(item.getId()).orElseThrow();
+    assertEquals("New Name", stored.getName());
+    assertEquals("Updated description", stored.getDescription());
+  }
+
+  @Test
+  void getSellerItems_shouldReturnEmpty_whenNoItems() {
+    List<Item> items = itemService.getSellerItems(seller.getId(), seller.getRole(), seller.getId());
+    assertTrue(items.isEmpty());
   }
 }

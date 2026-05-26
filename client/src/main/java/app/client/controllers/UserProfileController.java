@@ -46,6 +46,9 @@ public class UserProfileController {
       msg ->
           Platform.runLater(
               () -> {
+                if (UserManager.getInstance().getCurrentUser() == null) {
+                  return;
+                }
                 if (msg != null
                     && (msg.contains("thành công")
                         || msg.toLowerCase().contains("success")
@@ -67,12 +70,7 @@ public class UserProfileController {
   private void loadUserProfile() {
     User currentUser = UserManager.getInstance().getCurrentUser();
     if (currentUser == null) {
-      AlertUtils.showError("Lỗi", "Không tìm thấy thông tin user!");
-      try {
-        NavigationManager.getInstance().navigateTo(View.LOGIN);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      logger.warn("loadUserProfile: current user is null, skipping profile load.");
       return;
     }
     if (avatarCircle != null) {

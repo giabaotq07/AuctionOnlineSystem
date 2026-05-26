@@ -32,7 +32,8 @@ public class AuctionController implements Cleanable {
   @FXML private TextField startingPriceField;
   @FXML private TextField stepPriceField;
   @FXML private ComboBox<ItemType> typeComboBox;
-  @FXML private TextField durationField;
+  @FXML private DatePicker endDatePicker;
+  @FXML private TextField endTimeField;
   @FXML private DatePicker startDatePicker;
   @FXML private TextField startTimeField;
   @FXML private Button chooseImageButton;
@@ -76,24 +77,39 @@ public class AuctionController implements Cleanable {
       NavigationManager.getInstance().navigateTo(View.LOGIN);
       return;
     }
+
     try {
       String name = nameField.getText();
       String desc = descriptionField.getText();
-      long startPrice = Long.parseLong(startingPriceField.getText());
-      long stepPrice = Long.parseLong(stepPriceField.getText());
-      int durationMins = Integer.parseInt(durationField.getText());
-      ItemType type = typeComboBox.getValue();
+      String startingPriceStr = startingPriceField.getText();
+      String stepPriceStr = stepPriceField.getText();
 
       LocalDate startDate = startDatePicker.getValue();
       String timeStr = startTimeField.getText();
-      if (name.isEmpty()
+      LocalDate endDate = endDatePicker.getValue();
+      String endTimeStr = endTimeField.getText();
+
+      if (name == null
+          || name.isEmpty()
+          || desc == null
           || desc.isEmpty()
+          || startingPriceStr == null
+          || startingPriceStr.isEmpty()
+          || stepPriceStr == null
+          || stepPriceStr.isEmpty()
           || startDate == null
           || timeStr == null
-          || timeStr.isEmpty()) {
+          || timeStr.isEmpty()
+          || endDate == null
+          || endTimeStr == null
+          || endTimeStr.isEmpty()) {
         AlertUtils.showError("Lỗi", "Thiếu thông tin.");
         return;
       }
+
+      long startPrice = Long.parseLong(startingPriceStr);
+      long stepPrice = Long.parseLong(stepPriceStr);
+      ItemType type = typeComboBox.getValue();
 
       LocalTime startTimePicker;
       try {
@@ -104,6 +120,27 @@ public class AuctionController implements Cleanable {
       }
       LocalDateTime startTime = LocalDateTime.of(startDate, startTimePicker);
 
+      LocalTime endTimePicker;
+      try {
+        endTimePicker = LocalTime.parse(endTimeStr, DateTimeFormatter.ofPattern("HH:mm"));
+      } catch (DateTimeParseException e) {
+        AlertUtils.showError("Sai định dạng", "Giờ kết thúc phải có định dạng HH:mm");
+        return;
+      }
+      LocalDateTime endTime = LocalDateTime.of(endDate, endTimePicker);
+
+      if (!endTime.isAfter(startTime)) {
+        AlertUtils.showError("Lỗi thời gian", "Thời gian kết thúc phải sau thời gian bắt đầu.");
+        return;
+      }
+
+      long durationMinsLong = java.time.Duration.between(startTime, endTime).toMinutes();
+      if (durationMinsLong <= 0) {
+        AlertUtils.showError("Lỗi thời gian", "Thời gian diễn ra phải tối thiểu 1 phút.");
+        return;
+      }
+      int durationMins = (int) durationMinsLong;
+
       CreateAuctionRequest request =
           new CreateAuctionRequest(
               name, desc, startPrice, stepPrice, type, durationMins, startTime);
@@ -111,7 +148,7 @@ public class AuctionController implements Cleanable {
       setCreateLoading(true);
       requests.createAuction(request);
     } catch (NumberFormatException e) {
-      AlertUtils.showError("Sai định dạng", "Giá / thời gian phải là số");
+      AlertUtils.showError("Sai định dạng", "Giá phải là số");
     } catch (IOException e) {
       setCreateLoading(false);
       AlertUtils.showError("Lỗi", "Server không phản hồi");

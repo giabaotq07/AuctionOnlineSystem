@@ -325,6 +325,227 @@ public class AuctionServiceTest extends BaseDAOTest {
         () -> auctionService.cancelAuction(auction.getId(), seller, auction.getVersion()));
   }
 
+  /** Test startOpenAuction - chuyen trang thai OPEN sang RUNNING. */
+  @Test
+  public void testStartOpenAuction() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham A", "Mo ta", 5000L, 500L, ItemType.ART, 60, startTime, seller);
+
+    // Dat startTime ve qua khu de startOpenAuction co the chay
+    auction.setStartTime(LocalDateTime.now().minusMinutes(1));
+    auctionDAO.update(auction);
+
+    boolean started = auctionService.startOpenAuction(auction.getId());
+    assertTrue(started);
+
+    Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(AuctionStatus.RUNNING, stored.getStatus());
+  }
+
+  /** Test startOpenAuction khi phien khong OPEN - phai tra ve false. */
+  @Test
+  public void testStartOpenAuction_skipsNonOpen() {
+    LocalDateTime startTime = LocalDateTime.now().minusMinutes(10);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham B", "Mo ta", 5000L, 500L, ItemType.ART, 120, startTime, seller);
+    // Phien nay da RUNNING khi tao (startTime trong qua khu)
+    assertEquals(AuctionStatus.RUNNING, auction.getStatus());
+
+    // startOpenAuction voi phien RUNNING phai tra ve false
+    boolean started = auctionService.startOpenAuction(auction.getId());
+    assertFalse(started);
+  }
+
+  /** Test completeAuction - phien het han co bidder thang cuoc. */
+  @Test
+  public void testCompleteAuction_withWinner() {
+    // Tao phien voi duration 180 phut: endTime = now - 2h + 3h = now + 1h (pass validation)
+    LocalDateTime pastStart = LocalDateTime.now().minusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham C", "Mo ta", 3000L, 300L, ItemType.ELECTRONICS, 180, pastStart, seller);
+    // Phien da RUNNING vi startTime la trong qua khu
+    assertEquals(AuctionStatus.RUNNING, auction.getStatus());
+
+    // Set endTime ve qua khu de phien xem la het han
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction locked = auctionDAO.findById(conn, auction.getId()).orElseThrow();
+          locked.setEndTime(LocalDateTime.now().minusMinutes(5));
+          auctionDAO.update(conn, locked);
+        });
+
+    // Deposit du tien cho bidder truoc khi dat gia
+    bidder = userDAO.findById(bidder.getId()).orElseThrow();
+    bidder.getWallet().deposit(new BigDecimal("10000"));
+    userDAO.update(bidder);
+    bidder = userDAO.findById(bidder.getId()).orElseThrow();
+    bidder.getWallet().setFrozenAmount(String.valueOf(auction.getId()), new BigDecimal("3500"));
+    userDAO.update(bidder);
+    transactionManager.runWithoutResult(
+        conn -> bidDAO.insertBid(conn, auction.getId(), bidder.getId(), 3500L, false));
+
+    var completion = auctionService.completeAuction(auction.getId());
+
+    assertTrue(completion.completed());
+    assertEquals(auction.getId(), completion.auctionId());
+    assertTrue(completion.highestBid().isPresent());
+  }
+
+  /** Test completeAuction - phien het han khong co bidder. */
+  @Test
+  public void testCompleteAuction_noWinner() {
+    // Duration 180 phut: endTime = now - 2h + 3h = now + 1h (pass validation)
+    LocalDateTime pastStart = LocalDateTime.now().minusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham D", "Mo ta", 3000L, 300L, ItemType.ELECTRONICS, 180, pastStart, seller);
+
+    // Set endTime ve qua khu de phien xem la het han
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction locked = auctionDAO.findById(conn, auction.getId()).orElseThrow();
+          locked.setEndTime(LocalDateTime.now().minusMinutes(5));
+          auctionDAO.update(conn, locked);
+        });
+
+    var completion = auctionService.completeAuction(auction.getId());
+
+    assertTrue(completion.completed());
+    assertFalse(completion.highestBid().isPresent());
+  }
+
+  /** Test completeAuction - phien chua het han, phai tra ve false. */
+  @Test
+  public void testCompleteAuction_notExpiredYet() {
+    LocalDateTime startTime = LocalDateTime.now().minusMinutes(10);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham E", "Mo ta", 5000L, 500L, ItemType.ART, 120, startTime, seller);
+
+    var completion = auctionService.completeAuction(auction.getId());
+    assertFalse(completion.completed());
+  }
+
+  /** Test settleAuctionPayment - phien FINISHED co winner. */
+  @Test
+  public void testSettleAuctionPayment() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham F", "Mo ta", 5000L, 500L, ItemType.ART, 60, startTime, seller);
+
+    // Chuyen phien sang FINISHED voi winner
+    auction.setStatus(AuctionStatus.FINISHED);
+    auction.updateHighestBid(5500L, bidder.getId());
+    auctionDAO.update(auction);
+
+    // Nap tien vao vi bidder truoc khi freeze
+    bidder = userDAO.findById(bidder.getId()).orElseThrow();
+    bidder.getWallet().deposit(new BigDecimal("10000"));
+    userDAO.update(bidder);
+    // Set frozen amount (bidder da co du so du)
+    bidder = userDAO.findById(bidder.getId()).orElseThrow();
+    bidder.getWallet().setFrozenAmount(String.valueOf(auction.getId()), new BigDecimal("5500"));
+    userDAO.update(bidder);
+    transactionManager.runWithoutResult(
+        conn -> bidDAO.insertBid(conn, auction.getId(), bidder.getId(), 5500L, false));
+
+    var amount = auctionService.settleAuctionPayment(auction.getId());
+
+    assertTrue(amount.compareTo(BigDecimal.ZERO) > 0);
+
+    // Kiem tra phien duoc chuyen sang PAID
+    Auction stored = auctionDAO.findById(auction.getId()).orElseThrow();
+    assertEquals(AuctionStatus.PAID, stored.getStatus());
+  }
+
+  /** Test settleAuctionPayment khi phien da o trang thai PAID. */
+  @Test
+  public void testSettleAuctionPayment_alreadyPaid() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "San pham G", "Mo ta", 5000L, 500L, ItemType.ART, 60, startTime, seller);
+
+    auction.setStatus(AuctionStatus.PAID);
+    auctionDAO.update(auction);
+
+    var amount = auctionService.settleAuctionPayment(auction.getId());
+    assertEquals(BigDecimal.ZERO, amount);
+  }
+
+  /** Test completeExpiredAuctionCompletions - batch ket thuc phien het han. */
+  @Test
+  public void testCompleteExpiredAuctionCompletions() {
+    // Duration 185 phut: endTime = now - 3h + 3h5m = now + 5min (pass validation)
+    LocalDateTime pastStart = LocalDateTime.now().minusHours(3);
+    Auction expired =
+        auctionService.createAuction(
+            "Phien het han", "Mo ta", 2000L, 200L, ItemType.ELECTRONICS, 185, pastStart, seller);
+    // Set endTime ve qua khu de batch completion nhan ra
+    transactionManager.runWithoutResult(
+        conn -> {
+          Auction locked = auctionDAO.findById(conn, expired.getId()).orElseThrow();
+          locked.setEndTime(LocalDateTime.now().minusMinutes(1));
+          auctionDAO.update(conn, locked);
+        });
+
+    // Tao 1 phien chua het han
+    LocalDateTime futureStart = LocalDateTime.now().plusHours(1);
+    auctionService.createAuction(
+        "Phien con han", "Mo ta", 3000L, 300L, ItemType.ART, 120, futureStart, seller);
+
+    var completions = auctionService.completeExpiredAuctionCompletions();
+    assertFalse(completions.isEmpty());
+  }
+
+  /** Test validateAuctionIdentity - auctionId hoac expectedVersion khong hop le. */
+  @Test
+  public void testValidateAuctionIdentity_invalid() {
+    assertThrows(
+        app.common.exception.ServiceException.class,
+        () -> auctionService.cancelAuction(0, seller, 0));
+    assertThrows(
+        app.common.exception.ServiceException.class,
+        () -> auctionService.cancelAuction(1, seller, -1));
+  }
+
+  /** Test updateAuction - thay doi startingPrice lam thay doi highestBid. */
+  @Test
+  public void testUpdateAuction_success() {
+    LocalDateTime startTime = LocalDateTime.now().plusHours(2);
+    Auction auction =
+        auctionService.createAuction(
+            "Hang hoa XYZ",
+            "Mo ta ban dau",
+            8000L,
+            800L,
+            ItemType.ELECTRONICS,
+            60,
+            startTime,
+            seller);
+
+    Auction updated =
+        auctionService.updateAuction(
+            auction.getId(),
+            "Hang hoa XYZ v2",
+            "Mo ta moi",
+            9000L,
+            900L,
+            ItemType.ELECTRONICS,
+            90,
+            startTime.plusHours(1),
+            auction.getVersion(),
+            seller);
+
+    assertNotNull(updated);
+    assertEquals(9000L, updated.getHighestBid());
+  }
+
   /** Kiet tac clean du lieu de tranh anh huong giua cac testcase. */
   private void cleanAllData() {
     transactionManager.runWithoutResult(

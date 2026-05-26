@@ -50,17 +50,20 @@
                             <Label styleClass="field-label" text="Bước giá tối thiểu (USD) *" GridPane.columnIndex="0" GridPane.rowIndex="4" />
                             <TextField fx:id="stepPriceField" promptText="VD: 100000" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-                            <Label styleClass="field-label" text="Thời gian diễn ra (phút) *" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-                            <TextField fx:id="durationField" promptText="VD: 60" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                            <Label styleClass="field-label" text="Ngày bắt đầu *" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                            <DatePicker fx:id="startDatePicker" promptText="Chọn ngày" GridPane.columnIndex="1" GridPane.rowIndex="5" />
 
-                            <Label styleClass="field-label" text="Ngày bắt đầu *" GridPane.columnIndex="0" GridPane.rowIndex="6" />
-                            <DatePicker fx:id="startDatePicker" promptText="Chọn ngày" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                            <Label styleClass="field-label" text="Giờ bắt đầu (HH:mm) *" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                            <TextField fx:id="startTimeField" promptText="VD: 14:30" GridPane.columnIndex="1" GridPane.rowIndex="6" />
 
-                            <Label styleClass="field-label" text="Giờ bắt đầu (HH:mm) *" GridPane.columnIndex="0" GridPane.rowIndex="7" />
-                            <TextField fx:id="startTimeField" promptText="VD: 14:30" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+                            <Label styleClass="field-label" text="Ngày kết thúc *" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+                            <DatePicker fx:id="endDatePicker" promptText="Chọn ngày" GridPane.columnIndex="1" GridPane.rowIndex="7" />
 
-                            <Label styleClass="field-label" text="Ảnh vật phẩm" GridPane.columnIndex="0" GridPane.rowIndex="8" />
-                            <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="8">
+                            <Label styleClass="field-label" text="Giờ kết thúc (HH:mm) *" GridPane.columnIndex="0" GridPane.rowIndex="8" />
+                            <TextField fx:id="endTimeField" promptText="VD: 15:30" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+
+                            <Label styleClass="field-label" text="Ảnh vật phẩm" GridPane.columnIndex="0" GridPane.rowIndex="9" />
+                            <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="9">
                                 <Button fx:id="chooseImageButton" mnemonicParsing="false" onAction="#handleChooseImage" styleClass="secondary-button" text="Chọn ảnh..." />
                                 <Label fx:id="imageFileNameLabel" styleClass="muted-label" text="Chưa chọn ảnh" />
                             </HBox>

@@ -142,6 +142,61 @@ public class UserServiceTest extends BaseDAOTest {
     assertThrows(ServiceException.class, () -> userService.login("test_account", "test_password"));
   }
 
+  @Test
+  void getById_shouldReturnUser_whenExists() {
+    User found = userService.getById(tester.getId());
+    assertNotNull(found);
+    assertEquals(tester.getId(), found.getId());
+  }
+
+  @Test
+  void getById_shouldThrow_whenNotFound() {
+    assertThrows(ServiceException.class, () -> userService.getById(-999));
+  }
+
+  @Test
+  void getAllUsers_shouldReturnList() {
+    var users = userService.getAllUsers(tester.getId());
+    assertNotNull(users);
+    assertFalse(users.isEmpty());
+  }
+
+  @Test
+  void updateProfile_shouldUpdateName() {
+    tester.setName("Updated Name");
+    userService.updateProfile(tester);
+
+    User stored = userDAO.findById(tester.getId()).orElseThrow();
+    assertEquals("Updated Name", stored.getName());
+  }
+
+  @Test
+  void updateAvatarUrl_shouldPersistUrl() {
+    String oldUrl = userService.updateAvatarUrl(tester.getId(), "server_data/images/avatar.png");
+    assertNull(oldUrl); // User chua co avatar truoc do
+
+    User stored = userDAO.findById(tester.getId()).orElseThrow();
+    assertEquals("server_data/images/avatar.png", stored.getAvatarUrl());
+  }
+
+  @Test
+  void banUser_shouldClearFrozenFundsAndBan() {
+    // Nap tien truoc de co du so du cho setFrozenAmount
+    tester = userDAO.findById(tester.getId()).orElseThrow();
+    tester.getWallet().deposit(java.math.BigDecimal.valueOf(500));
+    userDAO.update(tester);
+    // Dat frozen funds truoc khi ban
+    tester = userDAO.findById(tester.getId()).orElseThrow();
+    tester.getWallet().setFrozenAmount("auction_1", java.math.BigDecimal.valueOf(100));
+    userDAO.update(tester);
+
+    userService.banUser(tester.getId());
+
+    User banned = userDAO.findById(tester.getId()).orElseThrow();
+    assertTrue(banned.isBanned());
+    assertTrue(banned.getWallet().getFrozenFundsSnapshot().isEmpty());
+  }
+
   // =========================
   // HELPERS
   // =========================
