@@ -428,7 +428,8 @@ public class Server {
 
   public void createAdmin() {
     try {
-      User admin = new User("ADMIN", new Account("admin123", "123123", UserRole.ADMIN), new Wallet());
+      User admin =
+          new User("ADMIN", new Account("admin123", "123123", UserRole.ADMIN), new Wallet());
       userService.register(admin);
     } catch (ServiceException e) {
       logger.warn("[SERVER] Admin account already exists");
