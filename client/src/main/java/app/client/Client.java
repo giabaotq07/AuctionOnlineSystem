@@ -17,8 +17,50 @@ import org.slf4j.LoggerFactory;
 public class Client {
   private static final Logger logger = LoggerFactory.getLogger(Client.class);
   private static volatile Client instance;
-  private static final String HOST = "127.0.0.1";
+  private static String HOST = "127.0.0.1";
   private static final int PORT = 5000;
+
+  static {
+    // Check if external application.properties exists next to jar
+    File propFile = new File("application.properties");
+    if (propFile.exists()) {
+      try (InputStream is = new FileInputStream(propFile)) {
+        java.util.Properties props = new java.util.Properties();
+        props.load(is);
+        String serverHost = props.getProperty("server.host");
+        if (serverHost != null && !serverHost.trim().isEmpty()) {
+          HOST = serverHost.trim();
+          logger.info("[CLIENT] Loaded HOST from external application.properties: {}", HOST);
+        }
+      } catch (IOException e) {
+        logger.warn("[CLIENT] Failed to read external application.properties", e);
+      }
+    } else {
+      // Try to load from classpath
+      try (InputStream is = Client.class.getResourceAsStream("/application.properties")) {
+        if (is != null) {
+          java.util.Properties props = new java.util.Properties();
+          props.load(is);
+          String serverHost = props.getProperty("server.host");
+          if (serverHost != null && !serverHost.trim().isEmpty()) {
+            HOST = serverHost.trim();
+            logger.info("[CLIENT] Loaded HOST from classpath application.properties: {}", HOST);
+          }
+        }
+      } catch (IOException e) {
+        logger.warn("[CLIENT] Failed to read classpath application.properties", e);
+      }
+    }
+  }
+
+  public static String getHost() {
+    return HOST;
+  }
+
+  public static void setHost(String host) {
+    HOST = host;
+  }
+
   private Socket socket;
   private BufferedWriter writer;
   private BufferedReader reader;

@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -15,6 +16,12 @@
                     <children>
                         <Label styleClass="auth-title" text="Kết nối Server" />
                         <Label styleClass="muted-label" text="Vui lòng kết nối tới server để tiếp tục" wrapText="true" />
+                        <VBox spacing="6.0">
+                            <children>
+                                <Label styleClass="field-label" text="ĐỊA CHỈ IP SERVER" />
+                                <TextField fx:id="ipField" prefHeight="40.0" promptText="Ví dụ: 127.0.0.1 hoặc 192.168.1.45" />
+                            </children>
+                        </VBox>
                         <Button fx:id="connectButton" maxWidth="Infinity" onAction="#connectServer" prefHeight="48.0" text="KẾT NỐI" />
                         <Label fx:id="statusLabel" maxWidth="Infinity" styleClass="muted-label" text="Đang chờ kết nối..." wrapText="true" />
                     </children>

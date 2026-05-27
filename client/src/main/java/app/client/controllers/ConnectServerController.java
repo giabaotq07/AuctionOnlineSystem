@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 
 /** ConnectServerController. */
@@ -20,12 +21,16 @@ public class ConnectServerController {
   @FXML private Button connectButton;
   @FXML private Label statusLabel;
   @FXML private AnchorPane rootPane;
+  @FXML private TextField ipField;
   private static final int CONNECTION_TIMEOUT = 5000;
   private boolean connecting;
   private Runnable stopConnectionLoading = () -> {};
 
   @FXML
   private void initialize() {
+    if (ipField != null) {
+      ipField.setText(Client.getHost());
+    }
     try {
       String url =
           Objects.requireNonNull(getClass().getResource("/app/views/images/background_login.png"))
@@ -50,6 +55,12 @@ public class ConnectServerController {
   public void connectServer(ActionEvent event) {
     if (connecting) {
       return;
+    }
+    if (ipField != null) {
+      String ip = ipField.getText().trim();
+      if (!ip.isEmpty()) {
+        Client.setHost(ip);
+      }
     }
     if (connectButton != null) {
       connecting = true;
