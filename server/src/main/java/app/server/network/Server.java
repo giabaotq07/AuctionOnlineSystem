@@ -108,6 +108,7 @@ public class Server {
     imageStorageService = new ImageStorageService();
     AuctionScheduler.getInstance().init(auctionService, auctionQueryService);
     startAuctionMaintenance();
+    createAdmin();
   }
 
   private void startAuctionMaintenance() {
@@ -235,7 +236,6 @@ public class Server {
                   itemService,
                   imageStorageService);
           clientPool.execute(clientHandler);
-          createAdmin();
         } catch (SocketException e) {
           if (serverSocket.isClosed()) {
             logger.info("[SERVER] Server socket closed");
@@ -249,7 +249,7 @@ public class Server {
         logger.error("[SERVER] Error accepting client", e);
       }
     } catch (ServiceException e) {
-      logger.error("[SERVER] admin account is existed", e);
+      logger.error("[SERVER] Service error", e);
     } catch (DatabaseException e) {
       logger.error("[SERVER] Database error", e);
     }
@@ -427,7 +427,13 @@ public class Server {
   }
 
   public void createAdmin() {
-    User admin = new User("ADMIN", new Account("admin123", "123123", UserRole.ADMIN), new Wallet());
-    userService.register(admin);
+    try {
+      User admin = new User("ADMIN", new Account("admin123", "123123", UserRole.ADMIN), new Wallet());
+      userService.register(admin);
+    } catch (ServiceException e) {
+      logger.warn("[SERVER] Admin account already exists");
+    } catch (DatabaseException e) {
+      logger.error("[SERVER] Database error during admin creation", e);
+    }
   }
 }
