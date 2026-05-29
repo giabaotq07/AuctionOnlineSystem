@@ -68,6 +68,8 @@ public class AdminDashboardController implements Cleanable {
   @FXML private TextField stepPriceField;
   @FXML private DatePicker startDatePicker;
   @FXML private TextField startTimeField;
+  @FXML private DatePicker endDatePicker;
+  @FXML private TextField endTimeField;
 
   // Users Table
   @FXML private TableView<UserDto> userTableView;
@@ -251,16 +253,6 @@ public class AdminDashboardController implements Cleanable {
     descriptionField.setText(item != null ? item.getDescription() : "");
     typeComboBox.setValue((item != null && item.getType() != null) ? item.getType() : ItemType.ART);
 
-    // Duration
-    // Calculate duration in minutes if possible
-    if (summary.startTime() != null && summary.endTime() != null) {
-      long durationMins =
-          java.time.Duration.between(summary.startTime(), summary.endTime()).toMinutes();
-      durationField.setText(String.valueOf(durationMins));
-    } else {
-      durationField.setText("60");
-    }
-
     startingPriceField.setText(String.valueOf(item != null ? item.getStartingPrice() : 0));
     stepPriceField.setText(String.valueOf(item != null ? item.getStepPrice() : 0));
 
@@ -270,6 +262,19 @@ public class AdminDashboardController implements Cleanable {
     } else {
       startDatePicker.setValue(LocalDate.now());
       startTimeField.setText("12:00");
+    }
+    if (endDatePicker != null && endTimeField != null && summary.endTime() != null) {
+      endDatePicker.setValue(summary.endTime().toLocalDate());
+      endTimeField.setText(summary.endTime().toLocalTime().format(timeFormatter));
+    } else if (endDatePicker != null && endTimeField != null) {
+      LocalDateTime defaultEnd = LocalDateTime.of(startDatePicker.getValue(), LocalTime.of(13, 0));
+      endDatePicker.setValue(defaultEnd.toLocalDate());
+      endTimeField.setText(defaultEnd.toLocalTime().format(timeFormatter));
+    }
+    if (durationField != null && summary.startTime() != null && summary.endTime() != null) {
+      long durationMins =
+          java.time.Duration.between(summary.startTime(), summary.endTime()).toMinutes();
+      durationField.setText(String.valueOf(durationMins));
     }
   }
 
@@ -434,11 +439,19 @@ public class AdminDashboardController implements Cleanable {
     nameField.clear();
     descriptionField.clear();
     typeComboBox.getSelectionModel().selectFirst();
-    durationField.setText("60");
     startingPriceField.clear();
     stepPriceField.clear();
     startDatePicker.setValue(LocalDate.now());
     startTimeField.setText("12:00");
+    if (endDatePicker != null) {
+      endDatePicker.setValue(LocalDate.now());
+    }
+    if (endTimeField != null) {
+      endTimeField.setText("13:00");
+    }
+    if (durationField != null) {
+      durationField.setText("60");
+    }
     auctionTableView.getSelectionModel().clearSelection();
   }
 
@@ -511,17 +524,20 @@ public class AdminDashboardController implements Cleanable {
     String desc = descriptionField.getText().trim();
     String startingStr = startingPriceField.getText().trim();
     String stepStr = stepPriceField.getText().trim();
-    String durationStr = durationField.getText().trim();
     ItemType type = typeComboBox.getValue();
     LocalDate startDate = startDatePicker.getValue();
     String timeStr = startTimeField.getText().trim();
+    LocalDate endDate = endDatePicker == null ? null : endDatePicker.getValue();
+    String endTimeStr = fieldText(endTimeField);
+    String durationStr = fieldText(durationField);
+    boolean hasEndTime = endDate != null && !endTimeStr.isEmpty();
 
     if (name.isEmpty()
         || startingStr.isEmpty()
         || stepStr.isEmpty()
-        || durationStr.isEmpty()
         || startDate == null
-        || timeStr.isEmpty()) {
+        || timeStr.isEmpty()
+        || (!hasEndTime && durationStr.isEmpty())) {
       AlertUtils.showError("Thiếu thông tin", "Vui lòng nhập đầy đủ các thông tin bắt buộc (*).");
       return null;
     }
@@ -529,9 +545,12 @@ public class AdminDashboardController implements Cleanable {
     try {
       long startingPrice = Long.parseLong(startingStr);
       long stepPrice = Long.parseLong(stepStr);
-      int durationMins = Integer.parseInt(durationStr);
       LocalTime startTime = LocalTime.parse(timeStr, timeFormatter);
       LocalDateTime startDateTime = LocalDateTime.of(startDate, startTime);
+      int durationMins =
+          hasEndTime
+              ? durationBetween(startDateTime, endDate, endTimeStr)
+              : Integer.parseInt(durationStr);
 
       return new UpdateAuctionRequest(
           selected.auctionId(),
@@ -545,13 +564,34 @@ public class AdminDashboardController implements Cleanable {
           selected.version());
     } catch (NumberFormatException e) {
       AlertUtils.showError(
-          "Sai định dạng số", "Giá khởi điểm, bước giá và thời lượng phải là số nguyên hợp lệ.");
+          "Sai định dạng số", "Giá khởi điểm và bước giá phải là số nguyên hợp lệ.");
       return null;
     } catch (DateTimeParseException e) {
       AlertUtils.showError(
-          "Sai định dạng giờ", "Giờ bắt đầu phải tuân theo định dạng HH:mm (ví dụ: 14:30).");
+          "Sai định dạng giờ",
+          "Giờ bắt đầu và kết thúc phải tuân theo định dạng HH:mm (ví dụ: 14:30).");
+      return null;
+    } catch (IllegalArgumentException e) {
+      AlertUtils.showError("Dữ liệu không hợp lệ", e.getMessage());
       return null;
     }
+  }
+
+  private int durationBetween(LocalDateTime startDateTime, LocalDate endDate, String endTimeStr) {
+    LocalTime endTime = LocalTime.parse(endTimeStr, timeFormatter);
+    LocalDateTime endDateTime = LocalDateTime.of(endDate, endTime);
+    if (!endDateTime.isAfter(startDateTime)) {
+      throw new IllegalArgumentException("Thời gian kết thúc phải sau thời gian bắt đầu.");
+    }
+    long durationMins = java.time.Duration.between(startDateTime, endDateTime).toMinutes();
+    if (durationMins <= 0 || durationMins > Integer.MAX_VALUE) {
+      throw new IllegalArgumentException("Thời gian diễn ra không hợp lệ.");
+    }
+    return (int) durationMins;
+  }
+
+  private String fieldText(TextField field) {
+    return field == null || field.getText() == null ? "" : field.getText().trim();
   }
 
   // Handle Response Message

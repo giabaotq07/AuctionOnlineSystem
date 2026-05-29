@@ -64,18 +64,14 @@
                                     <Label styleClass="field-label" text="Phân loại *" />
                                     <ComboBox fx:id="typeComboBox" maxWidth="Infinity" />
                                 </VBox>
-                                <VBox spacing="6.0" HBox.hgrow="ALWAYS">
-                                    <Label styleClass="field-label" text="Thời lượng (phút) *" />
-                                    <TextField fx:id="durationField" promptText="VD: 60" />
-                                </VBox>
                             </HBox>
                             <HBox spacing="12.0">
                                 <VBox spacing="6.0" HBox.hgrow="ALWAYS">
-                                    <Label styleClass="field-label" text="Giá khởi điểm ($) *" />
+                                    <Label styleClass="field-label" text="Giá khởi điểm (USD) *" />
                                     <TextField fx:id="startingPriceField" promptText="VD: 1000000" />
                                 </VBox>
                                 <VBox spacing="6.0" HBox.hgrow="ALWAYS">
-                                    <Label styleClass="field-label" text="Bước giá tối thiểu ($) *" />
+                                    <Label styleClass="field-label" text="Bước giá tối thiểu (USD) *" />
                                     <TextField fx:id="stepPriceField" promptText="VD: 50000" />
                                 </VBox>
                             </HBox>
@@ -87,6 +83,16 @@
                                 <VBox spacing="6.0" HBox.hgrow="ALWAYS">
                                     <Label styleClass="field-label" text="Giờ bắt đầu (HH:mm) *" />
                                     <TextField fx:id="startTimeField" promptText="VD: 14:30" />
+                                </VBox>
+                            </HBox>
+                            <HBox spacing="12.0">
+                                <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                    <Label styleClass="field-label" text="Ngày kết thúc *" />
+                                    <DatePicker fx:id="endDatePicker" maxWidth="Infinity" promptText="Chọn ngày" />
+                                </VBox>
+                                <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                    <Label styleClass="field-label" text="Giờ kết thúc (HH:mm) *" />
+                                    <TextField fx:id="endTimeField" promptText="VD: 15:30" />
                                 </VBox>
                             </HBox>
                         </VBox>
