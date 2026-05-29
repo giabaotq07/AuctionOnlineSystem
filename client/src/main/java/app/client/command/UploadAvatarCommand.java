@@ -16,6 +16,7 @@ public class UploadAvatarCommand extends Command {
         User currentUser = UserManager.getInstance().getCurrentUser();
         if (currentUser != null) {
           currentUser.setAvatarUrl(response.avatarUrl());
+          UserManager.getInstance().clearAvatarBase64(currentUser.getId());
         }
       }
       notifyUpdate();

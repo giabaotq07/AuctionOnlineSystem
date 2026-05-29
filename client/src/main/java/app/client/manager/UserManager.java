@@ -20,6 +20,10 @@ public class UserManager {
     return java.util.Optional.ofNullable(this.avatarBase64Cache.get(userId));
   }
 
+  public void clearAvatarBase64(int userId) {
+    this.avatarBase64Cache.remove(userId);
+  }
+
   public static UserManager getInstance() {
     if (instance == null) {
       synchronized (UserManager.class) {

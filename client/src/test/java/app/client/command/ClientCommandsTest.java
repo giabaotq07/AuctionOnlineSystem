@@ -3,9 +3,13 @@ package app.client.command;
 import static org.junit.jupiter.api.Assertions.*;
 
 import app.client.manager.ClientNotificationCenter;
+import app.client.manager.UserManager;
 import app.client.store.UserListStore;
 import app.common.dto.*;
 import app.common.enums.*;
+import app.common.models.Account;
+import app.common.models.User;
+import app.common.models.Wallet;
 import app.common.protocol.PacketRes;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -503,10 +507,18 @@ public class ClientCommandsTest {
   @Test
   public void testUploadAvatarCommand() {
     UploadAvatarCommand cmd = new UploadAvatarCommand();
+    User currentUser =
+        new User(1, "John Doe", new Account("john", "pwd", UserRole.BIDDER), new Wallet());
+    currentUser.setAvatarUrl("old_avatar_url");
+    UserManager.getInstance().setCurrentUser(currentUser);
+    UserManager.getInstance().setAvatarBase64(currentUser.getId(), "old_base64");
 
     UploadAvatarResponse payload = new UploadAvatarResponse("new_avatar_url");
     PacketRes successPacket = PacketRes.of(ResponseType.UPLOAD_AVATAR, "Avatar uploaded", payload);
     cmd.execute(successPacket);
+
+    assertEquals("new_avatar_url", currentUser.getAvatarUrl());
+    assertTrue(UserManager.getInstance().getAvatarBase64(currentUser.getId()).isEmpty());
     assertTrue(updateNotified);
   }
 }
