@@ -4,15 +4,20 @@ import app.client.manager.ClientNotificationCenter;
 import app.client.manager.ClientRequestService;
 import app.client.manager.NavigationManager;
 import app.client.store.AuctionStore;
+import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionPreview;
 import app.common.enums.AuctionStatus;
 import app.common.enums.View;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -22,13 +27,18 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** AllAuctionController. */
 public class AllAuctionController implements Cleanable {
+  private static final Logger logger = LoggerFactory.getLogger(AllAuctionController.class);
   private static final double CARD_WIDTH = 260;
   private static final double CARD_HEIGHT = 300;
   @FXML private FlowPane runningPane;
@@ -40,6 +50,7 @@ public class AllAuctionController implements Cleanable {
   private final AuctionStore store = AuctionStore.getInstance();
   private final List<AuctionPreview> auctions = new ArrayList<>();
   private final List<Timeline> countdownTimelines = new ArrayList<>();
+  private final Set<Integer> imageFetchInFlight = new HashSet<>();
   private boolean reloadLoading;
   private Button reloadButton;
   private Runnable stopReloadLoading = () -> {};
@@ -114,7 +125,13 @@ public class AllAuctionController implements Cleanable {
     imagePane.getStyleClass().add("auction-image");
     Label imgLabel = new Label("Ảnh tài sản");
     imgLabel.getStyleClass().add("image-placeholder");
-    imagePane.getChildren().add(imgLabel);
+    ImageView imageView = new ImageView();
+    imageView.setFitWidth(CARD_WIDTH - 30);
+    imageView.setFitHeight(92);
+    imageView.setPreserveRatio(true);
+    imageView.setSmooth(true);
+    loadCardImage(auction, imageView, imgLabel);
+    imagePane.getChildren().addAll(imgLabel, imageView);
     Label titleLabel = new Label(itemName(auction));
     titleLabel.setWrapText(true);
     titleLabel.getStyleClass().add("auction-card-title");
@@ -135,6 +152,34 @@ public class AllAuctionController implements Cleanable {
     btnDetail.setOnAction(e -> NavigationManager.getInstance().openAuctionDetail(auction));
     vbox.getChildren().addAll(imagePane, titleLabel, priceLabel, timeLabel, btnDetail);
     return vbox;
+  }
+
+  private void loadCardImage(AuctionPreview auction, ImageView imageView, Label placeholder) {
+    int itemId = auction.itemId();
+    Optional<String> cachedBase64 = ItemStore.getInstance().getItemImageBase64(itemId);
+    if (cachedBase64.isPresent()) {
+      try {
+        byte[] imageBytes = java.util.Base64.getDecoder().decode(cachedBase64.get());
+        imageView.setImage(new Image(new ByteArrayInputStream(imageBytes)));
+        placeholder.setVisible(false);
+        placeholder.setManaged(false);
+        imageFetchInFlight.remove(itemId);
+      } catch (Exception e) {
+        logger.warn("Failed to decode cached image for item {}", itemId, e);
+      }
+      return;
+    }
+    if (auction.imageUrl() == null || auction.imageUrl().isBlank() || itemId <= 0) {
+      return;
+    }
+    if (imageFetchInFlight.add(itemId)) {
+      try {
+        requests.fetchItemImage(itemId);
+      } catch (Exception e) {
+        logger.warn("Failed to fetch image for item {}", itemId, e);
+        imageFetchInFlight.remove(itemId);
+      }
+    }
   }
 
   private boolean isActiveStatus(AuctionStatus status) {
@@ -227,6 +272,7 @@ public class AllAuctionController implements Cleanable {
     notifications.removeUpdateListener(summariesListener);
     setReloadLoading(false);
     stopCountdownTimelines();
+    imageFetchInFlight.clear();
   }
 
   private void stopCountdownTimelines() {
