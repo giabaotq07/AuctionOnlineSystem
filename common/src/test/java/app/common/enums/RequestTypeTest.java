@@ -50,7 +50,7 @@ class RequestTypeTest {
     assertTrue(RequestType.CANCEL_AUCTION.isAllowed(UserRole.SELLER));
     assertTrue(RequestType.FETCH_SELLER_ITEMS.isAllowed(UserRole.SELLER));
 
-    assertTrue(RequestType.CREATE_AUCTION.isAllowed(UserRole.ADMIN));
+    assertFalse(RequestType.CREATE_AUCTION.isAllowed(UserRole.ADMIN));
     assertTrue(RequestType.UPDATE_AUCTION.isAllowed(UserRole.ADMIN));
     assertTrue(RequestType.CANCEL_AUCTION.isAllowed(UserRole.ADMIN));
     assertTrue(RequestType.FETCH_SELLER_ITEMS.isAllowed(UserRole.ADMIN));

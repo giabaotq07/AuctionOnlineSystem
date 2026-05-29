@@ -97,7 +97,6 @@
                 <VBox alignment="CENTER" spacing="10.0">
                     <HBox alignment="CENTER" spacing="10.0">
                         <Button mnemonicParsing="false" onAction="#handleClearForm" styleClass="secondary-button" text="Xóa form" HBox.hgrow="ALWAYS" />
-                        <Button mnemonicParsing="false" onAction="#handleCreateAuction" text="Thêm mới" HBox.hgrow="ALWAYS" />
                     </HBox>
                     <HBox alignment="CENTER" spacing="10.0">
                         <Button mnemonicParsing="false" onAction="#handleUpdateAuction" styleClass="success-button" text="Cập nhật" HBox.hgrow="ALWAYS" />

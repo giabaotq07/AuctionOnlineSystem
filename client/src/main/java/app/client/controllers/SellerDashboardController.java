@@ -9,7 +9,6 @@ import app.client.store.ItemStore;
 import app.client.utils.AlertUtils;
 import app.client.utils.LoadingButton;
 import app.common.dto.AuctionPreview;
-import app.common.dto.CreateAuctionRequest;
 import app.common.dto.UpdateAuctionRequest;
 import app.common.enums.AuctionStatus;
 import app.common.enums.ItemType;
@@ -292,22 +291,7 @@ public class SellerDashboardController implements Cleanable {
   // CRUD actions
   @FXML
   public void handleCreateAuction(ActionEvent event) {
-    if (actionLoading) return;
-    if (!requests.isConnected()) {
-      AlertUtils.showError("Mất kết nối", "Mất kết nối tới máy chủ.");
-      return;
-    }
-    try {
-      CreateAuctionRequest request = buildCreateRequest();
-      if (request == null) return;
-
-      currentLoadingButton = LoadingButton.fromEvent(event);
-      setActionLoading(true);
-      requests.createAuction(request);
-    } catch (IOException e) {
-      setActionLoading(false);
-      AlertUtils.showError("Lỗi kết nối", "Server không phản hồi.");
-    }
+    AlertUtils.showError("Không được phép", "Vui lòng tạo phiên mới tại màn Tạo phiên đấu giá.");
   }
 
   @FXML
@@ -363,46 +347,6 @@ public class SellerDashboardController implements Cleanable {
         setActionLoading(false);
         AlertUtils.showError("Lỗi kết nối", "Server không phản hồi.");
       }
-    }
-  }
-
-  private CreateAuctionRequest buildCreateRequest() {
-    String name = nameField.getText().trim();
-    String desc = descriptionField.getText().trim();
-    String startingStr = startingPriceField.getText().trim();
-    String stepStr = stepPriceField.getText().trim();
-    String durationStr = durationField.getText().trim();
-    ItemType type = typeComboBox.getValue();
-    LocalDate startDate = startDatePicker.getValue();
-    String timeStr = startTimeField.getText().trim();
-
-    if (name.isEmpty()
-        || startingStr.isEmpty()
-        || stepStr.isEmpty()
-        || durationStr.isEmpty()
-        || startDate == null
-        || timeStr.isEmpty()) {
-      AlertUtils.showError("Thiếu thông tin", "Vui lòng nhập đầy đủ các thông tin bắt buộc (*).");
-      return null;
-    }
-
-    try {
-      long startingPrice = Long.parseLong(startingStr);
-      long stepPrice = Long.parseLong(stepStr);
-      int durationMins = Integer.parseInt(durationStr);
-      LocalTime startTime = LocalTime.parse(timeStr, timeFormatter);
-      LocalDateTime startDateTime = LocalDateTime.of(startDate, startTime);
-
-      return new CreateAuctionRequest(
-          name, desc, startingPrice, stepPrice, type, durationMins, startDateTime);
-    } catch (NumberFormatException e) {
-      AlertUtils.showError(
-          "Sai định dạng số", "Giá khởi điểm, bước giá và thời lượng phải là số nguyên hợp lệ.");
-      return null;
-    } catch (DateTimeParseException e) {
-      AlertUtils.showError(
-          "Sai định dạng giờ", "Giờ bắt đầu phải tuân theo định dạng HH:mm (ví dụ: 14:30).");
-      return null;
     }
   }
 
