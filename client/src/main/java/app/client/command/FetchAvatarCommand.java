@@ -12,7 +12,8 @@ public class FetchAvatarCommand extends Command {
     if (packet.isSuccess()) {
       FetchAvatarResponse response = packet.getData(FetchAvatarResponse.class);
       if (response != null && response.base64Data() != null && !response.base64Data().isBlank()) {
-        UserManager.getInstance().setAvatarBase64(response.userId(), response.base64Data());
+        UserManager.getInstance()
+            .setAvatarBase64(response.userId(), response.avatarUrl(), response.base64Data());
       }
       notifyUpdate();
     }

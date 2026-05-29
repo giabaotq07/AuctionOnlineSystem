@@ -116,7 +116,7 @@ public class UserProfileController {
       return;
     }
     java.util.Optional<String> base64Opt =
-        UserManager.getInstance().getAvatarBase64(currentUser.getId());
+        UserManager.getInstance().getAvatarBase64(currentUser.getId(), avatarUrl);
     if (base64Opt.isPresent()) {
       try {
         byte[] bytes = java.util.Base64.getDecoder().decode(base64Opt.get());

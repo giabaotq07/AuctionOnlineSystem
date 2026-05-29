@@ -406,10 +406,16 @@ public class ClientCommandsTest {
   @Test
   public void testFetchAvatarCommand() {
     FetchAvatarCommand cmd = new FetchAvatarCommand();
+    int userId = 20001;
+    UserManager.getInstance().clearAvatarBase64(userId);
 
-    FetchAvatarResponse payload = new FetchAvatarResponse(1, "base64_data");
+    FetchAvatarResponse payload = new FetchAvatarResponse(userId, "base64_data", "avatar_v1.png");
     PacketRes successPacket = PacketRes.of(ResponseType.FETCH_AVATAR, "Avatar fetched", payload);
     cmd.execute(successPacket);
+
+    assertEquals(
+        "base64_data", UserManager.getInstance().getAvatarBase64(userId, "avatar_v1.png").get());
+    assertTrue(UserManager.getInstance().getAvatarBase64(userId, "avatar_v2.png").isEmpty());
     assertTrue(updateNotified);
   }
 

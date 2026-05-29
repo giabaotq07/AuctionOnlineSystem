@@ -37,7 +37,7 @@ public class FetchAvatarCommand implements Command {
           PacketRes.of(
               ResponseType.FETCH_AVATAR,
               "OK",
-              new FetchAvatarResponse(request.userId(), base64Data)));
+              new FetchAvatarResponse(request.userId(), base64Data, request.avatarUrl())));
 
       logger.info("Served avatar for userId={}, path={}", request.userId(), request.avatarUrl());
 

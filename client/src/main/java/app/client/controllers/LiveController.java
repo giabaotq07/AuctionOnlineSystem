@@ -106,7 +106,7 @@ public class LiveController implements Cleanable {
   @FXML private Button disableAutoBidBtn;
 
   private final Set<Integer> imageFetchInFlight = ConcurrentHashMap.newKeySet();
-  private final Set<Integer> avatarFetchInFlight = ConcurrentHashMap.newKeySet();
+  private final Map<Integer, String> avatarFetchInFlight = new ConcurrentHashMap<>();
   private final Map<String, Image> avatarImageCache = new ConcurrentHashMap<>();
   private final AtomicBoolean updateQueued = new AtomicBoolean(false);
   private ScheduledExecutorService scheduler;
@@ -590,9 +590,19 @@ public class LiveController implements Cleanable {
           .append(':')
           .append(bid.getAmount())
           .append(':')
-          .append(bid.getCreateAt());
+          .append(bid.getCreateAt())
+          .append(':')
+          .append(avatarUrlFor(bid.getBidder(), bid.getBidderId()));
     }
     return key.toString();
+  }
+
+  private String avatarUrlFor(User user, int userId) {
+    User currentUser = UserManager.getInstance().getCurrentUser();
+    if (currentUser != null && currentUser.getId() == userId) {
+      return currentUser.getAvatarUrl();
+    }
+    return user == null ? null : user.getAvatarUrl();
   }
 
   private void setDefaultAvatarStyle(Circle circle, String name) {
@@ -622,12 +632,13 @@ public class LiveController implements Cleanable {
         bid.getBidderName() == null ? "Bidder #" + bid.getBidderId() : bid.getBidderName();
 
     User bidder = bid.getBidder();
-    String avatarUrl = (bidder != null) ? bidder.getAvatarUrl() : null;
+    String avatarUrl = avatarUrlFor(bidder, bid.getBidderId());
     if (avatarUrl != null && !avatarUrl.isBlank()) {
       int bidderId = bid.getBidderId();
-      java.util.Optional<String> base64Opt = UserManager.getInstance().getAvatarBase64(bidderId);
+      java.util.Optional<String> base64Opt =
+          UserManager.getInstance().getAvatarBase64(bidderId, avatarUrl);
       if (base64Opt.isPresent()) {
-        avatarFetchInFlight.remove(bidderId);
+        avatarFetchInFlight.remove(bidderId, avatarUrl);
         try {
           Image image = avatarImage(bidderId, base64Opt.get(), 32);
           avatar.setFill(new ImagePattern(image));
@@ -696,12 +707,13 @@ public class LiveController implements Cleanable {
     // Đổi màu avatar theo người dẫn đầu
     if (leaderAvatar != null) {
       User bidder = topBid.getBidder();
-      String avatarUrl = (bidder != null) ? bidder.getAvatarUrl() : null;
+      String avatarUrl = avatarUrlFor(bidder, topBid.getBidderId());
       if (avatarUrl != null && !avatarUrl.isBlank()) {
         int bidderId = topBid.getBidderId();
-        java.util.Optional<String> base64Opt = UserManager.getInstance().getAvatarBase64(bidderId);
+        java.util.Optional<String> base64Opt =
+            UserManager.getInstance().getAvatarBase64(bidderId, avatarUrl);
         if (base64Opt.isPresent()) {
-          avatarFetchInFlight.remove(bidderId);
+          avatarFetchInFlight.remove(bidderId, avatarUrl);
           try {
             Image image = avatarImage(bidderId, base64Opt.get(), 44);
             leaderAvatar.setFill(new ImagePattern(image));
@@ -1655,13 +1667,17 @@ public class LiveController implements Cleanable {
     if (userId <= 0 || avatarUrl == null || avatarUrl.isBlank()) {
       return;
     }
-    if (!avatarFetchInFlight.add(userId)) {
+    String previousAvatarUrl = avatarFetchInFlight.putIfAbsent(userId, avatarUrl);
+    if (avatarUrl.equals(previousAvatarUrl)) {
       return;
+    }
+    if (previousAvatarUrl != null) {
+      avatarFetchInFlight.put(userId, avatarUrl);
     }
     try {
       requests.fetchAvatar(userId, avatarUrl);
     } catch (IOException e) {
-      avatarFetchInFlight.remove(userId);
+      avatarFetchInFlight.remove(userId, avatarUrl);
       logger.error("Failed to request avatar", e);
     }
   }
