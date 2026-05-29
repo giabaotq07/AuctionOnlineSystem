@@ -101,10 +101,12 @@ public class LiveController implements Cleanable {
   @FXML private Button disableAutoBidBtn;
 
   private final Set<Integer> imageFetchInFlight = ConcurrentHashMap.newKeySet();
+  private final Set<Integer> avatarFetchInFlight = ConcurrentHashMap.newKeySet();
   private ScheduledExecutorService scheduler;
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
+  private String displayedItemImageKey;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private final DateTimeFormatter bidTimeFormat = DateTimeFormatter.ofPattern("HH:mm:ss");
   private final ClientRequestService requests = ClientRequestService.getInstance();
@@ -563,12 +565,12 @@ public class LiveController implements Cleanable {
     User bidder = bid.getBidder();
     String avatarUrl = (bidder != null) ? bidder.getAvatarUrl() : null;
     if (avatarUrl != null && !avatarUrl.isBlank()) {
-      java.util.Optional<String> base64Opt =
-          UserManager.getInstance().getAvatarBase64(bid.getBidderId());
+      int bidderId = bid.getBidderId();
+      java.util.Optional<String> base64Opt = UserManager.getInstance().getAvatarBase64(bidderId);
       if (base64Opt.isPresent()) {
+        avatarFetchInFlight.remove(bidderId);
         try {
-          byte[] bytes = java.util.Base64.getDecoder().decode(base64Opt.get());
-          Image image = new Image(new java.io.ByteArrayInputStream(bytes));
+          Image image = decodeBase64Image(base64Opt.get(), 32, 32);
           avatar.setFill(new ImagePattern(image));
           avatar.setStroke(Color.web("#e2e8f0"));
           avatar.setStrokeWidth(1.5);
@@ -577,11 +579,7 @@ public class LiveController implements Cleanable {
         }
       } else {
         setDefaultAvatarStyle(avatar, bidderName);
-        try {
-          requests.fetchAvatar(bid.getBidderId(), avatarUrl);
-        } catch (IOException e) {
-          logger.error("Failed to request bidder avatar", e);
-        }
+        requestAvatarIfNeeded(bidderId, avatarUrl);
       }
     } else {
       setDefaultAvatarStyle(avatar, bidderName);
@@ -641,12 +639,12 @@ public class LiveController implements Cleanable {
       User bidder = topBid.getBidder();
       String avatarUrl = (bidder != null) ? bidder.getAvatarUrl() : null;
       if (avatarUrl != null && !avatarUrl.isBlank()) {
-        java.util.Optional<String> base64Opt =
-            UserManager.getInstance().getAvatarBase64(topBid.getBidderId());
+        int bidderId = topBid.getBidderId();
+        java.util.Optional<String> base64Opt = UserManager.getInstance().getAvatarBase64(bidderId);
         if (base64Opt.isPresent()) {
+          avatarFetchInFlight.remove(bidderId);
           try {
-            byte[] bytes = java.util.Base64.getDecoder().decode(base64Opt.get());
-            Image image = new Image(new java.io.ByteArrayInputStream(bytes));
+            Image image = decodeBase64Image(base64Opt.get(), 44, 44);
             leaderAvatar.setFill(new ImagePattern(image));
             leaderAvatar.setStroke(Color.web("#e2e8f0"));
             leaderAvatar.setStrokeWidth(1.5);
@@ -655,11 +653,7 @@ public class LiveController implements Cleanable {
           }
         } else {
           setDefaultAvatarStyle(leaderAvatar, name);
-          try {
-            requests.fetchAvatar(topBid.getBidderId(), avatarUrl);
-          } catch (IOException e) {
-            logger.error("Failed to request leader avatar", e);
-          }
+          requestAvatarIfNeeded(bidderId, avatarUrl);
         }
       } else {
         setDefaultAvatarStyle(leaderAvatar, name);
@@ -1451,6 +1445,13 @@ public class LiveController implements Cleanable {
     setDetailLoading(false);
     lastKnownStatus = null;
     imageFetchInFlight.clear();
+    avatarFetchInFlight.clear();
+    displayedItemImageKey = null;
+    priceHistory.clear();
+    if (bidHistoryList != null) {
+      bidHistoryList.getChildren().clear();
+    }
+    clearItemImage();
   }
 
   /** Member. */
@@ -1471,12 +1472,19 @@ public class LiveController implements Cleanable {
       clearItemImage();
       return;
     }
+    String imageKey = itemId + ":" + imageUrl;
+    if (imageKey.equals(displayedItemImageKey)
+        && itemImageView != null
+        && itemImageView.getImage() != null) {
+      imageFetchInFlight.remove(itemId);
+      return;
+    }
 
     // Kiểm tra cache local trước — tránh fetch lại mỗi lần nhận update
     ItemStore.getInstance()
         .getItemImageBase64(itemId)
         .ifPresentOrElse(
-            base64 -> displayBase64Image(itemId, base64),
+            base64 -> displayBase64Image(itemId, imageKey, base64),
             () -> {
               // Chưa có trong cache, gửi request nếu chưa có request đang bay
               if (imageFetchInFlight.add(itemId)) { // add() trả về false nếu đã tồn tại
@@ -1492,15 +1500,15 @@ public class LiveController implements Cleanable {
   }
 
   /** Decode Base64 → JavaFX Image → set lên ImageView. PHẢI chạy trên JavaFX Application Thread. */
-  private void displayBase64Image(int itemId, String base64Data) {
+  private void displayBase64Image(int itemId, String imageKey, String base64Data) {
     imageFetchInFlight.remove(itemId); // request đã hoàn thành, xóa khỏi in-flight
     try {
-      byte[] imageBytes = Base64.getDecoder().decode(base64Data);
-      Image image = new Image(new ByteArrayInputStream(imageBytes));
+      Image image = decodeBase64Image(base64Data, itemImageTargetWidth(), itemImageTargetHeight());
       if (image.isError() || itemImageView == null) return;
 
       // Đang trên FX thread — set trực tiếp, không cần Platform.runLater()
       itemImageView.setImage(image);
+      displayedItemImageKey = imageKey;
       itemImageView.setVisible(true);
       itemImageView.setManaged(true);
       if (imagePlaceholderLabel != null) {
@@ -1512,7 +1520,44 @@ public class LiveController implements Cleanable {
     }
   }
 
+  private Image decodeBase64Image(
+      String base64Data, double requestedWidth, double requestedHeight) {
+    byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+    return new Image(
+        new ByteArrayInputStream(imageBytes), requestedWidth, requestedHeight, true, true);
+  }
+
+  private double itemImageTargetWidth() {
+    if (itemImageView == null || itemImageView.getFitWidth() <= 0) {
+      return 400;
+    }
+    return itemImageView.getFitWidth();
+  }
+
+  private double itemImageTargetHeight() {
+    if (itemImageView == null || itemImageView.getFitHeight() <= 0) {
+      return 260;
+    }
+    return itemImageView.getFitHeight();
+  }
+
+  private void requestAvatarIfNeeded(int userId, String avatarUrl) {
+    if (userId <= 0 || avatarUrl == null || avatarUrl.isBlank()) {
+      return;
+    }
+    if (!avatarFetchInFlight.add(userId)) {
+      return;
+    }
+    try {
+      requests.fetchAvatar(userId, avatarUrl);
+    } catch (IOException e) {
+      avatarFetchInFlight.remove(userId);
+      logger.error("Failed to request avatar", e);
+    }
+  }
+
   private void clearItemImage() {
+    displayedItemImageKey = null;
     if (itemImageView == null) return;
     itemImageView.setImage(null);
     itemImageView.setVisible(false);
