@@ -866,8 +866,7 @@ public class LiveController implements Cleanable {
   }
 
   private void addPricePoint(long price) {
-    priceHistory.add(new ChartPoint(LocalDateTime.now(), price));
-    priceHistory.sort((left, right) -> left.time.compareTo(right.time));
+    appendChartPoint(LocalDateTime.now(), price);
   }
 
   /** Rebuild chart data từ bid list. */
@@ -879,7 +878,11 @@ public class LiveController implements Cleanable {
     long startingPrice = item == null ? 0 : item.getStartingPrice();
     List<Bid> bids = new ArrayList<>(detail.getBids());
     bids.removeIf(bid -> bid == null || bid.getCreateAt() == null);
-    bids.sort((left, right) -> left.getCreateAt().compareTo(right.getCreateAt()));
+    bids.sort(
+        (left, right) -> {
+          int byTime = left.getCreateAt().compareTo(right.getCreateAt());
+          return byTime != 0 ? byTime : Integer.compare(left.getId(), right.getId());
+        });
     String nextChartKey = chartKey(detail, bids, startingPrice);
     if (nextChartKey.equals(renderedChartKey)) {
       return false;
@@ -892,16 +895,32 @@ public class LiveController implements Cleanable {
       startTime = LocalDateTime.now().minusMinutes(30);
     }
     if (startingPrice > 0) {
-      priceHistory.add(new ChartPoint(startTime, startingPrice));
+      appendChartPoint(startTime, startingPrice);
     }
     int fromIndex = Math.max(0, bids.size() - MAX_CHART_POINTS);
     for (int i = fromIndex; i < bids.size(); i++) {
       Bid bid = bids.get(i);
-      priceHistory.add(new ChartPoint(bid.getCreateAt(), bid.getAmount()));
+      appendChartPoint(bid.getCreateAt(), bid.getAmount());
     }
-    priceHistory.sort((left, right) -> left.time.compareTo(right.time));
     renderedChartKey = nextChartKey;
     return true;
+  }
+
+  private void appendChartPoint(LocalDateTime time, long price) {
+    if (time == null) {
+      return;
+    }
+    long nextPrice =
+        priceHistory.isEmpty()
+            ? price
+            : Math.max(priceHistory.get(priceHistory.size() - 1).price, price);
+    if (!priceHistory.isEmpty() && priceHistory.get(priceHistory.size() - 1).price == nextPrice) {
+      return;
+    }
+    priceHistory.add(new ChartPoint(time, nextPrice));
+    while (priceHistory.size() > MAX_CHART_POINTS) {
+      priceHistory.remove(0);
+    }
   }
 
   private String chartKey(Auction detail, List<Bid> bids, long startingPrice) {
@@ -983,12 +1002,6 @@ public class LiveController implements Cleanable {
     long range = maxPrice - minPrice;
     minPrice = Math.max(0, minPrice - range / 10);
     maxPrice = maxPrice + range / 10;
-    LocalDateTime minTime = priceHistory.get(0).time;
-    LocalDateTime maxTime = priceHistory.get(priceHistory.size() - 1).time;
-    long rawTimeRangeMillis = ChronoUnit.MILLIS.between(minTime, maxTime);
-    long timeRangeMillis = Math.max(1, rawTimeRangeMillis);
-    boolean useTimeScale = rawTimeRangeMillis > 0;
-
     // Vẽ trục Y labels
     gc.setFill(Color.web("#64748b"));
     gc.setFont(javafx.scene.text.Font.font("System", 10));
@@ -1005,16 +1018,7 @@ public class LiveController implements Cleanable {
       for (int i = 0; i < labelCount; i++) {
         int idx = (int) ((double) i / (labelCount - 1) * (priceHistory.size() - 1));
         ChartPoint point = priceHistory.get(idx);
-        double x =
-            xForPoint(
-                point,
-                idx,
-                priceHistory.size(),
-                minTime,
-                timeRangeMillis,
-                useTimeScale,
-                padLeft,
-                chartW);
+        double x = xForPoint(idx, priceHistory.size(), padLeft, chartW);
         String timeStr = timeFormat.format(point.time);
         gc.setFill(Color.web("#64748b"));
         fillTextClamped(gc, timeStr, x - 15, h - 7, padLeft, w - padRight - 30);
@@ -1037,16 +1041,7 @@ public class LiveController implements Cleanable {
     gc.beginPath();
     for (int i = 0; i < priceHistory.size(); i++) {
       ChartPoint point = priceHistory.get(i);
-      double x =
-          xForPoint(
-              point,
-              i,
-              priceHistory.size(),
-              minTime,
-              timeRangeMillis,
-              useTimeScale,
-              padLeft,
-              chartW);
+      double x = xForPoint(i, priceHistory.size(), padLeft, chartW);
       double y = yForPrice(point.price, minPrice, maxPrice, padTop, chartH);
       if (i == 0) {
         gc.moveTo(x, y);
@@ -1066,16 +1061,7 @@ public class LiveController implements Cleanable {
     gc.beginPath();
     for (int i = 0; i < priceHistory.size(); i++) {
       ChartPoint point = priceHistory.get(i);
-      double x =
-          xForPoint(
-              point,
-              i,
-              priceHistory.size(),
-              minTime,
-              timeRangeMillis,
-              useTimeScale,
-              padLeft,
-              chartW);
+      double x = xForPoint(i, priceHistory.size(), padLeft, chartW);
       double y = yForPrice(point.price, minPrice, maxPrice, padTop, chartH);
       if (i == 0) {
         gc.moveTo(x, y);
@@ -1088,16 +1074,7 @@ public class LiveController implements Cleanable {
     // Vẽ dots tại mỗi data point
     for (int i = 0; i < priceHistory.size(); i++) {
       ChartPoint point = priceHistory.get(i);
-      double x =
-          xForPoint(
-              point,
-              i,
-              priceHistory.size(),
-              minTime,
-              timeRangeMillis,
-              useTimeScale,
-              padLeft,
-              chartW);
+      double x = xForPoint(i, priceHistory.size(), padLeft, chartW);
       double y = yForPrice(point.price, minPrice, maxPrice, padTop, chartH);
 
       // Outer glow
@@ -1111,37 +1088,15 @@ public class LiveController implements Cleanable {
     // Tooltip cho điểm cuối (giá mới nhất)
     if (!priceHistory.isEmpty()) {
       ChartPoint last = priceHistory.get(priceHistory.size() - 1);
-      double x =
-          xForPoint(
-              last,
-              priceHistory.size() - 1,
-              priceHistory.size(),
-              minTime,
-              timeRangeMillis,
-              useTimeScale,
-              padLeft,
-              chartW);
+      double x = xForPoint(priceHistory.size() - 1, priceHistory.size(), padLeft, chartW);
       double y = yForPrice(last.price, minPrice, maxPrice, padTop, chartH);
       drawLastPointLabel(gc, last, x, y, w, padRight);
     }
   }
 
-  private double xForPoint(
-      ChartPoint point,
-      int index,
-      int pointCount,
-      LocalDateTime minTime,
-      long timeRangeMillis,
-      boolean useTimeScale,
-      double padLeft,
-      double chartW) {
-    if (!useTimeScale) {
-      double normalizedIndex = pointCount <= 1 ? 0.5 : (double) index / (pointCount - 1.0);
-      return padLeft + chartW * normalizedIndex;
-    }
-    long elapsedMillis = Math.max(0, ChronoUnit.MILLIS.between(minTime, point.time));
-    double normalizedTime = clamp((double) elapsedMillis / timeRangeMillis);
-    return padLeft + chartW * normalizedTime;
+  private double xForPoint(int index, int pointCount, double padLeft, double chartW) {
+    double normalizedIndex = pointCount <= 1 ? 0.5 : (double) index / (pointCount - 1.0);
+    return padLeft + chartW * normalizedIndex;
   }
 
   private double yForPrice(long price, long minPrice, long maxPrice, double padTop, double chartH) {
