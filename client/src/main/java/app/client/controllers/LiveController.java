@@ -30,11 +30,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -64,6 +67,8 @@ import org.slf4j.LoggerFactory;
 /** LiveController. */
 public class LiveController implements Cleanable {
   private static final Logger logger = LoggerFactory.getLogger(LiveController.class);
+  private static final int MAX_VISIBLE_BID_ROWS = 80;
+  private static final int MAX_CHART_POINTS = 200;
   private AuctionDetailProxy auctionProxy;
   private AuctionPreview preview;
   private Auction auction;
@@ -102,11 +107,17 @@ public class LiveController implements Cleanable {
 
   private final Set<Integer> imageFetchInFlight = ConcurrentHashMap.newKeySet();
   private final Set<Integer> avatarFetchInFlight = ConcurrentHashMap.newKeySet();
+  private final Map<String, Image> avatarImageCache = new ConcurrentHashMap<>();
+  private final AtomicBoolean updateQueued = new AtomicBoolean(false);
   private ScheduledExecutorService scheduler;
+  private LocalDateTime activeCountdownTargetTime;
+  private boolean activeCountdownRequestsResult;
   private boolean resultRequested = false;
   private boolean auctionClosedShown = false;
   private boolean cleanedUp = false;
   private String displayedItemImageKey;
+  private String renderedBidHistoryKey;
+  private String renderedChartKey;
   private final DecimalFormat currencyFormat = new DecimalFormat("#,###");
   private final DateTimeFormatter bidTimeFormat = DateTimeFormatter.ofPattern("HH:mm:ss");
   private final ClientRequestService requests = ClientRequestService.getInstance();
@@ -116,7 +127,7 @@ public class LiveController implements Cleanable {
   private Runnable stopBidLoading = () -> {};
   private boolean detailRequestInFlight;
   private Integer requestedAuctionId;
-  private final Runnable updateListener = () -> Platform.runLater(this::handleUpdateNotification);
+  private final Runnable updateListener = this::queueUpdateNotification;
   private final Consumer<String> messageListener =
       message -> Platform.runLater(() -> handleMessageNotification(message));
   private AuctionStatus lastKnownStatus;
@@ -261,8 +272,18 @@ public class LiveController implements Cleanable {
     return "$" + currencyFormat.format(amount);
   }
 
+  private void queueUpdateNotification() {
+    if (!updateQueued.compareAndSet(false, true)) {
+      return;
+    }
+    Platform.runLater(
+        () -> {
+          updateQueued.set(false);
+          handleUpdateNotification();
+        });
+  }
+
   private void handleUpdateNotification() {
-    loadSessionAuction();
     refreshDetailFromStore();
     maybeRequestAuctionDetail();
     updateAvailableBalance();
@@ -309,7 +330,7 @@ public class LiveController implements Cleanable {
     int auctionId = auctionProxy.getAuctionId();
     if (!auctionProxy.needsDetailRefresh()) {
       Auction detail = auctionProxy.getDetailIfLoaded();
-      if (detail != null) {
+      if (detail != null && auction == null) {
         setAuction(detail);
       }
       detailRequestInFlight = false;
@@ -500,9 +521,9 @@ public class LiveController implements Cleanable {
     }
     handleItemImage(item);
 
-    // Cập nhật chart từ bid history
-    rebuildChartFromBids(detail);
-    drawPriceChart();
+    if (rebuildChartFromBids(detail)) {
+      drawPriceChart();
+    }
     updateAutoBidUi();
   }
 
@@ -513,10 +534,17 @@ public class LiveController implements Cleanable {
       return;
     }
     if (detail == null || detail.getBids().isEmpty()) {
-      bidHistoryList.getChildren().clear();
+      String emptyKey = "empty";
+      if (emptyKey.equals(renderedBidHistoryKey)) {
+        updateBidCount(0);
+        updateLeaderEmpty();
+        return;
+      }
       Label empty = new Label("Chưa có lượt đặt giá.");
       empty.getStyleClass().add("live-bid-time");
+      bidHistoryList.getChildren().clear();
       bidHistoryList.getChildren().add(empty);
+      renderedBidHistoryKey = emptyKey;
       updateBidCount(0);
       updateLeaderEmpty();
       return;
@@ -524,16 +552,47 @@ public class LiveController implements Cleanable {
     List<Bid> bids = detail.getBids();
     updateBidCount(bids.size());
     updateBidHint();
+    String nextHistoryKey = bidHistoryKey(bids);
+    if (nextHistoryKey.equals(renderedBidHistoryKey) && avatarFetchInFlight.isEmpty()) {
+      return;
+    }
 
     bidHistoryList.getChildren().clear();
-    boolean isFirst = true;
-    for (Bid bid : bids) {
+    int visibleRows = Math.min(bids.size(), MAX_VISIBLE_BID_ROWS);
+    for (int i = 0; i < visibleRows; i++) {
+      Bid bid = bids.get(i);
       if (bid == null) {
         continue;
       }
-      bidHistoryList.getChildren().add(createBidRow(bid, isFirst));
-      isFirst = false;
+      bidHistoryList.getChildren().add(createBidRow(bid, i == 0));
     }
+    if (bids.size() > MAX_VISIBLE_BID_ROWS) {
+      Label hidden = new Label("Hiển thị " + MAX_VISIBLE_BID_ROWS + " lượt mới nhất.");
+      hidden.getStyleClass().add("live-bid-time");
+      bidHistoryList.getChildren().add(hidden);
+    }
+    renderedBidHistoryKey = nextHistoryKey;
+  }
+
+  private String bidHistoryKey(List<Bid> bids) {
+    StringBuilder key = new StringBuilder();
+    key.append(bids.size());
+    int visibleRows = Math.min(bids.size(), MAX_VISIBLE_BID_ROWS);
+    for (int i = 0; i < visibleRows; i++) {
+      Bid bid = bids.get(i);
+      if (bid == null) {
+        continue;
+      }
+      key.append('|')
+          .append(bid.getId())
+          .append(':')
+          .append(bid.getBidderId())
+          .append(':')
+          .append(bid.getAmount())
+          .append(':')
+          .append(bid.getCreateAt());
+    }
+    return key.toString();
   }
 
   private void setDefaultAvatarStyle(Circle circle, String name) {
@@ -570,7 +629,7 @@ public class LiveController implements Cleanable {
       if (base64Opt.isPresent()) {
         avatarFetchInFlight.remove(bidderId);
         try {
-          Image image = decodeBase64Image(base64Opt.get(), 32, 32);
+          Image image = avatarImage(bidderId, base64Opt.get(), 32);
           avatar.setFill(new ImagePattern(image));
           avatar.setStroke(Color.web("#e2e8f0"));
           avatar.setStrokeWidth(1.5);
@@ -644,7 +703,7 @@ public class LiveController implements Cleanable {
         if (base64Opt.isPresent()) {
           avatarFetchInFlight.remove(bidderId);
           try {
-            Image image = decodeBase64Image(base64Opt.get(), 44, 44);
+            Image image = avatarImage(bidderId, base64Opt.get(), 44);
             leaderAvatar.setFill(new ImagePattern(image));
             leaderAvatar.setStroke(Color.web("#e2e8f0"));
             leaderAvatar.setStrokeWidth(1.5);
@@ -800,13 +859,21 @@ public class LiveController implements Cleanable {
   }
 
   /** Rebuild chart data từ bid list. */
-  private void rebuildChartFromBids(Auction detail) {
-    priceHistory.clear();
+  private boolean rebuildChartFromBids(Auction detail) {
     if (detail == null) {
-      return;
+      return false;
     }
     Item item = detail.getItem();
     long startingPrice = item == null ? 0 : item.getStartingPrice();
+    List<Bid> bids = new ArrayList<>(detail.getBids());
+    bids.removeIf(bid -> bid == null || bid.getCreateAt() == null);
+    bids.sort((left, right) -> left.getCreateAt().compareTo(right.getCreateAt()));
+    String nextChartKey = chartKey(detail, bids, startingPrice);
+    if (nextChartKey.equals(renderedChartKey)) {
+      return false;
+    }
+
+    priceHistory.clear();
     // Thêm giá khởi điểm
     LocalDateTime startTime = detail.getStartTime();
     if (startTime == null) {
@@ -815,13 +882,34 @@ public class LiveController implements Cleanable {
     if (startingPrice > 0) {
       priceHistory.add(new ChartPoint(startTime, startingPrice));
     }
-    List<Bid> bids = new ArrayList<>(detail.getBids());
-    bids.removeIf(bid -> bid == null || bid.getCreateAt() == null);
-    bids.sort((left, right) -> left.getCreateAt().compareTo(right.getCreateAt()));
-    for (Bid bid : bids) {
+    int fromIndex = Math.max(0, bids.size() - MAX_CHART_POINTS);
+    for (int i = fromIndex; i < bids.size(); i++) {
+      Bid bid = bids.get(i);
       priceHistory.add(new ChartPoint(bid.getCreateAt(), bid.getAmount()));
     }
     priceHistory.sort((left, right) -> left.time.compareTo(right.time));
+    renderedChartKey = nextChartKey;
+    return true;
+  }
+
+  private String chartKey(Auction detail, List<Bid> bids, long startingPrice) {
+    StringBuilder key =
+        new StringBuilder()
+            .append(detail.getId())
+            .append(':')
+            .append(detail.getVersion())
+            .append(':')
+            .append(detail.getHighestBid())
+            .append(':')
+            .append(startingPrice)
+            .append(':')
+            .append(bids.size());
+    int fromIndex = Math.max(0, bids.size() - MAX_CHART_POINTS);
+    for (int i = fromIndex; i < bids.size(); i++) {
+      Bid bid = bids.get(i);
+      key.append('|').append(bid.getId()).append(':').append(bid.getAmount());
+    }
+    return key.toString();
   }
 
   /** Vẽ biểu đồ giá trực tiếp lên Canvas. */
@@ -1315,9 +1403,17 @@ public class LiveController implements Cleanable {
   }
 
   private void startCountdownTimer(LocalDateTime targetTime, boolean requestResult) {
+    if (scheduler != null
+        && !scheduler.isShutdown()
+        && Objects.equals(activeCountdownTargetTime, targetTime)
+        && activeCountdownRequestsResult == requestResult) {
+      return;
+    }
     if (scheduler != null && !scheduler.isShutdown()) {
       scheduler.shutdownNow();
     }
+    activeCountdownTargetTime = targetTime;
+    activeCountdownRequestsResult = requestResult;
     scheduler =
         Executors.newSingleThreadScheduledExecutor(
             r -> {
@@ -1446,7 +1542,10 @@ public class LiveController implements Cleanable {
     lastKnownStatus = null;
     imageFetchInFlight.clear();
     avatarFetchInFlight.clear();
+    avatarImageCache.clear();
     displayedItemImageKey = null;
+    renderedBidHistoryKey = null;
+    renderedChartKey = null;
     priceHistory.clear();
     if (bidHistoryList != null) {
       bidHistoryList.getChildren().clear();
@@ -1525,6 +1624,17 @@ public class LiveController implements Cleanable {
     byte[] imageBytes = Base64.getDecoder().decode(base64Data);
     return new Image(
         new ByteArrayInputStream(imageBytes), requestedWidth, requestedHeight, true, true);
+  }
+
+  private Image avatarImage(int userId, String base64Data, int size) {
+    String key = userId + ":" + size + ":" + base64Data.length() + ":" + base64Data.hashCode();
+    Image cached = avatarImageCache.get(key);
+    if (cached != null) {
+      return cached;
+    }
+    Image image = decodeBase64Image(base64Data, size, size);
+    avatarImageCache.put(key, image);
+    return image;
   }
 
   private double itemImageTargetWidth() {
