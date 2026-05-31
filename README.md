@@ -52,29 +52,31 @@ Dự án được tổ chức dạng **Maven Multi-Module**:
 AuctionOnlineSystem/
 ├── common/                      # Tài nguyên dùng chung Client & Server
 │   └── src/main/java/app/common/
-│       ├── dto/                 # Data Transfer Objects (JSON payload qua Socket)
-│       ├── exceptions/          # Ngoại lệ tuỳ chỉnh của hệ thống
-│       ├── models/              # Entities: User, Item, Auction, Bid, Wallet...
-│       └── observer/            # PacketListener interface (Observer pattern)
+│       ├── dto/                 # Data Transfer Objects (JSON DTOs trao đổi qua Socket)
+│       ├── enums/               # Hệ thống Enum phân quyền, trạng thái, và loại gói tin
+│       ├── exception/           # Định nghĩa ngoại lệ tuỳ chỉnh của hệ thống
+│       ├── mapper/              # Bộ chuyển đổi dữ liệu (Mapper) giữa các đối tượng
+│       ├── models/              # Thực thể miền (Domain Models): User, Item, Auction, Bid, Wallet...
+│       └── protocol/            # Giao thức gói tin mạng PacketReq/PacketRes qua JSON
 │
 ├── server/                      # Module Server
 │   └── src/main/java/app/server/
 │       ├── command/             # Command handlers xử lý Request từ Client
-│       ├── dao/                 # Data Access Objects (interface + MySQL impl)
-│       ├── database/            # HikariCP config & TransactionManager
-│       ├── network/             # Server socket, ClientHandler, Session
-│       └── service/             # Business logic: AutoBidService, AntiSnipeService, Scheduler
+│       ├── dao/                 # Data Access Objects (MySQL Database CRUD)
+│       ├── database/            # HikariCP Connection Pool & TransactionManager
+│       ├── network/             # Server socket, ClientHandler, và SessionManager
+│       └── service/             # Business logic: AutoBid, AntiSnipe, AuctionScheduler
 │
 ├── client/                      # Module Client (JavaFX)
 │   └── src/main/java/app/client/
 │       ├── command/             # Command handlers xử lý Response từ Server
-│       ├── controllers/         # JavaFX Controllers điều khiển màn hình
-│       ├── manager/             # NavigationManager, ClientRequestService, AuctionDetailProxy
-│       └── store/               # Cache trạng thái cục bộ (LiveAuctionSessionStore, DataStore)
+│       ├── controllers/         # JavaFX Controllers điều khiển màn hình (AtlantaFX)
+│       ├── manager/             # NavigationManager, ClientRequestService, UserManager, NotificationCenter
+│       └── store/               # Lưu trữ trạng thái cục bộ (AuctionStore, LiveAuctionSessionStore, ItemStore...)
 │
 ├── UMLdiagram/                  # Sơ đồ UML lớp (.puml + ảnh PNG xuất ra)
-├── pom.xml                      # Root POM — quản lý dependency & cấu hình build
-├── DESIGN_PATTERNS.md           # Tài liệu mô tả 10 Design Patterns đã áp dụng
+├── pom.xml                      # Root POM — quản lý dependency & cấu hình build multi-module
+├── DESIGN_PATTERNS.md           # Tài liệu mô tả 10 Design Patterns thực tế đã áp dụng
 └── REPORT_BIG.pdf               # Báo cáo PDF tóm tắt dự án (≤ 5 trang)
 ```
 

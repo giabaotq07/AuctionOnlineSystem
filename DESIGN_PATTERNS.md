@@ -9,12 +9,14 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 
 **Nơi áp dụng:**
 * `app.server.database.DatabaseConnection`: Quản lý duy nhất một `HikariDataSource` dùng chung cho toàn bộ ứng dụng.
-* `app.observer.Client`: Mỗi client JavaFX dùng một instance socket chính để kết nối server và quản lý listener.
-* `app.observer.Server`: Quản lý server socket, service graph và thread pool thông qua `Server.getInstance()`.
-* `app.models.DataStore`: Lưu state cục bộ phía client như user hiện tại, danh sách phiên đấu giá và phiên đang xem.
-* `app.client.manager.NavigationManager`: Quản lý `primaryStage`, controller hiện tại và điều hướng màn hình JavaFX.
+* `app.client.Client`: Mỗi client JavaFX duy trì duy nhất một socket connection đến server và nhận phản hồi.
+* `app.server.network.Server`: Quản lý server socket, quản trị vòng đời và thread pool xử lý kết nối.
+* `app.client.manager.UserManager`: Lưu trữ trạng thái thông tin người dùng đang đăng nhập (`currentUser`) và cache ảnh đại diện.
+* `app.client.store.AuctionStore` (và các Store khác như `ItemStore`, `BidStore`, `UserListStore`): Quản lý bộ nhớ đệm (cache) cục bộ phía Client cho các preview và chi tiết đấu giá.
+* `app.client.manager.ClientNotificationCenter`: Hub đơn nhất để điều phối và đăng ký nhận các gói tin thông báo từ server.
+* `app.client.manager.NavigationManager`: Quản lý `primaryStage`, FXML loader và điều hướng màn hình JavaFX.
 
-**Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý một instance có state.
+**Ghi chú:** `JsonUtil`, `PasswordUtils`, `AlertUtils` là static utility classes, không phải Singleton đúng nghĩa vì không quản lý trạng thái instance.
 
 ---
 
@@ -22,12 +24,12 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Đóng gói logic tạo object, giúp code gọi không cần biết class con cụ thể.
 
 **Nơi áp dụng:**
-* `app.common.models.ItemFactory`: Tạo subclass của `Item` theo `ItemType`, ví dụ `Electronics`, `Art`, `Vehicle`.
-* `app.common.models.PacketReq` và `app.common.models.PacketRes`: Dùng static factory methods như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách tạo packet request/response.
+* `app.common.models.ItemFactory`: Tạo subclass của `Item` theo `ItemType` động (như `Electronics`, `Art`, `Vehicle`).
+* `app.common.protocol.PacketReq` và `app.common.protocol.PacketRes`: Sử dụng các phương thức static factory như `of(...)`, `success(...)`, `error(...)` để chuẩn hóa cách khởi tạo các gói tin DTO gửi/nhận qua Socket.
 
 **Lợi ích trong dự án:**
-* Giảm việc rải `new Electronics(...)` ở nhiều nơi.
-* Khi thêm loại item mới, logic tạo object tập trung tại factory.
+* Giảm thiểu việc lạm dụng toán tử `new` rải rác trong mã nguồn.
+* Đóng gói logic khởi tạo, dễ mở rộng danh mục sản phẩm mới chỉ bằng việc thêm nhánh xử lý trong `ItemFactory`.
 
 ---
 
@@ -48,18 +50,16 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 ---
 
 ## 4. Observer Pattern / Pub-Sub Variant
-**Ý nghĩa:** Cho phép nhiều thành phần đăng ký lắng nghe sự kiện. Khi packet tương ứng xuất hiện, publisher thông báo đến các listener đã subscribe.
+**Ý nghĩa:** Cho phép các thành phần đăng ký nhận sự kiện và cập nhật trạng thái tự động khi có dữ liệu mới.
 
 **Nơi áp dụng:**
-* `app.common.observer.PacketListener<T>` là callback interface.
-* `app.observer.Client` quản lý `Map<PacketType, CopyOnWriteArrayList<PacketListener<?>>>`.
-* `Client.subscribe(...)`, `Client.unsubscribe(...)`, `Client.notifyListeners(...)` tạo cơ chế pub-sub phía client.
-* Các controller như `FirstScene`, `LiveController`, `MyHistoryController`, `DepositController`, `RegisterController`, `LoginController`, `MessController`, `AuctionController` đăng ký listener theo từng `PacketType`.
-* `app.observer.Server.broadcast(...)` gửi packet đến nhiều client đang online để cập nhật realtime giá thầu, chat, danh sách phiên đấu giá và ví.
+* `app.client.manager.ClientNotificationCenter` (Singleton): Đóng vai trò là trung tâm phát tán sự kiện (Publisher Hub) phía Client. Quản lý danh sách các listener (`messageListeners`, `chatListeners`, `updateListeners`, `userListListeners`) sử dụng functional interfaces như `Consumer<String>`, `Consumer<ChatResponse>` hoặc `Runnable`.
+* Các JavaFX Controller (như `LiveController`, `MessController`, `AuctionController`...): Đăng ký lắng nghe các sự kiện mạng thông qua `addChatListener(...)`, `addUpdateListener(...)` để cập nhật trực tiếp giao diện JavaFX khi nhận được phản hồi.
+* Phía Server: `app.server.network.Server.broadcast(PacketRes packet)` gửi thông báo tới tất cả các `ClientHandler` để đồng bộ hóa cập nhật giá thầu, tin nhắn chat, số dư ví và trạng thái phiên tức thời.
 
 **Lợi ích trong dự án:**
-* Controller có thể phản ứng với packet realtime mà không cần polling liên tục.
-* Các màn hình khác nhau có thể lắng nghe cùng một loại packet theo nhu cầu riêng.
+* Giao diện UI phản ứng nhanh chóng với dữ liệu thời gian thực từ mạng mà không cần dùng cơ chế Polling tốn băng thông.
+* Giảm sự phụ thuộc trực tiếp (tight coupling) giữa tầng mạng Socket và tầng hiển thị UI.
 
 ---
 
@@ -113,10 +113,10 @@ Tài liệu này chỉ liệt kê các design pattern thực sự rõ ràng đan
 **Ý nghĩa:** Tách giao diện, dữ liệu/domain model và logic điều khiển màn hình.
 
 **Nơi áp dụng:**
-* **View:** `src/main/resources/app/views/` chứa các file FXML.
-* **Controller:** `app.client.controllers` chứa controller JavaFX như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MessController`.
-* **Model:** `app.models` chứa domain object như `Auction`, `Item`, `Wallet`, `User`, `BidTransaction`, `Session`, `DataStore`.
-* **Điều hướng:** `NavigationManager` load FXML, gắn CSS và thay scene trên `Stage`.
+* **View:** `src/main/resources/app/views/` chứa các file FXML bố cục giao diện.
+* **Controller:** `app.client.controllers` chứa các controller JavaFX điều khiển logic hiển thị (như `FirstScene`, `LiveController`, `LoginController`, `RegisterController`, `DepositController`, `MessController`).
+* **Model:** `app.common.models` chứa các thực thể nghiệp vụ (như `Auction`, `Item`, `Wallet`, `User`, `Bid`, `Account`, `AutoBid`).
+* **Điều hướng:** `NavigationManager` chịu trách nhiệm tải tệp FXML, áp dụng stylesheet AtlantaFX/CSS và thay đổi màn hình (Scene) trên Stage.
 
 **Lợi ích trong dự án:**
 * UI, state/domain model và logic điều khiển màn hình được tách riêng.
