@@ -189,5 +189,5 @@ java -jar client/target/client-1.0-SNAPSHOT.jar
 
 ## 📄 Báo cáo PDF & Video Demo
 
-- 📄 **Báo cáo PDF**: [REPORT_BIG.pdf](./REPORT_BIG.pdf) — Báo cáo tóm tắt ≤ 5 trang: mục tiêu, kiến trúc tổng thể, UML, các chức năng đạt được.
+- 📄 **Báo cáo PDF**: [Báo cáo Bài tập lớn-Hệ thống Đấu giá.pdf](./Báo cáo Bài tập lớn-Hệ thống Đấu giá.pdf) — Báo cáo tóm tắt ≤ 5 trang: mục tiêu, kiến trúc tổng thể, UML, các chức năng đạt được.
 - 🎥 **Video Demo**: [https://www.youtube.com/watch?v=qxf3Nleffd0](https://www.youtube.com/watch?v=qxf3Nleffd0)
