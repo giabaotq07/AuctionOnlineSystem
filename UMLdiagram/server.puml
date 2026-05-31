@@ -1,0 +1,213 @@
+@startuml
+' Module: server
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+package "app.server.network" {
+  class Server <<Singleton>> {
+    - instance : Server
+    - serverSocket : ServerSocket
+    - executor : ThreadPoolExecutor
+    - sessions : Map<Long, ClientHandler>
+    + getInstance() : Server
+    + start(port)
+    + broadcast(packet, ids)
+    + getSession(userId)
+  }
+
+  class ClientHandler {
+    - socket : Socket
+    - session : Session
+    - commands : EnumMap<RequestType, Command>
+    + run()
+    + handlePacket(packet)
+    + sendResponse(packet)
+    - createCommands() : EnumMap
+  }
+
+  class Session {
+    - userId : Long
+    - username : String
+    - role : UserRole
+    - watchingAuction : Long
+    + isLoggedIn() : boolean
+    + setWatching(id)
+  }
+}
+
+package "app.server.command" {
+  interface Command {
+    + execute(handler, packet)
+  }
+
+  abstract class SafeCommand {
+    # services : ServiceGraph
+    + execute(handler, packet)
+    # doExecute(handler, packet)
+  }
+
+  class LoginCommand
+  class RegisterCommand
+  class PlaceBidCommand
+  class CreateAuctionCommand
+  class SetAutoBidCommand
+  class CancelAuctionCommand
+  class DepositCommand
+  class ChatCommand
+  class UploadImageCommand
+  class UpdateAuctionCommand
+  class FetchAuctionSummariesCommand
+}
+
+package "app.server.service" {
+  class AuctionService {
+    - auctionDAO : AuctionDAO
+    - bidService : BidService
+    - autoBidService : AutoBidService
+    + createAuction(req) : Result
+    + cancelAuction(id) : Result
+    + updateAuction(req) : Result
+    + closeAuction(id)
+  }
+
+  class BidService {
+    - bidDAO : BidDAO
+    - auctionDAO : AuctionDAO
+    + placeBid(req) : Result
+    + validateBid(bid, auction)
+    + getBidHistory(auctionId)
+  }
+
+  class AutoBidService {
+    - autoBidDAO : AutoBidDAO
+    - bidService : BidService
+    + setAutoBid(req) : Result
+    + triggerAutoBid(auctionId)
+    + disableAutoBid(req)
+  }
+
+  class AntiSnipeService {
+    - snipeCount : Map<Long, Integer>
+    - MAX_EXTENSIONS = 5
+    + checkAndExtend(auction)
+    + reset(auctionId)
+  }
+
+  class AuctionScheduler {
+    - executor : ScheduledExecutor
+    - auctionService : AuctionService
+    + scheduleActivation(auction)
+    + scheduleClosure(auction)
+    + cancelSchedule(auctionId)
+  }
+
+  class UserService {
+    - userDAO : UserDAO
+    + register(req) : Result
+    + login(req) : Result
+    + banUser(req) : Result
+  }
+
+  class ItemService {
+    - itemDAO : ItemDAO
+    - imageStorage : ImageStorageService
+    + addItem(req) : Result
+    + updateItem(req) : Result
+    + getSellerItems(id)
+  }
+
+  class ImageStorageService {
+    - storageDir : Path
+    + save(bytes, name) : Path
+    + load(name) : byte[]
+    + delete(name)
+  }
+
+  class BidValidator {
+    - MIN_INCREMENT : BigDecimal
+    + validate(bid, auction) : Result
+    + checkDeposit(user, auction)
+  }
+
+  class OwnershipGuard {
+    + checkSeller(handler, itemId)
+    + checkAuction(handler, auctionId)
+  }
+}
+
+package "app.server.dao" {
+  abstract class BaseDAO {
+    # dataSource : DataSource
+    # withConnection(fn)
+    # runInTransaction(fn)
+    # executeUpdate(sql, params)
+    # setParameters(ps, params)
+  }
+
+  interface UserDAO
+  interface AuctionDAO
+  interface BidDAO
+  interface AutoBidDAO
+  interface ItemDAO
+  interface ChatDAO
+
+  class MySqlUserDAO
+  class MySqlAuctionDAO
+  class MySqlBidDAO
+  class MySqlAutoBidDAO
+  class MySqlItemDAO
+}
+
+package "app.server.database" {
+  class DatabaseConnection <<Singleton>> {
+    - dataSource : HikariDataSource
+    + getInstance() : DataSource
+    - configure(HikariConfig)
+  }
+
+  class TransactionManager {
+    - dataSource : DataSource
+    + runInTransaction(fn)
+    + runWithLock(fn, sql)
+  }
+}
+
+' Relationships
+Server "1" o-- "1..*" ClientHandler : manages
+ClientHandler o-- Session : has
+ClientHandler ..> Command : dispatches
+SafeCommand ..|> Command
+LoginCommand --|> SafeCommand
+RegisterCommand --|> SafeCommand
+PlaceBidCommand --|> SafeCommand
+CreateAuctionCommand --|> SafeCommand
+SetAutoBidCommand --|> SafeCommand
+CancelAuctionCommand --|> SafeCommand
+DepositCommand --|> SafeCommand
+ChatCommand --|> SafeCommand
+UploadImageCommand --|> SafeCommand
+UpdateAuctionCommand --|> SafeCommand
+FetchAuctionSummariesCommand --|> SafeCommand
+
+AuctionService ..> BidService
+AuctionService ..> AutoBidService
+BidService ..> AntiSnipeService
+ItemService ..> ImageStorageService
+BidService ..> BidValidator
+
+BaseDAO <|.. UserDAO
+BaseDAO <|.. AuctionDAO
+BaseDAO <|.. BidDAO
+BaseDAO <|.. AutoBidDAO
+BaseDAO <|.. ItemDAO
+BaseDAO <|.. ChatDAO
+MySqlUserDAO ..|> UserDAO
+MySqlAuctionDAO ..|> AuctionDAO
+MySqlBidDAO ..|> BidDAO
+MySqlAutoBidDAO ..|> AutoBidDAO
+MySqlItemDAO ..|> ItemDAO
+
+DatabaseConnection ..> TransactionManager
+BaseDAO ..> DatabaseConnection
+
+@enduml

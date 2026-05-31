@@ -1,0 +1,177 @@
+@startuml
+' Module: common
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+package "app.common.models" {
+  abstract class Entity {
+    # id : Long
+    # createdAt : LocalDateTime
+  }
+
+  abstract class Item {
+    # name : String
+    # description : String
+    # startingPrice : BigDecimal
+    # itemType : ItemType
+    # sellerId : Long
+    + getItemType() : ItemType
+    + getSellerId() : Long
+  }
+
+  class Electronics {
+    - brand : String
+    - model : String
+    + getItemType()
+  }
+
+  class Art {
+    - artist : String
+    - medium : String
+    + getItemType()
+  }
+
+  class Vehicle {
+    - make : String
+    - year : Integer
+    + getItemType()
+  }
+
+  class ItemFactory <<Factory>> {
+    + create(type, data) : Item
+  }
+
+  class User {
+    - username : String
+    - passwordHash : String
+    - email : String
+    - role : UserRole
+    - banned : boolean
+    + getRole() : UserRole
+    + isBanned() : boolean
+  }
+
+  class Wallet {
+    - userId : Long
+    - balance : BigDecimal
+    - frozenAmount : BigDecimal
+    + deposit(amount)
+    + freeze(amount)
+    + unfreeze(amount)
+    + deduct(amount)
+  }
+
+  class Auction {
+    - item : Item
+    - sellerId : Long
+    - status : AuctionStatus
+    - currentPrice : BigDecimal
+    - endTime : LocalDateTime
+    - winner : User
+    + isActive() : boolean
+    + getStatus() : AuctionStatus
+  }
+
+  class Bid {
+    - auctionId : Long
+    - bidderId : Long
+    - amount : BigDecimal
+    - bidType : BidType
+    - createdAt : LocalDateTime
+    + getBidType() : BidType
+  }
+
+  class AutoBid {
+    - auctionId : Long
+    - bidderId : Long
+    - maxBid : BigDecimal
+    - increment : BigDecimal
+    - active : boolean
+    + isActive() : boolean
+  }
+}
+
+package "app.common.protocol" {
+  interface Request
+  interface Response
+
+  class PacketReq <<record>> {
+    - type : RequestType
+    - payload : JsonElement
+    + of(type, req) : PacketReq
+    + getPayload(cls) : T
+    + getType() : RequestType
+  }
+
+  class PacketRes <<record>> {
+    - type : ResponseType
+    - status : OperationStatus
+    - payload : JsonElement
+    + success(type, res) : PacketRes
+    + error(type, msg) : PacketRes
+    + getPayload(cls) : T
+  }
+}
+
+package "app.common.enums" {
+  enum UserRole {
+    ADMIN
+    SELLER
+    BIDDER
+  }
+
+  enum AuctionStatus {
+    PENDING
+    ACTIVE
+    CLOSED
+    CANCELLED
+  }
+
+  enum ItemType {
+    ELECTRONICS
+    ART
+    VEHICLE
+  }
+
+  enum BidType {
+    MANUAL
+    AUTO
+  }
+
+  enum RequestType {
+    LOGIN
+    REGISTER
+    PLACE_BID
+    CREATE_AUCTION
+    SET_AUTO_BID
+  }
+
+  enum ResponseType {
+    LOGIN_RESULT
+    BID_RESULT
+    AUCTION_UPDATE
+  }
+
+  enum OperationStatus {
+    SUCCESS
+    FAILURE
+    UNAUTHORIZED
+  }
+}
+
+' Relationships
+Entity <|-- Item
+Item <|-- Electronics
+Item <|-- Art
+Item <|-- Vehicle
+ItemFactory ..> Item : creates
+Entity <|-- User
+Entity <|-- Wallet
+Entity <|-- Auction
+Entity <|-- Bid
+Entity <|-- AutoBid
+PacketReq ..|> Request
+PacketRes ..|> Response
+
+@enduml
+
