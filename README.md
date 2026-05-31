@@ -84,7 +84,7 @@ AuctionOnlineSystem/
 
 ## 📦 Vị trí các file `.jar`
 
-Nằm trong Mục release của GitHub: [https://github.com/giabaotq07/AuctionOnlineSystem]
+Nằm trong Mục release của GitHub: [https://github.com/giabaotq07/AuctionOnlineSystem/releases/tag/v1.0.0]
 
 ---
 
