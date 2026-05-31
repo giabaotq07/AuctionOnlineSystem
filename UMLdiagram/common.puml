@@ -1,177 +1,180 @@
 @startuml
-' Module: common
+' Compact common UML
+set namespaceSeparator none
+left to right direction
 skinparam classAttributeIconSize 0
 skinparam shadowing false
+skinparam nodesep 20
+skinparam ranksep 22
+hide empty members
 
-package "app.common.models" {
-  abstract class Entity {
-    # id : Long
-    # createdAt : LocalDateTime
-  }
+abstract class "app.common.models\nEntity" as Entity
+abstract class "app.common.models\nItem" as Item
+class Electronics
+class Art
+class Vehicle
+class ItemFactory <<Factory>>
 
-  abstract class Item {
-    # name : String
-    # description : String
-    # startingPrice : BigDecimal
-    # itemType : ItemType
-    # sellerId : Long
-    + getItemType() : ItemType
-    + getSellerId() : Long
-  }
+class "app.common.models\nUser" as User
+class Account
+class Wallet
+class Auction
+class Bid
+class AutoBid
 
-  class Electronics {
-    - brand : String
-    - model : String
-    + getItemType()
-  }
-
-  class Art {
-    - artist : String
-    - medium : String
-    + getItemType()
-  }
-
-  class Vehicle {
-    - make : String
-    - year : Integer
-    + getItemType()
-  }
-
-  class ItemFactory <<Factory>> {
-    + create(type, data) : Item
-  }
-
-  class User {
-    - username : String
-    - passwordHash : String
-    - email : String
-    - role : UserRole
-    - banned : boolean
-    + getRole() : UserRole
-    + isBanned() : boolean
-  }
-
-  class Wallet {
-    - userId : Long
-    - balance : BigDecimal
-    - frozenAmount : BigDecimal
-    + deposit(amount)
-    + freeze(amount)
-    + unfreeze(amount)
-    + deduct(amount)
-  }
-
-  class Auction {
-    - item : Item
-    - sellerId : Long
-    - status : AuctionStatus
-    - currentPrice : BigDecimal
-    - endTime : LocalDateTime
-    - winner : User
-    + isActive() : boolean
-    + getStatus() : AuctionStatus
-  }
-
-  class Bid {
-    - auctionId : Long
-    - bidderId : Long
-    - amount : BigDecimal
-    - bidType : BidType
-    - createdAt : LocalDateTime
-    + getBidType() : BidType
-  }
-
-  class AutoBid {
-    - auctionId : Long
-    - bidderId : Long
-    - maxBid : BigDecimal
-    - increment : BigDecimal
-    - active : boolean
-    + isActive() : boolean
-  }
+class "app.common.protocol\nPacketReq" as PacketReq {
+  type : RequestType
+  data : String
+  of(RequestType, Request)
+  getData(Class)
 }
 
-package "app.common.protocol" {
-  interface Request
-  interface Response
-
-  class PacketReq <<record>> {
-    - type : RequestType
-    - payload : JsonElement
-    + of(type, req) : PacketReq
-    + getPayload(cls) : T
-    + getType() : RequestType
-  }
-
-  class PacketRes <<record>> {
-    - type : ResponseType
-    - status : OperationStatus
-    - payload : JsonElement
-    + success(type, res) : PacketRes
-    + error(type, msg) : PacketRes
-    + getPayload(cls) : T
-  }
+class "app.common.protocol\nPacketRes" as PacketRes {
+  success : boolean
+  type : ResponseType
+  message : String
+  data : String
+  of(ResponseType, message, payload)
+  error(ResponseType, message)
+  getData(Class)
 }
 
-package "app.common.enums" {
-  enum UserRole {
-    ADMIN
-    SELLER
-    BIDDER
-  }
+interface Request
+interface Response
 
-  enum AuctionStatus {
-    PENDING
-    ACTIVE
-    CLOSED
-    CANCELLED
-  }
-
-  enum ItemType {
-    ELECTRONICS
-    ART
-    VEHICLE
-  }
-
-  enum BidType {
-    MANUAL
-    AUTO
-  }
-
-  enum RequestType {
-    LOGIN
-    REGISTER
-    PLACE_BID
-    CREATE_AUCTION
-    SET_AUTO_BID
-  }
-
-  enum ResponseType {
-    LOGIN_RESULT
-    BID_RESULT
-    AUCTION_UPDATE
-  }
-
-  enum OperationStatus {
-    SUCCESS
-    FAILURE
-    UNAUTHORIZED
-  }
+class "app.common.dto\nAuction request records" as RequestDtosA <<records>> {
+  AuctionDetailRequest
+  AuctionHistoryRequest
+  AuctionResultRequest
+  CancelAuctionRequest
+  CreateAuctionRequest
+  DisableAutoBidRequest
+  FetchItemImageRequest
+  PlaceBidRequest
+  SetAutoBidRequest
+  UpdateAuctionRequest
+  UploadImageRequest
 }
 
-' Relationships
+class "app.common.dto\nUser request records" as RequestDtosB <<records>> {
+  BanUserRequest
+  ChatRequest
+  DepositRequest
+  FetchAvatarRequest
+  FetchSellerItemsRequest
+  LoginRequest
+  RegisterRequest
+  SettleWalletRequest
+  UploadAvatarRequest
+}
+
+class "app.common.dto\nAuction response records" as ResponseDtosA <<records>> {
+  AuctionDetailResponse
+  AuctionHistoryResponse
+  AuctionPaidNoticeResponse
+  AuctionResultResponse
+  AuctionSummariesResponse
+  CancelAuctionResponse
+  CreateAuctionResponse
+  DisableAutoBidResponse
+  FetchItemImageResponse
+  ItemListResponse
+  PlaceBidResponse
+  SetAutoBidResponse
+  UploadImageResponse
+  WalletUpdateResponse
+}
+
+class "app.common.dto\nUser response records" as ResponseDtosB <<records>> {
+  BanUserResponse
+  ChatResponse
+  FetchAvatarResponse
+  LoginResponse
+  RegisterResponse
+  UploadAvatarResponse
+  UserListResponse
+}
+
+class "app.common.dto\nShared DTO records" as SharedDtos <<records>> {
+  AccountDto
+  AuctionDto
+  AuctionPreview
+  BidDto
+  ItemDto
+  ItemPreview
+  UserDto
+  UserPreview
+  WalletDto
+}
+
+class "app.common.enums\nDomain enums" as DomainEnums <<enumerations>> {
+  UserRole: ADMIN, BIDDER, SELLER
+  AuctionStatus: OPEN, RUNNING, FINISHED, PAID, CANCELED
+  ItemType: ELECTRONICS, ART, VEHICLE
+  BidType: NORMAL, AUTO, SYSTEM
+  OperationStatus: SUCCESS, FAIL, ERROR
+}
+
+class "app.common.enums\nView" as View <<enumeration>> {
+  CONNECT
+  LOGIN
+  ORGANIZE
+  LIVE
+  HISTORY
+  REGISTER
+  UI
+  MESSAGE
+  USER_PROFILE
+  DEPOSIT
+  ALL_AUCTIONS
+  ADMIN_DASHBOARD
+  SELLER_DASHBOARD
+}
+
+class "app.common.enums\nProtocol enums" as ProtocolEnums <<enumerations>> {
+  RequestType: 23 values
+  ResponseType: 31 values
+}
+
+class "app.common.support\nMapper / utils" as CommonSupport {
+  ModelMapper
+  JsonUtil
+}
+
+class "app.common.exception\nExceptions" as Exceptions {
+  AppException
+  ServiceException
+  DatabaseException
+  ConnectException
+  ValidationException
+}
+
 Entity <|-- Item
+Entity <|-- User
 Item <|-- Electronics
 Item <|-- Art
 Item <|-- Vehicle
 ItemFactory ..> Item : creates
-Entity <|-- User
-Entity <|-- Wallet
-Entity <|-- Auction
-Entity <|-- Bid
-Entity <|-- AutoBid
-PacketReq ..|> Request
-PacketRes ..|> Response
+User *-- Account
+User *-- Wallet
+Auction o-- Item
+Auction o-- User : seller/winner
+Auction o-- Bid
+Bid o-- User : bidder
+
+PacketReq --> Request
+PacketReq --> ProtocolEnums
+PacketReq ..> CommonSupport : JsonUtil
+PacketRes --> Response
+PacketRes --> ProtocolEnums
+PacketRes ..> CommonSupport : JsonUtil
+RequestDtosA -[hidden]right- RequestDtosB
+ResponseDtosA -[hidden]right- ResponseDtosB
+RequestDtosA ..|> Request
+RequestDtosB ..|> Request
+ResponseDtosA ..|> Response
+ResponseDtosB ..|> Response
+SharedDtos ..> Entity
+CommonSupport ..> SharedDtos : ModelMapper
 
 @enduml
-

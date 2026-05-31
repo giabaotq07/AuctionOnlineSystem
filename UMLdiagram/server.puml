@@ -1,213 +1,151 @@
 @startuml
-' Module: server
+' Compact server UML
+set namespaceSeparator none
+top to bottom direction
 skinparam classAttributeIconSize 0
 skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 25
+skinparam ranksep 25
+hide empty members
 
 package "app.server.network" {
   class Server <<Singleton>> {
-    - instance : Server
-    - serverSocket : ServerSocket
-    - executor : ThreadPoolExecutor
-    - sessions : Map<Long, ClientHandler>
-    + getInstance() : Server
-    + start(port)
-    + broadcast(packet, ids)
-    + getSession(userId)
+    authenticatedClients : Map<Integer, ClientHandler>
+    start()
+    shutdown()
+    broadcast(PacketRes)
+    sendPacketToUser(userId, PacketRes)
   }
 
   class ClientHandler {
-    - socket : Socket
-    - session : Session
-    - commands : EnumMap<RequestType, Command>
-    + run()
-    + handlePacket(packet)
-    + sendResponse(packet)
-    - createCommands() : EnumMap
+    session : Session
+    commands : Map<RequestType, Command>
+    run()
+    sendPacket(PacketRes)
+    authorize(RequestType)
   }
 
   class Session {
-    - userId : Long
-    - username : String
-    - role : UserRole
-    - watchingAuction : Long
-    + isLoggedIn() : boolean
-    + setWatching(id)
+    user : User
+    authenticated : boolean
+    viewingAuctionId : Integer
   }
 }
 
 package "app.server.command" {
   interface Command {
-    + execute(handler, packet)
+    execute(ClientHandler, PacketReq)
   }
 
-  abstract class SafeCommand {
-    # services : ServiceGraph
-    + execute(handler, packet)
-    # doExecute(handler, packet)
+  abstract class SafeCommand <<Template Method>> {
+    execute(ClientHandler, PacketReq)
+    doExecute(ClientHandler, PacketReq)
+    responseType() : ResponseType
   }
 
-  class LoginCommand
-  class RegisterCommand
-  class PlaceBidCommand
-  class CreateAuctionCommand
-  class SetAutoBidCommand
-  class CancelAuctionCommand
-  class DepositCommand
-  class ChatCommand
-  class UploadImageCommand
-  class UpdateAuctionCommand
-  class FetchAuctionSummariesCommand
+  class "Request commands" as ServerCommands {
+    BanUserCommand
+    CancelAuctionCommand
+    ChatCommand
+    CreateAuctionCommand
+    DepositCommand
+    DisableAutoBidCommand
+    FetchAuctionDetailCommand
+    FetchAuctionHistoryCommand
+    FetchAuctionResultCommand
+    FetchAuctionSummariesCommand
+    FetchAvatarCommand
+    FetchItemImageCommand
+    FetchSellerItemsCommand
+    FetchUserListCommand
+    LoginCommand
+    PlaceBidCommand
+    RegisterCommand
+    SetAutoBidCommand
+    SettleWalletCommand
+    UnwatchAuctionCommand
+    UpdateAuctionCommand
+    UploadAvatarCommand
+    UploadImageCommand
+  }
 }
 
 package "app.server.service" {
-  class AuctionService {
-    - auctionDAO : AuctionDAO
-    - bidService : BidService
-    - autoBidService : AutoBidService
-    + createAuction(req) : Result
-    + cancelAuction(id) : Result
-    + updateAuction(req) : Result
-    + closeAuction(id)
+  class "Services" as Services {
+    AuctionService
+    AuctionQueryService
+    BidService
+    AutoBidService
+    AuctionSettlementService
+    AuctionScheduler
+    UserService
+    ItemService
+    ImageStorageService
+    AntiSnipeService
+    BidValidator
+    OwnershipGuard
   }
 
-  class BidService {
-    - bidDAO : BidDAO
-    - auctionDAO : AuctionDAO
-    + placeBid(req) : Result
-    + validateBid(bid, auction)
-    + getBidHistory(auctionId)
-  }
-
-  class AutoBidService {
-    - autoBidDAO : AutoBidDAO
-    - bidService : BidService
-    + setAutoBid(req) : Result
-    + triggerAutoBid(auctionId)
-    + disableAutoBid(req)
-  }
-
-  class AntiSnipeService {
-    - snipeCount : Map<Long, Integer>
-    - MAX_EXTENSIONS = 5
-    + checkAndExtend(auction)
-    + reset(auctionId)
-  }
-
-  class AuctionScheduler {
-    - executor : ScheduledExecutor
-    - auctionService : AuctionService
-    + scheduleActivation(auction)
-    + scheduleClosure(auction)
-    + cancelSchedule(auctionId)
-  }
-
-  class UserService {
-    - userDAO : UserDAO
-    + register(req) : Result
-    + login(req) : Result
-    + banUser(req) : Result
-  }
-
-  class ItemService {
-    - itemDAO : ItemDAO
-    - imageStorage : ImageStorageService
-    + addItem(req) : Result
-    + updateItem(req) : Result
-    + getSellerItems(id)
-  }
-
-  class ImageStorageService {
-    - storageDir : Path
-    + save(bytes, name) : Path
-    + load(name) : byte[]
-    + delete(name)
-  }
-
-  class BidValidator {
-    - MIN_INCREMENT : BigDecimal
-    + validate(bid, auction) : Result
-    + checkDeposit(user, auction)
-  }
-
-  class OwnershipGuard {
-    + checkSeller(handler, itemId)
-    + checkAuction(handler, auctionId)
+  class "Result records" as ServiceResults <<records>> {
+    AutoBidUpdateResult
+    AuctionCompletion
+    AuctionSettlementResult
   }
 }
 
 package "app.server.dao" {
-  abstract class BaseDAO {
-    # dataSource : DataSource
-    # withConnection(fn)
-    # runInTransaction(fn)
-    # executeUpdate(sql, params)
-    # setParameters(ps, params)
+  abstract class BaseDAO
+
+  class "DAO interfaces" as DAOInterfaces <<interfaces>> {
+    UserDAO
+    AuctionDAO
+    BidDAO
+    AutoBidDAO
+    ItemDAO
+    ChatDAO
   }
 
-  interface UserDAO
-  interface AuctionDAO
-  interface BidDAO
-  interface AutoBidDAO
-  interface ItemDAO
-  interface ChatDAO
-
-  class MySqlUserDAO
-  class MySqlAuctionDAO
-  class MySqlBidDAO
-  class MySqlAutoBidDAO
-  class MySqlItemDAO
+  class "MySQL DAO implementations" as MySqlDaos {
+    MySqlUserDAO
+    MySqlAuctionDAO
+    MySqlBidDAO
+    MySqlAutoBidDAO
+    MySqlItemDAO
+  }
 }
 
 package "app.server.database" {
-  class DatabaseConnection <<Singleton>> {
-    - dataSource : HikariDataSource
-    + getInstance() : DataSource
-    - configure(HikariConfig)
-  }
+  class DatabaseConnection
+  class DatabaseConfig
+  class DatabaseInitializer
 
   class TransactionManager {
-    - dataSource : DataSource
-    + runInTransaction(fn)
-    + runWithLock(fn, sql)
+    runInTransaction(work)
+    runWithoutResult(work)
   }
 }
 
-' Relationships
-Server "1" o-- "1..*" ClientHandler : manages
-ClientHandler o-- Session : has
-ClientHandler ..> Command : dispatches
+Server -[hidden]down- ClientHandler
+ClientHandler -[hidden]down- Command
+Command -[hidden]down- Services
+Services -[hidden]down- DAOInterfaces
+DAOInterfaces -[hidden]down- DatabaseConnection
+
+Server "1" o-- "0..*" ClientHandler : manages
+ClientHandler o-- Session
+ClientHandler o-- Command : dispatches by RequestType
+ServerCommands --|> SafeCommand
 SafeCommand ..|> Command
-LoginCommand --|> SafeCommand
-RegisterCommand --|> SafeCommand
-PlaceBidCommand --|> SafeCommand
-CreateAuctionCommand --|> SafeCommand
-SetAutoBidCommand --|> SafeCommand
-CancelAuctionCommand --|> SafeCommand
-DepositCommand --|> SafeCommand
-ChatCommand --|> SafeCommand
-UploadImageCommand --|> SafeCommand
-UpdateAuctionCommand --|> SafeCommand
-FetchAuctionSummariesCommand --|> SafeCommand
-
-AuctionService ..> BidService
-AuctionService ..> AutoBidService
-BidService ..> AntiSnipeService
-ItemService ..> ImageStorageService
-BidService ..> BidValidator
-
-BaseDAO <|.. UserDAO
-BaseDAO <|.. AuctionDAO
-BaseDAO <|.. BidDAO
-BaseDAO <|.. AutoBidDAO
-BaseDAO <|.. ItemDAO
-BaseDAO <|.. ChatDAO
-MySqlUserDAO ..|> UserDAO
-MySqlAuctionDAO ..|> AuctionDAO
-MySqlBidDAO ..|> BidDAO
-MySqlAutoBidDAO ..|> AutoBidDAO
-MySqlItemDAO ..|> ItemDAO
-
-DatabaseConnection ..> TransactionManager
+ServerCommands ..> Services : calls
+Services ..> ServiceResults : returns
+Services ..> DAOInterfaces : persistence
+Services ..> TransactionManager : transactions
+MySqlDaos ..|> DAOInterfaces
+MySqlDaos --|> BaseDAO
 BaseDAO ..> DatabaseConnection
+TransactionManager ..> DatabaseConnection
+DatabaseInitializer ..> DatabaseConnection
+Server ..> Services : initializes / broadcasts
 
 @enduml

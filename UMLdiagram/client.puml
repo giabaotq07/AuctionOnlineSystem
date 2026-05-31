@@ -1,178 +1,132 @@
 @startuml
-' Module: client
+' Compact client UML
+set namespaceSeparator none
+left to right direction
 skinparam classAttributeIconSize 0
 skinparam shadowing false
+skinparam nodesep 20
+skinparam ranksep 22
+hide empty members
 
-package "app.client.core" {
-  class Client <<Singleton>> {
-    - instance : Client
-    - socket : Socket
-    - out : ObjectOutputStream
-    - in : ObjectInputStream
-    - listeners : Map<ResponseType, List<PacketListener>>
-    - commands : EnumMap<ResponseType, Command>
-    + getInstance() : Client
-    + connect(host, port)
-    + sendRequest(packet)
-    + subscribe(type, listener)
-    + unsubscribe(type, listener)
-    - notifyListeners(packet)
-    - handlePacket(packet)
-  }
+class "app.client.controllers\nMain controllers" as ControllersA {
+  LoginController
+  RegisterController
+  FirstScene
+  LiveController
+  AllAuctionController
+  AuctionController
+  DepositController
 }
 
-package "app.client.manager" {
-  class NavigationManager <<Singleton>> {
-    - instance : NavigationManager
-    - primaryStage : Stage
-    - currentController : Object
-    + getInstance() : NavigationManager
-    + navigateTo(view : View)
-    + setStage(stage)
-    + getCurrentController()
-  }
-
-  class ClientRequestService <<Facade>> {
-    - client : Client
-    + login(req)
-    + register(req)
-    + placeBid(req)
-    + createAuction(req)
-    + setAutoBid(req)
-    + deposit(req)
-    + fetchAuctionSummaries()
-  }
-
-  class UserManager <<Singleton>> {
-    - currentUser : User
-    - walletBalance : BigDecimal
-    + setCurrentUser(user)
-    + getCurrentUser() : User
-    + updateBalance(amount)
-  }
-
-  class ClientNotificationCenter {
-    - client : Client
-    + registerWalletListener()
-    + registerAuctionUpdateListener()
-    + unregisterAll()
-  }
-
-  class AuctionDetailProxy <<Proxy>> {
-    - auctionId : Long
-    - preview : AuctionPreview
-    - fullDetail : Auction
-    + getPreview() : AuctionPreview
-    + loadFullDetail(callback)
-    + invalidateCache()
-  }
+class "app.client.controllers\nOther controllers" as ControllersB {
+  MessController
+  MyHistoryController
+  SellerDashboardController
+  AdminDashboardController
+  ConnectServerController
+  UserProfileController
 }
 
-package "app.client.command" {
-  interface Command {
-    + execute(packet : PacketRes)
-  }
+interface Cleanable
 
-  class UpdateAuctionCommand
-  class PlaceBidResultCommand
-  class LoginResultCommand
-  class AuctionSummariesCommand
-  class ChatResultCommand
-  class WalletUpdateCommand
+class "app.client.manager\nClientRequestService" as ClientRequestService <<Facade, Singleton>> {
+  login/register
+  create/update/cancel auction
+  fetch auction/detail/history/result
+  placeBid / setAutoBid / disableAutoBid
+  deposit / settleWallet
+  chat
+  upload/fetch image/avatar
+  fetchUserList / banUser
 }
 
-package "app.client.store" {
-  class DataStore <<Singleton>> {
-    - currentUser : User
-    - auctionPreviews : List<AuctionPreview>
-    - watchingAuctionId : Long
-    + getInstance() : DataStore
-    + setCurrentUser(user)
-    + updatePreviews(list)
-    + getWatchingId() : Long
-  }
-
-  class LiveAuctionSessionStore <<Singleton>> {
-    - proxy : AuctionDetailProxy
-    - currentBids : List<Bid>
-    - chatMessages : List<ChatMsg>
-    + getInstance()
-    + setProxy(proxy)
-    + addBid(bid)
-    + clearSession()
-  }
+class "app.client\nClient" as Client <<Singleton>> {
+  socket : Socket
+  commands : Map<ResponseType, Command>
+  connect()
+  sendRequest(PacketReq)
+  handlePacket(PacketRes)
 }
 
-package "app.client.controllers" {
-  interface Cleanable {
-    + cleanup()
-  }
-
-  class LoginController
-  class RegisterController
-  class FirstScene
-  class LiveController
-  class AllAuctionController
-  class AuctionController
-  class DepositController
-  class MessController
-  class MyHistoryController
-  class UserProfileController
-  class SellerDashboardController
-  class AdminDashboardController
-  class ConnectServerController
+abstract class "app.client.command\nCommand" as Command {
+  execute(PacketRes)
 }
 
-package "app.client.enums" {
-  enum View {
-    CONNECT
-    LOGIN
-    REGISTER
-    FIRST_SCENE
-    LIVE
-    AUCTION_FORM
-    DEPOSIT
-    PROFILE
-    SELLER_DASH
-    ADMIN_DASH
-  }
+class "app.client.command\nAuth / auction commands" as ClientCommandsA {
+  AuctionPaidNoticeCommand
+  CancelAuctionCommand
+  CreateAuctionCommand
+  FetchAuctionDetailCommand
+  FetchAuctionHistoryCommand
+  FetchAuctionResultCommand
+  FetchAuctionSummariesCommand
+  LoginCommand
+  PlaceBidCommand
+  RegisterCommand
+  SetAutoBidCommand
+  UpdateAuctionCommand
 }
 
-package "app.common.observer" {
-  interface PacketListener<T> {
-    + onPacket(packet : T)
-  }
+class "app.client.command\nUser / media commands" as ClientCommandsB {
+  BanUserCommand
+  ChatCommand
+  DepositCommand
+  DisableAutoBidCommand
+  ErrorCommand
+  FetchAvatarCommand
+  FetchItemImageCommand
+  FetchSellerItemsCommand
+  FetchUserListCommand
+  UploadAvatarCommand
+  UploadImageCommand
+  WalletUpdateCommand
 }
 
-' Relationships
-Client ..> ClientRequestService
-ClientRequestService --> Client : sends via
-NavigationManager ..> View
-Client ..> PacketListener : notifies
-UpdateAuctionCommand ..|> Command
-PlaceBidResultCommand ..|> Command
-LoginResultCommand ..|> Command
-AuctionSummariesCommand ..|> Command
-ChatResultCommand ..|> Command
-WalletUpdateCommand ..|> Command
-Client ..> Command : dispatches
-LiveController ..> LiveAuctionSessionStore
-AuctionDetailProxy ..> LiveAuctionSessionStore
-LoginController ..|> Cleanable
-RegisterController ..|> Cleanable
-FirstScene ..|> Cleanable
-LiveController ..|> Cleanable
-AllAuctionController ..|> Cleanable
-AuctionController ..|> Cleanable
-DepositController ..|> Cleanable
-MessController ..|> Cleanable
-MyHistoryController ..|> Cleanable
-UserProfileController ..|> Cleanable
-SellerDashboardController ..|> Cleanable
-AdminDashboardController ..|> Cleanable
-ConnectServerController ..|> Cleanable
-AllAuctionController ..> ClientRequestService
-FirstScene ..> DataStore
+class "app.client.store\nStores" as Stores <<Singletons>> {
+  AuctionStore
+  ItemStore
+  BidStore
+  LiveAuctionSessionStore
+  UserListStore
+}
+
+class "app.client.manager\nOther managers" as Managers {
+  NavigationManager <<Singleton>>
+  UserManager <<Singleton>>
+  ClientNotificationCenter <<Observer Hub>>
+  AuctionDetailProxy <<Proxy>>
+}
+
+class "app.client\nEntry / utils" as ClientSupport {
+  App
+  Main
+  AlertUtils
+  LoadingButton
+}
+
+ControllersA -[hidden]right- ControllersB
+ControllersA -[hidden]down- ClientRequestService
+ClientRequestService -[hidden]down- Client
+Client -[hidden]down- Command
+Command -[hidden]down- ClientCommandsA
+ClientCommandsA -[hidden]right- ClientCommandsB
+ClientCommandsA -[hidden]down- Stores
+Stores -[hidden]down- Managers
+
+ControllersA ..> Cleanable : cleanup capable
+ControllersB ..> Cleanable
+ControllersA --> ClientRequestService : sends user actions
+ControllersB --> ClientRequestService
+ControllersA ..> Managers : navigation / state
+ControllersB ..> Managers
+ClientRequestService --> Client : PacketReq
+Client o-- Command : ResponseType registry
+ClientCommandsA --|> Command
+ClientCommandsB --|> Command
+ClientCommandsA --> Stores : update state
+ClientCommandsB --> Stores
+ClientCommandsA --> Managers : notify/update UI state
+ClientCommandsB --> Managers
+Managers --> Stores : proxy/cache
 
 @enduml
-
