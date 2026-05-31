@@ -84,12 +84,7 @@ AuctionOnlineSystem/
 
 ## 📦 Vị trí các file `.jar`
 
-Sau khi build thành công (xem Bước 2), các file thực thi nằm tại:
-
-| Module | Đường dẫn file JAR |
-|---|---|
-| **Server** | `server/target/server-1.0-SNAPSHOT.jar` |
-| **Client** | `client/target/client-1.0-SNAPSHOT.jar` |
+Nằm trong Mục release của GitHub: [https://github.com/giabaotq07/AuctionOnlineSystem]
 
 ---
 
@@ -180,7 +175,7 @@ java -jar client/target/client-1.0-SNAPSHOT.jar
 - [x] **Concurrency Control** — Row Locking (`SELECT … FOR UPDATE`) tránh race condition khi nhiều người đặt giá đồng thời
 - [x] **Cấu hình IP linh hoạt** — qua file `application.properties` hoặc nhập trực tiếp trên GUI
 
-### Chức năng nâng cao (Điểm cộng)
+### Chức năng nâng cao 
 
 - [x] **Auto-Bidding** — đặt giá tự động theo giá trần & bước tăng cấu hình sẵn (`AutoBidService`)
 - [x] **Anti-Sniping** — tự động gia hạn thêm 60 giây nếu có lượt đặt giá trong 30 giây cuối (tối đa 5 lần)
